@@ -103,7 +103,10 @@ struct ServerSheet: View {
             }
             .padding(20)
         }
-        .presentationDetents([.medium, .large])
+        // like discord's, it rises to just below the server name and stays there, the
+        // contents scroll inside and a swipe down closes it
+        .presentationDetents([.fraction(0.86)])
+        .presentationContentInteraction(.scrolls)
         .presentationDragIndicator(.visible)
         .presentationBackground(Theme.deepBackground)
         .sheet(isPresented: $isInboxPresented) {
@@ -217,10 +220,10 @@ private struct SheetAction: View {
         Button(action: action) {
             VStack(spacing: 8) {
                 Image(systemName: systemImage)
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(.system(size: 22, weight: .semibold))
                     .foregroundStyle(Theme.header)
-                    .frame(width: 52, height: 52)
-                    .background(Theme.listBackground, in: .circle)
+                    .frame(width: 60, height: 60)
+                    .background(Theme.listBackground, in: .rect(cornerRadius: 18))
 
                 Text(title)
                     .font(.caption)

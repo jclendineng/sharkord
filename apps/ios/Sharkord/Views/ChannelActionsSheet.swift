@@ -52,7 +52,7 @@ struct ChannelActionsSheet: View {
         }
         .presentationDetents([.medium])
         .presentationDragIndicator(.visible)
-        .presentationBackground(Theme.listBackground)
+        .presentationBackground(Theme.deepBackground)
         .sheet(isPresented: $isInvitePresented) {
             InviteSheet()
         }
@@ -164,11 +164,21 @@ private struct LevelRow: View {
 struct ActionGroup<Content: View>: View {
     @ViewBuilder let content: Content
 
+    // a hairline between rows, inset past the icons, like discord's grouped lists
     var body: some View {
         VStack(spacing: 0) {
-            content
+            Group(subviews: content) { rows in
+                ForEach(rows.indices, id: \.self) { index in
+                    rows[index]
+
+                    if index < rows.count - 1 {
+                        Theme.divider.frame(height: 1)
+                            .padding(.leading, 56)
+                    }
+                }
+            }
         }
-        .background(Theme.deepBackground, in: .rect(cornerRadius: 14))
+        .background(Theme.listBackground, in: .rect(cornerRadius: 14))
     }
 }
 
