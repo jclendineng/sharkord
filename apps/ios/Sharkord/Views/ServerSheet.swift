@@ -89,6 +89,10 @@ struct ServerSheet: View {
                 .tint(Theme.blurple)
                 .foregroundStyle(Theme.header)
 
+                if !session.customEmojis.isEmpty {
+                    ServerEmojiGrid()
+                }
+
                 ActionGroup {
                     if let host = session.address?.baseURL.absoluteString {
                         ActionRow(title: isAddressCopied ? "Copied" : "Copy Server Address", systemImage: "link", action: { copy(host) })
@@ -225,5 +229,42 @@ private struct SheetAction: View {
             .frame(maxWidth: .infinity)
         }
         .buttonStyle(.plain)
+    }
+}
+
+// the server's own emoji, the first few rows and a count of the rest
+private struct ServerEmojiGrid: View {
+    private static let shown = 32
+
+    @Environment(SessionStore.self) private var session
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Server Emoji")
+                .font(.subheadline)
+                .foregroundStyle(Theme.muted)
+
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 8), spacing: 8) {
+                ForEach(session.customEmojis.prefix(Self.shown)) { emoji in
+                    if let address = session.address {
+                        AsyncImage(url: address.fileURL(emoji.file)) { image in
+                            image.resizable().scaledToFit()
+                        } placeholder: {
+                            Color.clear
+                        }
+                        .frame(width: 28, height: 28)
+                        .accessibilityLabel(":\(emoji.name):")
+                    }
+                }
+
+                if session.customEmojis.count > Self.shown {
+                    Text("+\(session.customEmojis.count - Self.shown)")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Theme.muted)
+                }
+            }
+            .padding(14)
+            .background(Theme.listBackground, in: .rect(cornerRadius: 14))
+        }
     }
 }

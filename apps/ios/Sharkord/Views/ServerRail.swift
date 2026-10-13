@@ -80,7 +80,7 @@ private struct ServerRailItem: View {
         }
         // discord keeps the icon in place and opens a menu beside it, the system context
         // menu lifts the whole row out instead
-        .simultaneousGesture(LongPressGesture(minimumDuration: 0.4).onEnded(showMenu))
+        .simultaneousGesture(LongPressGesture(minimumDuration: 0.3).onEnded(showMenu))
     }
 
     // releasing a long press also counts as a tap, which must not switch servers

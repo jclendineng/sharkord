@@ -10,6 +10,7 @@ struct ServerRailMenu: View {
     @Environment(ServerListStore.self) private var servers
 
     @State private var height: CGFloat = 0
+    @State private var isShown = false
 
     private var server: SessionStore {
         menu.server
@@ -23,10 +24,20 @@ struct ServerRailMenu: View {
                     .onTapGesture(perform: close)
 
                 card
+                    .scaleEffect(isShown ? 1 : 0.85, anchor: .topLeading)
+                    .opacity(isShown ? 1 : 0)
                     .offset(x: menu.iconFrame.maxX + 10, y: top(in: proxy.size))
             }
         }
         .transition(.opacity)
+        .onAppear(perform: show)
+    }
+
+    // grows out of the icon like discord's, quick enough to feel attached to the finger
+    private func show() {
+        withAnimation(.spring(response: 0.22, dampingFraction: 0.82)) {
+            isShown = true
+        }
     }
 
     private var card: some View {
