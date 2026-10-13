@@ -90,6 +90,11 @@ const settings = sqliteTable(
     })
       .notNull()
       .default(true),
+    pushShowMessageContent: integer('push_show_message_content', {
+      mode: 'boolean'
+    })
+      .notNull()
+      .default(true),
     storageSignedUrlsEnabled: integer('storage_signed_urls_enabled', {
       mode: 'boolean'
     }).notNull(),

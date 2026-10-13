@@ -27,6 +27,50 @@ struct ServerAddress: Hashable {
         self.baseURL = url
     }
 
+    static let insecureMessage = "This server isn't using HTTPS, so everything sent to it could be read on the way. Sharkord only uses plain HTTP on your local network or Tailscale. Add it with an https:// address."
+
+    // plain http anywhere past the local network, where anyone along the way could read it.
+    // a private address or a tailscale one is fine, wireguard already encrypts tailscale
+    var isInsecure: Bool {
+        guard baseURL.scheme == "http", let host = baseURL.host(percentEncoded: false)?.lowercased() else {
+            return false
+        }
+
+        return !Self.isLocal(host)
+    }
+
+    private static let localSuffixes = [".local", ".lan", ".home.arpa", ".internal", ".ts.net"]
+
+    private static func isLocal(_ host: String) -> Bool {
+        let host = host.trimmingCharacters(in: CharacterSet(charactersIn: "[]"))
+
+        if host == "localhost" || localSuffixes.contains(where: host.hasSuffix) {
+            return true
+        }
+
+        if host.contains(":") {
+            return host == "::1" || host.hasPrefix("fe80:") || host.hasPrefix("fc") || host.hasPrefix("fd")
+        }
+
+        let octets = host.split(separator: ".").compactMap { Int($0) }
+
+        // a name without dots resolves on the local network only
+        guard octets.count == 4 else {
+            return !host.contains(".")
+        }
+
+        switch (octets[0], octets[1]) {
+        case (10, _), (127, _), (192, 168), (169, 254):
+            return true
+        case (172, 16...31):
+            return true
+        case (100, 64...127):
+            return true
+        default:
+            return false
+        }
+    }
+
     var webSocketURL: URL {
         var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
         components.scheme = components.scheme == "https" ? "wss" : "ws"

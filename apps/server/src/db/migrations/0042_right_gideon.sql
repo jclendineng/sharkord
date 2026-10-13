@@ -1,0 +1,1 @@
+ALTER TABLE `settings` ADD `push_show_message_content` integer DEFAULT true NOT NULL;

@@ -65,6 +65,8 @@ struct AdminServerSettings: Codable {
     var enableSearch: Bool
     var showWelcomeDialog: Bool
     var webRtcSimulcastEnabled: Bool
+    // missing on a server from before the setting existed
+    var pushShowMessageContent: Bool?
 }
 
 // users.getAll

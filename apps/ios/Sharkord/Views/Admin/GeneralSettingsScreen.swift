@@ -115,6 +115,19 @@ struct GeneralSettingsScreen: View {
                 Toggle("Simulcast for Video", isOn: settings.webRtcSimulcastEnabled)
             }
 
+            if let showsContent = settings.wrappedValue.pushShowMessageContent {
+                Section {
+                    Toggle("Show Message Text", isOn: Binding(
+                        get: { showsContent },
+                        set: { settings.wrappedValue.pushShowMessageContent = $0 }
+                    ))
+                } header: {
+                    Text("Push Notifications")
+                } footer: {
+                    Text("Notifications pass through Apple. Off, they only say who sent something, never what or in which channel.")
+                }
+            }
+
             if let errorMessage {
                 Section {
                     Text(errorMessage)
@@ -170,6 +183,7 @@ struct GeneralSettingsScreen: View {
             let enableSearch: Bool
             let showWelcomeDialog: Bool
             let webRtcSimulcastEnabled: Bool
+            let pushShowMessageContent: Bool?
 
             // a null password clears it, which a nil optional would leave out of the json
             func encode(to encoder: Encoder) throws {
@@ -185,11 +199,13 @@ struct GeneralSettingsScreen: View {
                 try container.encode(enableSearch, forKey: .enableSearch)
                 try container.encode(showWelcomeDialog, forKey: .showWelcomeDialog)
                 try container.encode(webRtcSimulcastEnabled, forKey: .webRtcSimulcastEnabled)
+                try container.encodeIfPresent(pushShowMessageContent, forKey: .pushShowMessageContent)
             }
 
             private enum CodingKeys: String, CodingKey {
                 case name, description, password, onlyAskForPasswordOnFirstJoin, allowNewUsers
                 case directMessagesEnabled, enablePlugins, enableSearch, showWelcomeDialog, webRtcSimulcastEnabled
+                case pushShowMessageContent
             }
         }
 
@@ -203,7 +219,8 @@ struct GeneralSettingsScreen: View {
             enablePlugins: settings.enablePlugins,
             enableSearch: settings.enableSearch,
             showWelcomeDialog: settings.showWelcomeDialog,
-            webRtcSimulcastEnabled: settings.webRtcSimulcastEnabled
+            webRtcSimulcastEnabled: settings.webRtcSimulcastEnabled,
+            pushShowMessageContent: settings.pushShowMessageContent
         )
 
         isSaving = true

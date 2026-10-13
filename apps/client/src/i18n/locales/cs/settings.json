@@ -147,6 +147,8 @@
   "searchEnabledDesc": "Umožnit uživatelům vyhledávat zprávy a soubory na celém serveru.",
   "showWelcomeDialogLabel": "Zobrazit uvítací dialog",
   "showWelcomeDialogDesc": "Zobrazit uživatelům dialog pro nastavení profilu při jejich prvním připojení k serveru.",
+  "pushShowMessageContentLabel": "Zobrazovat text zprávy v push oznámeních",
+  "pushShowMessageContentDesc": "Push oznámení procházejí servery Applu. Po vypnutí oznámení uvede jen, kdo zprávu poslal, nikdy její obsah ani kanál.",
   "usersTitle": "Uživatelé",
   "usersDesc": "Správa uživatelů serveru a jejich oprávnění",
   "usersAvatarCol": "Avatar",

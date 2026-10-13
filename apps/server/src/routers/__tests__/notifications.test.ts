@@ -319,6 +319,78 @@ describe('push notifications for new messages', () => {
   });
 });
 
+describe('message previews in push', () => {
+  test('should show the content by default', async () => {
+    const { pushShowMessageContent } = await getSettings();
+
+    expect(pushShowMessageContent).toBe(true);
+  });
+
+  test('should leave out the content of a direct message when previews are off', async () => {
+    await registerDevices(4);
+
+    const { caller: owner } = await initTest(1);
+
+    await owner.others.updateSettings({ pushShowMessageContent: false });
+
+    const spy = spyOnApns();
+    const { caller } = await initTest(3);
+
+    await caller.messages.send({ channelId: 3, content: 'hey b', files: [] });
+    await drainPushNotificationsQueue();
+
+    const [[notification]] = spy.mock.calls as unknown as [
+      [apns.TApnsNotification]
+    ];
+
+    expect(notification.payload).toMatchObject({
+      aps: { alert: { title: 'User A', body: 'Sent you a direct message' } },
+      channelId: 3
+    });
+    expect(JSON.stringify(notification.payload)).not.toContain('hey b');
+  });
+
+  test('should leave out the content and the channel of a mention when previews are off', async () => {
+    await registerDevices(2);
+
+    const { caller } = await initTest(1);
+
+    await caller.others.updateSettings({ pushShowMessageContent: false });
+
+    const spy = spyOnApns();
+
+    await caller.messages.send({
+      channelId: 1,
+      content:
+        '<p><span data-type="mention" data-user-id="2" class="mention">@Test User</span> secret plans</p>',
+      files: []
+    });
+    await drainPushNotificationsQueue();
+
+    const [[notification]] = spy.mock.calls as unknown as [
+      [apns.TApnsNotification]
+    ];
+
+    expect(notification.payload).toMatchObject({
+      aps: { alert: { title: 'Test Owner', body: 'Sent a message' } }
+    });
+    expect(JSON.stringify(notification.payload)).not.toContain('secret plans');
+    expect(JSON.stringify(notification.payload)).not.toContain('General');
+  });
+
+  test('should refuse to change previews without permission to manage settings', async () => {
+    const { caller } = await initTest(2);
+
+    await expect(
+      caller.others.updateSettings({ pushShowMessageContent: false })
+    ).rejects.toThrow('Insufficient permissions');
+
+    const { pushShowMessageContent } = await getSettings();
+
+    expect(pushShowMessageContent).toBe(true);
+  });
+});
+
 describe('channel notification settings', () => {
   const MENTION_USER_2 =
     '<p><span data-type="mention" data-user-id="2" class="mention">@Test User</span> look</p>';

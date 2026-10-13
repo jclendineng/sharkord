@@ -149,6 +149,8 @@
   "searchEnabledDesc": "Permita que os usuários busquem mensagens e arquivos em todo o servidor.",
   "showWelcomeDialogLabel": "Mostrar Diálogo de Boas-Vindas",
   "showWelcomeDialogDesc": "Mostra um diálogo de configuração de perfil aos usuários na primeira vez que entrarem no servidor.",
+  "pushShowMessageContentLabel": "Mostrar o texto nas notificações push",
+  "pushShowMessageContentDesc": "As notificações push passam pelos servidores da Apple. Desative para mostrar apenas quem enviou a mensagem, nunca o conteúdo nem o canal.",
   "usersTitle": "Usuários",
   "usersDesc": "Gerencie os usuários do servidor e suas permissões",
   "usersAvatarCol": "Avatar",

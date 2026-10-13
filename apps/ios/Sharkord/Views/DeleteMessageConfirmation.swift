@@ -8,7 +8,17 @@ struct DeleteMessageConfirmation: View {
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
 
+    // a long message is cut off here and fades out, a short one takes only its own height
+    private static let previewLimit: CGFloat = 140
+
     @State private var isShown = false
+    @State private var contentHeight: CGFloat = 0
+
+    private var previewMask: LinearGradient {
+        let fades = contentHeight > Self.previewLimit
+
+        return LinearGradient(colors: [.black, .black, fades ? .clear : .black], startPoint: .top, endPoint: .bottom)
+    }
 
     private var author: PublicUser? {
         message.userId.flatMap { session.usersById[$0] }
@@ -48,9 +58,11 @@ struct DeleteMessageConfirmation: View {
 
                         if let content = message.content, !content.isEmpty {
                             MessageContentView(html: content)
-                                .frame(maxHeight: 140, alignment: .top)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .onGeometryChange(for: CGFloat.self, of: \.size.height) { contentHeight = $0 }
+                                .frame(height: min(contentHeight, Self.previewLimit), alignment: .top)
                                 .clipped()
-                                .mask(LinearGradient(colors: [.black, .black, .clear], startPoint: .top, endPoint: .bottom))
+                                .mask(previewMask)
                         } else if !message.files.isEmpty {
                             Label("\(message.files.count) attachment\(message.files.count == 1 ? "" : "s")", systemImage: "paperclip")
                                 .font(.subheadline)

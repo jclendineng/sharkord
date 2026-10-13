@@ -159,6 +159,30 @@ const getRecipientDevices = async (
   );
 };
 
+const getPreviewAlert = (message: TPushMessage, senderName: string) => {
+  const text = getPlainTextFromHtml(message.content ?? '').trim();
+
+  let body = text || 'Sent an attachment';
+
+  if (body.length > BODY_MAX_LENGTH) {
+    body = `${body.slice(0, BODY_MAX_LENGTH - 1)}…`;
+  }
+
+  return {
+    title: message.isDm
+      ? senderName
+      : `${senderName} in #${message.channelName}`,
+    body
+  };
+};
+
+// the payload travels through apple, who can read it. with previews off it says who sent
+// something and nothing of what or where
+const getPrivateAlert = (message: TPushMessage, senderName: string) => ({
+  title: senderName,
+  body: message.isDm ? 'Sent you a direct message' : 'Sent a message'
+});
+
 const buildPushPayload = async (message: TPushMessage) => {
   const [settings, sender] = await Promise.all([
     getSettings(),
@@ -173,22 +197,12 @@ const buildPushPayload = async (message: TPushMessage) => {
   ]);
 
   const senderName = sender?.name ?? message.pluginId ?? 'Someone';
-  const text = getPlainTextFromHtml(message.content ?? '').trim();
-
-  let body = text || 'Sent an attachment';
-
-  if (body.length > BODY_MAX_LENGTH) {
-    body = `${body.slice(0, BODY_MAX_LENGTH - 1)}…`;
-  }
 
   return {
     aps: {
-      alert: {
-        title: message.isDm
-          ? senderName
-          : `${senderName} in #${message.channelName}`,
-        body
-      },
+      alert: settings.pushShowMessageContent
+        ? getPreviewAlert(message, senderName)
+        : getPrivateAlert(message, senderName),
       sound: 'default',
       'thread-id': `channel-${message.channelId}`
     },

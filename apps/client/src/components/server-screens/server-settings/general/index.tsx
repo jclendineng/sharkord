@@ -20,6 +20,7 @@ type TServerGeneralValues = {
   webRtcSimulcastEnabled: boolean;
   enableSearch: boolean;
   showWelcomeDialog: boolean;
+  pushShowMessageContent: boolean;
   // undefined means untouched, null means remove
   logo?: TPickedImage | null;
 };
@@ -34,7 +35,8 @@ const INITIAL_VALUES: TServerGeneralValues = {
   enablePlugins: false,
   webRtcSimulcastEnabled: false,
   enableSearch: true,
-  showWelcomeDialog: true
+  showWelcomeDialog: true,
+  pushShowMessageContent: true
 };
 
 const General = memo(() => {
@@ -54,7 +56,8 @@ const General = memo(() => {
       enablePlugins: values.enablePlugins,
       webRtcSimulcastEnabled: values.webRtcSimulcastEnabled,
       enableSearch: values.enableSearch,
-      showWelcomeDialog: values.showWelcomeDialog
+      showWelcomeDialog: values.showWelcomeDialog,
+      pushShowMessageContent: values.pushShowMessageContent
     });
 
     if (values.logo !== undefined) {
@@ -83,7 +86,8 @@ const General = memo(() => {
       enablePlugins: settings.enablePlugins ?? false,
       webRtcSimulcastEnabled: settings.webRtcSimulcastEnabled ?? false,
       enableSearch: settings.enableSearch ?? true,
-      showWelcomeDialog: settings.showWelcomeDialog ?? true
+      showWelcomeDialog: settings.showWelcomeDialog ?? true,
+      pushShowMessageContent: settings.pushShowMessageContent ?? true
     });
   }, [settings, reset]);
 
@@ -117,6 +121,10 @@ const General = memo(() => {
   );
   const handleWelcomeDialogChange = useCallback(
     (checked: boolean) => onChange('showWelcomeDialog', checked),
+    [onChange]
+  );
+  const handlePushContentChange = useCallback(
+    (checked: boolean) => onChange('pushShowMessageContent', checked),
     [onChange]
   );
 
@@ -218,6 +226,16 @@ const General = memo(() => {
         <Switch
           checked={values.showWelcomeDialog}
           onCheckedChange={handleWelcomeDialogChange}
+        />
+      </Group>
+
+      <Group
+        label={t('pushShowMessageContentLabel')}
+        description={t('pushShowMessageContentDesc')}
+      >
+        <Switch
+          checked={values.pushShowMessageContent}
+          onCheckedChange={handlePushContentChange}
         />
       </Group>
     </SettingsSection>

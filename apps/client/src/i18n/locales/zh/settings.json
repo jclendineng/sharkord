@@ -147,6 +147,8 @@
   "searchEnabledDesc": "允许用户在服务器中搜索消息和文件。",
   "showWelcomeDialogLabel": "显示欢迎对话框",
   "showWelcomeDialogDesc": "在用户首次加入服务器时向其显示个人资料设置对话框。",
+  "pushShowMessageContentLabel": "在推送通知中显示消息内容",
+  "pushShowMessageContentDesc": "推送通知会经过 Apple 的服务器。关闭后，通知只显示发送者，不显示消息内容或所在频道。",
   "usersTitle": "用户",
   "usersDesc": "管理服务器用户及其权限",
   "usersAvatarCol": "头像",

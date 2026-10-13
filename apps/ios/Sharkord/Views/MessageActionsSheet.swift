@@ -21,6 +21,21 @@ struct MessageActionsSheet: View {
     @State private var isPickerPresented = false
     @State private var isForwardPresented = false
     @State private var isReportUnavailable = false
+    // exactly as tall as every action, delete included, with nothing to scroll or drag to
+    @State private var fittedHeight: CGFloat?
+
+    private var fittedDetent: PresentationDetent {
+        fittedHeight.map { .height($0) } ?? .medium
+    }
+
+    private func fit(_ height: CGFloat) {
+        guard fittedHeight == nil else {
+            return
+        }
+
+        // the grabber sits above the content
+        fittedHeight = height + 12
+    }
 
     private var isOwn: Bool {
         message.userId != nil && message.userId == session.ownUserId
@@ -97,8 +112,10 @@ struct MessageActionsSheet: View {
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 16)
+            .onGeometryChange(for: CGFloat.self, of: \.size.height, action: fit)
         }
-        .presentationDetents([.medium, .large])
+        .scrollBounceBehavior(.basedOnSize)
+        .presentationDetents([fittedDetent])
         .presentationDragIndicator(.visible)
         .presentationBackground(Theme.deepBackground)
         .sheet(isPresented: $isPickerPresented) {

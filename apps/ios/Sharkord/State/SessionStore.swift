@@ -486,6 +486,11 @@ final class SessionStore {
     }
 
     private func signIn(_ address: ServerAddress, token fetchToken: () async throws -> String) async {
+        guard !address.isInsecure else {
+            errorMessage = ServerAddress.insecureMessage
+            return
+        }
+
         errorMessage = nil
         phase = .connecting
 
@@ -919,6 +924,12 @@ final class SessionStore {
     }
 
     private func connect(_ address: ServerAddress, token: String) async {
+        // a server added before plain http was refused, its token never goes out unencrypted
+        guard !address.isInsecure else {
+            signOut(message: ServerAddress.insecureMessage)
+            return
+        }
+
         self.address = address
         self.token = token
 

@@ -295,6 +295,13 @@
       "when": 1791897022027,
       "tag": "0041_far_mephisto",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "6",
+      "when": 1791900686667,
+      "tag": "0042_right_gideon",
+      "breakpoints": true
     }
   ]
 }
