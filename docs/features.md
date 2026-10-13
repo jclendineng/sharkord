@@ -164,9 +164,10 @@ inviteOnly=true
 
 or `SHARKORD_INVITE_ONLY=true`. A new account then needs an invite made by someone with
 Manage Invites (the owner, and any role given it), single sign on cannot create accounts,
-and `/info` tells the apps registration is closed. Existing members log in as before. The
-stored Allow New Users value is left alone, the settings screens show the switch locked off
-while config.ini holds it. Code
+and `/info` tells the apps registration is closed. Existing members log in as before. On
+startup the stored Allow New Users switch is turned off to match, and turning it on is
+refused while config.ini holds the lock, so the settings screens always show what the
+server does. Code
 `apps/server/src/helpers/registration.ts`.
 
 ## Server settings in the app

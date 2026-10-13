@@ -4,8 +4,10 @@ import { eq } from 'drizzle-orm';
 import { initTest, login } from '../../__tests__/helpers';
 import { tdb, testsBaseUrl } from '../../__tests__/setup';
 import { config } from '../../config';
+import { getSettings } from '../../db/queries/server';
 import { invites, users } from '../../db/schema';
 import { resolveOidcUser } from '../oidc/user';
+import { applyInviteOnly } from '../registration';
 
 // config.ini's registration.inviteOnly, which holds over the settings screen's allow new users
 afterEach(() => {
@@ -90,5 +92,43 @@ describe('others.getSettings', () => {
     config.registration.inviteOnly = true;
 
     expect((await caller.others.getSettings()).inviteOnly).toBe(true);
+  });
+});
+
+describe('applyInviteOnly', () => {
+  test('should turn the stored switch off when config.ini locks sign ups', async () => {
+    config.registration.inviteOnly = true;
+
+    await applyInviteOnly();
+
+    const { allowNewUsers } = await getSettings();
+
+    expect(allowNewUsers).toBe(false);
+  });
+
+  test('should leave the stored switch alone without the lock', async () => {
+    await applyInviteOnly();
+
+    const { allowNewUsers } = await getSettings();
+
+    expect(allowNewUsers).toBe(true);
+  });
+});
+
+describe('others.updateSettings', () => {
+  test('should refuse to allow new users while config.ini locks sign ups', async () => {
+    config.registration.inviteOnly = true;
+
+    const { caller } = await initTest(1);
+
+    await expect(
+      caller.others.updateSettings({ allowNewUsers: true })
+    ).rejects.toThrow('Sign ups are locked to invites by config.ini');
+
+    await caller.others.updateSettings({ allowNewUsers: false });
+
+    const { allowNewUsers } = await getSettings();
+
+    expect(allowNewUsers).toBe(false);
   });
 });

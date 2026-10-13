@@ -7,6 +7,7 @@ import {
   StorageOverflowAction
 } from '@sharkord/shared';
 import { z } from 'zod';
+import { config } from '../../config';
 import { updateSettings } from '../../db/mutations/server';
 import { publishSettings } from '../../db/publishers';
 import { getSettings } from '../../db/queries/server';
@@ -88,6 +89,12 @@ const updateSettingsRoute = protectedProcedure
     if (touchesGeneral) {
       await ctx.needsPermission(Permission.MANAGE_SETTINGS);
     }
+
+    invariant(!(input.allowNewUsers && config.registration.inviteOnly), {
+      code: 'BAD_REQUEST',
+      message:
+        'Sign ups are locked to invites by config.ini. Turn off inviteOnly there first.'
+    });
 
     const { enablePlugins: oldEnablePlugins } = await getSettings();
 
