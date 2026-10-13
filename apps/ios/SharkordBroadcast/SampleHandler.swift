@@ -1,3 +1,4 @@
+import AVFoundation
 import CoreImage
 import Foundation
 import os
@@ -5,10 +6,19 @@ import ReplayKit
 
 // the screen broadcast. it only forwards frames: the app, already in the voice channel, sends
 // them on through webrtc, which keeps this process far below the extension memory limit.
-// frames go to the app over loopback tcp, each a 4 byte big endian length followed by a jpeg.
-// the first one is the secret from ScreenShareEndpoint instead, see ScreenShareReceiver
+// messages go to the app over loopback tcp, each a 4 byte big endian length, a type byte and
+// the payload: the secret from ScreenShareEndpoint first, then jpeg frames and, with app audio
+// on, the game's sound as 48khz mono float samples. see ScreenShareReceiver
 final class SampleHandler: RPBroadcastSampleHandler, @unchecked Sendable {
+    private enum MessageType: UInt8 {
+        case secret = 0
+        case video = 1
+        case audio = 2
+    }
+
     private static let jpegQuality: CGFloat = 0.7
+    // MixingAudioDevice.gameSampleRate
+    private static let gameFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: 48_000, channels: 1, interleaved: false)!
 
     private let queue = DispatchQueue(label: "com.sharkord.broadcast")
     private let context = CIContext(options: [.cacheIntermediates: false])
@@ -16,6 +26,10 @@ final class SampleHandler: RPBroadcastSampleHandler, @unchecked Sendable {
     private var lastFrameTime: CFTimeInterval = 0
     private var maxDimension: CGFloat = 1280
     private var framesPerSecond = 30.0
+    private var shareAudio = false
+    // replaykit's app audio format can change mid broadcast, the converter follows it
+    private var audioConverter: AVAudioConverter?
+    private var audioSourceDescription: AudioStreamBasicDescription?
     // replaykit calls in on its own thread, the encoding runs on the queue
     private let isSending = OSAllocatedUnfairLock(initialState: false)
 
@@ -24,7 +38,7 @@ final class SampleHandler: RPBroadcastSampleHandler, @unchecked Sendable {
             let endpoint = ScreenShareEndpoint.load(),
             configure(endpoint),
             connect(port: endpoint.port),
-            send(Data(endpoint.secret.utf8))
+            send(.secret, Data(endpoint.secret.utf8))
         else {
             finishBroadcastWithError(NSError(
                 domain: "com.sharkord.broadcast",
@@ -42,10 +56,28 @@ final class SampleHandler: RPBroadcastSampleHandler, @unchecked Sendable {
     }
 
     override func processSampleBuffer(_ sampleBuffer: CMSampleBuffer, with sampleBufferType: RPSampleBufferType) {
-        guard sampleBufferType == .video else {
+        switch sampleBufferType {
+        case .video:
+            processVideo(sampleBuffer)
+        case .audioApp:
+            processAudio(sampleBuffer)
+        default:
+            break
+        }
+    }
+
+    // converted here, on replaykit's thread, so only plain data crosses to the queue
+    private func processAudio(_ sampleBuffer: CMSampleBuffer) {
+        guard shareAudio, let samples = convertAudio(sampleBuffer) else {
             return
         }
 
+        queue.async {
+            _ = self.send(.audio, samples)
+        }
+    }
+
+    private func processVideo(_ sampleBuffer: CMSampleBuffer) {
         let now = CACurrentMediaTime()
 
         // a frame still on its way means the app is behind, this one is dropped rather than queued
@@ -81,7 +113,7 @@ final class SampleHandler: RPBroadcastSampleHandler, @unchecked Sendable {
                 return
             }
 
-            if !self.send(jpeg) {
+            if !self.send(.video, jpeg) {
                 self.closeSocket()
                 self.finishBroadcastWithError(NSError(
                     domain: "com.sharkord.broadcast",
@@ -95,8 +127,87 @@ final class SampleHandler: RPBroadcastSampleHandler, @unchecked Sendable {
     private func configure(_ endpoint: ScreenShareEndpoint) -> Bool {
         maxDimension = CGFloat(endpoint.maxDimension)
         framesPerSecond = Double(max(endpoint.framesPerSecond, 1))
+        shareAudio = endpoint.shareAudio
 
         return true
+    }
+
+    private func convertAudio(_ sampleBuffer: CMSampleBuffer) -> Data? {
+        guard
+            let description = CMSampleBufferGetFormatDescription(sampleBuffer),
+            let streamDescription = CMAudioFormatDescriptionGetStreamBasicDescription(description)
+        else {
+            return nil
+        }
+
+        let frames = AVAudioFrameCount(CMSampleBufferGetNumSamples(sampleBuffer))
+        var source = streamDescription.pointee
+
+        guard frames > 0 else {
+            return nil
+        }
+
+        if audioConverter == nil || !Self.sameFormat(audioSourceDescription, source) {
+            guard let format = AVAudioFormat(streamDescription: &source) else {
+                return nil
+            }
+
+            audioConverter = AVAudioConverter(from: format, to: Self.gameFormat)
+            audioSourceDescription = source
+        }
+
+        guard
+            let converter = audioConverter,
+            let input = AVAudioPCMBuffer(pcmFormat: converter.inputFormat, frameCapacity: frames),
+            let output = AVAudioPCMBuffer(
+                pcmFormat: Self.gameFormat,
+                frameCapacity: AVAudioFrameCount(Double(frames) * Self.gameFormat.sampleRate / source.mSampleRate) + 32
+            )
+        else {
+            return nil
+        }
+
+        input.frameLength = frames
+
+        guard CMSampleBufferCopyPCMDataIntoAudioBufferList(
+            sampleBuffer,
+            at: 0,
+            frameCount: Int32(frames),
+            into: input.mutableAudioBufferList
+        ) == noErr else {
+            return nil
+        }
+
+        var consumed = false
+
+        converter.convert(to: output, error: nil) { _, status in
+            if consumed {
+                status.pointee = .noDataNow
+                return nil
+            }
+
+            consumed = true
+            status.pointee = .haveData
+
+            return input
+        }
+
+        guard let channel = output.floatChannelData?[0], output.frameLength > 0 else {
+            return nil
+        }
+
+        return Data(bytes: channel, count: Int(output.frameLength) * MemoryLayout<Float>.size)
+    }
+
+    private static func sameFormat(_ previous: AudioStreamBasicDescription?, _ current: AudioStreamBasicDescription) -> Bool {
+        guard let previous else {
+            return false
+        }
+
+        return previous.mSampleRate == current.mSampleRate
+            && previous.mChannelsPerFrame == current.mChannelsPerFrame
+            && previous.mFormatFlags == current.mFormatFlags
+            && previous.mBitsPerChannel == current.mBitsPerChannel
     }
 
     private func encode(_ image: CIImage) -> Data? {
@@ -143,13 +254,15 @@ final class SampleHandler: RPBroadcastSampleHandler, @unchecked Sendable {
         return true
     }
 
-    private func send(_ payload: Data) -> Bool {
+    private func send(_ type: MessageType, _ payload: Data) -> Bool {
         guard socket >= 0 else {
             return false
         }
 
         var length = UInt32(payload.count).bigEndian
-        let header = Data(bytes: &length, count: 4)
+        var header = Data(bytes: &length, count: 4)
+
+        header.append(type.rawValue)
 
         return write(header) && write(payload)
     }

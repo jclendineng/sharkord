@@ -53,22 +53,34 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
     private var soundMuted = false
     private var outputVolume: Double
     private let audioOptions: AudioOptions
+    private let mixingDevice: MixingAudioDevice?
     private var isClosed = false
 
     init(
         audioOptions: AudioOptions,
+        mixingDevice: MixingAudioDevice?,
         signal: @escaping Signal,
         onFailure: @escaping @MainActor @Sendable () -> Void,
         onVideo: @escaping VideoHandler
     ) {
-        Self.configureAudioSession(audioOptions)
+        // the mixing device sets up the audio session itself
+        if mixingDevice == nil {
+            Self.configureAudioSession(audioOptions)
+        }
 
         self.audioOptions = audioOptions
+        self.mixingDevice = mixingDevice
         self.outputVolume = audioOptions.outputVolume
         self.signal = signal
         self.onFailure = onFailure
         self.onVideo = onVideo
-        self.factory = RTCPeerConnectionFactory()
+        self.factory = mixingDevice.map { mixer in
+            RTCPeerConnectionFactory(
+                encoderFactory: RTCDefaultVideoEncoderFactory(),
+                decoderFactory: RTCDefaultVideoDecoderFactory(),
+                audioDevice: mixer
+            )
+        } ?? RTCPeerConnectionFactory()
         self.device = Device(pcFactory: factory)
     }
 
@@ -190,6 +202,12 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
     }
 
     func setMicMuted(_ muted: Bool) {
+        // with game audio in the same track, only the voice may go quiet
+        if let mixingDevice {
+            mixingDevice.isMicMuted = muted
+            return
+        }
+
         queue.async {
             self.microphone?.isEnabled = !muted
 
@@ -284,17 +302,24 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
             return
         }
 
+        // game audio rides in this track when mixing, and webrtc's noise suppression and gain
+        // control treat music as noise to remove. ios's voice processing still cleans the mic
+        let isMixing = mixingDevice != nil
         let constraints = RTCMediaConstraints(
             mandatoryConstraints: nil,
             optionalConstraints: [
                 "googEchoCancellation": audioOptions.echoCancellation ? "true" : "false",
-                "googNoiseSuppression": audioOptions.noiseSuppression ? "true" : "false",
-                "googAutoGainControl": audioOptions.autoGainControl ? "true" : "false"
+                "googNoiseSuppression": audioOptions.noiseSuppression && !isMixing ? "true" : "false",
+                "googAutoGainControl": audioOptions.autoGainControl && !isMixing ? "true" : "false"
             ]
         )
         let track = factory.audioTrack(with: factory.audioSource(with: constraints), trackId: "microphone")
 
-        track.isEnabled = !muted
+        if let mixingDevice {
+            mixingDevice.isMicMuted = muted
+        }
+
+        track.isEnabled = isMixing || !muted
 
         let producer = try sendTransport.createProducer(
             for: track,
@@ -304,7 +329,7 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
             appData: nil
         )
 
-        if muted {
+        if muted && !isMixing {
             producer.pause()
         }
 

@@ -27,6 +27,7 @@ final class AppSettings {
         static let speakerByDefault = "settings.speakerByDefault"
         static let outputVolume = "settings.outputVolume"
         static let streamQuality = "settings.streamQuality"
+        static let shareAppAudio = "settings.shareAppAudio"
     }
 
     private let defaults = UserDefaults.standard
@@ -56,6 +57,12 @@ final class AppSettings {
         didSet { defaults.set(streamQuality.rawValue, forKey: Key.streamQuality) }
     }
 
+    // puts the game's sound into a screen share, by swapping webrtc's audio device for
+    // MixingAudioDevice. off by default while that is new
+    var shareAppAudio: Bool {
+        didSet { defaults.set(shareAppAudio, forKey: Key.shareAppAudio) }
+    }
+
     private init() {
         defaults.register(defaults: [
             Key.echoCancellation: true,
@@ -70,6 +77,7 @@ final class AppSettings {
         autoGainControl = defaults.bool(forKey: Key.autoGainControl)
         speakerByDefault = defaults.bool(forKey: Key.speakerByDefault)
         outputVolume = defaults.double(forKey: Key.outputVolume)
+        shareAppAudio = defaults.bool(forKey: Key.shareAppAudio)
         streamQuality = defaults.string(forKey: Key.streamQuality).flatMap(StreamQuality.init(rawValue:)) ?? .standard
     }
 }

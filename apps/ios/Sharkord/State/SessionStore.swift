@@ -69,6 +69,8 @@ final class SessionStore {
     private var hasRequestedPush = false
     private var voice: VoiceConnection?
     private var screenReceiver: ScreenShareReceiver?
+    // present when the call was joined with app audio on, see AppSettings.shareAppAudio
+    private var mixingDevice: MixingAudioDevice?
     // the server drops a socket's voice session with the socket, so a reconnect rejoins it
     private var voiceChannelToRejoin: Int?
 
@@ -370,14 +372,20 @@ final class SessionStore {
             currentVoiceChannelId = channelId
 
             let settings = AppSettings.shared
+            let audioOptions = VoiceConnection.AudioOptions(
+                echoCancellation: settings.echoCancellation,
+                noiseSuppression: settings.noiseSuppression,
+                autoGainControl: settings.autoGainControl,
+                speakerByDefault: settings.speakerByDefault,
+                outputVolume: settings.outputVolume
+            )
+            let mixer = settings.shareAppAudio ? MixingAudioDevice(options: audioOptions) : nil
+
+            mixingDevice = mixer
+
             let connection = VoiceConnection(
-                audioOptions: VoiceConnection.AudioOptions(
-                    echoCancellation: settings.echoCancellation,
-                    noiseSuppression: settings.noiseSuppression,
-                    autoGainControl: settings.autoGainControl,
-                    speakerByDefault: settings.speakerByDefault,
-                    outputVolume: settings.outputVolume
-                ),
+                audioOptions: audioOptions,
+                mixingDevice: mixer,
                 signal: { [weak client] path, json in
                     guard let client else {
                         throw TRPCError(message: "Not connected to the server.", code: nil)
@@ -472,6 +480,7 @@ final class SessionStore {
         let receiver = ScreenShareReceiver(
             maxDimension: quality.maxDimension,
             framesPerSecond: quality.framesPerSecond,
+            shareAudio: mixingDevice != nil,
             onConnect: { [weak self] in
                 Task { @MainActor in
                     await self?.startScreenShare()
@@ -505,6 +514,12 @@ final class SessionStore {
                 sink.push(pixelBuffer)
             }
 
+            if let mixer = mixingDevice {
+                screenReceiver.setAudioHandler { samples in
+                    mixer.writeGameAudio(samples)
+                }
+            }
+
             isSharingScreen = true
             await updateVoiceState(["sharingScreen": true])
         } catch {
@@ -516,6 +531,8 @@ final class SessionStore {
 
     private func stopScreenShare() async {
         screenReceiver?.setFrameHandler(nil)
+        screenReceiver?.setAudioHandler(nil)
+        mixingDevice?.clearGameAudio()
 
         guard isSharingScreen, let voice else {
             return
@@ -932,6 +949,7 @@ final class SessionStore {
         isSharingScreen = false
         voice?.close()
         voice = nil
+        mixingDevice = nil
         currentVoiceChannelId = nil
         cameraEnabled = false
         videoTracks = [:]

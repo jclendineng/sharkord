@@ -11,6 +11,8 @@ nonisolated struct ScreenShareEndpoint: Codable, Sendable {
     // the stream settings sheet's choice, how large and how often the extension sends frames
     var maxDimension: Int
     var framesPerSecond: Int
+    // only when the call was joined with MixingAudioDevice, which is what can carry it
+    var shareAudio: Bool
 
     private static let service = "com.sharkord.screen-share"
     private static let account = "endpoint"

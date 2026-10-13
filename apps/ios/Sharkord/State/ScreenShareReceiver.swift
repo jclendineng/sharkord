@@ -13,8 +13,16 @@ nonisolated final class ScreenShareReceiver: @unchecked Sendable {
     private static let maxFrameBytes = 8 * 1024 * 1024
 
     typealias FrameHandler = @Sendable (CVPixelBuffer) -> Void
+    typealias AudioHandler = @Sendable (UnsafeBufferPointer<Float>) -> Void
 
-    private let quality: OSAllocatedUnfairLock<(maxDimension: Int, framesPerSecond: Int)>
+    // the first byte after each message's length, SampleHandler.MessageType mirrors it
+    private enum MessageType: UInt8 {
+        case secret = 0
+        case video = 1
+        case audio = 2
+    }
+
+    private let options: OSAllocatedUnfairLock<(maxDimension: Int, framesPerSecond: Int, shareAudio: Bool)>
     private let onConnect: @Sendable () -> Void
     private let onDisconnect: @Sendable () -> Void
     private let queue = DispatchQueue(label: "com.sharkord.screen-share")
@@ -25,16 +33,18 @@ nonisolated final class ScreenShareReceiver: @unchecked Sendable {
         var listener: Int32 = -1
         var client: Int32 = -1
         var onFrame: FrameHandler?
+        var onAudio: AudioHandler?
         var isStopped = false
     }
 
     init(
         maxDimension: Int,
         framesPerSecond: Int,
+        shareAudio: Bool,
         onConnect: @escaping @Sendable () -> Void,
         onDisconnect: @escaping @Sendable () -> Void
     ) {
-        self.quality = OSAllocatedUnfairLock(initialState: (maxDimension, framesPerSecond))
+        self.options = OSAllocatedUnfairLock(initialState: (maxDimension, framesPerSecond, shareAudio))
         self.onConnect = onConnect
         self.onDisconnect = onDisconnect
     }
@@ -72,13 +82,14 @@ nonisolated final class ScreenShareReceiver: @unchecked Sendable {
 
         let secret = Self.makeSecret()
 
-        let (maxDimension, framesPerSecond) = quality.withLock { $0 }
+        let (maxDimension, framesPerSecond, shareAudio) = options.withLock { $0 }
 
         ScreenShareEndpoint(
             port: UInt16(bigEndian: address.sin_port),
             secret: secret,
             maxDimension: maxDimension,
-            framesPerSecond: framesPerSecond
+            framesPerSecond: framesPerSecond,
+            shareAudio: shareAudio
         ).save()
         state.withLock { $0.listener = listener }
 
@@ -87,9 +98,17 @@ nonisolated final class ScreenShareReceiver: @unchecked Sendable {
         }
     }
 
+    // game audio, only set while a share with app audio is running
+    func setAudioHandler(_ handler: AudioHandler?) {
+        state.withLock { $0.onAudio = handler }
+    }
+
     // read by the extension when the next broadcast starts
     func setQuality(maxDimension: Int, framesPerSecond: Int) {
-        quality.withLock { $0 = (maxDimension, framesPerSecond) }
+        options.withLock { options in
+            options.maxDimension = maxDimension
+            options.framesPerSecond = framesPerSecond
+        }
 
         guard var endpoint = ScreenShareEndpoint.load() else {
             return
@@ -124,6 +143,7 @@ nonisolated final class ScreenShareReceiver: @unchecked Sendable {
             state.listener = -1
             state.client = -1
             state.onFrame = nil
+            state.onAudio = nil
 
             return sockets
         }
@@ -166,31 +186,52 @@ nonisolated final class ScreenShareReceiver: @unchecked Sendable {
     }
 
     private func isAuthorized(_ client: Int32, secret: String) -> Bool {
-        guard
-            let header = read(client, count: 4),
-            header.withUnsafeBytes({ Int(UInt32(bigEndian: $0.loadUnaligned(as: UInt32.self))) }) == secret.utf8.count,
-            let received = read(client, count: secret.utf8.count)
-        else {
+        guard let (type, payload) = readMessage(client), type == .secret else {
             return false
         }
 
-        return received == Data(secret.utf8)
+        return payload == Data(secret.utf8)
     }
 
     private func readFrames(_ client: Int32) {
-        while let header = read(client, count: 4) {
-            let length = header.withUnsafeBytes { Int(UInt32(bigEndian: $0.loadUnaligned(as: UInt32.self))) }
+        while let (type, payload) = readMessage(client) {
+            switch type {
+            case .video:
+                let handler = state.withLock { $0.onFrame }
 
-            guard length > 0, length <= Self.maxFrameBytes, let jpeg = read(client, count: length) else {
-                return
-            }
+                if let handler, let pixelBuffer = decode(payload) {
+                    handler(pixelBuffer)
+                }
+            case .audio:
+                let handler = state.withLock { $0.onAudio }
 
-            let handler = state.withLock { $0.onFrame }
-
-            if let handler, let pixelBuffer = decode(jpeg) {
-                handler(pixelBuffer)
+                payload.withUnsafeBytes { bytes in
+                    handler?(bytes.bindMemory(to: Float.self))
+                }
+            case .secret:
+                continue
             }
         }
+    }
+
+    // a 4 byte big endian length, a type byte, then that many bytes
+    private func readMessage(_ client: Int32) -> (MessageType, Data)? {
+        guard let header = read(client, count: 5) else {
+            return nil
+        }
+
+        let length = header.prefix(4).withUnsafeBytes { Int(UInt32(bigEndian: $0.loadUnaligned(as: UInt32.self))) }
+
+        guard
+            let type = MessageType(rawValue: header[header.startIndex + 4]),
+            length > 0,
+            length <= Self.maxFrameBytes,
+            let payload = read(client, count: length)
+        else {
+            return nil
+        }
+
+        return (type, payload)
     }
 
     private func read(_ client: Int32, count: Int) -> Data? {

@@ -189,8 +189,6 @@ private struct VoiceControls: View {
 
     @Environment(SessionStore.self) private var session
 
-    @State private var isStreamSettingsPresented = false
-
     var body: some View {
         HStack(spacing: 14) {
             ControlButton(
@@ -200,18 +198,9 @@ private struct VoiceControls: View {
                 action: toggleCamera
             )
 
-            if session.isSharingScreen {
-                BroadcastPickerButton(isSharing: true)
-                    .frame(width: 56, height: 56)
-                    .background(Color.white, in: .circle)
-            } else {
-                ControlButton(
-                    title: "Share Screen",
-                    systemImage: "rectangle.on.rectangle",
-                    isActive: false,
-                    action: showStreamSettings
-                )
-            }
+            BroadcastPickerButton(isSharing: session.isSharingScreen)
+                .frame(width: 56, height: 56)
+                .background(session.isSharingScreen ? Color.white : Theme.listBackground, in: .circle)
 
             ControlButton(
                 title: session.micMuted ? "Unmute" : "Mute",
@@ -237,13 +226,6 @@ private struct VoiceControls: View {
         .padding(.vertical, 14)
         .frame(maxWidth: .infinity)
         .background(Theme.deepBackground)
-        .sheet(isPresented: $isStreamSettingsPresented) {
-            StreamSettingsSheet()
-        }
-    }
-
-    private func showStreamSettings() {
-        isStreamSettingsPresented = true
     }
 
     private func toggleCamera() {

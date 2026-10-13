@@ -41,34 +41,3 @@ struct BroadcastPickerButton: UIViewRepresentable {
         button.accessibilityLabel = isSharing ? "Stop Sharing Screen" : "Share Screen"
     }
 }
-
-// starts the system picker from a button of our own, the stream settings sheet's
-final class BroadcastPickerTrigger {
-    fileprivate weak var picker: RPSystemBroadcastPickerView?
-
-    func open() {
-        picker?.subviews
-            .compactMap { $0 as? UIButton }
-            .first?
-            .sendActions(for: .touchUpInside)
-    }
-}
-
-struct HiddenBroadcastPicker: UIViewRepresentable {
-    let trigger: BroadcastPickerTrigger
-
-    func makeUIView(context: Context) -> RPSystemBroadcastPickerView {
-        let picker = RPSystemBroadcastPickerView(frame: CGRect(x: 0, y: 0, width: 1, height: 1))
-
-        picker.preferredExtension = BroadcastPickerButton.extensionBundleId
-        picker.showsMicrophoneButton = false
-        picker.alpha = 0.01
-        trigger.picker = picker
-
-        return picker
-    }
-
-    func updateUIView(_ picker: RPSystemBroadcastPickerView, context: Context) {
-        trigger.picker = picker
-    }
-}

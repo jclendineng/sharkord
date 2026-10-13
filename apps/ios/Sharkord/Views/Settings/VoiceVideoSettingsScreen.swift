@@ -74,6 +74,27 @@ struct VoiceVideoSettingsScreen: View {
             }
 
             Section {
+                Picker("Quality", selection: $settings.streamQuality) {
+                    Text("Default (720p)").tag(AppSettings.StreamQuality.standard)
+                    Text("High (1080p)").tag(AppSettings.StreamQuality.high)
+                }
+
+                Toggle(isOn: $settings.shareAppAudio) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Share App Audio")
+
+                        Text("Beta")
+                            .font(.caption)
+                            .foregroundStyle(Theme.muted)
+                    }
+                }
+            } header: {
+                Text("Screen Share")
+            } footer: {
+                Text("App audio sends the sound of what you share, like a game, mixed into your voice. It takes effect the next time you join a voice channel.")
+            }
+
+            Section {
                 if isCameraPreviewOn {
                     CameraPreview(position: cameraPosition)
                         .aspectRatio(3 / 4, contentMode: .fit)
@@ -98,6 +119,9 @@ struct VoiceVideoSettingsScreen: View {
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: settings.outputVolume) { _, volume in
             servers.voiceSession?.setOutputVolume(volume)
+        }
+        .onChange(of: settings.streamQuality) { _, quality in
+            servers.voiceSession?.setStreamQuality(quality)
         }
         .onDisappear {
             tester.stop()
