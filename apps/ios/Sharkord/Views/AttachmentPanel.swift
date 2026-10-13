@@ -48,24 +48,14 @@ struct AttachmentPanel: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            VStack(spacing: 0) {
-                Capsule()
-                    .fill(Theme.muted.opacity(0.5))
-                    .frame(width: 36, height: 5)
-                    .padding(.top, 8)
-                    .padding(.vertical, 10)
+        content
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // photos fade out under the grabber instead of meeting an edge
+            .overlay(alignment: .top) {
+                grabber
             }
-            .frame(maxWidth: .infinity)
-            .contentShape(.rect)
-            .gesture(resize)
-
-            content
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                // the grid stops at the panel's bottom, nothing shows under the bar
-                .clipped()
-        }
-        .frame(height: height)
+            .clipShape(UnevenRoundedRectangle(topLeadingRadius: 24, topTrailingRadius: 24, style: .continuous))
+            .frame(height: height)
         .overlay(alignment: .bottom) {
             bar
         }
@@ -84,6 +74,28 @@ struct AttachmentPanel: View {
         .task {
             await library.load()
         }
+    }
+
+    // the drag handle, over a fade the photos scroll up into
+    private var grabber: some View {
+        Capsule()
+            .fill(Theme.muted.opacity(0.5))
+            .frame(width: 36, height: 5)
+            .padding(.top, 8)
+            .frame(maxWidth: .infinity, minHeight: 34, alignment: .top)
+            .background {
+                LinearGradient(
+                    stops: [
+                        .init(color: Self.background, location: 0),
+                        .init(color: Self.background, location: 0.45),
+                        .init(color: Self.background.opacity(0), location: 1)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
+            .contentShape(.rect)
+            .gesture(resize)
     }
 
     // floats over the photos, which fade into the panel behind it rather than meeting an edge
@@ -230,7 +242,8 @@ struct AttachmentPanel: View {
                 .padding(.top, 20)
             }
         }
-        // room to scroll the last row out from under the floating bar
+        // room for the grabber above the first row and the floating bar below the last
+        .contentMargins(.top, 30, for: .scrollContent)
         .contentMargins(.bottom, 96, for: .scrollContent)
         .scrollIndicators(.hidden)
     }
