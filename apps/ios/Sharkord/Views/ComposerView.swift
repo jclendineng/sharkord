@@ -51,20 +51,18 @@ struct ComposerView: View {
     }
 
     var body: some View {
-        // the composer rides on the panel's height the way it rides on the keyboard, the panel
-        // itself drawn over the bottom so it can rise past the composer
+        // the composer rides on the panel the way it rides on the keyboard
         VStack(spacing: 0) {
+            // ahead of the buttons once the finger moves, so a swipe across the emoji or the
+            // mic button drags the panel instead of pressing them, taps still reach them
             composer
-                .simultaneousGesture(panelDrag)
+                .highPriorityGesture(panelDrag, including: store.attachPanel.isOpen ? .all : .subviews)
 
-            if store.attachPanel.isOpen {
-                Color.clear
-                    .frame(height: AttachPanelModel.restingHeight)
-            }
-        }
-        .overlay(alignment: .bottom) {
+            // laid out right under the composer so the two move as one, whatever the panel
+            // grows to past its resting height is drawn up over the composer
             if store.attachPanel.isOpen {
                 attachmentPanel
+                    .frame(height: AttachPanelModel.restingHeight, alignment: .bottom)
                     .transition(.move(edge: .bottom))
             }
         }
