@@ -54,6 +54,8 @@ struct Role: Decodable, Hashable, Identifiable {
     let id: Int
     let name: String
     let color: String
+    // optional so a role from an event without them still decodes
+    let permissions: [String]?
 }
 
 struct CustomEmoji: Decodable, Hashable, Identifiable {

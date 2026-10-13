@@ -14,6 +14,7 @@ struct ServerSheet: View {
     @State private var isAddressCopied = false
     @State private var isReportUnavailable = false
     @State private var isEmojiManagerPresented = false
+    @State private var isSettingsPresented = false
 
     @Environment(\.openURL) private var openURL
 
@@ -57,7 +58,9 @@ struct ServerSheet: View {
                     SheetAction(title: "Invite", systemImage: "person.badge.plus", action: invite)
                     SheetAction(title: "Notifications", systemImage: "bell.fill", action: showNotifications)
                     SheetAction(title: "Inbox", systemImage: "tray.fill", action: showInbox)
-                    SheetAction(title: "Settings", systemImage: "gearshape.fill", action: openSettings)
+                    if session.canManageServer {
+                        SheetAction(title: "Settings", systemImage: "gearshape.fill", action: openSettings)
+                    }
                 }
 
                 ActionGroup {
@@ -122,6 +125,9 @@ struct ServerSheet: View {
         .sheet(isPresented: $isEmojiManagerPresented) {
             EmojiManagerScreen()
         }
+        .sheet(isPresented: $isSettingsPresented) {
+            ServerSettingsScreen()
+        }
         .alert("Reporting isn't set up yet", isPresented: $isReportUnavailable) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -158,11 +164,8 @@ struct ServerSheet: View {
         isEditProfilePresented = true
     }
 
-    // server administration lives in the web client
     private func openSettings() {
-        if let url = session.address?.baseURL {
-            openURL(url)
-        }
+        isSettingsPresented = true
     }
 
     // the report goes by email to whoever runs reports, AppInfo.reportEmail

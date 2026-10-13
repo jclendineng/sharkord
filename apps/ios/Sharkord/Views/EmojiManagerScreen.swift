@@ -4,12 +4,33 @@ import UniformTypeIdentifiers
 
 // the server's custom emoji: add some from photos, a whole pack from files, rename or delete
 // them. the server refuses anyone without permission to manage emoji
+// the sheet from the server sheet's emoji section
 struct EmojiManagerScreen: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            EmojiManagerList()
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done", action: close)
+                    }
+                }
+        }
+        .presentationBackground(Theme.deepBackground)
+    }
+
+    private func close() {
+        dismiss()
+    }
+}
+
+// also pushed from server settings
+struct EmojiManagerList: View {
     // emojis.add and emojis.update accept up to this many characters
     private static let nameLimit = 32
 
     @Environment(SessionStore.self) private var session
-    @Environment(\.dismiss) private var dismiss
 
     @State private var photoItems: [PhotosPickerItem] = []
     @State private var isImporterPresented = false
@@ -19,82 +40,74 @@ struct EmojiManagerScreen: View {
     @State private var newName = ""
 
     var body: some View {
-        NavigationStack {
-            List {
+        List {
+            Section {
+                PhotosPicker(selection: $photoItems, maxSelectionCount: 50, matching: .images) {
+                    Label("Add from Photos", systemImage: "photo.on.rectangle")
+                }
+                .disabled(isUploading)
+
+                Button(action: showImporter) {
+                    Label("Add Emoji Pack from Files", systemImage: "folder")
+                }
+                .disabled(isUploading)
+
+                if isUploading {
+                    HStack(spacing: 10) {
+                        ProgressView()
+
+                        Text("Uploading…")
+                            .foregroundStyle(Theme.muted)
+                    }
+                }
+            } footer: {
+                Text("A pack is a set of images picked together, each named after its file. Square PNGs look best.")
+            }
+
+            if let errorMessage {
                 Section {
-                    PhotosPicker(selection: $photoItems, maxSelectionCount: 50, matching: .images) {
-                        Label("Add from Photos", systemImage: "photo.on.rectangle")
-                    }
-                    .disabled(isUploading)
-
-                    Button(action: showImporter) {
-                        Label("Add Emoji Pack from Files", systemImage: "folder")
-                    }
-                    .disabled(isUploading)
-
-                    if isUploading {
-                        HStack(spacing: 10) {
-                            ProgressView()
-
-                            Text("Uploading…")
-                                .foregroundStyle(Theme.muted)
-                        }
-                    }
-                } footer: {
-                    Text("A pack is a set of images picked together, each named after its file. Square PNGs look best.")
+                    Text(errorMessage)
+                        .foregroundStyle(Theme.red)
                 }
+            }
 
-                if let errorMessage {
-                    Section {
-                        Text(errorMessage)
-                            .foregroundStyle(Theme.red)
+            Section("\(session.customEmojis.count) Emoji") {
+                ForEach(session.customEmojis) { emoji in
+                    Button(action: { startRenaming(emoji) }) {
+                        EmojiRow(emoji: emoji)
                     }
-                }
-
-                Section("\(session.customEmojis.count) Emoji") {
-                    ForEach(session.customEmojis) { emoji in
-                        Button(action: { startRenaming(emoji) }) {
-                            EmojiRow(emoji: emoji)
-                        }
-                        .swipeActions {
-                            Button("Delete", systemImage: "trash", role: .destructive) {
-                                delete(emoji)
-                            }
+                    .swipeActions {
+                        Button("Delete", systemImage: "trash", role: .destructive) {
+                            delete(emoji)
                         }
                     }
                 }
-            }
-            .settingsListStyle()
-            .navigationTitle("Server Emoji")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done", action: close)
-                }
-            }
-            .fileImporter(
-                isPresented: $isImporterPresented,
-                allowedContentTypes: [.png, .jpeg, .gif, .webP, .image],
-                allowsMultipleSelection: true,
-                onCompletion: importFiles
-            )
-            .onChange(of: photoItems) { _, items in
-                guard !items.isEmpty else {
-                    return
-                }
-
-                importPhotos(items)
-            }
-            .alert("Rename Emoji", isPresented: isRenaming) {
-                TextField("Name", text: $newName)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-
-                Button("Save", action: saveRename)
-                Button("Cancel", role: .cancel) {}
             }
         }
-        .presentationBackground(Theme.deepBackground)
+        .settingsListStyle()
+        .navigationTitle("Server Emoji")
+        .navigationBarTitleDisplayMode(.inline)
+        .fileImporter(
+            isPresented: $isImporterPresented,
+            allowedContentTypes: [.png, .jpeg, .gif, .webP, .image],
+            allowsMultipleSelection: true,
+            onCompletion: importFiles
+        )
+        .onChange(of: photoItems) { _, items in
+            guard !items.isEmpty else {
+                return
+            }
+
+            importPhotos(items)
+        }
+        .alert("Rename Emoji", isPresented: isRenaming) {
+            TextField("Name", text: $newName)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+
+            Button("Save", action: saveRename)
+            Button("Cancel", role: .cancel) {}
+        }
     }
 
     private var isRenaming: Binding<Bool> {
@@ -219,9 +232,6 @@ struct EmojiManagerScreen: View {
         }
     }
 
-    private func close() {
-        dismiss()
-    }
 }
 
 private struct EmojiRow: View {

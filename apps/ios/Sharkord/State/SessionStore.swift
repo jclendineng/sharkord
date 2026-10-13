@@ -116,6 +116,64 @@ final class SessionStore {
     }
 
     // a muted channel never lights up the server, like discord
+    // OWNER_ROLE_ID, which holds every permission whatever its list says
+    private static let ownerRoleId = 1
+
+    // what the account may do server wide, from its roles
+    var ownPermissions: Set<String> {
+        guard let roleIds = ownUser?.roleIds else {
+            return []
+        }
+
+        return Set(roleIds.flatMap { rolesById[$0]?.permissions ?? [] })
+    }
+
+    var isOwner: Bool {
+        ownUser?.roleIds.contains(Self.ownerRoleId) == true
+    }
+
+    func can(_ permission: Permission) -> Bool {
+        isOwner || ownPermissions.contains(permission.rawValue)
+    }
+
+    // the logo and description live in /info, read again after an admin changes them
+    func refreshServerInfo() async {
+        if let address, let info = try? await AuthAPI.fetchInfo(address) {
+            serverInfo = info
+            serverName = info.name
+        }
+    }
+
+    // the settings screens call routes directly, these fail plainly while disconnected
+    func request<Output: Decodable>(_ path: String) async throws -> Output {
+        guard let client else {
+            throw TRPCError(message: "Not connected to the server.", code: nil)
+        }
+
+        return try await client.query(path)
+    }
+
+    func perform<Input: Encodable>(_ path: String, _ input: Input) async throws {
+        guard let client else {
+            throw TRPCError(message: "Not connected to the server.", code: nil)
+        }
+
+        try await client.mutation(path, input: input)
+    }
+
+    func perform<Input: Encodable, Output: Decodable>(_ path: String, _ input: Input) async throws -> Output {
+        guard let client else {
+            throw TRPCError(message: "Not connected to the server.", code: nil)
+        }
+
+        return try await client.mutation(path, input: input)
+    }
+
+    // whether the server settings screen has anything to show this account
+    var canManageServer: Bool {
+        isOwner || Permission.allCases.contains { $0.isAdmin && ownPermissions.contains($0.rawValue) }
+    }
+
     var hasUnreadChannels: Bool {
         channels.contains { !$0.isDm && !isMuted($0.id) && unreadCounts[$0.id, default: 0] > 0 }
     }
@@ -1248,6 +1306,34 @@ final class SessionStore {
 
         client.subscribe("emojis.onDelete") { [weak self] (emojiId: Int) in
             self?.customEmojis.removeAll { $0.id == emojiId }
+        }
+
+        for path in ["roles.onCreate", "roles.onUpdate"] {
+            client.subscribe(path) { [weak self] (role: Role) in
+                self?.rolesById[role.id] = role
+            }
+        }
+
+        client.subscribe("roles.onDelete") { [weak self] (roleId: Int) in
+            self?.rolesById[roleId] = nil
+        }
+
+        for path in ["categories.onCreate", "categories.onUpdate"] {
+            client.subscribe(path) { [weak self] (category: ChannelCategory) in
+                guard let self else {
+                    return
+                }
+
+                if let index = self.categories.firstIndex(where: { $0.id == category.id }) {
+                    self.categories[index] = category
+                } else {
+                    self.categories.append(category)
+                }
+            }
+        }
+
+        client.subscribe("categories.onDelete") { [weak self] (categoryId: Int) in
+            self?.categories.removeAll { $0.id == categoryId }
         }
 
         client.subscribe("users.onLeave") { [weak self] (userId: Int) in
