@@ -64,6 +64,9 @@ struct ComposerView: View {
             }
         }
         .animation(.snappy(duration: 0.25), value: isAttachPanelOpen)
+        // runs on behind the keyboard, whose rounded top corners would otherwise show the
+        // window's black
+        .background(Theme.chatBackground.ignoresSafeArea())
         .animation(.spring(response: 0.35, dampingFraction: 0.85), value: isAttachPanelExpanded)
         .sheet(isPresented: $isEmojiPickerPresented) {
             EmojiPickerView(includesCustom: false, onPick: insertEmoji)
