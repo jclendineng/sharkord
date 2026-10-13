@@ -16,6 +16,7 @@ import {
   messageReactions,
   messages,
   rolePermissions,
+  roles,
   settings
 } from '../../db/schema';
 
@@ -324,40 +325,38 @@ describe('messages router', () => {
     expect(ownerResult.files.length).toBeGreaterThan(0);
   });
 
-  test('should not return DM matches even for participants', async () => {
+  test('should return DM matches to both participants only', async () => {
     const { caller: userA } = await initTest(3);
+    const { caller: userB } = await initTest(4);
     const { caller: outsider } = await initTest(2);
-
-    const participantResult = await userA.messages.search({
-      query: 'hello user b'
-    });
-
-    const outsiderResult = await outsider.messages.search({
-      query: 'hello user b'
-    });
-
-    expect(participantResult.messages.length).toBe(0);
-    expect(participantResult.files.length).toBe(0);
-    expect(outsiderResult.messages.length).toBe(0);
-    expect(outsiderResult.files.length).toBe(0);
-  });
-
-  test('should not return DM matches for owner if not participant', async () => {
     const { caller: owner } = await initTest(1);
-    const { caller: userA } = await initTest(3);
 
-    const participantResult = await userA.messages.search({
-      query: 'hello user b'
+    await userA.messages.send({
+      channelId: 3,
+      content: '<p>quokka plans for the weekend</p>',
+      files: []
     });
 
-    const ownerResult = await owner.messages.search({
-      query: 'hello user b'
-    });
+    const [
+      participantResult,
+      otherParticipantResult,
+      outsiderResult,
+      ownerResult
+    ] = await Promise.all([
+      userA.messages.search({ query: 'quokka plans' }),
+      userB.messages.search({ query: 'quokka plans' }),
+      outsider.messages.search({ query: 'quokka plans' }),
+      owner.messages.search({ query: 'quokka plans' })
+    ]);
 
-    expect(participantResult.messages.length).toBe(0);
-    expect(participantResult.files.length).toBe(0);
+    expect(participantResult.messages.map((m) => m.channelId)).toEqual([3]);
+    expect(participantResult.messages[0]?.channelIsDm).toBe(true);
+    expect(otherParticipantResult.messages.map((m) => m.channelId)).toEqual([
+      3
+    ]);
+    expect(outsiderResult.messages.length).toBe(0);
+    // owning the server does not open other people's conversations
     expect(ownerResult.messages.length).toBe(0);
-    expect(ownerResult.files.length).toBe(0);
   });
 
   test('should only search files attached to messages', async () => {
@@ -2624,5 +2623,136 @@ describe('messages router', () => {
         files: [uploaded.id]
       })
     ).rejects.toThrow('File uploads are disabled on this server');
+  });
+});
+
+describe('messages.getMentions', () => {
+  const mention = (userId: number) =>
+    `<p>hey <span data-type="mention" data-user-id="${userId}">@user</span></p>`;
+
+  test('should list messages that mention the caller, newest first', async () => {
+    const { caller: owner } = await initTest(1);
+    const { caller: member } = await initTest(2);
+
+    const first = await owner.messages.send({
+      channelId: 1,
+      content: mention(2),
+      files: []
+    });
+    const second = await owner.messages.send({
+      channelId: 1,
+      content: mention(2),
+      files: []
+    });
+
+    await owner.messages.send({
+      channelId: 1,
+      content: '<p>nobody in particular</p>',
+      files: []
+    });
+
+    const { messages: mentions, nextCursor } =
+      await member.messages.getMentions({});
+
+    expect(mentions.map(({ id }) => id)).toEqual([second, first]);
+    expect(mentions[0]?.files).toEqual([]);
+    expect(nextCursor).toBeNull();
+  });
+
+  test('should list mentions of a role the caller holds', async () => {
+    const { caller: owner } = await initTest(1);
+    const { caller: moderator } = await initTest(5);
+    const { caller: member } = await initTest(2);
+
+    const moderatorRole = await tdb
+      .select({ id: roles.id })
+      .from(roles)
+      .where(eq(roles.name, 'Moderator'))
+      .get();
+
+    const messageId = await owner.messages.send({
+      channelId: 1,
+      content: `<p><span data-type="role-mention" data-role-id="${moderatorRole!.id}">@Moderator</span> look</p>`,
+      files: []
+    });
+
+    const moderatorMentions = await moderator.messages.getMentions({});
+    const memberMentions = await member.messages.getMentions({});
+
+    expect(moderatorMentions.messages.map(({ id }) => id)).toEqual([messageId]);
+    expect(memberMentions.messages).toEqual([]);
+  });
+
+  test('should list replies to the caller and leave out their own messages', async () => {
+    const { caller: owner } = await initTest(1);
+    const { caller: member } = await initTest(2);
+
+    const memberMessageId = await member.messages.send({
+      channelId: 1,
+      content: mention(2),
+      files: []
+    });
+
+    const replyId = await owner.messages.send({
+      channelId: 1,
+      content: '<p>replying</p>',
+      replyToMessageId: memberMessageId,
+      files: []
+    });
+
+    const { messages: mentions } = await member.messages.getMentions({});
+
+    expect(mentions.map(({ id }) => id)).toEqual([replyId]);
+  });
+
+  test('should not list mentions in a channel the caller cannot see', async () => {
+    const { caller: owner } = await initTest(1);
+    const { caller: member } = await initTest(2);
+
+    // user 2 is denied viewing channel 5
+    await owner.messages.send({
+      channelId: 5,
+      content: mention(2),
+      files: []
+    });
+
+    const { messages: mentions } = await member.messages.getMentions({});
+
+    expect(mentions).toEqual([]);
+  });
+
+  test('should page through mentions with the cursor', async () => {
+    const { caller: member } = await initTest(2);
+
+    // more than a page, past the send rate limit, so written straight to the database
+    const now = Date.now();
+    const inserted = await tdb
+      .insert(messages)
+      .values(
+        Array.from({ length: 27 }, (_, index) => ({
+          channelId: 1,
+          userId: 1,
+          content: mention(2),
+          createdAt: now + index
+        }))
+      )
+      .returning({ id: messages.id });
+    const sentIds = inserted.map(({ id }) => id);
+
+    const firstPage = await member.messages.getMentions({});
+
+    expect(firstPage.messages.length).toBe(25);
+    expect(firstPage.nextCursor).not.toBeNull();
+
+    const secondPage = await member.messages.getMentions({
+      cursor: firstPage.nextCursor
+    });
+
+    expect(secondPage.nextCursor).toBeNull();
+    expect(
+      [...firstPage.messages, ...secondPage.messages]
+        .map(({ id }) => id)
+        .sort((a, b) => a - b)
+    ).toEqual(sentIds);
   });
 });

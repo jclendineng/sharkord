@@ -70,9 +70,11 @@ const searchMessagesRoute = rateLimitedProcedure(protectedProcedure, {
 
     const accessibleChannels = await getChannelsForUser(ctx.userId);
 
-    const accessibleChannelIds = accessibleChannels
-      .filter((channel) => !channel.isDm)
-      .map((channel) => channel.id);
+    // getChannelsForUser only returns the direct messages the caller takes part in, the
+    // owner included, so their conversations are searched along with the channels
+    const accessibleChannelIds = accessibleChannels.map(
+      (channel) => channel.id
+    );
 
     if (accessibleChannelIds.length === 0) {
       return {

@@ -8,6 +8,7 @@ import {
   onMessageUpdateRoute,
   onThreadReplyCountUpdateRoute
 } from './events';
+import { getMentionsRoute } from './get-mentions';
 import { getMessageRoute } from './get-message';
 import { getMessagesRoute } from './get-messages';
 import { getPinnedRoute } from './get-pinned';
@@ -25,6 +26,7 @@ export const messagesRouter = t.router({
   get: getMessagesRoute,
   getPinned: getPinnedRoute,
   getOne: getMessageRoute,
+  getMentions: getMentionsRoute,
   search: searchMessagesRoute,
   getThread: getThreadMessagesRoute,
   toggleReaction: toggleMessageReactionRoute,
