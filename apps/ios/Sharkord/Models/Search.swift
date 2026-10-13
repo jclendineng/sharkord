@@ -43,19 +43,33 @@ struct MentionsPage: Decodable {
 
 // messages.search's filters, chosen from the search screen's filter menu
 struct SearchFilters: Hashable {
+    // discord's has: list, the kinds messages.search can tell apart
     enum Has: String, CaseIterable {
-        case file
         case image
+        case video
         case link
+        case file
+        case poll
+        case sticker
 
         var title: String {
+            rawValue.capitalized
+        }
+
+        var symbol: String {
             switch self {
-            case .file:
-                "File"
             case .image:
-                "Image"
+                "photo.fill"
+            case .video:
+                "video.fill"
             case .link:
-                "Link"
+                "link"
+            case .file:
+                "paperclip"
+            case .poll:
+                "text.alignleft"
+            case .sticker:
+                "seal.fill"
             }
         }
     }

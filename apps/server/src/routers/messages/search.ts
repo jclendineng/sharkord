@@ -1,11 +1,28 @@
 import { getPlainTextFromHtml, hasMention, type TFile } from '@sharkord/shared';
-import { and, desc, eq, exists, gt, gte, inArray, lt, sql } from 'drizzle-orm';
+import {
+  and,
+  desc,
+  eq,
+  exists,
+  gt,
+  gte,
+  inArray,
+  isNotNull,
+  lt,
+  sql
+} from 'drizzle-orm';
 import { z } from 'zod';
 import { config } from '../../config';
 import { db } from '../../db';
 import { getChannelsForUser } from '../../db/queries/channels';
 import { getSettings } from '../../db/queries/server';
-import { channels, files, messageFiles, messages } from '../../db/schema';
+import {
+  channels,
+  files,
+  messageFiles,
+  messages,
+  polls
+} from '../../db/schema';
 import { attachFileToken } from '../../helpers/files-crypto';
 import { invariant } from '../../utils/invariant';
 import { protectedProcedure, rateLimitedProcedure } from '../../utils/trpc';
@@ -65,7 +82,9 @@ const searchMessagesRoute = rateLimitedProcedure(protectedProcedure, {
         fromUserId: z.number().int().positive().optional(),
         channelId: z.number().int().positive().optional(),
         mentionsUserId: z.number().int().positive().optional(),
-        has: z.enum(['file', 'image', 'link']).optional(),
+        has: z
+          .enum(['file', 'image', 'video', 'link', 'poll', 'sticker'])
+          .optional(),
         before: z.number().int().nonnegative().optional(),
         after: z.number().int().nonnegative().optional(),
         // the start of a day, the whole day from there is searched
@@ -137,13 +156,40 @@ const searchMessagesRoute = rateLimitedProcedure(protectedProcedure, {
             )
           )
       ),
-      link: sql`${messages.content} GLOB '*href="http*'`
+      video: exists(
+        db
+          .select({ id: messageFiles.messageId })
+          .from(messageFiles)
+          .innerJoin(files, eq(files.id, messageFiles.fileId))
+          .where(
+            and(
+              eq(messageFiles.messageId, messages.id),
+              sql`${files.mimeType} GLOB 'video/*'`
+            )
+          )
+      ),
+      link: sql`${messages.content} GLOB '*href="http*'`,
+      poll: exists(
+        db
+          .select({ id: polls.messageId })
+          .from(polls)
+          .where(eq(polls.messageId, messages.id))
+      ),
+      sticker: isNotNull(messages.stickerId)
     };
 
-    // a mention or a link lives in a message, not in a file, so those leave no file results
+    // the kinds a file can be, the rest live in the message and leave no file results
+    const fileKinds: (string | undefined)[] = [
+      undefined,
+      'file',
+      'image',
+      'video'
+    ];
+
+    // a mention, a link, a poll or a sticker lives in a message, not in a file
     const searchesFiles =
       input.mentionsUserId === undefined &&
-      input.has !== 'link' &&
+      fileKinds.includes(input.has) &&
       (globPattern !== undefined || input.has !== undefined);
 
     const messageFetchLimit = Math.min(
@@ -197,6 +243,9 @@ const searchMessagesRoute = rateLimitedProcedure(protectedProcedure, {
                   : undefined,
                 input.has === 'image'
                   ? sql`${files.mimeType} GLOB 'image/*'`
+                  : undefined,
+                input.has === 'video'
+                  ? sql`${files.mimeType} GLOB 'video/*'`
                   : undefined
               )
             )

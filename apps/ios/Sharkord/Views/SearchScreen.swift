@@ -10,13 +10,21 @@ struct SearchScreen: View {
 
     @State private var query = ""
     @State private var filters = SearchFilters()
-    @State private var picker: FilterPicker?
+    // the filter whose choices are listed under the box, its token sitting in the box
+    @State private var token: FilterPicker?
+    @State private var datePicker: FilterPicker?
     @State private var results: SearchResults?
     @State private var errorMessage: String?
     @State private var isSearching = false
+    @FocusState private var isFieldFocused: Bool
 
+    // while a token is up, what is typed narrows its choices rather than searching
     private var trimmedQuery: String {
-        query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard token == nil else {
+            return ""
+        }
+
+        return query.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private var members: [PublicUser] {
@@ -36,6 +44,84 @@ struct SearchScreen: View {
     }
 
     var body: some View {
+        Group {
+            if let token {
+                FilterSuggestions(
+                    picker: token,
+                    text: query,
+                    onPickUser: pick,
+                    onPickChannel: pick,
+                    onPickHas: pick
+                )
+            } else {
+                resultsList
+            }
+        }
+        .background(Theme.deepBackground)
+        // the search box sits in the navigation bar between its back button and the filters,
+        // the bar staying keeps the swipe back
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(Theme.deepBackground, for: .navigationBar)
+        .toolbarBackgroundVisibility(.visible, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                searchBox
+            }
+
+            ToolbarItem(placement: .topBarTrailing) {
+                FilterMenu(isFiltering: !filters.isEmpty, onChoose: choose)
+            }
+        }
+        .sheet(item: $datePicker) { picker in
+            DateFilterSheet(picker: picker) { date in
+                apply(date, for: picker)
+            }
+        }
+        .task(id: searchKey) {
+            await search()
+        }
+        .onAppear {
+            isFieldFocused = true
+        }
+    }
+
+    // discord's search box, with the filter being picked sitting in it as a token
+    private var searchBox: some View {
+        HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(Theme.muted)
+
+                if let token {
+                    Button(action: clearToken) {
+                        Text(token.token)
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.header)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 5)
+                            .background(Theme.inputBackground, in: .rect(cornerRadius: 6))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Remove \(token.token) filter")
+                }
+
+                TextField("", text: $query, prompt: Text(token == nil ? "Search \(session.displayName)" : "").foregroundStyle(Theme.muted))
+                    .focused($isFieldFocused)
+                    .foregroundStyle(Theme.header)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .submitLabel(.search)
+            }
+        .padding(.horizontal, 12)
+        .frame(height: 38)
+        .frame(maxWidth: .infinity)
+        .background(Theme.listBackground, in: .rect(cornerRadius: 12, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(isFieldFocused ? Theme.blurple : Theme.divider, lineWidth: 1)
+        }
+    }
+
+    private var resultsList: some View {
         List {
             if !filters.isEmpty {
                 FilterChips(filters: $filters)
@@ -82,7 +168,7 @@ struct SearchScreen: View {
         }
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
-        .background(Theme.deepBackground)
+        .scrollDismissesKeyboard(.interactively)
         .overlay {
             if isSearching {
                 ProgressView()
@@ -90,27 +176,60 @@ struct SearchScreen: View {
                 ContentUnavailableView.search(text: trimmedQuery)
             }
         }
-        .searchable(
-            text: $query,
-            placement: .navigationBarDrawer(displayMode: .always),
-            prompt: "Search \(session.displayName)"
-        )
-        .autocorrectionDisabled()
-        .textInputAutocapitalization(.never)
-        .navigationTitle("Search")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(Theme.deepBackground, for: .navigationBar)
-        .toolbarBackgroundVisibility(.visible, for: .navigationBar)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                FilterMenu(filters: $filters, picker: $picker)
-            }
+    }
+
+    // a picker filter puts its token in the box and lists its choices, a date opens the wheel
+    private func choose(_ picker: FilterPicker) {
+        if picker.isDate {
+            datePicker = picker
+            return
         }
-        .sheet(item: $picker) { picker in
-            FilterPickerSheet(picker: picker, filters: $filters)
+
+        token = picker
+        query = ""
+        isFieldFocused = true
+    }
+
+    private func clearToken() {
+        token = nil
+        query = ""
+    }
+
+    private func pick(_ user: PublicUser) {
+        if token == .from {
+            filters.from = user
+        } else {
+            filters.mentions = user
         }
-        .task(id: searchKey) {
-            await search()
+
+        clearToken()
+    }
+
+    private func pick(_ channel: Channel) {
+        filters.channel = channel
+        clearToken()
+    }
+
+    private func pick(_ kind: SearchFilters.Has) {
+        filters.has = kind
+        clearToken()
+    }
+
+    // sent on a day replaces a range, and a range replaces sent on, they would contradict
+    private func apply(_ date: Date, for picker: FilterPicker) {
+        switch picker {
+        case .on:
+            filters.on = date
+            filters.before = nil
+            filters.after = nil
+        case .before:
+            filters.before = date
+            filters.on = nil
+        case .after:
+            filters.after = date
+            filters.on = nil
+        case .from, .channel, .mentions, .has:
+            break
         }
     }
 

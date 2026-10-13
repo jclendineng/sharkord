@@ -17,7 +17,8 @@ import {
   messages,
   rolePermissions,
   roles,
-  settings
+  settings,
+  stickers
 } from '../../db/schema';
 
 describe('messages router', () => {
@@ -2918,6 +2919,88 @@ describe('messages.search filters', () => {
     expect(images.messages.map(({ id }) => id)).toEqual([imageMessage!.id]);
     expect(images.files.map(({ file }) => file.originalName)).toEqual([
       'picture.png'
+    ]);
+  });
+
+  test('should find polls, stickers and videos by what they have', async () => {
+    const { caller } = await initTest(1);
+    const now = Date.now();
+
+    const pollMessageId = await caller.polls.create({
+      channelId: 1,
+      question: 'Lunch?',
+      answers: [{ text: 'Yes' }],
+      durationHours: 24,
+      allowMultiple: false
+    });
+
+    const [stickerFile, videoFile] = await tdb
+      .insert(files)
+      .values([
+        {
+          name: `sticker-${now}.png`,
+          originalName: 'wave.png',
+          md5: `md5-sticker-${now}`,
+          userId: 1,
+          size: 10,
+          mimeType: 'image/png',
+          extension: 'png',
+          createdAt: now
+        },
+        {
+          name: `clip-${now}.mp4`,
+          originalName: 'clip.mp4',
+          md5: `md5-clip-${now}`,
+          userId: 1,
+          size: 10,
+          mimeType: 'video/mp4',
+          extension: 'mp4',
+          createdAt: now
+        }
+      ])
+      .returning({ id: files.id });
+
+    const [sticker] = await tdb
+      .insert(stickers)
+      .values({
+        name: 'wave',
+        fileId: stickerFile!.id,
+        userId: 1,
+        createdAt: now
+      })
+      .returning({ id: stickers.id });
+
+    const stickerMessageId = await caller.messages.send({
+      channelId: 1,
+      content: '',
+      stickerId: sticker!.id
+    });
+
+    const videoMessageId = await caller.messages.send({
+      channelId: 1,
+      content: 'watch this'
+    });
+
+    await tdb
+      .insert(messageFiles)
+      .values({
+        messageId: videoMessageId,
+        fileId: videoFile!.id,
+        createdAt: now
+      });
+
+    const withPolls = await caller.messages.search({ has: 'poll' });
+    const withStickers = await caller.messages.search({ has: 'sticker' });
+    const withVideos = await caller.messages.search({ has: 'video' });
+
+    expect(withPolls.messages.map(({ id }) => id)).toEqual([pollMessageId]);
+    expect(withPolls.files).toEqual([]);
+    expect(withStickers.messages.map(({ id }) => id)).toEqual([
+      stickerMessageId
+    ]);
+    expect(withVideos.messages.map(({ id }) => id)).toEqual([videoMessageId]);
+    expect(withVideos.files.map(({ file }) => file.originalName)).toEqual([
+      'clip.mp4'
     ]);
   });
 
