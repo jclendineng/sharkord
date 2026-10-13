@@ -138,5 +138,17 @@
   "pollMinutesLeft_one": "Queda {{count}} min",
   "pollMinutesLeft_other": "Quedan {{count}} min",
   "pollVoteFailed": "No se pudo registrar tu voto",
-  "pollEndFailed": "No se pudo terminar la encuesta"
+  "pollEndFailed": "No se pudo terminar la encuesta",
+  "expressionEmoji": "Emoji",
+  "expressionGifs": "GIFs",
+  "expressionStickers": "Stickers",
+  "searchKlipy": "Buscar en Klipy",
+  "trendingGifs": "GIFs en tendencia",
+  "gifsNotSetUp": "Los GIFs no están configurados en este servidor. Un administrador puede añadir una clave de API de Klipy en Ajustes del servidor.",
+  "gifsLoadFailed": "No se pudieron cargar los GIFs.",
+  "gifsBack": "Atrás",
+  "noGifsFound": "No se encontraron GIFs.",
+  "searchStickers": "Encuentra el sticker perfecto",
+  "noStickers": "Este servidor aún no tiene stickers. Los administradores pueden añadirlos en Ajustes del servidor.",
+  "noStickersFound": "Ningún sticker coincide."
 }

@@ -1,4 +1,5 @@
 import type { TJoinedMessage } from '@sharkord/shared';
+import { getPlainTextFromHtml } from '@sharkord/shared';
 import { Element, htmlToDOM, type DOMNode } from 'html-react-parser';
 import type {
   TFoundMedia,
@@ -167,6 +168,22 @@ const extractMessageOpenGraph = (
     .filter((item): item is TFoundOpenGraph => !!item);
 };
 
+// a message that is nothing but a link to the gif or image it shows, like a gif from the
+// picker: the media says it all and the link above it would only repeat it
+const isMediaLinkOnly = (
+  content: string | null,
+  media: TFoundMedia[]
+): boolean => {
+  if (media.length !== 1) return false;
+
+  const text = getPlainTextFromHtml(content ?? '').trim();
+
+  return (
+    text.length > 0 &&
+    normalizeComparableUrl(text) === normalizeComparableUrl(media[0]!.url)
+  );
+};
+
 export {
   extractMessageOpenGraph,
   extractYoutubeVideoIds,
@@ -174,5 +191,6 @@ export {
   getYoutubeInfo,
   getYoutubeVideoId,
   hasSpecializedLinkOverride,
+  isMediaLinkOnly,
   normalizeComparableUrl
 };

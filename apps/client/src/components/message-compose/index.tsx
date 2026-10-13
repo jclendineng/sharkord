@@ -1,4 +1,4 @@
-import { EmojiPicker } from '@/components/emoji-picker';
+import { ExpressionPicker } from '@/components/expression-picker';
 import { PluginSlotRenderer } from '@/components/plugin-slot-renderer';
 import type { TTiptapInputHandle } from '@/components/tiptap-input';
 import { TiptapInput } from '@/components/tiptap-input';
@@ -17,13 +17,19 @@ import { useFlatPluginCommands } from '@/features/server/plugins/hooks';
 import { useUploadFiles } from '@/hooks/use-upload-files';
 import { getTRPCClient } from '@/lib/trpc';
 import type { TReplyTarget } from '@/types';
-import type { TJoinedPublicUser, TTempFile } from '@sharkord/shared';
+import type {
+  TGif,
+  TJoinedPublicUser,
+  TJoinedSticker,
+  TTempFile
+} from '@sharkord/shared';
 import {
   ChannelPermission,
-  isEmptyMessage,
   MESSAGE_MAX_LENGTH,
   Permission,
-  PluginSlot
+  PluginSlot,
+  getTrpcError,
+  isEmptyMessage
 } from '@sharkord/shared';
 import { Button, Spinner } from '@sharkord/ui';
 import { filesize } from 'filesize';
@@ -57,6 +63,7 @@ type TMessageComposeProps = {
   typingUsers: TJoinedPublicUser[];
   showPluginSlot?: boolean;
   allowPolls?: boolean;
+  parentMessageId?: number;
   composeContainerRef?: RefObject<HTMLDivElement | null>;
   inputStorageKey?: LocalStorageKey;
   inputDefaultMaxHeightVh?: number;
@@ -83,6 +90,7 @@ const MessageCompose = memo(
     typingUsers,
     showPluginSlot = false,
     allowPolls = false,
+    parentMessageId,
     composeContainerRef,
     inputStorageKey = LocalStorageKey.CHAT_INPUT_HEIGHT_VH,
     inputDefaultMaxHeightVh = DEFAULT_MAX_HEIGHT_VH,
@@ -230,6 +238,38 @@ const MessageCompose = memo(
       [channelId]
     );
 
+    // a gif goes as its link, which the message shows as the gif alone, and a sticker as a
+    // message of its own. neither touches what is being typed
+    const sendExpression = useCallback(
+      async (expression: { content: string; stickerId?: number }) => {
+        try {
+          const trpc = getTRPCClient();
+
+          await trpc.messages.send.mutate({
+            channelId,
+            parentMessageId,
+            content: expression.content,
+            stickerId: expression.stickerId,
+            files: []
+          });
+        } catch (error) {
+          toast.error(getTrpcError(error, t('failedSendMessage')));
+        }
+      },
+      [channelId, parentMessageId, t]
+    );
+
+    const onGifSelect = useCallback(
+      (gif: TGif) => sendExpression({ content: gif.url }),
+      [sendExpression]
+    );
+
+    const onStickerSelect = useCallback(
+      (sticker: TJoinedSticker) =>
+        sendExpression({ content: '', stickerId: sticker.id }),
+      [sendExpression]
+    );
+
     const insertEmoji = useCallback((emoji: TEmojiItem) => {
       tiptapRef.current?.insertEmoji(emoji);
     }, []);
@@ -343,7 +383,11 @@ const MessageCompose = memo(
               />
             )}
 
-            <EmojiPicker onEmojiSelect={insertEmoji}>
+            <ExpressionPicker
+              onEmojiSelect={insertEmoji}
+              onGifSelect={onGifSelect}
+              onStickerSelect={onStickerSelect}
+            >
               <Button
                 size="icon"
                 variant="ghost"
@@ -351,7 +395,7 @@ const MessageCompose = memo(
               >
                 <Smile className="h-4 w-4" />
               </Button>
-            </EmojiPicker>
+            </ExpressionPicker>
             {allowPolls && (
               <Button
                 size="icon"

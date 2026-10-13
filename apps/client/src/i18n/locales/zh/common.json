@@ -138,5 +138,17 @@
   "pollMinutesLeft_one": "剩余 {{count}} 分钟",
   "pollMinutesLeft_other": "剩余 {{count}} 分钟",
   "pollVoteFailed": "无法记录你的投票",
-  "pollEndFailed": "无法结束投票"
+  "pollEndFailed": "无法结束投票",
+  "expressionEmoji": "表情",
+  "expressionGifs": "GIF",
+  "expressionStickers": "贴纸",
+  "searchKlipy": "搜索 Klipy",
+  "trendingGifs": "热门 GIF",
+  "gifsNotSetUp": "此服务器尚未设置 GIF。管理员可以在服务器设置中添加 Klipy API 密钥。",
+  "gifsLoadFailed": "无法加载 GIF。",
+  "gifsBack": "返回",
+  "noGifsFound": "未找到 GIF。",
+  "searchStickers": "找到最合适的贴纸",
+  "noStickers": "此服务器还没有贴纸。管理员可以在服务器设置中添加。",
+  "noStickersFound": "没有匹配的贴纸。"
 }

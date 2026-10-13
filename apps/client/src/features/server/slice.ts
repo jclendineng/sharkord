@@ -12,6 +12,7 @@ import type {
   TJoinedMessage,
   TJoinedPublicUser,
   TJoinedRole,
+  TJoinedSticker,
   TPluginCapabilityAccessRule,
   TPluginComponentsMap,
   TPluginMetadata,
@@ -43,6 +44,7 @@ export interface IServerState {
   categories: TCategory[];
   channels: TChannel[];
   emojis: TJoinedEmoji[];
+  stickers: TJoinedSticker[];
   ownUserId: number | undefined;
   ownUserPasswordSet: boolean;
   selectedChannelId: number | undefined;
@@ -98,6 +100,7 @@ const initialState: IServerState = {
   categories: [],
   channels: [],
   emojis: [],
+  stickers: [],
   selectedChannelId: undefined,
   currentVoiceChannelId: undefined,
   voiceMoveTargetChannelId: undefined,
@@ -188,6 +191,7 @@ export const serverSlice = createSlice({
         ownUserPasswordSet: boolean;
         roles: TJoinedRole[];
         emojis: TJoinedEmoji[];
+        stickers?: TJoinedSticker[];
         publicSettings: TPublicServerSettings | undefined;
         voiceMap: TVoiceMap;
         externalStreamsMap: TExternalStreamsMap;
@@ -201,6 +205,7 @@ export const serverSlice = createSlice({
       state.categories = action.payload.categories;
       state.channels = action.payload.channels;
       state.emojis = action.payload.emojis;
+      state.stickers = action.payload.stickers ?? [];
       state.users = action.payload.users;
       state.roles = action.payload.roles;
       state.ownUserId = action.payload.ownUserId;
@@ -524,8 +529,9 @@ export const serverSlice = createSlice({
           }));
       }
 
-      // remove user from emojis
+      // remove user from emojis and stickers
       state.emojis = state.emojis.filter((e) => e.userId !== userId);
+      state.stickers = state.stickers.filter((s) => s.userId !== userId);
     },
     reassignUser: (
       state,
@@ -578,9 +584,12 @@ export const serverSlice = createSlice({
         }));
       }
 
-      // reassign emojis
+      // reassign emojis and stickers
       state.emojis = state.emojis.map((e) =>
         e.userId === userId ? { ...e, userId: deletedUserId } : e
+      );
+      state.stickers = state.stickers.map((s) =>
+        s.userId === userId ? { ...s, userId: deletedUserId } : s
       );
     },
 
@@ -714,6 +723,23 @@ export const serverSlice = createSlice({
     removeEmoji: (state, action: PayloadAction<{ emojiId: number }>) => {
       state.emojis = state.emojis.filter(
         (e) => e.id !== action.payload.emojiId
+      );
+    },
+
+    // STICKERS ------------------------------------------------------------
+
+    upsertSticker: (state, action: PayloadAction<TJoinedSticker>) => {
+      const index = state.stickers.findIndex((s) => s.id === action.payload.id);
+
+      if (index === -1) {
+        state.stickers.push(action.payload);
+      } else {
+        state.stickers[index] = action.payload;
+      }
+    },
+    removeSticker: (state, action: PayloadAction<{ stickerId: number }>) => {
+      state.stickers = state.stickers.filter(
+        (s) => s.id !== action.payload.stickerId
       );
     },
 

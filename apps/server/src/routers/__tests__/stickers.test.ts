@@ -293,3 +293,25 @@ describe('sticker push notifications', () => {
     });
   });
 });
+
+describe('a deleted uploader', () => {
+  test("should leave their stickers on the server, the placeholder's now", async () => {
+    const stickerId = await addSticker('kept');
+    const { caller } = await initTest(1);
+
+    await tdb
+      .update(stickers)
+      .set({ userId: 5 })
+      .where(eq(stickers.id, stickerId));
+    await caller.users.delete({ userId: 5, wipe: false });
+
+    const sticker = await tdb
+      .select()
+      .from(stickers)
+      .where(eq(stickers.id, stickerId))
+      .get();
+
+    expect(sticker).toBeDefined();
+    expect(sticker!.userId).not.toBe(5);
+  });
+});

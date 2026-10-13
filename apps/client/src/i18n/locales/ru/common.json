@@ -138,5 +138,17 @@
   "pollMinutesLeft_one": "Осталась {{count}} мин",
   "pollMinutesLeft_other": "Осталось {{count}} мин",
   "pollVoteFailed": "Не удалось сохранить голос",
-  "pollEndFailed": "Не удалось завершить опрос"
+  "pollEndFailed": "Не удалось завершить опрос",
+  "expressionEmoji": "Эмодзи",
+  "expressionGifs": "GIF",
+  "expressionStickers": "Стикеры",
+  "searchKlipy": "Искать в Klipy",
+  "trendingGifs": "Популярные GIF",
+  "gifsNotSetUp": "GIF на этом сервере не настроены. Администратор может добавить ключ API Klipy в настройках сервера.",
+  "gifsLoadFailed": "Не удалось загрузить GIF.",
+  "gifsBack": "Назад",
+  "noGifsFound": "GIF не найдены.",
+  "searchStickers": "Найдите идеальный стикер",
+  "noStickers": "На этом сервере пока нет стикеров. Администраторы могут добавить их в настройках сервера.",
+  "noStickersFound": "Нет подходящих стикеров."
 }

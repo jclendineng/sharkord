@@ -140,5 +140,17 @@
   "pollMinutesLeft_one": "{{count}}m left",
   "pollMinutesLeft_other": "{{count}}m left",
   "pollVoteFailed": "Could not record your vote",
-  "pollEndFailed": "Could not end the poll"
+  "pollEndFailed": "Could not end the poll",
+  "expressionEmoji": "Emoji",
+  "expressionGifs": "GIFs",
+  "expressionStickers": "Stickers",
+  "searchKlipy": "Search Klipy",
+  "trendingGifs": "Trending GIFs",
+  "gifsNotSetUp": "GIFs aren't set up on this server. An admin can add a Klipy API key in Server Settings.",
+  "gifsLoadFailed": "Couldn't load GIFs.",
+  "gifsBack": "Back",
+  "noGifsFound": "No GIFs found.",
+  "searchStickers": "Find the perfect sticker",
+  "noStickers": "This server has no stickers yet. Admins can add some in Server Settings.",
+  "noStickersFound": "No stickers match that."
 }

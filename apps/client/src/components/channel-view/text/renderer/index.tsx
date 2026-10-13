@@ -27,7 +27,7 @@ import {
   getParsedMessageHtml,
   getYoutubeVideoIds
 } from './content-cache';
-import { extractMessageOpenGraph } from './helpers';
+import { extractMessageOpenGraph, isMediaLinkOnly } from './helpers';
 import { Media } from './media';
 import { extractMessageMedia } from './media-cache';
 import { MessageRenderFallback } from './message-render-fallback';
@@ -97,13 +97,19 @@ const MessageRenderer = memo(
       [message, allMedia]
     );
 
+    const hidesText = useMemo(
+      () => isMediaLinkOnly(message.content, allMedia),
+      [message.content, allMedia]
+    );
+
     return (
       <div className="flex flex-col gap-1">
         <div
           className={cn(
             'prose max-w-full wrap-break-word msg-content',
             emojiOnly && 'emoji-only',
-            message.editedAt && 'msg-edited'
+            message.editedAt && 'msg-edited',
+            hidesText && 'hidden'
           )}
         >
           <ErrorBoundary
@@ -142,6 +148,17 @@ const MessageRenderer = memo(
         ))}
         <Media media={allMedia} />
         <OpenGraph previews={openGraphPreviews} />
+
+        {message.sticker && (
+          <Tooltip content={message.sticker.name}>
+            <img
+              src={getFileUrl(message.sticker.file)}
+              alt={message.sticker.name}
+              className="h-40 w-40 object-contain"
+              loading="lazy"
+            />
+          </Tooltip>
+        )}
 
         {message.poll && (
           <Poll

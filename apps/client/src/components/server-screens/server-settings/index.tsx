@@ -9,6 +9,7 @@ import {
   Settings,
   Shield,
   Smile,
+  Sticker,
   Users
 } from 'lucide-react';
 import { memo, useMemo } from 'react';
@@ -22,6 +23,7 @@ import { Invites } from './invites';
 import { PluginView } from './plugin-view';
 import { Plugins } from './plugins';
 import { Roles } from './roles';
+import { Stickers } from './stickers';
 import { Storage } from './storage';
 import { Updates } from './updates';
 import { Users as UsersSection } from './users';
@@ -60,6 +62,13 @@ const ServerSettings = memo(({ close }: TServerSettingsProps) => {
         label: t('emojisTab'),
         icon: Smile,
         content: <Emojis />,
+        permission: Permission.MANAGE_EMOJIS
+      },
+      {
+        id: 'stickers',
+        label: t('stickersTab'),
+        icon: Sticker,
+        content: <Stickers />,
         permission: Permission.MANAGE_EMOJIS
       },
       {

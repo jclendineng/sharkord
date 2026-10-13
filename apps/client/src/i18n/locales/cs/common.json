@@ -138,5 +138,17 @@
   "pollMinutesLeft_one": "Zbývá {{count}} min",
   "pollMinutesLeft_other": "Zbývá {{count}} min",
   "pollVoteFailed": "Hlas se nepodařilo uložit",
-  "pollEndFailed": "Anketu se nepodařilo ukončit"
+  "pollEndFailed": "Anketu se nepodařilo ukončit",
+  "expressionEmoji": "Emoji",
+  "expressionGifs": "GIFy",
+  "expressionStickers": "Nálepky",
+  "searchKlipy": "Hledat na Klipy",
+  "trendingGifs": "Populární GIFy",
+  "gifsNotSetUp": "GIFy na tomto serveru nejsou nastavené. Správce může přidat API klíč Klipy v Nastavení serveru.",
+  "gifsLoadFailed": "GIFy se nepodařilo načíst.",
+  "gifsBack": "Zpět",
+  "noGifsFound": "Žádné GIFy nenalezeny.",
+  "searchStickers": "Najdi tu pravou nálepku",
+  "noStickers": "Tento server zatím nemá žádné nálepky. Správci je mohou přidat v Nastavení serveru.",
+  "noStickersFound": "Žádná nálepka neodpovídá."
 }

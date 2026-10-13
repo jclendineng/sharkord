@@ -16,6 +16,7 @@ import {
   files,
   messageReactions,
   messages,
+  stickers,
   users
 } from '../../db/schema';
 import { assertCanActOnUser } from '../../helpers/assert-can-act-on-user';
@@ -117,6 +118,11 @@ const deleteUserRoute = protectedProcedure
         tx.update(emojis)
           .set({ userId: deletedUserId })
           .where(eq(emojis.userId, input.userId))
+          .run();
+
+        tx.update(stickers)
+          .set({ userId: deletedUserId })
+          .where(eq(stickers.userId, input.userId))
           .run();
 
         // the reactions primary key is (messageId, userId, emoji), so a

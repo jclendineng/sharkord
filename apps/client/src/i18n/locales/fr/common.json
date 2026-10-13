@@ -138,5 +138,17 @@
   "pollMinutesLeft_one": "{{count}} min restante",
   "pollMinutesLeft_other": "{{count}} min restantes",
   "pollVoteFailed": "Impossible d'enregistrer ton vote",
-  "pollEndFailed": "Impossible de terminer le sondage"
+  "pollEndFailed": "Impossible de terminer le sondage",
+  "expressionEmoji": "Emoji",
+  "expressionGifs": "GIF",
+  "expressionStickers": "Stickers",
+  "searchKlipy": "Rechercher sur Klipy",
+  "trendingGifs": "GIF tendance",
+  "gifsNotSetUp": "Les GIF ne sont pas configures sur ce serveur. Un admin peut ajouter une cle API Klipy dans les parametres du serveur.",
+  "gifsLoadFailed": "Impossible de charger les GIF.",
+  "gifsBack": "Retour",
+  "noGifsFound": "Aucun GIF trouve.",
+  "searchStickers": "Trouve le sticker parfait",
+  "noStickers": "Ce serveur n'a pas encore de stickers. Les admins peuvent en ajouter dans les parametres du serveur.",
+  "noStickersFound": "Aucun sticker ne correspond."
 }

@@ -140,5 +140,17 @@
   "pollMinutesLeft_one": "Falta {{count}} min",
   "pollMinutesLeft_other": "Faltam {{count}} min",
   "pollVoteFailed": "Não foi possível registrar seu voto",
-  "pollEndFailed": "Não foi possível encerrar a enquete"
+  "pollEndFailed": "Não foi possível encerrar a enquete",
+  "expressionEmoji": "Emoji",
+  "expressionGifs": "GIFs",
+  "expressionStickers": "Figurinhas",
+  "searchKlipy": "Pesquisar no Klipy",
+  "trendingGifs": "GIFs em alta",
+  "gifsNotSetUp": "Os GIFs não estão configurados neste servidor. Um administrador pode adicionar uma chave de API do Klipy nas Configurações do servidor.",
+  "gifsLoadFailed": "Não foi possível carregar os GIFs.",
+  "gifsBack": "Voltar",
+  "noGifsFound": "Nenhum GIF encontrado.",
+  "searchStickers": "Encontre a figurinha perfeita",
+  "noStickers": "Este servidor ainda não tem figurinhas. Os administradores podem adicioná-las nas Configurações do servidor.",
+  "noStickersFound": "Nenhuma figurinha corresponde."
 }

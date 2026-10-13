@@ -101,6 +101,7 @@ const ThreadCompose = memo(
 
     return (
       <MessageCompose
+        parentMessageId={parentMessageId}
         ref={ref}
         channelId={channelId}
         message={newMessage}

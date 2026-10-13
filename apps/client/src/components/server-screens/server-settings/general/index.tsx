@@ -22,6 +22,7 @@ type TServerGeneralValues = {
   showWelcomeDialog: boolean;
   pushShowMessageContent: boolean;
   reportEmail: string;
+  klipyApiKey: string;
   // undefined means untouched, null means remove
   logo?: TPickedImage | null;
 };
@@ -38,7 +39,8 @@ const INITIAL_VALUES: TServerGeneralValues = {
   enableSearch: true,
   showWelcomeDialog: true,
   pushShowMessageContent: true,
-  reportEmail: ''
+  reportEmail: '',
+  klipyApiKey: ''
 };
 
 const General = memo(() => {
@@ -60,7 +62,8 @@ const General = memo(() => {
       enableSearch: values.enableSearch,
       showWelcomeDialog: values.showWelcomeDialog,
       pushShowMessageContent: values.pushShowMessageContent,
-      reportEmail: values.reportEmail.trim() || null
+      reportEmail: values.reportEmail.trim() || null,
+      klipyApiKey: values.klipyApiKey.trim() || null
     });
 
     if (values.logo !== undefined) {
@@ -91,7 +94,8 @@ const General = memo(() => {
       enableSearch: settings.enableSearch ?? true,
       showWelcomeDialog: settings.showWelcomeDialog ?? true,
       pushShowMessageContent: settings.pushShowMessageContent ?? true,
-      reportEmail: settings.reportEmail ?? ''
+      reportEmail: settings.reportEmail ?? '',
+      klipyApiKey: settings.klipyApiKey ?? ''
     });
   }, [settings, reset]);
 
@@ -238,6 +242,15 @@ const General = memo(() => {
           {...r('reportEmail')}
           type="email"
           placeholder={t('reportEmailPlaceholder')}
+        />
+      </Group>
+
+      <Group label={t('klipyApiKeyLabel')} description={t('klipyApiKeyDesc')}>
+        <Input
+          {...r('klipyApiKey')}
+          type="password"
+          autoComplete="off"
+          placeholder={t('klipyApiKeyPlaceholder')}
         />
       </Group>
 
