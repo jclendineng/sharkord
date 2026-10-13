@@ -188,10 +188,12 @@ final class TRPCClient {
 
         if let error = object["error"] as? [String: Any] {
             let data = error["data"] as? [String: Any]
-            let trpcError = TRPCError(
-                message: error["message"] as? String ?? "Unknown error",
-                code: data?["code"] as? String
-            )
+            let code = data?["code"] as? String
+            // a route this server does not have yet, it runs an older sharkord than the app
+            let message = code == "NOT_FOUND" && (error["message"] as? String)?.contains("-procedure on path") == true
+                ? "This server needs to be updated to use this."
+                : error["message"] as? String ?? "Unknown error"
+            let trpcError = TRPCError(message: message, code: code)
 
             if let continuation = pending.removeValue(forKey: id) {
                 continuation.resume(throwing: trpcError)

@@ -47,6 +47,8 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
     private var cameraTrack: RTCVideoTrack?
     private var cameraProducer: Producer?
     private var cameraPosition = AVCaptureDevice.Position.front
+    private var screenProducer: Producer?
+    private var screenTrack: RTCVideoTrack?
     private var rtpCapabilities = "{}"
     private var soundMuted = false
     private var outputVolume: Double
@@ -153,6 +155,26 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
         _ = try? await signal("voice.closeProducer", json)
     }
 
+    // frames come from the broadcast extension through ScreenShareReceiver, the returned sink
+    // takes them on whatever thread they arrive
+    func startScreenShare() async throws -> ScreenFrameSink {
+        try await onQueueResult {
+            try self.produceScreen()
+        }
+    }
+
+    func stopScreenShare() async {
+        await onQueueValue {
+            self.screenProducer?.close()
+            self.screenProducer = nil
+            self.screenTrack = nil
+        }
+
+        let json = Data("{\"kind\":\"screen\"}".utf8)
+
+        _ = try? await signal("voice.closeProducer", json)
+    }
+
     func flipCamera() {
         queue.async {
             guard let camera = self.camera else {
@@ -214,6 +236,9 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
             self.camera = nil
             self.cameraTrack = nil
             self.cameraProducer = nil
+            self.screenProducer?.close()
+            self.screenProducer = nil
+            self.screenTrack = nil
             self.sendTransport?.close()
             self.receiveTransport?.close()
             self.producer = nil
@@ -319,6 +344,31 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
         }
     }
 
+    private func produceScreen() throws -> ScreenFrameSink {
+        guard let sendTransport else {
+            throw VoiceError(message: "Join a voice channel before sharing your screen.")
+        }
+
+        screenProducer?.close()
+
+        let source = factory.videoSource(forScreenCast: true)
+        let capturer = RTCVideoCapturer(delegate: source)
+        let track = factory.videoTrack(with: source, trackId: "screen")
+
+        let producer = try sendTransport.createProducer(
+            for: track,
+            encodings: nil,
+            codecOptions: nil,
+            codec: nil,
+            appData: "{\"kind\":\"screen\"}"
+        )
+
+        screenTrack = track
+        screenProducer = producer
+
+        return ScreenFrameSink(source: source, capturer: capturer)
+    }
+
     private func produceCamera(ownUserId: Int) throws {
         guard let sendTransport, cameraProducer == nil else {
             return
@@ -384,6 +434,18 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
                 do {
                     try work()
                     continuation.resume()
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    private func onQueueResult<T: Sendable>(_ work: @escaping @Sendable () throws -> T) async throws -> T {
+        try await withCheckedThrowingContinuation { continuation in
+            queue.async {
+                do {
+                    continuation.resume(returning: try work())
                 } catch {
                     continuation.resume(throwing: error)
                 }
@@ -509,6 +571,29 @@ nonisolated struct VoiceStreamKey: Hashable, Sendable, CustomStringConvertible {
 
     var description: String {
         "\(kind.rawValue)/\(remoteId)"
+    }
+}
+
+// hands broadcast frames to the screen track's source. webrtc's sources take frames from any
+// thread, so this needs no queue of its own
+nonisolated final class ScreenFrameSink: @unchecked Sendable {
+    private let source: RTCVideoSource
+    private let capturer: RTCVideoCapturer
+
+    init(source: RTCVideoSource, capturer: RTCVideoCapturer) {
+        self.source = source
+        self.capturer = capturer
+    }
+
+    func push(_ pixelBuffer: CVPixelBuffer) {
+        let buffer = RTCCVPixelBuffer(pixelBuffer: pixelBuffer)
+        let frame = RTCVideoFrame(
+            buffer: buffer,
+            rotation: ._0,
+            timeStampNs: Int64(CACurrentMediaTime() * 1_000_000_000)
+        )
+
+        source.capturer(capturer, didCapture: frame)
     }
 }
 

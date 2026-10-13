@@ -55,6 +55,7 @@ final class SessionStore {
     private(set) var micMuted = false
     private(set) var soundMuted = false
     private(set) var cameraEnabled = false
+    private(set) var isSharingScreen = false
     // webcams and screen shares in the current voice channel, the own camera under the own id
     private(set) var videoTracks: [VoiceStreamKey: VideoTrackBox] = [:]
 
@@ -67,6 +68,7 @@ final class SessionStore {
     private var pushToken: String?
     private var hasRequestedPush = false
     private var voice: VoiceConnection?
+    private var screenReceiver: ScreenShareReceiver?
     // the server drops a socket's voice session with the socket, so a reconnect rejoins it
     private var voiceChannelToRejoin: Int?
 
@@ -411,6 +413,8 @@ final class SessionStore {
             for key in producers.keys {
                 await connection.consume(key)
             }
+
+            listenForScreenShare()
         } catch {
             showError(error)
             await leaveVoice()
@@ -458,6 +462,60 @@ final class SessionStore {
         } catch {
             showError(error)
         }
+    }
+
+    // the broadcast extension connects to this when someone starts sharing from the picker
+    private func listenForScreenShare() {
+        screenReceiver?.stop()
+
+        let receiver = ScreenShareReceiver(
+            onConnect: { [weak self] in
+                Task { @MainActor in
+                    await self?.startScreenShare()
+                }
+            },
+            onDisconnect: { [weak self] in
+                Task { @MainActor in
+                    await self?.stopScreenShare()
+                }
+            }
+        )
+
+        receiver.start()
+        screenReceiver = receiver
+    }
+
+    private func startScreenShare() async {
+        guard let voice, let screenReceiver else {
+            return
+        }
+
+        do {
+            let sink = try await voice.startScreenShare()
+
+            screenReceiver.setFrameHandler { pixelBuffer in
+                sink.push(pixelBuffer)
+            }
+
+            isSharingScreen = true
+            await updateVoiceState(["sharingScreen": true])
+        } catch {
+            showError(error)
+            // the extension sees the connection close and ends the broadcast
+            screenReceiver.dropClient()
+        }
+    }
+
+    private func stopScreenShare() async {
+        screenReceiver?.setFrameHandler(nil)
+
+        guard isSharingScreen, let voice else {
+            return
+        }
+
+        isSharingScreen = false
+        await voice.stopScreenShare()
+        await updateVoiceState(["sharingScreen": false])
     }
 
     func flipCamera() {
@@ -861,6 +919,9 @@ final class SessionStore {
     }
 
     private func stopVoice() {
+        screenReceiver?.stop()
+        screenReceiver = nil
+        isSharingScreen = false
         voice?.close()
         voice = nil
         currentVoiceChannelId = nil

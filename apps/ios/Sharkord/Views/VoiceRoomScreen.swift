@@ -27,6 +27,15 @@ struct VoiceRoomScreen: View {
 
             ScrollView {
                 VStack(spacing: 10) {
+                    if session.isSharingScreen {
+                        Label("You're sharing your screen", systemImage: "rectangle.on.rectangle")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(Theme.blurple, in: .rect(cornerRadius: 12))
+                    }
+
                     ForEach(screenShares, id: \.key) { share in
                         ScreenShareTile(userId: share.key.remoteId, track: share.track)
                     }
@@ -134,6 +143,21 @@ private struct ParticipantTile: View {
             .background(.black.opacity(0.55), in: .capsule)
             .padding(8)
         }
+        .overlay(alignment: .topTrailing) {
+            if isOwn && track != nil {
+                Button("Flip Camera", systemImage: "arrow.triangle.2.circlepath.camera.fill", action: flipCamera)
+                    .labelStyle(.iconOnly)
+                    .font(.subheadline)
+                    .foregroundStyle(.white)
+                    .frame(width: 36, height: 36)
+                    .background(.black.opacity(0.55), in: .circle)
+                    .padding(8)
+            }
+        }
+    }
+
+    private func flipCamera() {
+        session.flipCamera()
     }
 }
 
@@ -174,14 +198,9 @@ private struct VoiceControls: View {
                 action: toggleCamera
             )
 
-            if session.cameraEnabled {
-                ControlButton(
-                    title: "Flip Camera",
-                    systemImage: "arrow.triangle.2.circlepath.camera.fill",
-                    isActive: false,
-                    action: flipCamera
-                )
-            }
+            BroadcastPickerButton(isSharing: session.isSharingScreen)
+                .frame(width: 56, height: 56)
+                .background(session.isSharingScreen ? Color.white : Theme.listBackground, in: .circle)
 
             ControlButton(
                 title: session.micMuted ? "Unmute" : "Mute",
@@ -211,10 +230,6 @@ private struct VoiceControls: View {
 
     private func toggleCamera() {
         Task { await session.toggleCamera() }
-    }
-
-    private func flipCamera() {
-        session.flipCamera()
     }
 
     private func toggleMic() {

@@ -17,6 +17,8 @@
 	<string>Sharkord connects to servers on your local network.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Sharkord uses the microphone so you can talk in voice channels.</string>
+	<key>SharkordKeychainGroup</key>
+	<string>$(AppIdentifierPrefix)com.sharkord.shared</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>

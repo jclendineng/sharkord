@@ -25,9 +25,17 @@ including direct messages, invite links, an inbox with mentions and unreads, sig
 sign in, server password, channel list with unread counts, message history with pagination,
 sending, live new/edited/deleted messages, auto reconnect, DMs, threads, reactions with emoji
 picker, uploads, rich message rendering, push notifications, voice with webcams and watching
-screen shares, profile editing, settings (account, devices, voice and video, notifications).
+screen shares, sharing your own screen, profile editing, settings (account, devices, voice and
+video, notifications).
 
-Not yet: sharing your own screen from the phone, which needs a broadcast upload extension.
+## Screen sharing
+
+`SharkordBroadcast` is a ReplayKit broadcast upload extension. It only forwards frames: each
+one is shrunk to 1280px, encoded as a jpeg and sent over loopback tcp to the app, which is
+already in the voice channel and publishes them as the `screen` stream. The app writes the
+port and a random secret to a keychain group both targets share
+(`$(AppIdentifierPrefix)com.sharkord.shared`), and the extension has to send that secret
+first. A keychain group needs no setup in the developer portal, unlike an App Group.
 
 ## Sessions
 
