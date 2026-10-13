@@ -4,6 +4,20 @@ import Observation
 // device wide preferences from the settings screens, kept in UserDefaults
 @Observable
 final class AppSettings {
+    enum StreamQuality: String, CaseIterable {
+        case standard
+        case high
+
+        var maxDimension: Int {
+            self == .high ? 1920 : 1280
+        }
+
+        // jpeg frames through the extension, 30 per second is what it keeps up with
+        var framesPerSecond: Int {
+            30
+        }
+    }
+
     static let shared = AppSettings()
 
     private enum Key {
@@ -12,6 +26,7 @@ final class AppSettings {
         static let autoGainControl = "settings.autoGainControl"
         static let speakerByDefault = "settings.speakerByDefault"
         static let outputVolume = "settings.outputVolume"
+        static let streamQuality = "settings.streamQuality"
     }
 
     private let defaults = UserDefaults.standard
@@ -37,6 +52,10 @@ final class AppSettings {
         didSet { defaults.set(outputVolume, forKey: Key.outputVolume) }
     }
 
+    var streamQuality: StreamQuality {
+        didSet { defaults.set(streamQuality.rawValue, forKey: Key.streamQuality) }
+    }
+
     private init() {
         defaults.register(defaults: [
             Key.echoCancellation: true,
@@ -51,5 +70,6 @@ final class AppSettings {
         autoGainControl = defaults.bool(forKey: Key.autoGainControl)
         speakerByDefault = defaults.bool(forKey: Key.speakerByDefault)
         outputVolume = defaults.double(forKey: Key.outputVolume)
+        streamQuality = defaults.string(forKey: Key.streamQuality).flatMap(StreamQuality.init(rawValue:)) ?? .standard
     }
 }

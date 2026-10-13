@@ -14,6 +14,7 @@ nonisolated final class ScreenShareReceiver: @unchecked Sendable {
 
     typealias FrameHandler = @Sendable (CVPixelBuffer) -> Void
 
+    private let quality: OSAllocatedUnfairLock<(maxDimension: Int, framesPerSecond: Int)>
     private let onConnect: @Sendable () -> Void
     private let onDisconnect: @Sendable () -> Void
     private let queue = DispatchQueue(label: "com.sharkord.screen-share")
@@ -27,7 +28,13 @@ nonisolated final class ScreenShareReceiver: @unchecked Sendable {
         var isStopped = false
     }
 
-    init(onConnect: @escaping @Sendable () -> Void, onDisconnect: @escaping @Sendable () -> Void) {
+    init(
+        maxDimension: Int,
+        framesPerSecond: Int,
+        onConnect: @escaping @Sendable () -> Void,
+        onDisconnect: @escaping @Sendable () -> Void
+    ) {
+        self.quality = OSAllocatedUnfairLock(initialState: (maxDimension, framesPerSecond))
         self.onConnect = onConnect
         self.onDisconnect = onDisconnect
     }
@@ -65,12 +72,32 @@ nonisolated final class ScreenShareReceiver: @unchecked Sendable {
 
         let secret = Self.makeSecret()
 
-        ScreenShareEndpoint(port: UInt16(bigEndian: address.sin_port), secret: secret).save()
+        let (maxDimension, framesPerSecond) = quality.withLock { $0 }
+
+        ScreenShareEndpoint(
+            port: UInt16(bigEndian: address.sin_port),
+            secret: secret,
+            maxDimension: maxDimension,
+            framesPerSecond: framesPerSecond
+        ).save()
         state.withLock { $0.listener = listener }
 
         queue.async {
             self.acceptLoop(listener, secret: secret)
         }
+    }
+
+    // read by the extension when the next broadcast starts
+    func setQuality(maxDimension: Int, framesPerSecond: Int) {
+        quality.withLock { $0 = (maxDimension, framesPerSecond) }
+
+        guard var endpoint = ScreenShareEndpoint.load() else {
+            return
+        }
+
+        endpoint.maxDimension = maxDimension
+        endpoint.framesPerSecond = framesPerSecond
+        endpoint.save()
     }
 
     // closing the client tells the extension to end the broadcast

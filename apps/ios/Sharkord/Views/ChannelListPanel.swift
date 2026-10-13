@@ -163,6 +163,8 @@ private struct CategoryHeader: View {
 private struct ChannelRow: View {
     @Environment(SessionStore.self) private var session
 
+    @State private var isVoiceSheetPresented = false
+
     let channel: Channel
     let unreadCount: Int
     let isSelected: Bool
@@ -192,18 +194,19 @@ private struct ChannelRow: View {
             }
             .buttonStyle(ChannelRowButtonStyle())
         case .voice:
-            Button(action: joinVoice) {
+            Button(action: showVoiceSheet) {
                 label
             }
             .buttonStyle(ChannelRowButtonStyle())
-            .disabled(session.isJoiningVoice)
+            .sheet(isPresented: $isVoiceSheetPresented) {
+                VoiceChannelSheet(channel: channel)
+            }
         }
     }
 
-    private func joinVoice() {
-        Task {
-            await session.joinVoice(channel.id)
-        }
+    // like discord, a voice channel shows who is in it before anyone joins
+    private func showVoiceSheet() {
+        isVoiceSheetPresented = true
     }
 
     private var label: some View {

@@ -468,7 +468,10 @@ final class SessionStore {
     private func listenForScreenShare() {
         screenReceiver?.stop()
 
+        let quality = AppSettings.shared.streamQuality
         let receiver = ScreenShareReceiver(
+            maxDimension: quality.maxDimension,
+            framesPerSecond: quality.framesPerSecond,
             onConnect: { [weak self] in
                 Task { @MainActor in
                     await self?.startScreenShare()
@@ -483,6 +486,11 @@ final class SessionStore {
 
         receiver.start()
         screenReceiver = receiver
+    }
+
+    func setStreamQuality(_ quality: AppSettings.StreamQuality) {
+        AppSettings.shared.streamQuality = quality
+        screenReceiver?.setQuality(maxDimension: quality.maxDimension, framesPerSecond: quality.framesPerSecond)
     }
 
     private func startScreenShare() async {

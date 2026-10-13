@@ -8,6 +8,9 @@ import Security
 nonisolated struct ScreenShareEndpoint: Codable, Sendable {
     let port: UInt16
     let secret: String
+    // the stream settings sheet's choice, how large and how often the extension sends frames
+    var maxDimension: Int
+    var framesPerSecond: Int
 
     private static let service = "com.sharkord.screen-share"
     private static let account = "endpoint"

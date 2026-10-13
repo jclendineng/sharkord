@@ -8,20 +8,21 @@ import ReplayKit
 // frames go to the app over loopback tcp, each a 4 byte big endian length followed by a jpeg.
 // the first one is the secret from ScreenShareEndpoint instead, see ScreenShareReceiver
 final class SampleHandler: RPBroadcastSampleHandler, @unchecked Sendable {
-    private static let maxFramesPerSecond = 15.0
-    private static let maxDimension: CGFloat = 1280
     private static let jpegQuality: CGFloat = 0.7
 
     private let queue = DispatchQueue(label: "com.sharkord.broadcast")
     private let context = CIContext(options: [.cacheIntermediates: false])
     private var socket: Int32 = -1
     private var lastFrameTime: CFTimeInterval = 0
+    private var maxDimension: CGFloat = 1280
+    private var framesPerSecond = 30.0
     // replaykit calls in on its own thread, the encoding runs on the queue
     private let isSending = OSAllocatedUnfairLock(initialState: false)
 
     override func broadcastStarted(withSetupInfo setupInfo: [String: NSObject]?) {
         guard
             let endpoint = ScreenShareEndpoint.load(),
+            configure(endpoint),
             connect(port: endpoint.port),
             send(Data(endpoint.secret.utf8))
         else {
@@ -48,7 +49,7 @@ final class SampleHandler: RPBroadcastSampleHandler, @unchecked Sendable {
         let now = CACurrentMediaTime()
 
         // a frame still on its way means the app is behind, this one is dropped rather than queued
-        guard now - lastFrameTime >= 1 / Self.maxFramesPerSecond, let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
+        guard now - lastFrameTime >= 1 / framesPerSecond, let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
             return
         }
 
@@ -91,9 +92,16 @@ final class SampleHandler: RPBroadcastSampleHandler, @unchecked Sendable {
         }
     }
 
+    private func configure(_ endpoint: ScreenShareEndpoint) -> Bool {
+        maxDimension = CGFloat(endpoint.maxDimension)
+        framesPerSecond = Double(max(endpoint.framesPerSecond, 1))
+
+        return true
+    }
+
     private func encode(_ image: CIImage) -> Data? {
         let extent = image.extent
-        let scale = min(1, Self.maxDimension / max(extent.width, extent.height))
+        let scale = min(1, maxDimension / max(extent.width, extent.height))
         let scaled = image.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
 
         return context.jpegRepresentation(
