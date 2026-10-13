@@ -564,7 +564,9 @@ extension UIApplication {
 }
 
 // where the attachment panel sits, shared so the panel, the composer and the conversation can
-// all drag it: the height it rests at between drags and how far the current drag has moved it
+// all drag it. a drag up grows the panel, which is drawn over the conversation, so nothing else
+// moves. a drag down only slides the composer and the panel together as one piece, an offset
+// rather than a new layout, which is what keeps it smooth under the finger
 @Observable
 final class AttachPanelModel {
     static let restingHeight: CGFloat = 340
@@ -582,8 +584,14 @@ final class AttachPanelModel {
         return height - insets.top - insets.bottom - 110
     }
 
+    // the panel's own height, never less than resting, a drag below that is a slide instead
     var height: CGFloat {
-        min(max(settledHeight - dragOffset, 0), expandedHeight)
+        min(max(settledHeight - dragOffset, Self.restingHeight), expandedHeight)
+    }
+
+    // how far the composer and the panel have been pushed down past the resting height
+    var slideOffset: CGFloat {
+        max(0, dragOffset - (settledHeight - Self.restingHeight))
     }
 
     var isDragging: Bool {
@@ -601,29 +609,22 @@ final class AttachPanelModel {
         Double(max(0, min(1, (height - Self.restingHeight) / (expandedHeight - Self.restingHeight))))
     }
 
-    // rises from nothing, the composer above it rising along
     func open() {
         settledHeight = Self.restingHeight
-        dragOffset = Self.restingHeight
-        isOpen = true
+        dragOffset = 0
 
         withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
-            dragOffset = 0
+            isOpen = true
         }
     }
 
-    // slides down from wherever it is, the composer following, then goes
+    // slides away, the composer coming down with it in the same motion
     func close() {
         guard isOpen else {
             return
         }
 
-        withAnimation(.easeOut(duration: 0.22)) {
-            dragOffset = settledHeight
-        }
-
-        Task {
-            try? await Task.sleep(for: .milliseconds(220))
+        withAnimation(.easeOut(duration: 0.25)) {
             isOpen = false
             dragOffset = 0
             settledHeight = Self.restingHeight
@@ -637,12 +638,6 @@ final class AttachPanelModel {
         settledHeight = Self.restingHeight
     }
 
-    // how much room the composer leaves under itself: the panel's height, up to the resting
-    // height, past which the panel covers the composer instead of pushing it
-    var reservedHeight: CGFloat {
-        min(height, Self.restingHeight)
-    }
-
     func drag(_ translation: CGFloat) {
         guard isOpen else {
             return
@@ -652,8 +647,8 @@ final class AttachPanelModel {
     }
 
     // one swipe moves one step: from full height a swipe down lands at the resting height, from
-    // the resting height it follows the finger down and away. otherwise it settles at whichever
-    // height is nearest to where the fling would have carried it
+    // the resting height it slides down and away. otherwise it settles at whichever height is
+    // nearest to where the fling would have carried it
     func release(predicted translation: CGFloat) {
         guard isOpen else {
             return

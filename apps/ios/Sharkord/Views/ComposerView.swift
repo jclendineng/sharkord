@@ -59,14 +59,16 @@ struct ComposerView: View {
 
             if store.attachPanel.isOpen {
                 Color.clear
-                    .frame(height: store.attachPanel.reservedHeight)
+                    .frame(height: AttachPanelModel.restingHeight)
             }
         }
         .overlay(alignment: .bottom) {
             if store.attachPanel.isOpen {
                 attachmentPanel
+                    .transition(.move(edge: .bottom))
             }
         }
+        .offset(y: store.attachPanel.slideOffset)
         // runs on behind the keyboard, whose rounded top corners would otherwise show the
         // window's black
         .background(Theme.chatBackground.ignoresSafeArea())
