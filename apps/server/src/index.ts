@@ -15,6 +15,7 @@ import { loadCrons } from './crons';
 import { loadDb } from './db';
 import { getHost } from './helpers/get-host';
 import { applyInviteOnly } from './helpers/registration';
+import { applyForcedSignedUrls } from './helpers/signed-urls';
 import './helpers/updater';
 import { pluginManager } from './plugins';
 import { enqueueActivityLog } from './queues/activity-log';
@@ -25,6 +26,7 @@ import { printDebug } from './utils/print-debug';
 
 await loadDb();
 await applyInviteOnly();
+await applyForcedSignedUrls();
 await pluginManager.init();
 await createServers();
 await loadMediasoup();

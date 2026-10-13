@@ -74,6 +74,10 @@ const zConfig = z.object({
   registration: z.object({
     inviteOnly: z.coerce.boolean()
   }),
+  // forceSignedUrls keeps every file link signed and expiring, whatever the settings screen says
+  storage: z.object({
+    forceSignedUrls: z.coerce.boolean()
+  }),
   // a klipy key set here turns gifs on without the settings screen, one saved there wins
   gifs: z.object({
     klipyApiKey: z.string().trim()
@@ -149,6 +153,9 @@ const defaultConfig: TConfig = {
   },
   registration: {
     inviteOnly: false
+  },
+  storage: {
+    forceSignedUrls: false
   },
   gifs: {
     klipyApiKey: ''
@@ -317,6 +324,7 @@ const envOverridesMap: Record<string, string> = {
   'push.apnsKeyPath': 'SHARKORD_PUSH_APNS_KEY_PATH',
   'push.apnsBundleId': 'SHARKORD_PUSH_APNS_BUNDLE_ID',
   'registration.inviteOnly': 'SHARKORD_INVITE_ONLY',
+  'storage.forceSignedUrls': 'SHARKORD_FORCE_SIGNED_URLS',
   'gifs.klipyApiKey': 'SHARKORD_KLIPY_API_KEY',
   'webRtc.port': 'SHARKORD_WEBRTC_PORT',
   'webRtc.announcedAddress': 'SHARKORD_WEBRTC_ANNOUNCED_ADDRESS',

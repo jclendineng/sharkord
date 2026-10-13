@@ -341,6 +341,7 @@
   "imageQualityDesc": "Contrôle la qualité WebP utilisée pour les images optimisées. Les valeurs élevées préservent plus de détails, mais utilisent plus d’espace de stockage.",
   "signedUrlsLabel": "URL signées",
   "signedUrlsDesc": "Lorsque cette option est activée, toutes les URL de fichiers nécessitent un token signé avec une durée de validité. Cela empêche l'accès non autorisé aux fichiers par devinette d'URL. Lorsque cette option est désactivée, les fichiers dans les salons publics sont accessibles par toute personne disposant de l'URL.",
+  "signedUrlsLockedDesc": "Verrouillé par forceSignedUrls dans config.ini. Chaque lien de fichier nécessite un jeton qui expire.",
   "signedUrlsTtlLabel": "Expiration des URL signées",
   "signedUrlsTtlDesc": "Durée pendant laquelle une URL signée reste valide avant d'expirer. Des durées plus courtes améliorent la sécurité mais peuvent causer des désagréments aux utilisateurs accédant aux fichiers.",
   "signedUrlsTtlUnit": "minutes",

@@ -96,6 +96,18 @@ const updateSettingsRoute = protectedProcedure
         'Sign ups are locked to invites by config.ini. Turn off inviteOnly there first.'
     });
 
+    invariant(
+      !(
+        input.storageSignedUrlsEnabled === false &&
+        config.storage.forceSignedUrls
+      ),
+      {
+        code: 'BAD_REQUEST',
+        message:
+          'Signed file links are locked on by config.ini. Turn off forceSignedUrls there first.'
+      }
+    );
+
     const { enablePlugins: oldEnablePlugins } = await getSettings();
 
     await updateSettings(input);

@@ -341,6 +341,7 @@
   "imageQualityDesc": "Určuje kvalitu WebP pro optimalizované obrázky. Vyšší hodnoty zachovají více detailů, ale použijí více úložiště.",
   "signedUrlsLabel": "Podepsané adresy URL",
   "signedUrlsDesc": "Pokud je tato možnost povolena, vyžadují všechny adresy URL souborů podepsaný token s dobou platnosti. Tím se zabrání neoprávněnému přístupu k souborům pomocí odhadování adresy URL. Pokud je tato možnost zakázána, jsou soubory ve veřejných kanálech přístupné komukoli, kdo zná adresu URL.",
+  "signedUrlsLockedDesc": "Uzamčeno volbou forceSignedUrls v config.ini. Každý odkaz na soubor potřebuje token s omezenou platností.",
   "signedUrlsTtlLabel": "Platnost podepsané adresy URL",
   "signedUrlsTtlDesc": "Jak dlouho zůstane podepsaná adresa URL platná, než vyprší její platnost. Kratší doba zvyšuje zabezpečení, ale může uživatelům způsobit nepříjemnosti při přístupu k souborům.",
   "signedUrlsTtlUnit": "minut",

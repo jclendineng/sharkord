@@ -153,6 +153,10 @@ struct AdminStorage: Decodable {
     }
 
     let storageSettings: Settings
+
+    // forceSignedUrls in config.ini, missing on a server from before it existed
+
+    let signedUrlsLocked: Bool?
     let diskMetrics: Disk
     let pluginStorage: [PluginUsage]
 }

@@ -248,17 +248,19 @@ export const useAdminStorage = () => {
     undefined
   );
   const [pluginStorage, setPluginStorage] = useState<TPluginStorageUsage[]>([]);
+  const [signedUrlsLocked, setSignedUrlsLocked] = useState(false);
 
   const fetchStorageSettings = useCallback(async () => {
     setLoading(true);
 
     const trpc = getTRPCClient();
-    const { storageSettings, diskMetrics, pluginStorage } =
+    const { storageSettings, diskMetrics, pluginStorage, signedUrlsLocked } =
       await trpc.others.getStorageSettings.query();
 
     setStorageSettings(storageSettings);
     setDiskMetrics(diskMetrics);
     setPluginStorage(pluginStorage);
+    setSignedUrlsLocked(signedUrlsLocked);
     setLoading(false);
   }, []);
 
@@ -270,6 +272,7 @@ export const useAdminStorage = () => {
     storageSettings,
     diskMetrics,
     pluginStorage,
+    signedUrlsLocked,
     refetch: fetchStorageSettings,
     loading
   };

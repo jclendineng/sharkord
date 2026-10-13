@@ -89,4 +89,20 @@ struct ModelTests {
         #expect(locked.inviteOnly == true)
         #expect(older.inviteOnly == nil)
     }
+
+    @Test func storageSettingsDecodeTheSignedLinksLock() throws {
+        let settings = """
+        "storageSettings":{"storageUploadEnabled":true,"storageFileSharingInDirectMessages":true,
+         "storageQuota":0,"storageUploadMaxFileSize":1,"storageMaxAvatarSize":1,"storageMaxBannerSize":1,
+         "storageMaxFilesPerMessage":10,"storageSpaceQuotaByUser":0,"storageOverflowAction":"prevent",
+         "storageSignedUrlsEnabled":true,"storageSignedUrlsTtlSeconds":3600,
+         "storageImageOptimizationEnabled":false,"storageImageOptimizationQuality":80},
+        "diskMetrics":{"totalSpace":1,"freeSpace":1,"usedSpace":0,"sharkordUsedSpace":0},"pluginStorage":[]
+        """
+        let locked = try decode(AdminStorage.self, "{\(settings),\"signedUrlsLocked\":true}")
+        let older = try decode(AdminStorage.self, "{\(settings)}")
+
+        #expect(locked.signedUrlsLocked == true)
+        #expect(older.signedUrlsLocked == nil)
+    }
 }

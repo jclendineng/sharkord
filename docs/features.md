@@ -92,7 +92,7 @@ downloaded once into the app's cache.
 Uploaded files are stored under their own name and served from `/public/<name>`. With
 **Signed File Links** off (the default) anyone who has or guesses that link can open the
 file without signing in. Turn it on in Server Settings, Storage, and every link carries a
-token that expires.
+token that expires, or lock it on in config.ini (see Forced signed file links).
 
 ## Voice messages
 
@@ -180,6 +180,21 @@ channel (`voice.moveUser`), a member's logins, files and messages for moderators
 (`users.getInfo`), live server settings (`others.onServerSettingsUpdate`) and channel
 permissions (`channels.onPermissionsUpdate`), which lock the message box where a private
 channel does not allow posting. Plugin commands, actions and panels stay web only.
+
+## Forced signed file links
+
+Uploaded files are served from `/public/<name>`. With Signed File Links off, anyone with or
+guessing a link can open the file. `config.ini` can hold them on:
+
+```ini
+[storage]
+forceSignedUrls=true
+```
+
+or `SHARKORD_FORCE_SIGNED_URLS=true`. On startup the stored switch is turned on to match,
+turning it off is refused while the lock holds, and the settings screens show it locked on.
+Every file link then carries a token that expires, apart from the server logo, which shows
+before anyone signs in. Code `apps/server/src/helpers/signed-urls.ts`.
 
 ## Server settings in the app
 
