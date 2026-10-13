@@ -10,7 +10,7 @@ struct AttachmentPanel: View {
     static let height: CGFloat = 340
 
     // the one color the whole panel is, down behind the home indicator
-    static let background = Theme.listBackground
+    static let background = Color(hex: "#232428")
 
     let selectedIds: Set<String>
     let canAddMore: Bool
@@ -86,7 +86,7 @@ struct AttachmentPanel: View {
             bar
         }
         .background {
-            UnevenRoundedRectangle(topLeadingRadius: 24, topTrailingRadius: 24)
+            UnevenRoundedRectangle(topLeadingRadius: 24, topTrailingRadius: 24, style: .continuous)
                 .fill(Self.background)
                 .ignoresSafeArea(edges: .bottom)
         }
@@ -102,23 +102,39 @@ struct AttachmentPanel: View {
         }
     }
 
+    // floats over the photos, which fade into the panel behind it rather than meeting an edge
     private var bar: some View {
         HStack(spacing: 0) {
-            PanelButton(title: "Photos", systemImage: "photo", action: onPhotos)
-
-            if let onPoll {
-                PanelButton(title: "Poll", systemImage: "text.alignleft", action: onPoll)
+            PanelButton(title: "Photos", action: onPhotos) {
+                Image(systemName: "photo.fill")
             }
 
-            PanelButton(title: "Files", systemImage: "paperclip", action: onFiles)
+            if let onPoll {
+                PanelButton(title: "Poll", action: onPoll) {
+                    PollGlyph()
+                }
+            }
+
+            PanelButton(title: "Files", action: onFiles) {
+                Image(systemName: "paperclip")
+                    .fontWeight(.bold)
+            }
         }
-        .padding(.vertical, 10)
-        .background(Theme.chatBackground, in: .rect(cornerRadius: 18))
+        .padding(.vertical, 12)
+        .padding(.horizontal, 8)
+        .background(Color(hex: "#2B2C31"), in: .rect(cornerRadius: 28, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 18).stroke(Theme.divider.opacity(0.6), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .strokeBorder(.white.opacity(0.06), lineWidth: 1)
         }
-        .padding(.horizontal, 24)
-        .padding(.bottom, 4)
+        .shadow(color: .black.opacity(0.45), radius: 24, y: 10)
+        .padding(.horizontal, 28)
+        .padding(.bottom, 6)
+        .background(alignment: .bottom) {
+            LinearGradient(colors: [Self.background.opacity(0), Self.background], startPoint: .top, endPoint: .center)
+                .frame(height: 130)
+                .allowsHitTesting(false)
+        }
     }
 
     // the grabber drags the panel taller or shorter, a flick down from its resting size closes it
@@ -464,25 +480,38 @@ private struct NoAccessView: View {
     }
 }
 
-private struct PanelButton: View {
+private struct PanelButton<Icon: View>: View {
     let title: String
-    let systemImage: String
     let action: () -> Void
+    @ViewBuilder let icon: Icon
 
     var body: some View {
         Button(action: action) {
             VStack(spacing: 6) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 22))
-                    .frame(height: 26)
+                icon
+                    .font(.system(size: 24))
+                    .frame(height: 28)
 
                 Text(title)
-                    .font(.footnote.weight(.medium))
+                    .font(.subheadline.weight(.medium))
             }
             .foregroundStyle(Theme.header)
             .frame(maxWidth: .infinity)
+            .contentShape(.rect)
         }
         .buttonStyle(.plain)
+    }
+}
+
+// three rounded bars of different lengths, the poll mark in discord's bar
+private struct PollGlyph: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3.5) {
+            Capsule().frame(width: 24, height: 5.5)
+            Capsule().frame(width: 15, height: 5.5)
+            Capsule().frame(width: 20, height: 5.5)
+        }
+        .frame(width: 26, height: 26)
     }
 }
 

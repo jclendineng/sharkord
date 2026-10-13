@@ -63,6 +63,15 @@ struct DeleteMessageConfirmation: View {
                                 .frame(height: min(contentHeight, Self.previewLimit), alignment: .top)
                                 .clipped()
                                 .mask(previewMask)
+                        } else if let poll = message.poll {
+                            Label {
+                                Text(poll.question)
+                                    .lineLimit(3)
+                            } icon: {
+                                Image(systemName: "text.alignleft")
+                            }
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.text)
                         } else if !message.files.isEmpty {
                             Label("\(message.files.count) attachment\(message.files.count == 1 ? "" : "s")", systemImage: "paperclip")
                                 .font(.subheadline)
