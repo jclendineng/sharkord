@@ -62,6 +62,12 @@ struct AttachmentPanel: View {
                 .fill(Self.background)
                 .ignoresSafeArea(edges: .bottom)
         }
+        .overlay {
+            Theme.chatBackground
+                .opacity(model.isCoveredByKeyboard ? 1 : 0)
+                .ignoresSafeArea(edges: .bottom)
+                .allowsHitTesting(false)
+        }
         .confirmationDialog("Photo Access", isPresented: $isManagePresented, titleVisibility: .hidden) {
             Button("Select More Photos", action: selectMore)
             Button("Allow Access to All Photos", action: openSettings)
@@ -628,6 +634,9 @@ final class AttachPanelModel {
     private(set) var isHandingOff = false
     // opened from the keyboard, so closing it brings the keyboard back
     private(set) var returnsToKeyboard = false
+    // the keyboard is translucent: as it slides over, the panel fades to the color the
+    // keyboard always sits on, so nothing shows through and nothing changes when it goes
+    private(set) var isCoveredByKeyboard = false
 
     // all but a sliver of the conversation under the navigation bar, as discord leaves it
     var expandedHeight: CGFloat {
@@ -689,6 +698,10 @@ final class AttachPanelModel {
         withoutAnimation {
             isHandingOff = true
         }
+
+        withAnimation(.easeOut(duration: 0.18)) {
+            isCoveredByKeyboard = true
+        }
     }
 
     // the keyboard is fully up over the panel, which goes underneath it
@@ -699,6 +712,7 @@ final class AttachPanelModel {
             settledHeight = Self.restingHeight
             returnsToKeyboard = false
             isHandingOff = false
+            isCoveredByKeyboard = false
         }
     }
 
