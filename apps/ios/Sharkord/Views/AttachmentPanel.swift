@@ -2,67 +2,64 @@ import Photos
 import SwiftUI
 import UniformTypeIdentifiers
 
-// discord's attachment panel: the latest photos in a grid to pick from right there, the full
-// pickers in a floating bar below. with access to only some photos it says so and offers to
-// change them, like discord does
+// discord's attachment panel, in the keyboard's place under the composer: the camera and the
+// latest photos to tap straight into the message, the full pickers in a bar below. with access
+// to only some photos it says so and offers to change them
 struct AttachmentPanel: View {
-    let maxSelection: Int
-    let onPick: ([PHAsset]) -> Void
+    static let height: CGFloat = 330
+
+    let selectedIds: Set<String>
+    let canAddMore: Bool
+    let onToggle: (PHAsset) -> Void
+    let onCamera: () -> Void
     let onPhotos: () -> Void
     let onFiles: () -> Void
 
-    @Environment(\.dismiss) private var dismiss
-
-    @State private var library = PhotoLibrary()
-    @State private var selected: [PHAsset] = []
-    @State private var isManagePresented = false
     @Environment(\.openURL) private var openURL
 
+    @State private var library = PhotoLibrary()
+    @State private var isManagePresented = false
+
+    private var isLimited: Bool {
+        library.status == .limited
+    }
+
     var body: some View {
-        ZStack(alignment: .bottom) {
+        VStack(spacing: 0) {
+            if isLimited {
+                HStack(spacing: 12) {
+                    Text("You've given Sharkord access to a select number of photos and videos.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.muted)
+
+                    Spacer(minLength: 0)
+
+                    Button("Manage", action: manage)
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(Theme.header)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 7)
+                        .background(Theme.inputBackground, in: .capsule)
+                        .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+            }
+
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            HStack(spacing: 12) {
-                HStack(spacing: 0) {
-                    PanelButton(title: "Photos", systemImage: "photo", action: openPhotos)
-                    PanelButton(title: "Files", systemImage: "paperclip", action: openFiles)
-                }
-                .padding(.vertical, 12)
-                .padding(.horizontal, 8)
-                .frame(width: 200)
-                .background(Theme.inputBackground, in: .rect(cornerRadius: 22))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 22).stroke(Theme.divider, lineWidth: 1)
-                }
-
-                if !selected.isEmpty {
-                    Button(action: attach) {
-                        Image(systemName: "arrow.up")
-                            .font(.title3.bold())
-                            .foregroundStyle(.white)
-                            .frame(width: 56, height: 56)
-                            .background(Theme.blurple, in: .circle)
-                            .overlay(alignment: .topTrailing) {
-                                Text("\(selected.count)")
-                                    .font(.caption2.bold())
-                                    .foregroundStyle(Theme.blurple)
-                                    .frame(minWidth: 20, minHeight: 20)
-                                    .background(.white, in: .capsule)
-                                    .offset(x: 4, y: -4)
-                            }
-                    }
-                    .buttonStyle(.plain)
-                    .transition(.scale.combined(with: .opacity))
-                }
+            HStack(spacing: 0) {
+                PanelButton(title: "Photos", systemImage: "photo", action: onPhotos)
+                PanelButton(title: "Files", systemImage: "paperclip", action: onFiles)
             }
-            .shadow(color: .black.opacity(0.4), radius: 12, y: 4)
-            .padding(.bottom, 12)
-            .animation(.spring(response: 0.3, dampingFraction: 0.8), value: selected.isEmpty)
+            .padding(.vertical, 8)
+            .background(Theme.chatBackground, in: .rect(cornerRadius: 16))
+            .padding(.horizontal, 12)
+            .padding(.bottom, 6)
         }
-        .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
-        .presentationBackground(Theme.listBackground)
+        .frame(height: Self.height)
+        .background(Theme.deepBackground)
         .confirmationDialog("Photo Access", isPresented: $isManagePresented, titleVisibility: .hidden) {
             Button("Select More Photos", action: selectMore)
             Button("Allow Access to All Photos", action: openSettings)
@@ -77,12 +74,8 @@ struct AttachmentPanel: View {
     @ViewBuilder
     private var content: some View {
         switch library.status {
-        case .authorized:
-            grid(showsManage: false)
-        case .limited where !library.assets.isEmpty:
-            grid(showsManage: true)
-        case .limited:
-            LimitedAccessView(onManage: manage)
+        case .authorized, .limited:
+            grid
         case .denied, .restricted:
             NoAccessView()
         default:
@@ -90,64 +83,43 @@ struct AttachmentPanel: View {
         }
     }
 
-    private func grid(showsManage: Bool) -> some View {
+    private var grid: some View {
         ScrollView {
-            if showsManage {
-                HStack(spacing: 12) {
-                    Text("Sharkord can see only the photos you picked.")
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.muted)
-
-                    Spacer(minLength: 0)
-
-                    Button("Manage", action: manage)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Theme.link)
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 4), spacing: 4) {
+                Button(action: onCamera) {
+                    Color.clear
+                        .aspectRatio(1, contentMode: .fit)
+                        .overlay {
+                            Image(systemName: "camera.fill")
+                                .font(.title2)
+                                .foregroundStyle(Theme.text)
+                        }
+                        .background(Theme.inputBackground, in: .rect(cornerRadius: 8))
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 24)
-            }
+                .buttonStyle(.plain)
 
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: 3), spacing: 2) {
                 ForEach(library.assets, id: \.localIdentifier) { asset in
-                    AssetCell(
-                        asset: asset,
-                        library: library,
-                        number: selected.firstIndex(of: asset).map { $0 + 1 },
-                        onTap: { toggle(asset) }
-                    )
+                    let isSelected = selectedIds.contains(asset.localIdentifier)
+
+                    AssetCell(asset: asset, library: library, isSelected: isSelected) {
+                        if isSelected || canAddMore {
+                            onToggle(asset)
+                        }
+                    }
                 }
             }
-            .padding(.top, showsManage ? 8 : 24)
-            // room to scroll the last row out from under the floating bar
-            .padding(.bottom, 100)
+            .padding(.horizontal, 8)
+            .padding(.top, isLimited ? 0 : 10)
+
+            if isLimited {
+                Text("Not what you're looking for? Browse your photo library for that.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.muted)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(12)
+            }
         }
         .scrollIndicators(.hidden)
-    }
-
-    private func toggle(_ asset: PHAsset) {
-        if let index = selected.firstIndex(of: asset) {
-            selected.remove(at: index)
-        } else if selected.count < maxSelection {
-            selected.append(asset)
-        }
-    }
-
-    private func attach() {
-        let assets = selected
-
-        dismiss()
-        onPick(assets)
-    }
-
-    private func openPhotos() {
-        dismiss()
-        onPhotos()
-    }
-
-    private func openFiles() {
-        dismiss()
-        onFiles()
     }
 
     private func manage() {
@@ -317,7 +289,7 @@ final class PhotoLibrary {
 private struct AssetCell: View {
     let asset: PHAsset
     let library: PhotoLibrary
-    let number: Int?
+    let isSelected: Bool
     let onTap: () -> Void
 
     @State private var image: UIImage?
@@ -340,81 +312,34 @@ private struct AssetCell: View {
                     Theme.inputBackground
                 }
             }
-            .clipped()
+            .clipShape(.rect(cornerRadius: 8))
             .overlay(alignment: .bottomTrailing) {
                 if asset.mediaType == .video {
                     Text(duration)
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(.white)
                         .shadow(radius: 2)
-                        .padding(6)
+                        .padding(5)
                 }
             }
             .overlay(alignment: .topTrailing) {
-                SelectionBadge(number: number)
-                    .padding(6)
-            }
-            .overlay {
-                if number != nil {
-                    Rectangle()
-                        .stroke(Theme.blurple, lineWidth: 3)
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 20, height: 20)
+                        .background(Theme.blurple, in: .circle)
+                        .overlay {
+                            Circle().stroke(.white, lineWidth: 1.5)
+                        }
+                        .padding(5)
                 }
             }
             .contentShape(.rect)
             .onTapGesture(perform: onTap)
             .task(id: asset.localIdentifier) {
-                image = await library.thumbnail(for: asset, size: CGSize(width: 140, height: 140))
+                image = await library.thumbnail(for: asset, size: CGSize(width: 100, height: 100))
             }
-    }
-}
-
-private struct SelectionBadge: View {
-    let number: Int?
-
-    var body: some View {
-        ZStack {
-            Circle()
-                .fill(number == nil ? Color.black.opacity(0.25) : Theme.blurple)
-
-            Circle()
-                .stroke(.white, lineWidth: 1.5)
-
-            if let number {
-                Text("\(number)")
-                    .font(.caption.bold())
-                    .foregroundStyle(.white)
-            }
-        }
-        .frame(width: 24, height: 24)
-    }
-}
-
-private struct LimitedAccessView: View {
-    let onManage: () -> Void
-
-    var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "photo.on.rectangle.angled")
-                .font(.system(size: 64))
-                .foregroundStyle(Theme.muted)
-
-            Text("You've given Sharkord access to a select number of photos and videos.")
-                .font(.headline)
-                .foregroundStyle(Theme.muted)
-                .multilineTextAlignment(.center)
-
-            Button(action: onManage) {
-                Label("Manage", systemImage: "gearshape.fill")
-                    .font(.headline)
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 22)
-                    .padding(.vertical, 12)
-                    .background(Theme.blurple, in: .rect(cornerRadius: 12))
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.horizontal, 24)
-        .padding(.bottom, 100)
     }
 }
 
@@ -422,13 +347,13 @@ private struct NoAccessView: View {
     @Environment(\.openURL) private var openURL
 
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 14) {
             Image(systemName: "photo.badge.exclamationmark")
-                .font(.system(size: 64))
+                .font(.system(size: 40))
                 .foregroundStyle(Theme.muted)
 
             Text("Sharkord can't see your photos. Allow access in Settings, or pick one with Photos below.")
-                .font(.headline)
+                .font(.subheadline)
                 .foregroundStyle(Theme.muted)
                 .multilineTextAlignment(.center)
 
@@ -443,7 +368,6 @@ private struct NoAccessView: View {
             .buttonStyle(.plain)
         }
         .padding(.horizontal, 24)
-        .padding(.bottom, 100)
     }
 
     private func openSettings() {
@@ -462,10 +386,11 @@ private struct PanelButton: View {
         Button(action: action) {
             VStack(spacing: 6) {
                 Image(systemName: systemImage)
-                    .font(.system(size: 26))
+                    .font(.system(size: 22))
+                    .frame(height: 26)
 
                 Text(title)
-                    .font(.subheadline)
+                    .font(.footnote.weight(.medium))
             }
             .foregroundStyle(Theme.header)
             .frame(maxWidth: .infinity)

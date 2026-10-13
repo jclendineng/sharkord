@@ -14,17 +14,24 @@ struct ComposerView: View {
     @State private var attachments: [PendingAttachment] = []
     @State private var isSending = false
     @State private var errorMessage: String?
-    @State private var photoSelection: [PhotosPickerItem] = []
+    @State private var isEmojiPickerPresented = false
+    // the attachment panel takes the keyboard's place, so the two never show together
+    @State private var isAttachPanelOpen = false
     @State private var isPhotoPickerPresented = false
     @State private var isFileImporterPresented = false
-    @State private var isEmojiPickerPresented = false
-    @State private var isAttachPanelPresented = false
+    @State private var isCameraPresented = false
+    @State private var photoSelection: [PhotosPickerItem] = []
+    @FocusState private var isFieldFocused: Bool
     @State private var recorder = VoiceMessageRecorder()
 
     @Environment(ServerListStore.self) private var servers
 
     private var uploadedFiles: [TemporaryFile] {
         attachments.compactMap(\.uploaded)
+    }
+
+    private var selectedAssetIds: Set<String> {
+        Set(attachments.compactMap(\.assetId))
     }
 
     private var isUploading: Bool {
@@ -44,6 +51,66 @@ struct ComposerView: View {
     }
 
     var body: some View {
+        VStack(spacing: 0) {
+            composer
+
+            if isAttachPanelOpen {
+                AttachmentPanel(
+                    selectedIds: selectedAssetIds,
+                    canAddMore: attachments.count < maxFiles,
+                    onToggle: toggleAsset,
+                    onCamera: openCamera,
+                    onPhotos: openPhotoPicker,
+                    onFiles: openFileImporter
+                )
+                .background(Theme.deepBackground.ignoresSafeArea(edges: .bottom))
+                .transition(.move(edge: .bottom))
+            }
+        }
+        .animation(.snappy(duration: 0.25), value: isAttachPanelOpen)
+        .sheet(isPresented: $isEmojiPickerPresented) {
+            EmojiPickerView(includesCustom: false, onPick: insertEmoji)
+        }
+        .photosPicker(
+            isPresented: $isPhotoPickerPresented,
+            selection: $photoSelection,
+            maxSelectionCount: max(1, maxFiles - attachments.count),
+            matching: .any(of: [.images, .videos])
+        )
+        .fileImporter(
+            isPresented: $isFileImporterPresented,
+            allowedContentTypes: [.item],
+            allowsMultipleSelection: true,
+            onCompletion: importFiles
+        )
+        .fullScreenCover(isPresented: $isCameraPresented) {
+            CameraPicker(onCapture: importCapture)
+                .ignoresSafeArea()
+        }
+        .onChange(of: photoSelection) { _, items in
+            importPhotos(items)
+        }
+        .onChange(of: isFieldFocused) { _, isFocused in
+            if isFocused {
+                isAttachPanelOpen = false
+            }
+        }
+        .onChange(of: store.editing) { _, message in
+            if let message {
+                text = HTMLText.plainText(from: message.content ?? "")
+            }
+        }
+        .onChange(of: store.pendingInsert) { _, insert in
+            guard let insert else {
+                return
+            }
+
+            text += insert
+            store.pendingInsert = nil
+        }
+    }
+
+    private var composer: some View {
         VStack(alignment: .leading, spacing: 8) {
             if let errorMessage {
                 Text(errorMessage)
@@ -74,45 +141,6 @@ struct ComposerView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(Theme.chatBackground)
-        .photosPicker(
-            isPresented: $isPhotoPickerPresented,
-            selection: $photoSelection,
-            maxSelectionCount: max(1, maxFiles - attachments.count),
-            matching: .any(of: [.images, .videos])
-        )
-        .fileImporter(
-            isPresented: $isFileImporterPresented,
-            allowedContentTypes: [.item],
-            allowsMultipleSelection: true,
-            onCompletion: importFiles
-        )
-        .sheet(isPresented: $isEmojiPickerPresented) {
-            EmojiPickerView(includesCustom: false, onPick: insertEmoji)
-        }
-        .sheet(isPresented: $isAttachPanelPresented) {
-            AttachmentPanel(
-                maxSelection: max(1, maxFiles - attachments.count),
-                onPick: importAssets,
-                onPhotos: openPhotoPicker,
-                onFiles: openFileImporter
-            )
-        }
-        .onChange(of: photoSelection) { _, items in
-            importPhotos(items)
-        }
-        .onChange(of: store.editing) { _, message in
-            if let message {
-                text = HTMLText.plainText(from: message.content ?? "")
-            }
-        }
-        .onChange(of: store.pendingInsert) { _, insert in
-            guard let insert else {
-                return
-            }
-
-            text += insert
-            store.pendingInsert = nil
-        }
     }
 
     private var modeTitle: String? {
@@ -133,17 +161,18 @@ struct ComposerView: View {
     private var inputRow: some View {
         HStack(alignment: .bottom, spacing: 8) {
             if canUpload && store.editing == nil {
-                Button("Attach", systemImage: "plus", action: openAttachPanel)
+                Button("Attach", systemImage: isAttachPanelOpen ? "xmark" : "plus", action: toggleAttachPanel)
                     .labelStyle(.iconOnly)
                     .font(.body.weight(.semibold))
                     .foregroundStyle(Theme.text)
                     .frame(width: 38, height: 38)
                     .background(Theme.inputBackground, in: .circle)
-                    .disabled(attachments.count >= maxFiles)
+                    .contentTransition(.symbolEffect(.replace))
             }
 
             HStack(alignment: .bottom, spacing: 10) {
                 TextField(placeholder, text: $text, axis: .vertical)
+                    .focused($isFieldFocused)
                     .lineLimit(1...6)
                     .foregroundStyle(Theme.text)
                     .padding(.vertical, 9)
@@ -184,14 +213,6 @@ struct ComposerView: View {
         canUpload && !hasText && attachments.isEmpty && store.editing == nil
     }
 
-    private func openPhotoPicker() {
-        isPhotoPickerPresented = true
-    }
-
-    private func openFileImporter() {
-        isFileImporterPresented = true
-    }
-
     private func openEmojiPicker() {
         isEmojiPickerPresented = true
     }
@@ -202,8 +223,30 @@ struct ComposerView: View {
         text += entry?.emoji ?? ":\(shortcode):"
     }
 
-    private func openAttachPanel() {
-        isAttachPanelPresented = true
+    private func toggleAttachPanel() {
+        if isAttachPanelOpen {
+            isAttachPanelOpen = false
+            isFieldFocused = true
+        } else {
+            isFieldFocused = false
+            isAttachPanelOpen = true
+        }
+    }
+
+    private func openPhotoPicker() {
+        isPhotoPickerPresented = true
+    }
+
+    private func openFileImporter() {
+        isFileImporterPresented = true
+    }
+
+    private func openCamera() {
+        guard attachments.count < maxFiles else {
+            return
+        }
+
+        isCameraPresented = true
     }
 
     private func cancelMode() {
@@ -322,21 +365,36 @@ struct ComposerView: View {
         }
     }
 
-    private func importAssets(_ assets: [PHAsset]) {
-        for asset in assets {
-            let attachment = PendingAttachment(name: asset.mediaType == .video ? "Video" : "Photo")
+    // tapping a photo in the panel adds it to the message, tapping it again takes it back out
+    private func toggleAsset(_ asset: PHAsset) {
+        if let attachment = attachments.first(where: { $0.assetId == asset.localIdentifier }) {
+            remove(attachment)
+            return
+        }
 
-            attachments.append(attachment)
+        var attachment = PendingAttachment(name: asset.mediaType == .video ? "Video" : "Photo")
 
-            Task {
-                do {
-                    let url = try await PhotoLibrary.export(asset)
+        attachment.assetId = asset.localIdentifier
+        attachments.append(attachment)
 
-                    await upload(attachment.id, fileURL: url)
-                } catch {
-                    fail(attachment.id, error)
-                }
+        Task {
+            do {
+                let url = try await PhotoLibrary.export(asset)
+
+                await upload(attachment.id, fileURL: url)
+            } catch {
+                fail(attachment.id, error)
             }
+        }
+    }
+
+    private func importCapture(_ url: URL) {
+        let attachment = PendingAttachment(name: url.lastPathComponent)
+
+        attachments.append(attachment)
+
+        Task {
+            await upload(attachment.id, fileURL: url)
         }
     }
 
@@ -412,6 +470,8 @@ struct PendingAttachment: Identifiable, Equatable {
     let id = UUID()
     var name: String
     var state: State = .uploading
+    // the library photo it came from, so the panel can show it picked
+    var assetId: String?
 
     var uploaded: TemporaryFile? {
         if case .uploaded(let file) = state {
