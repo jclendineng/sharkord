@@ -13,6 +13,10 @@ struct SharkordFile: Codable, Hashable, Identifiable {
         mimeType.hasPrefix("image/")
     }
 
+    var isAudio: Bool {
+        mimeType.hasPrefix("audio/") || ["m4a", "mp3", "aac", "wav", "ogg", "flac"].contains((name as NSString).pathExtension.lowercased())
+    }
+
     private enum CodingKeys: String, CodingKey {
         case id, name, originalName, size, mimeType
         case accessToken = "_accessToken"

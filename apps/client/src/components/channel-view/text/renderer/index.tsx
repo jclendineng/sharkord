@@ -7,11 +7,17 @@ import { getFileUrl } from '@/helpers/get-file-url';
 import { getRenderedUsername } from '@/helpers/get-rendered-username';
 import { getTRPCClient } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
-import { PluginSlot, type TJoinedMessage } from '@sharkord/shared';
+import {
+  FileCategory,
+  getFileCategory,
+  PluginSlot,
+  type TJoinedMessage
+} from '@sharkord/shared';
 import { Tooltip } from '@sharkord/ui';
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { AudioCard } from '../audio-card';
 import { FileCard } from '../file-card';
 import { MessageReactions } from '../message-reactions';
 import { YoutubeOverride } from '../overrides/youtube';
@@ -150,18 +156,30 @@ const MessageRenderer = memo(
 
         {message.files.length > 0 && !disableFiles && (
           <div className="flex gap-1 flex-wrap">
-            {message.files.map((file) => (
-              <FileCard
-                key={file.id}
-                name={file.originalName}
-                extension={file.extension}
-                size={file.size}
-                onRemove={
-                  isOwnMessage ? () => onRemoveFileClick(file.id) : undefined
-                }
-                href={getFileUrl(file)}
-              />
-            ))}
+            {message.files.map((file) =>
+              getFileCategory(file.extension) === FileCategory.AUDIO ? (
+                <AudioCard
+                  key={file.id}
+                  name={file.originalName}
+                  size={file.size}
+                  src={getFileUrl(file)}
+                  onRemove={
+                    isOwnMessage ? () => onRemoveFileClick(file.id) : undefined
+                  }
+                />
+              ) : (
+                <FileCard
+                  key={file.id}
+                  name={file.originalName}
+                  extension={file.extension}
+                  size={file.size}
+                  onRemove={
+                    isOwnMessage ? () => onRemoveFileClick(file.id) : undefined
+                  }
+                  href={getFileUrl(file)}
+                />
+              )
+            )}
           </div>
         )}
       </div>

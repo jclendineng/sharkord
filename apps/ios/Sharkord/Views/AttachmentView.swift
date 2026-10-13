@@ -1,3 +1,4 @@
+import AVFoundation
 import SwiftUI
 
 struct AttachmentView: View {
@@ -28,6 +29,8 @@ struct AttachmentView: View {
                 .fullScreenCover(isPresented: $isViewerPresented) {
                     ImageViewer(url: url)
                 }
+            } else if file.isAudio {
+                AudioPlayerCard(file: file, url: url)
             } else {
                 FileCard(file: file, url: url)
             }
@@ -120,3 +123,82 @@ private struct ImageViewer: View {
         dismiss()
     }
 }
+
+// discord's voice message: a round play button, a waveform that fills as it plays and the
+// length, played here rather than downloaded
+private struct AudioPlayerCard: View {
+    private static let barCount = 28
+
+    let file: SharkordFile
+    let url: URL
+
+    @State private var playback = AudioPlayback.shared
+    @State private var duration: Double?
+
+    private var isCurrent: Bool {
+        playback.currentFileId == file.id
+    }
+
+    private var isPlaying: Bool {
+        isCurrent && playback.isPlaying
+    }
+
+    // the same file always draws the same shape
+    private var bars: [CGFloat] {
+        var seed = UInt64(truncatingIfNeeded: file.id) &* 2_654_435_761 &+ 1
+
+        return (0..<Self.barCount).map { _ in
+            seed = seed &* 6_364_136_223_846_793_005 &+ 1_442_695_040_888_963_407
+
+            return 0.25 + CGFloat(seed >> 33) / CGFloat(UInt32.max) * 0.75
+        }
+    }
+
+    private var timeText: String {
+        let total = duration ?? 0
+        let shown = isCurrent ? total * playback.progress : total
+        let seconds = Int(shown.rounded())
+
+        return String(format: "%d:%02d", seconds / 60, seconds % 60)
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Button(isPlaying ? "Pause" : "Play", systemImage: isPlaying ? "pause.fill" : "play.fill", action: toggle)
+                .labelStyle(.iconOnly)
+                .font(.title3)
+                .foregroundStyle(.white)
+                .frame(width: 44, height: 44)
+                .background(Theme.blurple, in: .circle)
+
+            HStack(alignment: .center, spacing: 2) {
+                ForEach(Array(bars.enumerated()), id: \.offset) { index, height in
+                    let played = isCurrent && Double(index) / Double(Self.barCount) < playback.progress
+
+                    Capsule()
+                        .fill(played ? Theme.header : Theme.muted.opacity(0.6))
+                        .frame(width: 3, height: 22 * height)
+                }
+            }
+            .frame(height: 24)
+
+            Text(timeText)
+                .font(.subheadline.monospacedDigit())
+                .foregroundStyle(Theme.muted)
+        }
+        .padding(.leading, 8)
+        .padding(.trailing, 16)
+        .padding(.vertical, 8)
+        .background(Theme.listBackground, in: .capsule)
+        .task {
+            if let seconds = try? await AVURLAsset(url: url).load(.duration).seconds, seconds.isFinite {
+                duration = seconds
+            }
+        }
+    }
+
+    private func toggle() {
+        playback.toggle(fileId: file.id, url: url)
+    }
+}
+
