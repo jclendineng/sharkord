@@ -17,7 +17,6 @@ struct ComposerView: View {
     @State private var isEmojiPickerPresented = false
     // the attachment panel takes the keyboard's place, so the two never show together
     @State private var isAttachPanelOpen = false
-    @State private var isAttachPanelExpanded = false
     @State private var isPhotoPickerPresented = false
     @State private var isFileImporterPresented = false
     @State private var isCameraPresented = false
@@ -54,10 +53,7 @@ struct ComposerView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // an expanded panel covers the composer, like discord's
-            if !isAttachPanelExpanded {
-                composer
-            }
+            composer
 
             if isAttachPanelOpen {
                 attachmentPanel
@@ -67,7 +63,6 @@ struct ComposerView: View {
         // runs on behind the keyboard, whose rounded top corners would otherwise show the
         // window's black
         .background(Theme.chatBackground.ignoresSafeArea())
-        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: isAttachPanelExpanded)
         .sheet(isPresented: $isEmojiPickerPresented) {
             EmojiPickerView(includesCustom: false, onPick: insertEmoji)
         }
@@ -96,7 +91,6 @@ struct ComposerView: View {
         .onChange(of: isFieldFocused) { _, isFocused in
             if isFocused {
                 isAttachPanelOpen = false
-                isAttachPanelExpanded = false
             }
         }
         .onChange(of: store.editing) { _, message in
@@ -132,8 +126,7 @@ struct ComposerView: View {
             onPhotos: openPhotoPicker,
             onPoll: pollAction,
             onFiles: openFileImporter,
-            onClose: closeAttachPanel,
-            isExpanded: $isAttachPanelExpanded
+            onClose: closeAttachPanel
         )
         .transition(.move(edge: .bottom))
     }
@@ -259,7 +252,6 @@ struct ComposerView: View {
     private func toggleAttachPanel() {
         if isAttachPanelOpen {
             isAttachPanelOpen = false
-            isAttachPanelExpanded = false
             isFieldFocused = true
         } else {
             isFieldFocused = false
@@ -269,7 +261,6 @@ struct ComposerView: View {
 
     private func closeAttachPanel() {
         isAttachPanelOpen = false
-        isAttachPanelExpanded = false
     }
 
     // the panel stays behind the sheet, so backing out of a poll lands back on it

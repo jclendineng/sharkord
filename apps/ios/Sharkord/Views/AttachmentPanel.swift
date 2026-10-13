@@ -4,8 +4,9 @@ import UniformTypeIdentifiers
 
 // discord's attachment panel, in the keyboard's place under the composer: the camera and the
 // latest photos to tap straight into the message, the full pickers in a bar floating over the
-// bottom. dragged up it covers nearly the whole screen, composer included, dragged down it
-// goes away. with access to only some photos it says so and offers to change them
+// bottom. it follows the finger: up over the composer and the conversation, which dims behind
+// it, down to put it away, settling wherever the drag was headed. with access to only some
+// photos it says so and offers to change them
 struct AttachmentPanel: View {
     static let height: CGFloat = 340
 
@@ -20,12 +21,13 @@ struct AttachmentPanel: View {
     let onPoll: (() -> Void)?
     let onFiles: () -> Void
     let onClose: () -> Void
-    @Binding var isExpanded: Bool
 
     @Environment(\.openURL) private var openURL
 
     @State private var library = PhotoLibrary()
     @State private var isManagePresented = false
+    // the height it rests at between drags, and how far the current drag has moved it
+    @State private var settledHeight = Self.height
     @State private var dragOffset: CGFloat = 0
 
     private var isLimited: Bool {
@@ -42,12 +44,29 @@ struct AttachmentPanel: View {
     }
 
     private var height: CGFloat {
-        let resting = isExpanded ? expandedHeight : Self.height
+        min(max(settledHeight - dragOffset, 0), expandedHeight)
+    }
 
-        return min(max(resting - dragOffset, Self.height * 0.6), expandedHeight)
+    // how far past its resting height the panel has been pulled, for the dimming behind it
+    private var expansion: Double {
+        Double(max(0, min(1, (height - Self.height) / (expandedHeight - Self.height))))
     }
 
     var body: some View {
+        ZStack(alignment: .bottom) {
+            // reaches up over the conversation, a tap on it settles the panel back down
+            Color.black
+                .opacity(expansion * 0.5)
+                .frame(height: 2400)
+                .allowsHitTesting(expansion > 0.05)
+                .onTapGesture(perform: collapse)
+
+            panel
+        }
+        .frame(height: Self.height, alignment: .bottom)
+    }
+
+    private var panel: some View {
         content
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             // photos fade out under the grabber instead of meeting an edge
@@ -64,7 +83,6 @@ struct AttachmentPanel: View {
                 .fill(Self.background)
                 .ignoresSafeArea(edges: .bottom)
         }
-        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: isExpanded)
         .confirmationDialog("Photo Access", isPresented: $isManagePresented, titleVisibility: .hidden) {
             Button("Select More Photos", action: selectMore)
             Button("Allow Access to All Photos", action: openSettings)
@@ -135,26 +153,33 @@ struct AttachmentPanel: View {
     }
 
     // the grabber drags the panel taller or shorter, a flick down from its resting size closes it
+    // the panel moves with the finger, then settles at whichever of closed, resting or full
+    // height is nearest to where the fling would have carried it
     private var resize: some Gesture {
-        DragGesture()
+        DragGesture(coordinateSpace: .global)
             .onChanged { value in
                 dragOffset = value.translation.height
             }
             .onEnded { value in
-                let travel = value.predictedEndTranslation.height
+                let projected = settledHeight - value.predictedEndTranslation.height
+                let stops: [CGFloat] = [0, Self.height, expandedHeight]
+                let target = stops.min { abs($0 - projected) < abs($1 - projected) } ?? Self.height
 
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.86)) {
                     dragOffset = 0
+                    settledHeight = max(target, Self.height)
+                }
 
-                    if travel < -80 {
-                        isExpanded = true
-                    } else if travel > 80 && isExpanded {
-                        isExpanded = false
-                    } else if travel > 80 {
-                        onClose()
-                    }
+                if target == 0 {
+                    onClose()
                 }
             }
+    }
+
+    private func collapse() {
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.86)) {
+            settledHeight = Self.height
+        }
     }
 
     @ViewBuilder
