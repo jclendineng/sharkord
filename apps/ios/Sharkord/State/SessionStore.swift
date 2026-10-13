@@ -153,6 +153,14 @@ final class SessionStore {
         return try await client.query(path)
     }
 
+    func request<Input: Encodable, Output: Decodable>(_ path: String, _ input: Input) async throws -> Output {
+        guard let client else {
+            throw TRPCError(message: "Not connected to the server.", code: nil)
+        }
+
+        return try await client.query(path, input: input)
+    }
+
     func perform<Input: Encodable>(_ path: String, _ input: Input) async throws {
         guard let client else {
             throw TRPCError(message: "Not connected to the server.", code: nil)

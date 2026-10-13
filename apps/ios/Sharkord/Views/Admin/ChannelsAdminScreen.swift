@@ -244,8 +244,14 @@ private struct ChannelEditor: View {
 
             Section {
                 Toggle("Private Channel", isOn: $isPrivate)
+
+                if session.can(.manageChannelPermissions) {
+                    NavigationLink("Permissions") {
+                        ChannelPermissionsScreen(channelId: channel.id)
+                    }
+                }
             } footer: {
-                Text("Only roles and members given access can see a private channel. Access is set per channel in the web client for now.")
+                Text("Only the roles and members given access in Permissions can see a private channel.")
             }
 
             Section {

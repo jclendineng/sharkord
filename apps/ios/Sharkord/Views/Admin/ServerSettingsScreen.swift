@@ -53,7 +53,7 @@ struct ServerSettingsScreen: View {
                         }
                     }
 
-                    if session.can(.manageChannels) || session.can(.manageCategories) {
+                    if session.can(.manageChannels) || session.can(.manageCategories) || session.can(.manageChannelPermissions) {
                         NavigationLink {
                             ChannelsAdminScreen()
                         } label: {
