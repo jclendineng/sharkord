@@ -17,6 +17,7 @@ struct ComposerView: View {
     @State private var isEmojiPickerPresented = false
     // the attachment panel takes the keyboard's place, so the two never show together
     @State private var isAttachPanelOpen = false
+    @State private var composerHeight: CGFloat = 60
     @State private var isPhotoPickerPresented = false
     @State private var isFileImporterPresented = false
     @State private var isCameraPresented = false
@@ -54,6 +55,7 @@ struct ComposerView: View {
     var body: some View {
         VStack(spacing: 0) {
             composer
+                .onGeometryChange(for: CGFloat.self, of: \.size.height) { composerHeight = $0 }
 
             if isAttachPanelOpen {
                 attachmentPanel
@@ -126,7 +128,8 @@ struct ComposerView: View {
             onPhotos: openPhotoPicker,
             onPoll: pollAction,
             onFiles: openFileImporter,
-            onClose: closeAttachPanel
+            onClose: closeAttachPanel,
+            composerHeight: composerHeight
         )
         .transition(.move(edge: .bottom))
     }

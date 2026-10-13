@@ -4,9 +4,9 @@ import UniformTypeIdentifiers
 
 // discord's attachment panel, in the keyboard's place under the composer: the camera and the
 // latest photos to tap straight into the message, the full pickers in a bar floating over the
-// bottom. it follows the finger: up over the composer and the conversation, which dims behind
-// it, down to put it away, settling wherever the drag was headed. with access to only some
-// photos it says so and offers to change them
+// bottom. it follows the finger between its resting and full heights, up over the composer
+// and the conversation, which dims behind it. a tap or a swipe on the conversation puts it
+// away, like discord's. with access to only some photos it says so and offers to change them
 struct AttachmentPanel: View {
     static let height: CGFloat = 340
 
@@ -21,6 +21,9 @@ struct AttachmentPanel: View {
     let onPoll: (() -> Void)?
     let onFiles: () -> Void
     let onClose: () -> Void
+    // the composer above the resting panel, which the outside area stops short of so the field
+    // and the close button still take their taps
+    let composerHeight: CGFloat
 
     @Environment(\.openURL) private var openURL
 
@@ -44,8 +47,15 @@ struct AttachmentPanel: View {
         return height - insets.top - insets.bottom - 110
     }
 
+    // a drag down past the resting height gives a little, then holds
     private var height: CGFloat {
-        min(max(settledHeight - dragOffset, 0), expandedHeight)
+        let raw = settledHeight - dragOffset
+
+        if raw < Self.height {
+            return Self.height - (Self.height - raw) * 0.15
+        }
+
+        return min(raw, expandedHeight)
     }
 
     // the grid only scrolls once the panel is as tall as it gets, before that a drag on the
@@ -61,12 +71,18 @@ struct AttachmentPanel: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            // reaches up over the conversation, a tap on it settles the panel back down
             Color.black
                 .opacity(expansion * 0.5)
                 .frame(height: 2400)
-                .allowsHitTesting(expansion > 0.05)
-                .onTapGesture(perform: collapse)
+                .allowsHitTesting(false)
+
+            // the conversation above the composer: touching it puts the panel away
+            Color.clear
+                .contentShape(.rect)
+                .frame(height: 2400)
+                .padding(.bottom, max(height, Self.height + composerHeight))
+                .onTapGesture(perform: onClose)
+                .gesture(DragGesture(minimumDistance: 6).onChanged { _ in onClose() })
 
             panel
         }
@@ -190,27 +206,16 @@ struct AttachmentPanel: View {
             }
     }
 
-    // one swipe moves one step: down from full height lands at the resting height, only a
-    // swipe from there puts the panel away
+    // the panel's own drags only move it between resting and full height, putting it away
+    // is for the conversation outside it
     private func settle(predicted translation: CGFloat) {
         let projected = settledHeight - translation
-        let startedExpanded = settledHeight > Self.height
-        let stops: [CGFloat] = startedExpanded ? [Self.height, expandedHeight] : [0, Self.height, expandedHeight]
+        let stops: [CGFloat] = [Self.height, expandedHeight]
         let target = stops.min { abs($0 - projected) < abs($1 - projected) } ?? Self.height
 
         withAnimation(.spring(response: 0.4, dampingFraction: 0.86)) {
             dragOffset = 0
-            settledHeight = max(target, Self.height)
-        }
-
-        if target == 0 {
-            onClose()
-        }
-    }
-
-    private func collapse() {
-        withAnimation(.spring(response: 0.4, dampingFraction: 0.86)) {
-            settledHeight = Self.height
+            settledHeight = target
         }
     }
 
