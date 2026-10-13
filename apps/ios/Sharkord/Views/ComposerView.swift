@@ -16,8 +16,6 @@ struct ComposerView: View {
     @State private var errorMessage: String?
     @State private var isEmojiPickerPresented = false
     // the attachment panel takes the keyboard's place, so the two never show together
-    @State private var isAttachPanelOpen = false
-    @State private var composerHeight: CGFloat = 60
     @State private var isPhotoPickerPresented = false
     @State private var isFileImporterPresented = false
     @State private var isCameraPresented = false
@@ -55,13 +53,12 @@ struct ComposerView: View {
     var body: some View {
         VStack(spacing: 0) {
             composer
-                .onGeometryChange(for: CGFloat.self, of: \.size.height) { composerHeight = $0 }
 
-            if isAttachPanelOpen {
+            if store.isAttachPanelOpen {
                 attachmentPanel
             }
         }
-        .animation(.snappy(duration: 0.25), value: isAttachPanelOpen)
+        .animation(.snappy(duration: 0.25), value: store.isAttachPanelOpen)
         // runs on behind the keyboard, whose rounded top corners would otherwise show the
         // window's black
         .background(Theme.chatBackground.ignoresSafeArea())
@@ -92,7 +89,7 @@ struct ComposerView: View {
         }
         .onChange(of: isFieldFocused) { _, isFocused in
             if isFocused {
-                isAttachPanelOpen = false
+                store.isAttachPanelOpen = false
             }
         }
         .onChange(of: store.editing) { _, message in
@@ -128,8 +125,7 @@ struct ComposerView: View {
             onPhotos: openPhotoPicker,
             onPoll: pollAction,
             onFiles: openFileImporter,
-            onClose: closeAttachPanel,
-            composerHeight: composerHeight
+            onClose: closeAttachPanel
         )
         .transition(.move(edge: .bottom))
     }
@@ -190,13 +186,13 @@ struct ComposerView: View {
                 Button(action: toggleAttachPanel) {
                     Image(systemName: "plus")
                         .font(.body.weight(.semibold))
-                        .rotationEffect(.degrees(isAttachPanelOpen ? 45 : 0))
+                        .rotationEffect(.degrees(store.isAttachPanelOpen ? 45 : 0))
                         .foregroundStyle(Theme.text)
                         .frame(width: 38, height: 38)
                         .background(Theme.inputBackground, in: .circle)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(isAttachPanelOpen ? "Close Attachments" : "Attach")
+                .accessibilityLabel(store.isAttachPanelOpen ? "Close Attachments" : "Attach")
             }
 
             HStack(alignment: .bottom, spacing: 10) {
@@ -253,17 +249,17 @@ struct ComposerView: View {
     }
 
     private func toggleAttachPanel() {
-        if isAttachPanelOpen {
-            isAttachPanelOpen = false
+        if store.isAttachPanelOpen {
+            store.isAttachPanelOpen = false
             isFieldFocused = true
         } else {
             isFieldFocused = false
-            isAttachPanelOpen = true
+            store.isAttachPanelOpen = true
         }
     }
 
     private func closeAttachPanel() {
-        isAttachPanelOpen = false
+        store.isAttachPanelOpen = false
     }
 
     // the panel stays behind the sheet, so backing out of a poll lands back on it

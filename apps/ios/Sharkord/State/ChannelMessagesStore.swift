@@ -24,6 +24,8 @@ final class ChannelMessagesStore {
     var editing: Message?
     // text the composer adds where the cursor is, a mention for instance
     var pendingInsert: String?
+    // the composer's attachment panel, which the message list puts away when it is touched
+    var isAttachPanelOpen = false
 
     private var nextCursor: MessagesCursor?
     private unowned let session: SessionStore

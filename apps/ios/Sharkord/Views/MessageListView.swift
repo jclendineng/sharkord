@@ -46,6 +46,14 @@ struct MessageListView<Header: View>: View {
         .defaultScrollAnchor(.bottom)
         .defaultScrollAnchor(.bottom, for: .sizeChanges)
         .scrollDismissesKeyboard(.interactively)
+        // like the keyboard, a scroll or a tap on the conversation puts the attachment panel
+        // away, and the scroll carries on
+        .onScrollPhaseChange { _, phase in
+            if phase == .interacting {
+                closeAttachPanel()
+            }
+        }
+        .simultaneousGesture(TapGesture().onEnded(closeAttachPanel))
         .background(Theme.chatBackground)
         .overlay {
             if !store.hasLoaded {
@@ -84,6 +92,12 @@ struct MessageListView<Header: View>: View {
     }
 
     // discord's double tap, the first quick reaction
+    private func closeAttachPanel() {
+        if store.isAttachPanelOpen {
+            store.isAttachPanelOpen = false
+        }
+    }
+
     private func react(to message: Message) {
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
 

@@ -5,8 +5,8 @@ import UniformTypeIdentifiers
 // discord's attachment panel, in the keyboard's place under the composer: the camera and the
 // latest photos to tap straight into the message, the full pickers in a bar floating over the
 // bottom. it follows the finger between its resting and full heights, up over the composer
-// and the conversation, which dims behind it. a tap or a swipe on the conversation puts it
-// away, like discord's. with access to only some photos it says so and offers to change them
+// and the conversation, which dims behind it. a tap or a scroll on the conversation puts it
+// away, like discord's, see MessageListView. with access to only some photos it says so and offers to change them
 struct AttachmentPanel: View {
     static let height: CGFloat = 340
 
@@ -21,9 +21,6 @@ struct AttachmentPanel: View {
     let onPoll: (() -> Void)?
     let onFiles: () -> Void
     let onClose: () -> Void
-    // the composer above the resting panel, which the outside area stops short of so the field
-    // and the close button still take their taps
-    let composerHeight: CGFloat
 
     @Environment(\.openURL) private var openURL
 
@@ -75,14 +72,6 @@ struct AttachmentPanel: View {
                 .opacity(expansion * 0.5)
                 .frame(height: 2400)
                 .allowsHitTesting(false)
-
-            // the conversation above the composer: touching it puts the panel away
-            Color.clear
-                .contentShape(.rect)
-                .frame(height: 2400)
-                .padding(.bottom, max(height, Self.height + composerHeight))
-                .onTapGesture(perform: onClose)
-                .gesture(DragGesture(minimumDistance: 6).onChanged { _ in onClose() })
 
             panel
         }
