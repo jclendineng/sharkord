@@ -7,6 +7,7 @@ struct MessageListView<Header: View>: View {
     @Environment(SessionStore.self) private var session
 
     @State private var actionsMessage: Message?
+    @State private var deletingMessage: Message?
     @State private var openedThread: Message?
 
     // consecutive messages from the same author inside this window share one header
@@ -56,8 +57,17 @@ struct MessageListView<Header: View>: View {
                 message: message,
                 store: store,
                 canOpenThread: store.scope == .channel,
-                onOpenThread: { openThread(message) }
+                onOpenThread: { openThread(message) },
+                onDelete: confirmDelete
             )
+        }
+        .fullScreenCover(item: $deletingMessage) { message in
+            DeleteMessageConfirmation(message: message, onConfirm: { delete(message) })
+                .presentationBackground(.clear)
+        }
+        .transaction(value: deletingMessage) { transaction in
+            // the card fades in over the chat on its own, without the cover sliding up
+            transaction.disablesAnimations = true
         }
         .navigationDestination(item: $openedThread) { parent in
             ThreadScreen(parent: parent)
@@ -80,6 +90,24 @@ struct MessageListView<Header: View>: View {
         Task {
             do {
                 try await session.toggleReaction(messageId: message.id, emoji: MessageActionsSheet.quickReactions[0])
+            } catch {
+                session.showError(error)
+            }
+        }
+    }
+
+    private func confirmDelete(_ message: Message) {
+        // the actions sheet has to finish closing before another presentation can start
+        Task {
+            try? await Task.sleep(for: .milliseconds(350))
+            deletingMessage = message
+        }
+    }
+
+    private func delete(_ message: Message) {
+        Task {
+            do {
+                try await store.delete(message)
             } catch {
                 session.showError(error)
             }

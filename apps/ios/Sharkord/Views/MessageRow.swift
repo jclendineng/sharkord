@@ -77,7 +77,14 @@ struct MessageRow: View {
         .padding(.top, showsHeader ? 16 : 2)
         .contentShape(.rect)
         .onTapGesture(count: 2, perform: onDoubleTap)
-        .onLongPressGesture(perform: onLongPress)
+        // simultaneous so it also works over an attachment's own button, a voice message's play
+        // button for one. the sheet opening cancels that button's tap
+        .simultaneousGesture(LongPressGesture(minimumDuration: 0.4).onEnded(longPressed))
+    }
+
+    private func longPressed(_: Bool) {
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        onLongPress()
     }
 
     private var header: some View {

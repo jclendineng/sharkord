@@ -11,6 +11,8 @@ struct MessageActionsSheet: View {
     let store: ChannelMessagesStore
     let canOpenThread: Bool
     let onOpenThread: () -> Void
+    // the list asks for confirmation once this sheet is gone, like discord
+    let onDelete: (Message) -> Void
 
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
@@ -18,7 +20,6 @@ struct MessageActionsSheet: View {
 
     @State private var isPickerPresented = false
     @State private var isForwardPresented = false
-    @State private var isConfirmingDelete = false
     @State private var isReportUnavailable = false
 
     private var isOwn: Bool {
@@ -88,7 +89,7 @@ struct MessageActionsSheet: View {
 
                 ActionGroup {
                     if isOwn {
-                        ActionRow(title: "Delete Message", systemImage: "trash", tint: Theme.red, action: confirmDelete)
+                        ActionRow(title: "Delete Message", systemImage: "trash", tint: Theme.red, action: delete)
                     } else {
                         ActionRow(title: "Report", systemImage: "flag.fill", tint: Theme.red, action: report)
                     }
@@ -105,9 +106,6 @@ struct MessageActionsSheet: View {
         }
         .sheet(isPresented: $isForwardPresented, onDismiss: close) {
             ForwardSheet(message: message)
-        }
-        .confirmationDialog("Delete this message?", isPresented: $isConfirmingDelete, titleVisibility: .visible) {
-            Button("Delete", role: .destructive, action: delete)
         }
         .alert("Reporting isn't set up yet", isPresented: $isReportUnavailable) {
             Button("OK", role: .cancel) {}
@@ -177,22 +175,9 @@ struct MessageActionsSheet: View {
         dismiss()
     }
 
-    private func confirmDelete() {
-        isConfirmingDelete = true
-    }
-
     private func delete() {
-        let message = message
-
         dismiss()
-
-        Task {
-            do {
-                try await store.delete(message)
-            } catch {
-                session.showError(error)
-            }
-        }
+        onDelete(message)
     }
 
     // by email, like reporting a server, AppInfo.reportEmail
