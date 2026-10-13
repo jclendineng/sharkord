@@ -12,3 +12,17 @@ extension Color {
         )
     }
 }
+
+extension Color {
+    // the "#rrggbb" form users.update accepts
+    var hexString: String {
+        let components = UIColor(self).cgColor.converted(
+            to: CGColorSpace(name: CGColorSpace.sRGB)!,
+            intent: .defaultIntent,
+            options: nil
+        )?.components ?? [0, 0, 0]
+        let channels = components.prefix(3).map { Int((min(max($0, 0), 1) * 255).rounded()) }
+
+        return String(format: "#%02X%02X%02X", channels[0], channels[1], channels[2])
+    }
+}

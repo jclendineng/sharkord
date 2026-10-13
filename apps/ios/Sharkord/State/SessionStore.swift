@@ -22,6 +22,8 @@ final class SessionStore {
     }
 
     private(set) var phase: Phase
+    // a reconnect usually finishes before anyone notices, the banner waits a moment first
+    private(set) var showsReconnectingBanner = false
     var errorMessage: String?
     private(set) var toastMessage: String?
 
@@ -52,11 +54,15 @@ final class SessionStore {
     private(set) var isJoiningVoice = false
     private(set) var micMuted = false
     private(set) var soundMuted = false
+    private(set) var cameraEnabled = false
+    // webcams and screen shares in the current voice channel, the own camera under the own id
+    private(set) var videoTracks: [VoiceStreamKey: VideoTrackBox] = [:]
 
     private var handshakeHash: String?
     private var messageStores: [Int: ChannelMessagesStore] = [:]
     private var threadStores: [Int: ChannelMessagesStore] = [:]
     private var reconnectTask: Task<Void, Never>?
+    private var reconnectBannerTask: Task<Void, Never>?
     private var reconnectAttempt = 0
     private var pushToken: String?
     private var hasRequestedPush = false
@@ -87,6 +93,15 @@ final class SessionStore {
         channels
             .filter { unreadCounts[$0.id, default: 0] > 0 }
             .sorted { $0.position < $1.position }
+    }
+
+    // everyone on the server, without the deleted user placeholder or banned accounts
+    var members: [PublicUser] {
+        usersById.values.filter(\.isMember)
+    }
+
+    var onlineCount: Int {
+        members.filter { $0.status == .online || $0.status == .idle }.count
     }
 
     var hasUnreadChannels: Bool {
@@ -290,6 +305,7 @@ final class SessionStore {
         customEmojis = []
         settings = nil
         errorMessage = message
+        hideReconnectingBanner()
         phase = .signedOut
     }
 
@@ -351,7 +367,15 @@ final class SessionStore {
 
             currentVoiceChannelId = channelId
 
+            let settings = AppSettings.shared
             let connection = VoiceConnection(
+                audioOptions: VoiceConnection.AudioOptions(
+                    echoCancellation: settings.echoCancellation,
+                    noiseSuppression: settings.noiseSuppression,
+                    autoGainControl: settings.autoGainControl,
+                    speakerByDefault: settings.speakerByDefault,
+                    outputVolume: settings.outputVolume
+                ),
                 signal: { [weak client] path, json in
                     guard let client else {
                         throw TRPCError(message: "Not connected to the server.", code: nil)
@@ -361,6 +385,9 @@ final class SessionStore {
                 },
                 onFailure: { [weak self] in
                     self?.voiceConnectionFailed()
+                },
+                onVideo: { [weak self] key, track in
+                    self?.videoTracks[key] = track
                 }
             )
 
@@ -381,8 +408,8 @@ final class SessionStore {
             // the only voice procedure that is a query, so it cannot go through the signal
             let producers: RemoteProducers = try await client.query("voice.getProducers")
 
-            for remoteId in producers.remoteAudioIds {
-                await connection.consume(remoteId: remoteId)
+            for key in producers.keys {
+                await connection.consume(key)
             }
         } catch {
             showError(error)
@@ -407,6 +434,36 @@ final class SessionStore {
         await updateVoiceState(["micMuted": micMuted])
     }
 
+    func toggleCamera() async {
+        guard let voice, let ownUserId else {
+            return
+        }
+
+        if cameraEnabled {
+            cameraEnabled = false
+            await voice.stopCamera(ownUserId: ownUserId)
+            await updateVoiceState(["webcamEnabled": false])
+            return
+        }
+
+        guard await AVCaptureDevice.requestAccess(for: .video) else {
+            showError(VoiceConnection.VoiceError(message: "Allow camera access in Settings to turn on your camera."))
+            return
+        }
+
+        do {
+            try await voice.startCamera(ownUserId: ownUserId)
+            cameraEnabled = true
+            await updateVoiceState(["webcamEnabled": true])
+        } catch {
+            showError(error)
+        }
+    }
+
+    func flipCamera() {
+        voice?.flipCamera()
+    }
+
     func toggleSoundMuted() async {
         soundMuted.toggle()
         voice?.setSoundMuted(soundMuted)
@@ -419,7 +476,9 @@ final class SessionStore {
     }
 
     func registerPushDevice(_ token: String) async {
-        guard let client else {
+        CredentialStore.devicePushToken = token
+
+        guard let client, let address, !CredentialStore.isPushMuted(for: address) else {
             return
         }
 
@@ -595,6 +654,8 @@ final class SessionStore {
         categories = result.categories
         channels = result.channels
         usersById = Dictionary(uniqueKeysWithValues: result.users.map { ($0.id, $0) })
+        // joining is what makes this account online, whatever the list said a moment before
+        usersById[result.ownUserId]?.status = .online
         rolesById = Dictionary(uniqueKeysWithValues: result.roles.map { ($0.id, $0) })
         customEmojis = result.emojis
         settings = result.publicSettings
@@ -618,6 +679,7 @@ final class SessionStore {
         self.handshakeHash = nil
         reconnectAttempt = 0
         phase = .connected
+        hideReconnectingBanner()
 
         subscribe(client)
 
@@ -633,16 +695,177 @@ final class SessionStore {
             await joinVoice(channelId)
         }
 
+        await refreshToken()
+
         // anything that arrived while disconnected was missed by the subscriptions
         for store in Array(messageStores.values) + Array(threadStores.values) where store.hasLoaded {
             await store.reload()
         }
     }
 
+    private func showReconnectingBannerLater() {
+        guard reconnectBannerTask == nil else {
+            return
+        }
+
+        reconnectBannerTask = Task {
+            try? await Task.sleep(for: .seconds(2))
+
+            if !Task.isCancelled, phase == .reconnecting {
+                showsReconnectingBanner = true
+            }
+        }
+    }
+
+    private func hideReconnectingBanner() {
+        reconnectBannerTask?.cancel()
+        reconnectBannerTask = nil
+        showsReconnectingBanner = false
+    }
+
+    // a token lives a week from when it was issued, renewing it on every connect keeps a
+    // device that is in use signed in. an older server without sessions just says no
+    private func refreshToken() async {
+        guard let client, let address else {
+            return
+        }
+
+        struct NoInput: Encodable {}
+
+        guard let refreshed: RefreshedToken = try? await client.mutation("sessions.refreshToken", input: NoInput()) else {
+            return
+        }
+
+        token = refreshed.token
+        CredentialStore.save(token: refreshed.token, for: address)
+    }
+
+    func deviceSessions() async throws -> [DeviceSession] {
+        guard let client else {
+            return []
+        }
+
+        return try await client.query("sessions.getAll")
+    }
+
+    func revokeSession(_ sessionId: String) async throws {
+        guard let client else {
+            return
+        }
+
+        try await client.mutation("sessions.revoke", input: ["sessionId": sessionId])
+    }
+
+    func revokeOtherSessions() async throws -> Int {
+        guard let client else {
+            return 0
+        }
+
+        struct NoInput: Encodable {}
+
+        let result: RevokedSessions = try await client.mutation("sessions.revokeOthers", input: NoInput())
+
+        return result.revokedCount
+    }
+
+    // the server signs every device out afterwards, this one included
+    func changePassword(current: String, new: String) async throws {
+        guard let client else {
+            return
+        }
+
+        struct PasswordInput: Encodable {
+            let currentPassword: String
+            let newPassword: String
+            let confirmNewPassword: String
+        }
+
+        try await client.mutation(
+            "users.updatePassword",
+            input: PasswordInput(currentPassword: current, newPassword: new, confirmNewPassword: new)
+        )
+    }
+
+    var isPushEnabled: Bool {
+        guard let address else {
+            return false
+        }
+
+        return serverInfo?.pushEnabled == true && !CredentialStore.isPushMuted(for: address)
+    }
+
+    func setPushEnabled(_ enabled: Bool) async {
+        guard let address else {
+            return
+        }
+
+        CredentialStore.setPushMuted(!enabled, for: address)
+
+        if enabled {
+            if let token = CredentialStore.devicePushToken {
+                await registerPushDevice(token)
+            } else {
+                hasRequestedPush = false
+                await enablePushIfAvailable()
+            }
+        } else if let client, let pushToken {
+            try? await client.mutation("notifications.unregisterDevice", input: ["token": pushToken])
+            self.pushToken = nil
+        }
+    }
+
+    func setOutputVolume(_ volume: Double) {
+        voice?.setOutputVolume(volume)
+    }
+
+    func markAllAsRead() async {
+        for channel in unreadChannels where !channel.isDm {
+            await markAsRead(channel.id)
+        }
+    }
+
+    func mentions() async throws -> [Message] {
+        guard let client else {
+            return []
+        }
+
+        struct MentionsInput: Encodable {}
+
+        let page: MentionsPage = try await client.query("messages.getMentions", input: MentionsInput())
+
+        return page.messages
+    }
+
+    func updateProfile(name: String, bio: String, profileColor: String) async throws {
+        guard let client else {
+            return
+        }
+
+        struct ProfileInput: Encodable {
+            let name: String
+            let profileColor: String
+            let bio: String
+        }
+
+        try await client.mutation("users.update", input: ProfileInput(name: name, profileColor: profileColor, bio: bio))
+    }
+
+    func changeAvatar(fileAt fileURL: URL, name: String) async throws {
+        guard let client, let address, let token else {
+            return
+        }
+
+        let file = try await UploadAPI.upload(fileAt: fileURL, name: name, to: address, token: token)
+
+        try await client.mutation("users.changeAvatar", input: ["fileId": file.id])
+    }
+
     private func stopVoice() {
         voice?.close()
         voice = nil
         currentVoiceChannelId = nil
+        cameraEnabled = false
+        videoTracks = [:]
     }
 
     private func voiceConnectionFailed() {
@@ -715,10 +938,25 @@ final class SessionStore {
             Task { await self?.loadDirectMessages() }
         }
 
-        for path in ["users.onJoin", "users.onUpdate", "users.onCreate"] {
+        client.subscribe("users.onJoin") { [weak self] (user: PublicUser) in
+            var joined = user
+
+            joined.status = joined.status ?? .online
+            self?.usersById[user.id] = joined
+        }
+
+        // a profile change carries no status, the one already known still holds
+        for path in ["users.onUpdate", "users.onCreate"] {
             client.subscribe(path) { [weak self] (user: PublicUser) in
-                self?.usersById[user.id] = user
+                var updated = user
+
+                updated.status = updated.status ?? self?.usersById[user.id]?.status
+                self?.usersById[user.id] = updated
             }
+        }
+
+        client.subscribe("users.onDelete") { [weak self] (event: UserDeletedEvent) in
+            self?.usersById[event.userId] = nil
         }
 
         client.subscribe("users.onLeave") { [weak self] (userId: Int) in
@@ -759,22 +997,26 @@ final class SessionStore {
         client.subscribe("voice.onNewProducer") { [weak self] (event: VoiceProducerEvent) in
             guard
                 let self,
-                event.kind == "audio",
+                let kind = VoiceStreamKey.Kind(rawValue: event.kind),
                 event.channelId == self.currentVoiceChannelId,
                 event.remoteId != self.ownUserId
             else {
                 return
             }
 
-            Task { await self.voice?.consume(remoteId: event.remoteId) }
+            Task { await self.voice?.consume(VoiceStreamKey(kind: kind, remoteId: event.remoteId)) }
         }
 
         client.subscribe("voice.onProducerClosed") { [weak self] (event: VoiceProducerEvent) in
-            guard let self, event.kind == "audio", event.channelId == self.currentVoiceChannelId else {
+            guard
+                let self,
+                let kind = VoiceStreamKey.Kind(rawValue: event.kind),
+                event.channelId == self.currentVoiceChannelId
+            else {
                 return
             }
 
-            self.voice?.closeConsumer(remoteId: event.remoteId)
+            self.voice?.closeConsumer(VoiceStreamKey(kind: kind, remoteId: event.remoteId))
         }
 
         client.subscribe("voice.onMoved") { [weak self] (event: VoiceMovedEvent) in
@@ -867,8 +1109,11 @@ final class SessionStore {
 
         phase = .reconnecting
         reconnectAttempt += 1
+        showReconnectingBannerLater()
 
-        let delay = min(pow(2, Double(reconnectAttempt - 1)), 30)
+        // the first retry is immediate, a socket ios dropped in the background usually comes
+        // straight back, only repeated failures back off
+        let delay = reconnectAttempt == 1 ? 0 : min(pow(2, Double(reconnectAttempt - 2)), 30)
 
         reconnectTask?.cancel()
         reconnectTask = Task {

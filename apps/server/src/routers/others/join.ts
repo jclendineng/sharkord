@@ -146,7 +146,7 @@ const joinServerRoute = rateLimitedProcedure(publicProcedure, {
       .set({ lastLoginAt: Date.now() })
       .where(eq(users.id, ctx.user.id));
 
-    enqueueLogin(ctx.user.id, connectionInfo);
+    enqueueLogin(ctx.user.id, connectionInfo, ctx.sessionId);
     enqueueActivityLog({
       type: ActivityLogType.USER_JOINED,
       userId: ctx.user.id,

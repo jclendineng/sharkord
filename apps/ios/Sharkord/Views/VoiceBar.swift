@@ -3,24 +3,32 @@ import SwiftUI
 struct VoiceBar: View {
     @Environment(SessionStore.self) private var session
 
+    @State private var isRoomPresented = false
+
     private var channelName: String {
         session.currentVoiceChannelId.flatMap { session.channel($0)?.name } ?? ""
     }
 
     var body: some View {
         HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Voice Connected")
-                    .font(.footnote.bold())
-                    .foregroundStyle(Theme.green)
+            Button(action: showRoom) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Voice Connected")
+                            .font(.footnote.bold())
+                            .foregroundStyle(Theme.green)
 
-                Text("\(channelName) / \(session.displayName)")
-                    .font(.caption)
-                    .foregroundStyle(Theme.muted)
-                    .lineLimit(1)
+                        Text("\(channelName) / \(session.displayName)")
+                            .font(.caption)
+                            .foregroundStyle(Theme.muted)
+                            .lineLimit(1)
+                    }
+
+                    Spacer()
+                }
+                .contentShape(.rect)
             }
-
-            Spacer()
+            .buttonStyle(.plain)
 
             Button(
                 session.micMuted ? "Unmute" : "Mute",
@@ -44,6 +52,14 @@ struct VoiceBar: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .background(Theme.listBackground, in: .rect(cornerRadius: 20))
+        .fullScreenCover(isPresented: $isRoomPresented) {
+            VoiceRoomScreen()
+                .environment(session)
+        }
+    }
+
+    private func showRoom() {
+        isRoomPresented = true
     }
 
     private func toggleMic() {

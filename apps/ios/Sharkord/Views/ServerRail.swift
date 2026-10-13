@@ -85,7 +85,7 @@ private struct ServerRailItem: View {
     }
 }
 
-private struct ServerIcon: View {
+struct ServerIcon: View {
     let server: SessionStore
 
     private var initials: String {

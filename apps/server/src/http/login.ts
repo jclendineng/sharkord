@@ -7,19 +7,20 @@ import {
 import chalk from 'chalk';
 import { eq } from 'drizzle-orm';
 import http from 'http';
-import jwt from 'jsonwebtoken';
+
 import z from 'zod';
 import { config } from '../config';
 import { db } from '../db';
 import { createUser } from '../db/mutations/users';
 import { publishUser } from '../db/publishers';
 import { isInviteValid } from '../db/queries/invites';
-import { getServerToken, getSettings } from '../db/queries/server';
+import { getSettings } from '../db/queries/server';
 import { getUserByIdentity } from '../db/queries/users';
 import { users } from '../db/schema';
 import { getWsInfo } from '../helpers/get-ws-info';
 import { isLocalLoginDisabled } from '../helpers/oidc/settings';
 import { safeCompare } from '../helpers/safe-compare';
+import { createSessionToken } from '../helpers/sessions';
 import { logger } from '../logger';
 import { pluginManager } from '../plugins';
 import { runHook } from '../plugins/run-hook';
@@ -199,12 +200,10 @@ const loginRouteHandler = async (
     );
   }
 
-  const token = jwt.sign(
-    { userId: existingUser.id, tokenVersion: existingUser.tokenVersion },
-    await getServerToken(),
-    {
-      expiresIn: '604800s' // 7 days
-    }
+  const token = await createSessionToken(
+    existingUser.id,
+    existingUser.tokenVersion,
+    connectionInfo
   );
 
   res.writeHead(200, { 'Content-Type': 'application/json' });

@@ -22,7 +22,7 @@ struct SearchScreen: View {
             return []
         }
 
-        return session.usersById.values
+        return session.members
             .filter { $0.id != session.ownUserId && $0.name.localizedCaseInsensitiveContains(trimmedQuery) }
             .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
             .prefix(8)
@@ -193,6 +193,15 @@ private struct MessageResultRow: View {
         message.userId.flatMap { session.usersById[$0] }
     }
 
+    // a direct message is named after the other person, not its channel
+    private var place: String {
+        guard message.channelIsDm else {
+            return "#\(message.channelName)"
+        }
+
+        return "@\(session.directMessagePartner(for: message.channelId)?.name ?? "Direct Message")"
+    }
+
     var body: some View {
         Button(action: onOpen) {
             HStack(alignment: .top, spacing: 12) {
@@ -204,7 +213,7 @@ private struct MessageResultRow: View {
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(Color(hex: session.roleColor(for: author) ?? "#F2F3F5"))
 
-                        Text("#\(message.channelName)")
+                        Text(place)
                             .font(.caption)
                             .foregroundStyle(Theme.muted)
 

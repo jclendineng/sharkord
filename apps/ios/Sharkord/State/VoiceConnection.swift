@@ -3,13 +3,25 @@ import Foundation
 import Mediasoup
 import WebRTC
 
-// the webrtc side of a voice channel: one send transport carrying the microphone and one
-// receive transport carrying everyone else (apps/server/src/routers/voice).
+// the webrtc side of a voice channel: one send transport carrying the microphone and camera,
+// one receive transport carrying everyone else's audio, webcams and screen shares
+// (apps/server/src/routers/voice).
 // mediasoup blocks the calling thread until the server answers, createProducer waits for
 // onProduce to be called back with the producer id, so everything touching it runs on one
 // serial queue and signaling hops to the main actor where the tRPC client lives
 nonisolated final class VoiceConnection: @unchecked Sendable {
     typealias Signal = @MainActor @Sendable (_ path: String, _ json: Data?) async throws -> Data
+    // a remote webcam or screen share arriving, or going away with nil
+    typealias VideoHandler = @MainActor @Sendable (_ key: VoiceStreamKey, _ track: VideoTrackBox?) -> Void
+
+    // from the voice and video settings, read once when the call starts
+    struct AudioOptions: Sendable {
+        let echoCancellation: Bool
+        let noiseSuppression: Bool
+        let autoGainControl: Bool
+        let speakerByDefault: Bool
+        let outputVolume: Double
+    }
 
     struct VoiceError: LocalizedError {
         let message: String
@@ -20,6 +32,7 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
     private let queue = DispatchQueue(label: "com.sharkord.voice")
     private let signal: Signal
     private let onFailure: @MainActor @Sendable () -> Void
+    private let onVideo: VideoHandler
     private let factory: RTCPeerConnectionFactory
     private let device: Device
 
@@ -29,16 +42,30 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
     private var receiveTransport: ReceiveTransport?
     private var producer: Producer?
     private var microphone: RTCAudioTrack?
-    private var consumers: [Int: Consumer] = [:]
+    private var consumers: [VoiceStreamKey: Consumer] = [:]
+    private var camera: RTCCameraVideoCapturer?
+    private var cameraTrack: RTCVideoTrack?
+    private var cameraProducer: Producer?
+    private var cameraPosition = AVCaptureDevice.Position.front
     private var rtpCapabilities = "{}"
     private var soundMuted = false
+    private var outputVolume: Double
+    private let audioOptions: AudioOptions
     private var isClosed = false
 
-    init(signal: @escaping Signal, onFailure: @escaping @MainActor @Sendable () -> Void) {
-        Self.configureAudioSession()
+    init(
+        audioOptions: AudioOptions,
+        signal: @escaping Signal,
+        onFailure: @escaping @MainActor @Sendable () -> Void,
+        onVideo: @escaping VideoHandler
+    ) {
+        Self.configureAudioSession(audioOptions)
 
+        self.audioOptions = audioOptions
+        self.outputVolume = audioOptions.outputVolume
         self.signal = signal
         self.onFailure = onFailure
+        self.onVideo = onVideo
         self.factory = RTCPeerConnectionFactory()
         self.device = Device(pcFactory: factory)
     }
@@ -69,29 +96,74 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
         }
     }
 
-    func consume(remoteId: Int) async {
+    func consume(_ key: VoiceStreamKey) async {
         let input = await onQueueValue { self.rtpCapabilities }
 
         do {
             let json = try JSONSerialization.data(withJSONObject: [
-                "kind": "audio",
-                "remoteId": remoteId,
+                "kind": key.kind.rawValue,
+                "remoteId": key.remoteId,
                 "rtpCapabilities": try JSONSerialization.jsonObject(with: Data(input.utf8))
             ])
             let data = try await signal("voice.consume", json)
             let consumed = try ConsumeResponse(data)
 
             try await onQueue {
-                try self.addConsumer(remoteId: remoteId, consumed)
+                try self.addConsumer(key, consumed)
             }
         } catch {
-            print("[voice] could not consume \(remoteId): \(error)")
+            print("[voice] could not consume \(key): \(error)")
         }
     }
 
-    func closeConsumer(remoteId: Int) {
+    func closeConsumer(_ key: VoiceStreamKey) {
         queue.async {
-            self.consumers.removeValue(forKey: remoteId)?.close()
+            self.consumers.removeValue(forKey: key)?.close()
+        }
+
+        if key.kind.isVideo {
+            let onVideo = onVideo
+
+            Task { @MainActor in
+                onVideo(key, nil)
+            }
+        }
+    }
+
+    // the local preview comes back through the handler under the caller's own id
+    func startCamera(ownUserId: Int) async throws {
+        try await onQueue {
+            try self.produceCamera(ownUserId: ownUserId)
+        }
+    }
+
+    func stopCamera(ownUserId: Int) async {
+        await onQueueValue {
+            self.cameraProducer?.close()
+            self.cameraProducer = nil
+            self.camera?.stopCapture()
+            self.camera = nil
+            self.cameraTrack = nil
+        }
+
+        await onVideo(VoiceStreamKey(kind: .video, remoteId: ownUserId), nil)
+
+        let json = Data("{\"kind\":\"video\"}".utf8)
+
+        _ = try? await signal("voice.closeProducer", json)
+    }
+
+    func flipCamera() {
+        queue.async {
+            guard let camera = self.camera else {
+                return
+            }
+
+            self.cameraPosition = self.cameraPosition == .front ? .back : .front
+
+            if let device = Self.captureDevice(self.cameraPosition) {
+                Self.startCapture(camera, device: device)
+            }
         }
     }
 
@@ -107,11 +179,21 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
         }
     }
 
+    func setOutputVolume(_ volume: Double) {
+        queue.async {
+            self.outputVolume = volume
+
+            for (key, consumer) in self.consumers where !key.kind.isVideo {
+                (consumer.track as? RTCAudioTrack)?.source.volume = volume
+            }
+        }
+    }
+
     func setSoundMuted(_ muted: Bool) {
         queue.async {
             self.soundMuted = muted
 
-            for consumer in self.consumers.values {
+            for (key, consumer) in self.consumers where !key.kind.isVideo {
                 consumer.track.isEnabled = !muted
             }
         }
@@ -127,6 +209,11 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
             self.consumers.values.forEach { $0.close() }
             self.consumers = [:]
             self.producer?.close()
+            self.cameraProducer?.close()
+            self.camera?.stopCapture()
+            self.camera = nil
+            self.cameraTrack = nil
+            self.cameraProducer = nil
             self.sendTransport?.close()
             self.receiveTransport?.close()
             self.producer = nil
@@ -172,7 +259,15 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
             return
         }
 
-        let track = factory.audioTrack(withTrackId: "microphone")
+        let constraints = RTCMediaConstraints(
+            mandatoryConstraints: nil,
+            optionalConstraints: [
+                "googEchoCancellation": audioOptions.echoCancellation ? "true" : "false",
+                "googNoiseSuppression": audioOptions.noiseSuppression ? "true" : "false",
+                "googAutoGainControl": audioOptions.autoGainControl ? "true" : "false"
+            ]
+        )
+        let track = factory.audioTrack(with: factory.audioSource(with: constraints), trackId: "microphone")
 
         track.isEnabled = !muted
 
@@ -192,7 +287,7 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
         self.producer = producer
     }
 
-    private func addConsumer(remoteId: Int, _ consumed: ConsumeResponse) throws {
+    private func addConsumer(_ key: VoiceStreamKey, _ consumed: ConsumeResponse) throws {
         guard let receiveTransport, !isClosed else {
             return
         }
@@ -200,14 +295,87 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
         let consumer = try receiveTransport.consume(
             consumerId: consumed.consumerId,
             producerId: consumed.producerId,
-            kind: .audio,
+            kind: key.kind.isVideo ? .video : .audio,
             rtpParameters: consumed.rtpParameters,
             appData: nil
         )
 
-        consumer.track.isEnabled = !soundMuted
-        consumers.removeValue(forKey: remoteId)?.close()
-        consumers[remoteId] = consumer
+        consumers.removeValue(forKey: key)?.close()
+        consumers[key] = consumer
+
+        guard key.kind.isVideo else {
+            consumer.track.isEnabled = !soundMuted
+            (consumer.track as? RTCAudioTrack)?.source.volume = outputVolume
+            return
+        }
+
+        if let track = consumer.track as? RTCVideoTrack {
+            let onVideo = onVideo
+            let box = VideoTrackBox(track: track)
+
+            Task { @MainActor in
+                onVideo(key, box)
+            }
+        }
+    }
+
+    private func produceCamera(ownUserId: Int) throws {
+        guard let sendTransport, cameraProducer == nil else {
+            return
+        }
+
+        guard let device = Self.captureDevice(cameraPosition) else {
+            throw VoiceError(message: "No camera is available.")
+        }
+
+        let source = factory.videoSource()
+        let capturer = RTCCameraVideoCapturer(delegate: source)
+        let track = factory.videoTrack(with: source, trackId: "camera")
+
+        Self.startCapture(capturer, device: device)
+
+        // the kind travels in appData, onProduce reads it back for voice.produce
+        let producer = try sendTransport.createProducer(
+            for: track,
+            encodings: nil,
+            codecOptions: nil,
+            codec: nil,
+            appData: "{\"kind\":\"video\"}"
+        )
+
+        camera = capturer
+        cameraTrack = track
+        cameraProducer = producer
+
+        let onVideo = onVideo
+        let box = VideoTrackBox(track: track)
+
+        Task { @MainActor in
+            onVideo(VoiceStreamKey(kind: .video, remoteId: ownUserId), box)
+        }
+    }
+
+    private static func captureDevice(_ position: AVCaptureDevice.Position) -> AVCaptureDevice? {
+        RTCCameraVideoCapturer.captureDevices().first { $0.position == position }
+            ?? RTCCameraVideoCapturer.captureDevices().first
+    }
+
+    // 720p at 30fps where the camera has it, which is plenty for a phone sized tile
+    private static func startCapture(_ capturer: RTCCameraVideoCapturer, device: AVCaptureDevice) {
+        let formats = RTCCameraVideoCapturer.supportedFormats(for: device)
+        let format = formats.first { format in
+            let dimensions = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
+
+            return dimensions.width == 1280 && dimensions.height == 720
+        } ?? formats.last
+
+        guard let format else {
+            return
+        }
+
+        let maxRate = format.videoSupportedFrameRateRanges.map(\.maxFrameRate).max() ?? 30
+
+        capturer.startCapture(with: device, format: format, fps: Int(min(maxRate, 30)))
     }
 
     private func onQueue(_ work: @escaping @Sendable () throws -> Void) async throws {
@@ -231,13 +399,18 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
         }
     }
 
-    // speaker by default like other voice chat apps, voiceChat mode turns on echo cancellation
-    private static func configureAudioSession() {
+    // speaker by default like other voice chat apps, voiceChat mode adds the system's own echo
+    // cancellation on top of webrtc's
+    private static func configureAudioSession(_ options: AudioOptions) {
         let configuration = RTCAudioSessionConfiguration.webRTC()
 
         configuration.category = AVAudioSession.Category.playAndRecord.rawValue
-        configuration.mode = AVAudioSession.Mode.voiceChat.rawValue
-        configuration.categoryOptions = [.allowBluetoothHFP, .defaultToSpeaker]
+        configuration.mode = options.echoCancellation
+            ? AVAudioSession.Mode.voiceChat.rawValue
+            : AVAudioSession.Mode.default.rawValue
+        configuration.categoryOptions = options.speakerByDefault
+            ? [.allowBluetoothHFP, .defaultToSpeaker]
+            : [.allowBluetoothHFP]
 
         RTCAudioSessionConfiguration.setWebRTC(configuration)
     }
@@ -290,7 +463,8 @@ nonisolated private final class TransportSignaler: SendTransportDelegate, Receiv
     ) {
         let signal = signal
         let reply = UncheckedBox(callback)
-        let json = Data("{\"transportId\":\"\(transport.id)\",\"kind\":\"audio\",\"rtpParameters\":\(rtpParameters)}".utf8)
+        let kind = ProducerAppData.kind(appData)
+        let json = Data("{\"transportId\":\"\(transport.id)\",\"kind\":\"\(kind)\",\"rtpParameters\":\(rtpParameters)}".utf8)
 
         Task {
             do {
@@ -314,6 +488,45 @@ nonisolated private final class TransportSignaler: SendTransportDelegate, Receiv
         callback: @escaping (String?) -> Void
     ) {
         callback(nil)
+    }
+}
+
+// a stream from the voice channel, the server keys them by kind and the sender's user id
+nonisolated struct VoiceStreamKey: Hashable, Sendable, CustomStringConvertible {
+    enum Kind: String, Sendable {
+        case audio
+        case video
+        case screen
+        case screenAudio = "screen_audio"
+
+        var isVideo: Bool {
+            self == .video || self == .screen
+        }
+    }
+
+    let kind: Kind
+    let remoteId: Int
+
+    var description: String {
+        "\(kind.rawValue)/\(remoteId)"
+    }
+}
+
+// webrtc tracks are not sendable, they only ever get attached to a renderer on the main actor
+nonisolated struct VideoTrackBox: @unchecked Sendable {
+    let track: RTCVideoTrack
+}
+
+nonisolated private enum ProducerAppData {
+    static func kind(_ appData: String) -> String {
+        guard
+            let object = try? JSONSerialization.jsonObject(with: Data(appData.utf8)) as? [String: Any],
+            let kind = object["kind"] as? String
+        else {
+            return "audio"
+        }
+
+        return kind
     }
 }
 

@@ -26,6 +26,7 @@ const registerDeviceRoute = rateLimitedProcedure(protectedProcedure, {
     const values = {
       userId: ctx.userId,
       tokenVersion: ctx.user.tokenVersion,
+      sessionId: ctx.sessionId ?? null,
       sandbox: input.sandbox,
       createdAt: Date.now()
     };

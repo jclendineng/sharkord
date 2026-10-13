@@ -29,10 +29,16 @@ struct UserBar: View {
                     AvatarView(user: session.ownUser, size: 44, showsStatus: true)
 
                     VStack(alignment: .leading, spacing: 1) {
-                        Text(session.ownUser?.name ?? session.displayName)
-                            .font(.headline)
-                            .foregroundStyle(Theme.header)
-                            .lineLimit(1)
+                        HStack(spacing: 4) {
+                            Text(session.ownUser?.name ?? session.displayName)
+                                .font(.headline)
+                                .foregroundStyle(Theme.header)
+                                .lineLimit(1)
+
+                            Image(systemName: "chevron.down")
+                                .font(.caption.bold())
+                                .foregroundStyle(Theme.muted)
+                        }
 
                         Text(statusText)
                             .font(.subheadline)
@@ -69,7 +75,7 @@ struct UserBar: View {
             ProfileScreen()
         }
         .sheet(isPresented: $isUnreadsPresented) {
-            UnreadsSheet()
+            InboxSheet()
         }
     }
 

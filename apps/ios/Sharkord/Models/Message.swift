@@ -14,6 +14,7 @@ struct Message: Codable, Hashable, Identifiable {
     let pluginId: String?
     let channelId: Int
     let parentMessageId: Int?
+    let replyToMessageId: Int?
     let createdAt: Int
     let editedAt: Int?
     let files: [SharkordFile]

@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import UIKit
 
 // every server the app is signed in to, each with its own SessionStore and socket, like the
 // server rail in discord. the selected one is what the screens read from the environment
@@ -11,6 +12,8 @@ final class ServerListStore {
     var isShowingDirectMessages = false
     // the sign in screen, for a new server or one whose session ended
     private(set) var signingInSession: SessionStore?
+
+    @ObservationIgnored private var backgroundTask: UIBackgroundTaskIdentifier = .invalid
 
     init() {
         sessions = CredentialStore.serverURLs
@@ -112,7 +115,30 @@ final class ServerListStore {
     }
 
     func appDidBecomeActive() {
+        endBackgroundTask()
         sessions.forEach { $0.appDidBecomeActive() }
+    }
+
+    // ios freezes the app seconds after it leaves the screen and its sockets die with it. the
+    // time it grants on request, around thirty seconds, keeps them open through a quick
+    // switch to another app. a voice call needs none of this, its audio keeps the app running
+    func appDidEnterBackground() {
+        guard backgroundTask == .invalid else {
+            return
+        }
+
+        backgroundTask = UIApplication.shared.beginBackgroundTask(withName: "keep-connected") { [weak self] in
+            self?.endBackgroundTask()
+        }
+    }
+
+    private func endBackgroundTask() {
+        guard backgroundTask != .invalid else {
+            return
+        }
+
+        UIApplication.shared.endBackgroundTask(backgroundTask)
+        backgroundTask = .invalid
     }
 
     private func makeSession(_ address: ServerAddress?) -> SessionStore {

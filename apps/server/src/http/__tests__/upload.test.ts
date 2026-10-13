@@ -9,6 +9,7 @@ import { tdb, testsBaseUrl } from '../../__tests__/setup';
 import { config } from '../../config';
 import { rolePermissions, settings, users } from '../../db/schema';
 import { TMP_PATH } from '../../helpers/paths';
+import { createSessionToken } from '../../helpers/sessions';
 import { sanitizeFileName } from '../helpers';
 
 const getMockFile = (content: string): File => {
@@ -20,13 +21,10 @@ const getMockFile = (content: string): File => {
 describe('/upload', () => {
   let token: string;
 
+  // a token belongs to a session row, and every test starts from a fresh database, so each
+  // one needs its own. signing in over http for each would run into the login rate limit
   beforeEach(async () => {
-    if (token) return;
-
-    const response = await login('testowner', 'password123');
-    const data: any = await response.json();
-
-    token = data.token;
+    token = await createSessionToken(1, 0, undefined);
   });
 
   afterAll(async () => {

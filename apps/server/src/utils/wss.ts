@@ -21,6 +21,7 @@ import { channelUserCan } from '../db/queries/channels';
 import { getUserRoles } from '../db/queries/roles';
 import { getUserById, getUserByToken } from '../db/queries/users';
 import { getWsInfo } from '../helpers/get-ws-info';
+import { getTokenSessionId } from '../helpers/session-token';
 import { logger } from '../logger';
 import { eventBus } from '../plugins/event-bus';
 import { enqueueActivityLog } from '../queues/activity-log';
@@ -70,6 +71,22 @@ const disconnectUser = (
   userSockets.get(userId)?.forEach((socket) => socket.close(code, reason));
 };
 
+// one device signed out while the account's other sockets stay connected
+const disconnectSessions = (
+  userId: number,
+  sessionIds: string[],
+  code: DisconnectCode,
+  reason?: string
+) => {
+  const ids = new Set(sessionIds);
+
+  userSockets.get(userId)?.forEach((socket) => {
+    if (socket.sessionId && ids.has(socket.sessionId)) {
+      socket.close(code, reason);
+    }
+  });
+};
+
 const getOnlineUserIds = (): number[] => Array.from(userSockets.keys());
 
 const getUserWsCount = (userId: number): number =>
@@ -88,6 +105,10 @@ const createContext = async ({
     code: 'UNAUTHORIZED',
     message: 'Invalid authentication token'
   });
+
+  const sessionId = getTokenSessionId(token);
+
+  if (ws) ws.sessionId = sessionId;
 
   const hasPermission = async (targetPermission: Permission | Permission[]) => {
     const user = await getUserById(decodedUser.id);
@@ -183,6 +204,7 @@ const createContext = async ({
     user: decodedUser,
     authenticated: false,
     userId: decodedUser.id,
+    sessionId,
     handshakeHash: '',
     currentVoiceChannelId: undefined,
     locale: DEFAULT_LOCALE,
@@ -299,6 +321,7 @@ export {
   clearUserSocketsForTests,
   createContext,
   createWsServer,
+  disconnectSessions,
   disconnectUser,
   getOnlineUserIds,
   getUserIp,

@@ -33,7 +33,10 @@ final class TRPCClient {
         var components = URLComponents(url: wsURL, resolvingAgainstBaseURL: false)!
         components.queryItems = [URLQueryItem(name: "connectionParams", value: "1")]
 
-        self.task = URLSession.shared.webSocketTask(with: components.url!)
+        var request = URLRequest(url: components.url!)
+        request.setValue(AppInfo.userAgent, forHTTPHeaderField: "User-Agent")
+
+        self.task = URLSession.shared.webSocketTask(with: request)
         self.token = token
     }
 

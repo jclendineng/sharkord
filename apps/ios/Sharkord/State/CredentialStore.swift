@@ -23,6 +23,20 @@ enum CredentialStore {
         }
     }
 
+    // this device's apns token, kept so a server's push can be switched back on later
+    static var devicePushToken: String? {
+        get { UserDefaults.standard.string(forKey: "devicePushToken") }
+        set { UserDefaults.standard.set(newValue, forKey: "devicePushToken") }
+    }
+
+    static func isPushMuted(for address: ServerAddress) -> Bool {
+        UserDefaults.standard.bool(forKey: "pushMuted." + address.baseURL.absoluteString)
+    }
+
+    static func setPushMuted(_ muted: Bool, for address: ServerAddress) {
+        UserDefaults.standard.set(muted, forKey: "pushMuted." + address.baseURL.absoluteString)
+    }
+
     static func lastChannelId(for address: ServerAddress) -> Int? {
         UserDefaults.standard.object(forKey: lastChannelKeyPrefix + address.baseURL.absoluteString) as? Int
     }

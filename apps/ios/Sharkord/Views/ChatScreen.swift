@@ -45,7 +45,7 @@ struct ChatScreen: View {
             )
         }
         .safeAreaInset(edge: .top, spacing: 0) {
-            if session.phase == .reconnecting {
+            if session.showsReconnectingBanner {
                 ReconnectingBanner()
             }
         }
@@ -54,8 +54,15 @@ struct ChatScreen: View {
         .toolbarBackgroundVisibility(.visible, for: .navigationBar)
         .toolbarVisibility(.hidden, for: .tabBar)
         .toolbar {
-            ToolbarItem(placement: .principal) {
+            PlainToolbarItem(placement: .topBarLeading) {
                 ChatTitle(title: title, partner: partner, isDirectMessage: channel?.isDm == true)
+            }
+
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink(value: SearchRoute()) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundStyle(Theme.text)
+                }
             }
         }
         .task {
@@ -70,25 +77,89 @@ struct ChatScreen: View {
     }
 }
 
+// ios 26 wraps every toolbar item in a glass capsule, which makes a plain title look like a
+// button that does nothing
+private struct PlainToolbarItem<Content: View>: ToolbarContent {
+    let placement: ToolbarItemPlacement
+    @ViewBuilder let content: Content
+
+    var body: some ToolbarContent {
+        if #available(iOS 26.0, *) {
+            ToolbarItem(placement: placement) {
+                content
+            }
+            .sharedBackgroundVisibility(.hidden)
+        } else {
+            ToolbarItem(placement: placement) {
+                content
+            }
+        }
+    }
+}
+
+// discord's header: the name with a chevron, and who is around under it
 private struct ChatTitle: View {
     let title: String
     let partner: PublicUser?
     let isDirectMessage: Bool
 
+    @Environment(SessionStore.self) private var session
+
+    private var subtitle: String {
+        if isDirectMessage {
+            switch partner?.status {
+            case .online:
+                return "Online"
+            case .idle:
+                return "Idle"
+            case .offline, nil:
+                return "Offline"
+            }
+        }
+
+        return "\(session.onlineCount) Online"
+    }
+
+    private var isOnline: Bool {
+        isDirectMessage ? partner?.status == .online : session.onlineCount > 0
+    }
+
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 8) {
             if isDirectMessage {
-                AvatarView(user: partner, size: 24, showsStatus: true)
-            } else {
-                Image(systemName: "number")
-                    .foregroundStyle(Theme.muted)
+                AvatarView(user: partner, size: 30, showsStatus: true)
             }
 
-            Text(title)
-                .font(.headline)
-                .foregroundStyle(Theme.header)
-                .lineLimit(1)
+            VStack(alignment: .leading, spacing: 1) {
+                HStack(spacing: 4) {
+                    if !isDirectMessage {
+                        Image(systemName: "number")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Theme.muted)
+                    }
+
+                    Text(title)
+                        .font(.headline)
+                        .foregroundStyle(Theme.header)
+                        .lineLimit(1)
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption2.bold())
+                        .foregroundStyle(Theme.muted)
+                }
+
+                HStack(spacing: 4) {
+                    Circle()
+                        .fill(isOnline ? Theme.green : Theme.muted)
+                        .frame(width: 7, height: 7)
+
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(Theme.muted)
+                }
+            }
         }
+        .fixedSize()
     }
 }
 

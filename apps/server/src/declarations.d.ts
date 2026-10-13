@@ -4,6 +4,8 @@ declare module 'ws' {
   interface WebSocket {
     userId?: number;
     token: string;
+    // the login this socket belongs to, closed when that session is signed out
+    sessionId?: string;
   }
 }
 

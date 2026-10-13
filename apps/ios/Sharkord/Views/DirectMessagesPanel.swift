@@ -99,7 +99,7 @@ private struct NewDirectMessageSheet: View {
     @State private var errorMessage: String?
 
     private var users: [PublicUser] {
-        let others = session.usersById.values
+        let others = session.members
             .filter { $0.id != session.ownUserId }
             .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
 

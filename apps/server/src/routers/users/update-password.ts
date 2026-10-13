@@ -3,7 +3,7 @@ import { eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { config } from '../../config';
 import { db } from '../../db';
-import { users } from '../../db/schema';
+import { sessions, users } from '../../db/schema';
 import { enqueueActivityLog } from '../../queues/activity-log';
 import { invariant } from '../../utils/invariant';
 import { protectedProcedure, rateLimitedProcedure } from '../../utils/trpc';
@@ -69,14 +69,19 @@ const updatePasswordRoute = rateLimitedProcedure(protectedProcedure, {
 
     const hashedNewPassword = await Bun.password.hash(input.newPassword);
 
-    await db
-      .update(users)
-      .set({
-        password: hashedNewPassword,
-        tokenVersion: sql`${users.tokenVersion} + 1`
-      })
-      .where(eq(users.id, ctx.userId))
-      .run();
+    // the version bump already refuses every old token, the sessions go too so the devices
+    // list does not show logins that can no longer be used
+    db.transaction((tx) => {
+      tx.update(users)
+        .set({
+          password: hashedNewPassword,
+          tokenVersion: sql`${users.tokenVersion} + 1`
+        })
+        .where(eq(users.id, ctx.userId))
+        .run();
+
+      tx.delete(sessions).where(eq(sessions.userId, ctx.userId)).run();
+    });
 
     const sockets = ctx.getUserWs(ctx.userId);
 

@@ -1,6 +1,8 @@
 import { sha256, UploadHeaders } from '@sharkord/shared';
 import jwt from 'jsonwebtoken';
 import type WebSocket from 'ws';
+import { getTokenSessionId } from '../helpers/session-token';
+import { createSessionToken } from '../helpers/sessions';
 import { appRouter } from '../routers';
 import type { Context } from '../utils/trpc';
 import { createMockContext, type TMockContextOptions } from './context';
@@ -46,6 +48,20 @@ const getCaller = async (
   });
 
   return { caller, mockedToken };
+};
+
+// a caller whose token belongs to a session, the way a real login is. getCaller's token
+// predates sessions and carries none
+const getSessionCaller = async (userId: number, socket?: WebSocket) => {
+  const token = await createSessionToken(userId, 0, undefined);
+  const caller = appRouter.createCaller(
+    await createMockContext({ customToken: token, socket })
+  );
+  const { handshakeHash } = await caller.others.handshake();
+
+  await caller.others.joinServer({ handshakeHash });
+
+  return { caller, token, sessionId: getTokenSessionId(token)! };
 };
 
 // this will basically simulate a specific user connecting to the server
@@ -104,6 +120,7 @@ export {
   createFakeSocket,
   getCaller,
   getMockedToken,
+  getSessionCaller,
   initTest,
   login,
   uploadFile,

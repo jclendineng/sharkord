@@ -73,3 +73,29 @@ struct DirectMessageConversation: Decodable, Hashable, Identifiable {
 struct OpenedDirectMessage: Decodable {
     let channelId: Int
 }
+
+// sessions.getAll, one signed in device
+struct DeviceSession: Decodable, Identifiable, Hashable {
+    let id: String
+    let os: String?
+    let device: String?
+    let ip: String?
+    let city: String?
+    let region: String?
+    let country: String?
+    let createdAt: Int
+    let lastActiveAt: Int
+    let isCurrent: Bool
+
+    var lastActiveDate: Date {
+        Date(timeIntervalSince1970: TimeInterval(lastActiveAt) / 1000)
+    }
+}
+
+struct RefreshedToken: Decodable {
+    let token: String
+}
+
+struct RevokedSessions: Decodable {
+    let revokedCount: Int
+}

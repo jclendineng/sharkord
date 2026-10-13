@@ -1,0 +1,243 @@
+import SwiftUI
+
+// the call itself: screen shares across the top, a tile per person with their camera or
+// avatar, the controls along the bottom
+struct VoiceRoomScreen: View {
+    @Environment(SessionStore.self) private var session
+    @Environment(\.dismiss) private var dismiss
+
+    private var channelName: String {
+        session.currentVoiceChannelId.flatMap { session.channel($0)?.name } ?? "Voice"
+    }
+
+    private var participants: [(user: PublicUser?, state: VoiceUserState)] {
+        session.currentVoiceChannelId.map { session.voiceParticipants(in: $0) } ?? []
+    }
+
+    private var screenShares: [(key: VoiceStreamKey, track: VideoTrackBox)] {
+        session.videoTracks
+            .filter { $0.key.kind == .screen }
+            .sorted { $0.key.remoteId < $1.key.remoteId }
+            .map { ($0.key, $0.value) }
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            header
+
+            ScrollView {
+                VStack(spacing: 10) {
+                    ForEach(screenShares, id: \.key) { share in
+                        ScreenShareTile(userId: share.key.remoteId, track: share.track)
+                    }
+
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                        ForEach(participants, id: \.user?.id) { participant in
+                            ParticipantTile(user: participant.user, state: participant.state)
+                        }
+                    }
+                }
+                .padding(12)
+            }
+
+            VoiceControls(onLeave: leave)
+        }
+        .background(Color.black)
+        .preferredColorScheme(.dark)
+        .onChange(of: session.currentVoiceChannelId) { _, channelId in
+            if channelId == nil {
+                dismiss()
+            }
+        }
+    }
+
+    private var header: some View {
+        HStack(spacing: 12) {
+            Button("Close", systemImage: "chevron.down", action: close)
+                .labelStyle(.iconOnly)
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(Theme.header)
+                .frame(width: 40, height: 40)
+                .background(Theme.listBackground, in: .circle)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Label(channelName, systemImage: "speaker.wave.2.fill")
+                    .font(.headline)
+                    .foregroundStyle(Theme.header)
+                    .lineLimit(1)
+
+                Text(session.displayName)
+                    .font(.caption)
+                    .foregroundStyle(Theme.muted)
+            }
+
+            Spacer()
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+    }
+
+    private func close() {
+        dismiss()
+    }
+
+    private func leave() {
+        dismiss()
+
+        Task {
+            await session.leaveVoice()
+        }
+    }
+}
+
+private struct ParticipantTile: View {
+    let user: PublicUser?
+    let state: VoiceUserState
+
+    @Environment(SessionStore.self) private var session
+
+    private var track: VideoTrackBox? {
+        user.flatMap { session.videoTracks[VoiceStreamKey(kind: .video, remoteId: $0.id)] }
+    }
+
+    private var isOwn: Bool {
+        user?.id == session.ownUserId
+    }
+
+    var body: some View {
+        ZStack {
+            Color(hex: user?.profileColor ?? "#5865F2")
+                .opacity(0.35)
+
+            if let track {
+                VideoView(track: track, isMirrored: isOwn)
+            } else {
+                AvatarView(user: user, size: 64)
+            }
+        }
+        .aspectRatio(3 / 4, contentMode: .fit)
+        .clipShape(.rect(cornerRadius: 14))
+        .overlay(alignment: .bottomLeading) {
+            HStack(spacing: 4) {
+                if state.micMuted {
+                    Image(systemName: "mic.slash.fill")
+                        .foregroundStyle(Theme.red)
+                }
+
+                Text(user?.name ?? "Unknown")
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+            }
+            .font(.caption.weight(.semibold))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(.black.opacity(0.55), in: .capsule)
+            .padding(8)
+        }
+    }
+}
+
+private struct ScreenShareTile: View {
+    let userId: Int
+    let track: VideoTrackBox
+
+    @Environment(SessionStore.self) private var session
+
+    var body: some View {
+        VideoView(track: track, contentMode: .scaleAspectFit)
+            .aspectRatio(16 / 9, contentMode: .fit)
+            .background(Color.black)
+            .clipShape(.rect(cornerRadius: 14))
+            .overlay(alignment: .bottomLeading) {
+                Label("\(session.usersById[userId]?.name ?? "Someone")'s screen", systemImage: "display")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(.black.opacity(0.55), in: .capsule)
+                    .padding(8)
+            }
+    }
+}
+
+private struct VoiceControls: View {
+    let onLeave: () -> Void
+
+    @Environment(SessionStore.self) private var session
+
+    var body: some View {
+        HStack(spacing: 14) {
+            ControlButton(
+                title: session.cameraEnabled ? "Turn Off Camera" : "Turn On Camera",
+                systemImage: session.cameraEnabled ? "video.fill" : "video.slash.fill",
+                isActive: session.cameraEnabled,
+                action: toggleCamera
+            )
+
+            if session.cameraEnabled {
+                ControlButton(
+                    title: "Flip Camera",
+                    systemImage: "arrow.triangle.2.circlepath.camera.fill",
+                    isActive: false,
+                    action: flipCamera
+                )
+            }
+
+            ControlButton(
+                title: session.micMuted ? "Unmute" : "Mute",
+                systemImage: session.micMuted ? "mic.slash.fill" : "mic.fill",
+                isActive: !session.micMuted,
+                action: toggleMic
+            )
+
+            ControlButton(
+                title: session.soundMuted ? "Undeafen" : "Deafen",
+                systemImage: session.soundMuted ? "speaker.slash.fill" : "speaker.wave.2.fill",
+                isActive: !session.soundMuted,
+                action: toggleSound
+            )
+
+            Button("Disconnect", systemImage: "phone.down.fill", action: onLeave)
+                .labelStyle(.iconOnly)
+                .font(.title3)
+                .foregroundStyle(.white)
+                .frame(width: 56, height: 56)
+                .background(Theme.red, in: .circle)
+        }
+        .padding(.vertical, 14)
+        .frame(maxWidth: .infinity)
+        .background(Theme.deepBackground)
+    }
+
+    private func toggleCamera() {
+        Task { await session.toggleCamera() }
+    }
+
+    private func flipCamera() {
+        session.flipCamera()
+    }
+
+    private func toggleMic() {
+        Task { await session.toggleMicMuted() }
+    }
+
+    private func toggleSound() {
+        Task { await session.toggleSoundMuted() }
+    }
+}
+
+private struct ControlButton: View {
+    let title: String
+    let systemImage: String
+    let isActive: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(title, systemImage: systemImage, action: action)
+            .labelStyle(.iconOnly)
+            .font(.title3)
+            .foregroundStyle(isActive ? Color.black : Theme.header)
+            .frame(width: 56, height: 56)
+            .background(isActive ? Color.white : Theme.listBackground, in: .circle)
+    }
+}

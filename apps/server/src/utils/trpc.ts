@@ -24,6 +24,8 @@ export type Context = {
   pubsub: typeof pubsub;
   user: TUser;
   userId: number;
+  // undefined for a token from before sessions existed
+  sessionId: string | undefined;
   token: string;
   currentVoiceChannelId: number | undefined;
   locale: TLocale;

@@ -39,6 +39,7 @@ enum AuthAPI {
     static func login(_ address: ServerAddress, identity: String, password: String) async throws -> String {
         var request = URLRequest(url: address.url(path: "login"))
         request.httpMethod = "POST"
+        request.setValue(AppInfo.userAgent, forHTTPHeaderField: "User-Agent")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONEncoder().encode(LoginBody(identity: identity, password: password))
 
@@ -52,6 +53,7 @@ enum AuthAPI {
     static func exchangeOIDC(_ login: OIDCLogin, code: String) async throws -> String {
         var request = URLRequest(url: login.address.url(path: "oidc/exchange"))
         request.httpMethod = "POST"
+        request.setValue(AppInfo.userAgent, forHTTPHeaderField: "User-Agent")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONEncoder().encode(OIDCExchangeBody(code: code, verifier: login.verifier))
 

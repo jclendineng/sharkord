@@ -5,10 +5,14 @@ struct ChannelListPanel: View {
 
     @State private var collapsedCategoryIds: Set<Int> = []
     @State private var isInvitePresented = false
+    @State private var isServerSheetPresented = false
+    @State private var isInviteQueued = false
 
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 2) {
+                header
+
                 ForEach(session.channelSections) { section in
                     if let title = section.title {
                         CategoryHeader(
@@ -34,46 +38,73 @@ struct ChannelListPanel: View {
             .padding(.horizontal, 8)
             .padding(.bottom, 16)
         }
+        .scrollIndicators(.hidden)
         .safeAreaInset(edge: .top, spacing: 0) {
-            VStack(spacing: 0) {
+            if session.showsReconnectingBanner {
+                ReconnectingBanner()
+            }
+        }
+        .sheet(isPresented: $isInvitePresented) {
+            InviteSheet()
+        }
+        .sheet(isPresented: $isServerSheetPresented, onDismiss: showQueuedInvite) {
+            ServerSheet(onInvite: queueInvite)
+        }
+    }
+
+    // scrolls away with the channels, like discord
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button(action: showServerSheet) {
                 PanelHeader(title: session.serverName) {
                     Image(systemName: "chevron.right")
                         .font(.caption.bold())
                         .foregroundStyle(Theme.muted)
                 }
+                .padding(.horizontal, -8)
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
 
-                HStack(spacing: 8) {
-                    NavigationLink(value: SearchRoute()) {
-                        Label("Search", systemImage: "magnifyingglass")
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(Theme.text)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 40)
-                            .background(Theme.deepBackground, in: .rect(cornerRadius: 12))
-                    }
-
-                    Button("Invite", systemImage: "person.badge.plus", action: showInvite)
-                        .labelStyle(.iconOnly)
-                        .font(.system(size: 17, weight: .semibold))
+            HStack(spacing: 8) {
+                NavigationLink(value: SearchRoute()) {
+                    Label("Search", systemImage: "magnifyingglass")
+                        .font(.subheadline.weight(.medium))
                         .foregroundStyle(Theme.text)
-                        .frame(width: 44, height: 40)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 40)
                         .background(Theme.deepBackground, in: .rect(cornerRadius: 12))
                 }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 12)
-                .padding(.bottom, 10)
 
-                Theme.divider.frame(height: 1)
-                    .padding(.horizontal, 12)
-
-                if session.phase == .reconnecting {
-                    ReconnectingBanner()
-                }
+                Button("Invite", systemImage: "person.badge.plus", action: showInvite)
+                    .labelStyle(.iconOnly)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(Theme.text)
+                    .frame(width: 44, height: 40)
+                    .background(Theme.deepBackground, in: .rect(cornerRadius: 12))
             }
-            .background(Theme.listBackground)
+            .buttonStyle(.plain)
+            .padding(.horizontal, 4)
+            .padding(.bottom, 10)
+
+            Theme.divider.frame(height: 1)
+                .padding(.horizontal, 4)
         }
-        .sheet(isPresented: $isInvitePresented) {
-            InviteSheet()
+    }
+
+    private func showServerSheet() {
+        isServerSheetPresented = true
+    }
+
+    // a sheet cannot open while another one is still closing
+    private func queueInvite() {
+        isInviteQueued = true
+    }
+
+    private func showQueuedInvite() {
+        if isInviteQueued {
+            isInviteQueued = false
+            isInvitePresented = true
         }
     }
 

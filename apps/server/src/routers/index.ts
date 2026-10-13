@@ -10,6 +10,7 @@ import { notificationsRouter } from './notifications';
 import { othersRouter } from './others';
 import { pluginsRouter } from './plugins';
 import { rolesRouter } from './roles';
+import { sessionsRouter } from './sessions';
 import { usersRouter } from './users';
 import { voiceRouter } from './voice';
 
@@ -26,7 +27,8 @@ const appRouter = t.router({
   voice: voiceRouter,
   categories: categoriesRouter,
   plugins: pluginsRouter,
-  notifications: notificationsRouter
+  notifications: notificationsRouter,
+  sessions: sessionsRouter
 });
 
 type AppRouter = typeof appRouter;

@@ -15,8 +15,13 @@ struct SharkordApp: App {
                     await servers.restore()
                 }
                 .onChange(of: scenePhase) { _, newPhase in
-                    if newPhase == .active {
+                    switch newPhase {
+                    case .active:
                         servers.appDidBecomeActive()
+                    case .background:
+                        servers.appDidEnterBackground()
+                    default:
+                        break
                     }
                 }
         }

@@ -20,13 +20,21 @@ breaks here at runtime, not at compile time.
 
 ## Status
 
-Done: several servers at once (Discord style server rail, one socket per server), search,
-invite links, an unreads inbox, sign in, OIDC sign in, server password, channel list with unread counts, message
-history with pagination, sending, live new/edited/deleted messages, auto reconnect, DMs,
-threads, reactions with emoji picker, uploads, rich message rendering, push notifications,
-voice (audio only).
+Done: several servers at once (Discord style server rail, one socket per server), search
+including direct messages, invite links, an inbox with mentions and unreads, sign in, OIDC
+sign in, server password, channel list with unread counts, message history with pagination,
+sending, live new/edited/deleted messages, auto reconnect, DMs, threads, reactions with emoji
+picker, uploads, rich message rendering, push notifications, voice with webcams and watching
+screen shares, profile editing, settings (account, devices, voice and video, notifications).
 
-Not yet: webcam and screen share in voice.
+Not yet: sharing your own screen from the phone, which needs a broadcast upload extension.
+
+## Sessions
+
+Each sign in is a row in the server's `sessions` table, and its id rides in the token. The
+Devices screen lists them and can sign one or all others out. The app renews its token on
+every connect (`sessions.refreshToken`), so a device in regular use is never signed out by
+the token's one week expiry.
 
 ## OIDC sign in
 

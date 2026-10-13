@@ -30,6 +30,16 @@ struct VoiceMovedEvent: Decodable {
 
 struct RemoteProducers: Decodable {
     let remoteAudioIds: [Int]
+    let remoteVideoIds: [Int]
+    let remoteScreenIds: [Int]
+    let remoteScreenAudioIds: [Int]
+
+    var keys: [VoiceStreamKey] {
+        remoteAudioIds.map { VoiceStreamKey(kind: .audio, remoteId: $0) }
+            + remoteVideoIds.map { VoiceStreamKey(kind: .video, remoteId: $0) }
+            + remoteScreenIds.map { VoiceStreamKey(kind: .screen, remoteId: $0) }
+            + remoteScreenAudioIds.map { VoiceStreamKey(kind: .screenAudio, remoteId: $0) }
+    }
 }
 
 struct VoiceProducerEvent: Decodable {

@@ -11,6 +11,7 @@ import { signFile } from '../../helpers/files-crypto';
 import type { TTokenPayload } from '../../types';
 import { files, userRoles, users } from '../schema';
 import { getServerToken, getSettings } from './server';
+import { getSession } from './sessions';
 
 const getPublicUserById = async (
   userId: number
@@ -310,6 +311,15 @@ const getUserByToken = async (token: string | undefined) => {
     // the case where the row survives but its sessions should not, such as a password
     // change. tokens predating this mechanism carry no version and count as 0
     if (user && (decoded.tokenVersion ?? 0) !== user.tokenVersion) {
+      return undefined;
+    }
+
+    // a signed out device's session row is gone
+    if (
+      user &&
+      decoded.sessionId &&
+      !(await getSession(decoded.sessionId, user.id))
+    ) {
       return undefined;
     }
 

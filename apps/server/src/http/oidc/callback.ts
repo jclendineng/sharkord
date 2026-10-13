@@ -1,13 +1,13 @@
 import { getErrorMessage, OidcError } from '@sharkord/shared';
 import type http from 'http';
-import jwt from 'jsonwebtoken';
 import * as client from 'openid-client';
-import { getServerToken } from '../../db/queries/server';
 import type { getWsInfo } from '../../helpers/get-ws-info';
 import { OidcCallbackError } from '../../helpers/oidc/error';
 import { oidcManager } from '../../helpers/oidc/manager';
 import { resolveOidcUser, type TOidcClaims } from '../../helpers/oidc/user';
+import { createSessionToken } from '../../helpers/sessions';
 import { logger } from '../../logger';
+import type { TConnectionInfo } from '../../types';
 import {
   clearStateCookie,
   guardOidcRoute,
@@ -86,7 +86,7 @@ const takeCallbackTransaction = (
 const completeOidcCallback = async (
   transaction: TOidcTransaction,
   url: URL,
-  ip: string | undefined
+  info: TConnectionInfo | undefined
 ): Promise<{ handoffCode: string; origin: string }> => {
   if (url.searchParams.has('error')) {
     throw new OidcCallbackError(
@@ -108,7 +108,10 @@ const completeOidcCallback = async (
   });
 
   const { claims, userInfoFailed } = await collectClaims(oidcConfig, tokens);
-  const { user } = await resolveOidcUser(claims, { userInfoFailed, ip });
+  const { user } = await resolveOidcUser(claims, {
+    userInfoFailed,
+    ip: info?.ip
+  });
 
   if (user.banned) {
     throw new OidcCallbackError(
@@ -119,11 +122,7 @@ const completeOidcCallback = async (
 
   // tokenVersion has to travel with the token, otherwise a kick or a password change no
   // longer invalidates the session and anyone already bumped can never sign in again
-  const token = jwt.sign(
-    { userId: user.id, tokenVersion: user.tokenVersion },
-    await getServerToken(),
-    { expiresIn: '604800s' } // 7 days, matching the password login
-  );
+  const token = await createSessionToken(user.id, user.tokenVersion, info);
 
   return {
     handoffCode: oidcManager.createHandoff(
@@ -159,7 +158,7 @@ const oidcCallbackRouteHandler = async (
     const { handoffCode, origin } = await completeOidcCallback(
       transaction,
       url,
-      info?.ip
+      info
     );
 
     let target: URL;

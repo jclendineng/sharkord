@@ -557,6 +557,28 @@ const oidcHandoffs = sqliteTable(
 
 // tokenVersion is copied from the user at registration, so a kick or a password change that
 // ends the user's sessions also stops pushes to the devices those sessions registered
+// one row per login, so a single device can be signed out. the id travels in the token, and
+// a token whose row is gone is refused. device and location are kept up to date by each join
+const sessions = sqliteTable(
+  'sessions',
+  {
+    id: text('id').primaryKey(),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    os: text('os'),
+    device: text('device'),
+    userAgent: text('user_agent'),
+    ip: text('ip'),
+    city: text('city'),
+    region: text('region'),
+    country: text('country'),
+    createdAt: integer('created_at').notNull(),
+    lastActiveAt: integer('last_active_at').notNull()
+  },
+  (t) => [index('sessions_user_active_idx').on(t.userId, t.lastActiveAt)]
+);
+
 const pushDevices = sqliteTable(
   'push_devices',
   {
@@ -566,6 +588,11 @@ const pushDevices = sqliteTable(
       .references(() => users.id, { onDelete: 'cascade' }),
     token: text('token').notNull(),
     tokenVersion: integer('token_version').notNull(),
+    // signing that session out removes the device with it. null for one registered by a token
+    // from before sessions existed
+    sessionId: text('session_id').references(() => sessions.id, {
+      onDelete: 'cascade'
+    }),
     // a development build's token is only accepted by the apns sandbox
     sandbox: integer('sandbox', { mode: 'boolean' }).notNull().default(false),
     createdAt: integer('created_at').notNull()
@@ -661,6 +688,7 @@ export {
   pushDevices,
   rolePermissions,
   roles,
+  sessions,
   settings,
   userRoles,
   users

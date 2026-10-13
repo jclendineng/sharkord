@@ -13,6 +13,7 @@ struct SearchMessage: Decodable, Identifiable {
     let userId: Int?
     let createdAt: Int
     let channelName: String
+    let channelIsDm: Bool
     let plainContent: String
 
     var createdDate: Date {
@@ -32,4 +33,10 @@ struct SearchFile: Decodable, Identifiable {
 
 struct Invite: Decodable {
     let code: String
+}
+
+// messages.getMentions
+struct MentionsPage: Decodable {
+    let messages: [Message]
+    let nextCursor: MessagesCursor?
 }
