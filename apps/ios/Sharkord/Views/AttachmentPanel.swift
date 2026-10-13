@@ -80,6 +80,8 @@ struct AttachmentPanel: View {
 
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                // the grid stops at the panel's bottom, nothing shows under the bar
+                .clipped()
         }
         .frame(height: height)
         .overlay(alignment: .bottom) {
@@ -133,6 +135,7 @@ struct AttachmentPanel: View {
         .background(alignment: .bottom) {
             LinearGradient(colors: [Self.background.opacity(0), Self.background], startPoint: .top, endPoint: .center)
                 .frame(height: 130)
+                .ignoresSafeArea(edges: .bottom)
                 .allowsHitTesting(false)
         }
     }
@@ -174,7 +177,7 @@ struct AttachmentPanel: View {
 
     private var grid: some View {
         ScrollView {
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 4), spacing: 4) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
                 Button(action: onCamera) {
                     Color.clear
                         .aspectRatio(1, contentMode: .fit)
@@ -183,7 +186,7 @@ struct AttachmentPanel: View {
                                 .font(.title2)
                                 .foregroundStyle(Theme.text)
                         }
-                        .background(Theme.inputBackground, in: .rect(cornerRadius: 10))
+                        .background(Theme.inputBackground, in: .rect(cornerRadius: 14, style: .continuous))
                 }
                 .buttonStyle(.plain)
 
@@ -197,7 +200,7 @@ struct AttachmentPanel: View {
                     }
                 }
             }
-            .padding(.horizontal, 10)
+            .padding(.horizontal, 12)
 
             if isLimited {
                 VStack(spacing: 14) {
@@ -415,7 +418,7 @@ private struct AssetCell: View {
                     Theme.inputBackground
                 }
             }
-            .clipShape(.rect(cornerRadius: 10))
+            .clipShape(.rect(cornerRadius: 14, style: .continuous))
             .overlay(alignment: .bottomTrailing) {
                 if asset.mediaType == .video {
                     Text(duration)

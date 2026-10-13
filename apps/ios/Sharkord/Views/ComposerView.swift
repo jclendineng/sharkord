@@ -255,8 +255,8 @@ struct ComposerView: View {
         isAttachPanelOpen = false
     }
 
+    // the panel stays behind the sheet, so backing out of a poll lands back on it
     private func openPollCreator() {
-        isAttachPanelOpen = false
         isPollCreatorPresented = true
     }
 
