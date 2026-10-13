@@ -4,8 +4,8 @@ import UniformTypeIdentifiers
 
 // discord's attachment panel, in the keyboard's place under the composer: the camera and the
 // latest photos to tap straight into the message, the full pickers in a bar floating over the
-// bottom. drag it up to fill the screen, down to put it away. with access to only some photos
-// it says so and offers to change them
+// bottom. dragged up it covers nearly the whole screen, composer included, dragged down it
+// goes away. with access to only some photos it says so and offers to change them
 struct AttachmentPanel: View {
     static let height: CGFloat = 340
 
@@ -20,23 +20,25 @@ struct AttachmentPanel: View {
     let onPoll: (() -> Void)?
     let onFiles: () -> Void
     let onClose: () -> Void
+    @Binding var isExpanded: Bool
 
     @Environment(\.openURL) private var openURL
 
     @State private var library = PhotoLibrary()
     @State private var isManagePresented = false
-    @State private var isExpanded = false
     @State private var dragOffset: CGFloat = 0
 
     private var isLimited: Bool {
         library.status == .limited
     }
 
-    // the screen less the navigation bar and the composer, which stays above the panel
+    // all but a sliver of the conversation under the navigation bar, as discord leaves it
     private var expandedHeight: CGFloat {
-        let screen = UIApplication.shared.topViewController?.view.window?.bounds.height ?? 800
+        let window = UIApplication.shared.topViewController?.view.window
+        let height = window?.bounds.height ?? 800
+        let insets = window?.safeAreaInsets ?? .zero
 
-        return screen * 0.72
+        return height - insets.top - insets.bottom - 110
     }
 
     private var height: CGFloat {
@@ -52,27 +54,7 @@ struct AttachmentPanel: View {
                     .fill(Theme.muted.opacity(0.5))
                     .frame(width: 36, height: 5)
                     .padding(.top, 8)
-                    .padding(.bottom, isLimited ? 6 : 10)
-
-                if isLimited {
-                    HStack(spacing: 12) {
-                        Text("You've given Sharkord access to a select number of photos and videos.")
-                            .font(.subheadline)
-                            .foregroundStyle(Theme.text)
-
-                        Spacer(minLength: 0)
-
-                        Button("Manage", action: manage)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Theme.header)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 8)
-                            .background(Theme.inputBackground, in: .rect(cornerRadius: 10))
-                            .buttonStyle(.plain)
-                    }
-                    .padding(.horizontal, 14)
-                    .padding(.bottom, 10)
-                }
+                    .padding(.vertical, 10)
             }
             .frame(maxWidth: .infinity)
             .contentShape(.rect)
@@ -175,9 +157,34 @@ struct AttachmentPanel: View {
         }
     }
 
+    // the banner scrolls away with the photos rather than staying pinned
+    private var limitedBanner: some View {
+        HStack(spacing: 12) {
+            Text("You've given Sharkord access to a select number of photos and videos.")
+                .font(.subheadline)
+                .foregroundStyle(Theme.text)
+
+            Spacer(minLength: 0)
+
+            Button("Manage", action: manage)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Theme.header)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(Theme.inputBackground, in: .rect(cornerRadius: 10))
+                .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 14)
+        .padding(.bottom, 12)
+    }
+
     private var grid: some View {
         ScrollView {
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 4), spacing: 4) {
+            if isLimited {
+                limitedBanner
+            }
+
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 3), count: 4), spacing: 3) {
                 Button(action: onCamera) {
                     Color.clear
                         .aspectRatio(1, contentMode: .fit)
@@ -186,7 +193,7 @@ struct AttachmentPanel: View {
                                 .font(.title2)
                                 .foregroundStyle(Theme.text)
                         }
-                        .background(Theme.inputBackground, in: .rect(cornerRadius: 14, style: .continuous))
+                        .background(Theme.inputBackground, in: .rect(cornerRadius: 8, style: .continuous))
                 }
                 .buttonStyle(.plain)
 
@@ -200,7 +207,7 @@ struct AttachmentPanel: View {
                     }
                 }
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 6)
 
             if isLimited {
                 VStack(spacing: 14) {
@@ -418,7 +425,7 @@ private struct AssetCell: View {
                     Theme.inputBackground
                 }
             }
-            .clipShape(.rect(cornerRadius: 14, style: .continuous))
+            .clipShape(.rect(cornerRadius: 6, style: .continuous))
             .overlay(alignment: .bottomTrailing) {
                 if asset.mediaType == .video {
                     Text(duration)
