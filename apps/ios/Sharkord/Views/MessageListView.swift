@@ -46,13 +46,9 @@ struct MessageListView<Header: View>: View {
         .defaultScrollAnchor(.bottom)
         .defaultScrollAnchor(.bottom, for: .sizeChanges)
         .scrollDismissesKeyboard(.interactively)
-        // like the keyboard, a scroll or a tap on the conversation puts the attachment panel
-        // away, and the scroll carries on
-        .onScrollPhaseChange { _, phase in
-            if phase == .interacting {
-                closeAttachPanel()
-            }
-        }
+        // like the keyboard: a swipe down on the conversation drags the attachment panel with
+        // it while the conversation scrolls, a tap puts it away
+        .simultaneousGesture(attachPanelDrag)
         .simultaneousGesture(TapGesture().onEnded(closeAttachPanel))
         .background(Theme.chatBackground)
         .overlay {
@@ -93,9 +89,21 @@ struct MessageListView<Header: View>: View {
 
     // discord's double tap, the first quick reaction
     private func closeAttachPanel() {
-        if store.isAttachPanelOpen {
-            store.isAttachPanelOpen = false
-        }
+        store.attachPanel.close()
+    }
+
+    private var attachPanelDrag: some Gesture {
+        DragGesture(minimumDistance: 10, coordinateSpace: .global)
+            .onChanged { value in
+                if value.translation.height > 0 {
+                    store.attachPanel.drag(value.translation.height)
+                }
+            }
+            .onEnded { value in
+                if store.attachPanel.isDragging {
+                    store.attachPanel.release(predicted: value.predictedEndTranslation.height)
+                }
+            }
     }
 
     private func react(to message: Message) {

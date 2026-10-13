@@ -5,10 +5,10 @@ import UniformTypeIdentifiers
 // discord's attachment panel, in the keyboard's place under the composer: the camera and the
 // latest photos to tap straight into the message, the full pickers in a bar floating over the
 // bottom. it follows the finger, up over the composer and the conversation, which dims behind
-// it, or down and away. a tap or a scroll on the conversation puts it away too, like discord's,
-// see MessageListView. with access to only some photos it says so and offers to change them
+// it, or down and away, and a swipe down on the composer or the conversation drags it the same
+// way, like the keyboard. with access to only some photos it says so and offers to change them
 struct AttachmentPanel: View {
-    static let height: CGFloat = 340
+    static let height = AttachPanelModel.restingHeight
 
     // the one color the whole panel is, down behind the home indicator
     static let background = Color(hex: "#232428")
@@ -20,49 +20,22 @@ struct AttachmentPanel: View {
     let onPhotos: () -> Void
     let onPoll: (() -> Void)?
     let onFiles: () -> Void
-    let onClose: () -> Void
+    let model: AttachPanelModel
 
     @Environment(\.openURL) private var openURL
 
     @State private var library = PhotoLibrary()
     @State private var isManagePresented = false
-    // the height it rests at between drags, and how far the current drag has moved it
-    @State private var settledHeight = Self.height
-    @State private var dragOffset: CGFloat = 0
     @State private var scrollOffset: CGFloat = 0
 
     private var isLimited: Bool {
         library.status == .limited
     }
 
-    // all but a sliver of the conversation under the navigation bar, as discord leaves it
-    private var expandedHeight: CGFloat {
-        let window = UIApplication.shared.topViewController?.view.window
-        let height = window?.bounds.height ?? 800
-        let insets = window?.safeAreaInsets ?? .zero
-
-        return height - insets.top - insets.bottom - 110
-    }
-
-    private var height: CGFloat {
-        min(max(settledHeight - dragOffset, 0), expandedHeight)
-    }
-
-    // the grid only scrolls once the panel is as tall as it gets, before that a drag on the
-    // photos moves the panel, like a sheet
-    private var isFullHeight: Bool {
-        settledHeight >= expandedHeight - 1 && dragOffset == 0
-    }
-
-    // how far past its resting height the panel has been pulled, for the dimming behind it
-    private var expansion: Double {
-        Double(max(0, min(1, (height - Self.height) / (expandedHeight - Self.height))))
-    }
-
     var body: some View {
         ZStack(alignment: .bottom) {
             Color.black
-                .opacity(expansion * 0.5)
+                .opacity(model.expansion * 0.5)
                 .frame(height: 2400)
                 .allowsHitTesting(false)
 
@@ -79,7 +52,7 @@ struct AttachmentPanel: View {
                 grabber
             }
             .clipShape(UnevenRoundedRectangle(topLeadingRadius: 24, topTrailingRadius: 24, style: .continuous))
-            .frame(height: height)
+            .frame(height: model.height)
         .overlay(alignment: .bottom) {
             bar
         }
@@ -157,16 +130,13 @@ struct AttachmentPanel: View {
         }
     }
 
-    // the grabber drags the panel taller or shorter, a flick down from its resting size closes it
-    // the panel moves with the finger, then settles at whichever of closed, resting or full
-    // height is nearest to where the fling would have carried it
     private var resize: some Gesture {
         DragGesture(coordinateSpace: .global)
             .onChanged { value in
-                dragOffset = value.translation.height
+                model.drag(value.translation.height)
             }
             .onEnded { value in
-                settle(predicted: value.predictedEndTranslation.height)
+                model.release(predicted: value.predictedEndTranslation.height)
             }
     }
 
@@ -177,43 +147,15 @@ struct AttachmentPanel: View {
             .onChanged { value in
                 let pullsDownFromTop = scrollOffset <= 1 && value.translation.height > 0
 
-                if dragOffset != 0 || !isFullHeight || pullsDownFromTop {
-                    dragOffset = value.translation.height
+                if model.isDragging || !model.isFullHeight || pullsDownFromTop {
+                    model.drag(value.translation.height)
                 }
             }
             .onEnded { value in
-                if dragOffset != 0 {
-                    settle(predicted: value.predictedEndTranslation.height)
+                if model.isDragging {
+                    model.release(predicted: value.predictedEndTranslation.height)
                 }
             }
-    }
-
-    // one swipe moves one step: from full height a swipe down lands at the resting height,
-    // from the resting height it follows the finger down and puts the panel away
-    private func settle(predicted translation: CGFloat) {
-        let projected = settledHeight - translation
-        let startedExpanded = settledHeight > Self.height
-        let stops: [CGFloat] = startedExpanded ? [Self.height, expandedHeight] : [0, Self.height, expandedHeight]
-        let target = stops.min { abs($0 - projected) < abs($1 - projected) } ?? Self.height
-
-        // slides the rest of the way down from under the finger, then goes
-        if target == 0 {
-            withAnimation(.easeOut(duration: 0.2)) {
-                dragOffset = settledHeight
-            }
-
-            Task {
-                try? await Task.sleep(for: .milliseconds(200))
-                onClose()
-            }
-
-            return
-        }
-
-        withAnimation(.spring(response: 0.4, dampingFraction: 0.86)) {
-            dragOffset = 0
-            settledHeight = target
-        }
     }
 
     @ViewBuilder
@@ -305,7 +247,7 @@ struct AttachmentPanel: View {
         .contentMargins(.top, 30, for: .scrollContent)
         .contentMargins(.bottom, 96, for: .scrollContent)
         .scrollIndicators(.hidden)
-        .scrollDisabled(!isFullHeight)
+        .scrollDisabled(!model.isFullHeight)
         .onScrollGeometryChange(for: CGFloat.self) { geometry in
             geometry.contentOffset.y + geometry.contentInsets.top
         } action: { _, offset in
@@ -618,5 +560,118 @@ extension UIApplication {
         }
 
         return top
+    }
+}
+
+// where the attachment panel sits, shared so the panel, the composer and the conversation can
+// all drag it: the height it rests at between drags and how far the current drag has moved it
+@Observable
+final class AttachPanelModel {
+    static let restingHeight: CGFloat = 340
+
+    private(set) var isOpen = false
+    private(set) var settledHeight = restingHeight
+    private(set) var dragOffset: CGFloat = 0
+
+    // all but a sliver of the conversation under the navigation bar, as discord leaves it
+    var expandedHeight: CGFloat {
+        let window = UIApplication.shared.topViewController?.view.window
+        let height = window?.bounds.height ?? 800
+        let insets = window?.safeAreaInsets ?? .zero
+
+        return height - insets.top - insets.bottom - 110
+    }
+
+    var height: CGFloat {
+        min(max(settledHeight - dragOffset, 0), expandedHeight)
+    }
+
+    var isDragging: Bool {
+        dragOffset != 0
+    }
+
+    // the grid only scrolls once the panel is as tall as it gets, before that a drag on the
+    // photos moves the panel, like a sheet
+    var isFullHeight: Bool {
+        settledHeight >= expandedHeight - 1 && dragOffset == 0
+    }
+
+    // how far past its resting height the panel has been pulled, for the dimming behind it
+    var expansion: Double {
+        Double(max(0, min(1, (height - Self.restingHeight) / (expandedHeight - Self.restingHeight))))
+    }
+
+    // rises from nothing, the composer above it rising along
+    func open() {
+        settledHeight = Self.restingHeight
+        dragOffset = Self.restingHeight
+        isOpen = true
+
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
+            dragOffset = 0
+        }
+    }
+
+    // slides down from wherever it is, the composer following, then goes
+    func close() {
+        guard isOpen else {
+            return
+        }
+
+        withAnimation(.easeOut(duration: 0.22)) {
+            dragOffset = settledHeight
+        }
+
+        Task {
+            try? await Task.sleep(for: .milliseconds(220))
+            isOpen = false
+            dragOffset = 0
+            settledHeight = Self.restingHeight
+        }
+    }
+
+    // a closed panel the keyboard replaces, no slide
+    func dismiss() {
+        isOpen = false
+        dragOffset = 0
+        settledHeight = Self.restingHeight
+    }
+
+    // how much room the composer leaves under itself: the panel's height, up to the resting
+    // height, past which the panel covers the composer instead of pushing it
+    var reservedHeight: CGFloat {
+        min(height, Self.restingHeight)
+    }
+
+    func drag(_ translation: CGFloat) {
+        guard isOpen else {
+            return
+        }
+
+        dragOffset = translation
+    }
+
+    // one swipe moves one step: from full height a swipe down lands at the resting height, from
+    // the resting height it follows the finger down and away. otherwise it settles at whichever
+    // height is nearest to where the fling would have carried it
+    func release(predicted translation: CGFloat) {
+        guard isOpen else {
+            return
+        }
+
+        let projected = settledHeight - translation
+        let startedExpanded = settledHeight > Self.restingHeight
+        let stops: [CGFloat] = startedExpanded ? [Self.restingHeight, expandedHeight] : [0, Self.restingHeight, expandedHeight]
+        let target = stops.min { abs($0 - projected) < abs($1 - projected) } ?? Self.restingHeight
+
+        if target == 0 {
+            close()
+            return
+        }
+
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.86)) {
+            dragOffset = 0
+            settledHeight = target
+        }
     }
 }
