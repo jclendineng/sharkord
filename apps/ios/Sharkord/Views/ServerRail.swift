@@ -61,6 +61,8 @@ private struct ServerRailItem: View {
 
     @Environment(ServerListStore.self) private var servers
 
+    @State private var frame = CGRect.zero
+
     var body: some View {
         RailItem(
             isSelected: isSelected,
@@ -70,56 +72,29 @@ private struct ServerRailItem: View {
         ) {
             ServerIcon(server: server)
                 .opacity(server.phase == .signedOut ? 0.4 : 1)
-        }
-        .contextMenu {
-            Section(server.displayName) {
-                Button("Mark As Read", systemImage: "envelope.open", action: markAsRead)
-
-                if server.serverInfo?.pushEnabled == true {
-                    Button(
-                        server.isPushEnabled ? "Turn Off Notifications" : "Turn On Notifications",
-                        systemImage: server.isPushEnabled ? "bell.slash" : "bell",
-                        action: togglePush
-                    )
+                .onGeometryChange(for: CGRect.self) { proxy in
+                    proxy.frame(in: .named(HomeView.coordinateSpace))
+                } action: { newFrame in
+                    frame = newFrame
                 }
-
-                Button("More Options", systemImage: "gearshape", action: moreOptions)
-            }
-
-            Button("Log Out", systemImage: "rectangle.portrait.and.arrow.right", role: .destructive, action: remove)
-        } preview: {
-            // the row itself is as wide as the rail with the pill beside it, lifted as is
-            // the icon jumps out of place
-            ServerIcon(server: server)
-                .frame(width: 64, height: 64)
-                .clipShape(.rect(cornerRadius: 18))
         }
+        // discord keeps the icon in place and opens a menu beside it, the system context
+        // menu lifts the whole row out instead
+        .simultaneousGesture(LongPressGesture(minimumDuration: 0.4).onEnded(showMenu))
     }
 
-    private func markAsRead() {
-        Task {
-            await server.markAllAsRead()
-        }
-    }
-
-    private func togglePush() {
-        let enable = !server.isPushEnabled
-
-        Task {
-            await server.setPushEnabled(enable)
-        }
-    }
-
-    private func moreOptions() {
-        servers.showServerSheet(for: server)
-    }
-
+    // releasing a long press also counts as a tap, which must not switch servers
     private func select() {
+        guard servers.railMenu == nil else {
+            return
+        }
+
         onSelect(server)
     }
 
-    private func remove() {
-        servers.remove(server)
+    private func showMenu(_: Bool) {
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        servers.railMenu = ServerListStore.RailMenu(server: server, iconFrame: frame)
     }
 }
 

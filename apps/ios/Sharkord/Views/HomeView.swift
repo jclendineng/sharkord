@@ -3,6 +3,8 @@ import SwiftUI
 // discord's layout: the server rail on the left, the picked server's channels or the direct
 // messages next to it, the user bar along the bottom
 struct HomeView: View {
+    static let coordinateSpace = "home"
+
     let session: SessionStore
 
     @Environment(ServerListStore.self) private var servers
@@ -39,6 +41,14 @@ struct HomeView: View {
             .opensRequestedChannel($path)
         }
         .environment(session)
+        .coordinateSpace(.named(Self.coordinateSpace))
+        .overlay {
+            if let menu = servers.railMenu {
+                ServerRailMenu(menu: menu)
+                    .environment(session)
+            }
+        }
+        .animation(.snappy(duration: 0.2), value: servers.railMenu?.server.id)
         .overlay(alignment: .top) {
             if let toastMessage = session.toastMessage {
                 ErrorToast(message: toastMessage)

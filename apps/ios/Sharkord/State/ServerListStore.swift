@@ -16,6 +16,14 @@ final class ServerListStore {
     // the rail's "more options", the channel panel opens the server sheet for it
     var serverSheetRequest: ObjectIdentifier?
 
+    struct RailMenu {
+        let server: SessionStore
+        let iconFrame: CGRect
+    }
+
+    // a server icon held down, HomeView draws the menu beside it
+    var railMenu: RailMenu?
+
     @ObservationIgnored private var backgroundTask: UIBackgroundTaskIdentifier = .invalid
 
     init() {
