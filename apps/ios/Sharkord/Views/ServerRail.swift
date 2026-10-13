@@ -20,7 +20,7 @@ struct ServerRail: View {
                         .font(.system(size: 20))
                         .foregroundStyle(servers.isShowingDirectMessages ? .white : Theme.text)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(servers.isShowingDirectMessages ? Theme.blurple : Theme.listBackground)
+                        .background(servers.isShowingDirectMessages ? Theme.blurple : Theme.panelControl)
                 }
 
                 Capsule()
@@ -40,7 +40,7 @@ struct ServerRail: View {
                         .font(.system(size: 20, weight: .semibold))
                         .foregroundStyle(Theme.green)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Theme.listBackground)
+                        .background(Theme.panelControl)
                 }
             }
             .padding(.vertical, 8)
@@ -127,7 +127,7 @@ struct ServerIcon: View {
             .font(.system(size: 16, weight: .semibold))
             .foregroundStyle(Theme.header)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Theme.listBackground)
+            .background(Theme.panelControl)
     }
 }
 
@@ -161,7 +161,7 @@ private struct RailItem<Content: View>: View {
                             .frame(minWidth: 18, minHeight: 18)
                             .background(Theme.red, in: .capsule)
                             .overlay {
-                                Capsule().stroke(Theme.deepBackground, lineWidth: 3)
+                                Capsule().stroke(Theme.railBackground, lineWidth: 3)
                             }
                             .offset(x: 4, y: 4)
                     }

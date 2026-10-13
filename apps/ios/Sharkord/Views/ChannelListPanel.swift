@@ -82,7 +82,7 @@ struct ChannelListPanel: View {
                         .foregroundStyle(Theme.text)
                         .frame(maxWidth: .infinity)
                         .frame(height: 40)
-                        .background(Theme.deepBackground, in: .rect(cornerRadius: 12))
+                        .background(Theme.panelControl, in: .rect(cornerRadius: 12))
                 }
 
                 Button("Invite", systemImage: "person.badge.plus", action: showInvite)
@@ -90,7 +90,7 @@ struct ChannelListPanel: View {
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(Theme.text)
                     .frame(width: 44, height: 40)
-                    .background(Theme.deepBackground, in: .rect(cornerRadius: 12))
+                    .background(Theme.panelControl, in: .rect(cornerRadius: 12))
             }
             .buttonStyle(.plain)
             .padding(.horizontal, 4)
@@ -205,7 +205,7 @@ private struct ChannelRow: View {
         // plain gestures rather than a link or button: a recognised long press cancels the
         // tap, where a button still fires when the finger lifts after one
         label
-            .background(isPressed ? Theme.hover : .clear, in: .rect(cornerRadius: 6))
+            .background(isPressed ? Theme.panelSelected : .clear, in: .rect(cornerRadius: 6))
             .onTapGesture(perform: open)
             .onLongPressGesture(minimumDuration: 0.35, perform: showActions, onPressingChanged: setPressed)
             .accessibilityAddTraits(.isButton)
@@ -262,7 +262,7 @@ private struct ChannelRow: View {
         .opacity(isMuted && !isSelected ? 0.5 : 1)
         .padding(.horizontal, 8)
         .padding(.vertical, 8)
-        .background(isSelected ? Theme.hover : .clear, in: .rect(cornerRadius: 8))
+        .background(isSelected ? Theme.panelSelected : .clear, in: .rect(cornerRadius: 8))
         .contentShape(.rect)
         .overlay(alignment: .leading) {
             if isUnread {

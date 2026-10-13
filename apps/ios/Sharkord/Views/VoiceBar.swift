@@ -51,7 +51,7 @@ struct VoiceBar: View {
         .font(.title3)
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .background(Theme.listBackground, in: .rect(cornerRadius: 20))
+        .background(Color(hex: "#202125"), in: .rect(cornerRadius: 20))
         .fullScreenCover(isPresented: $isRoomPresented) {
             VoiceRoomScreen()
                 .environment(session)

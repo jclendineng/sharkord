@@ -17,7 +17,7 @@ struct DirectMessagesPanel: View {
                         unreadCount: session.unreadCounts[conversation.channelId, default: 0]
                     )
                 }
-                .listRowBackground(Theme.listBackground)
+                .listRowBackground(Theme.panelBackground)
             }
         }
         .listStyle(.plain)
@@ -43,7 +43,7 @@ struct DirectMessagesPanel: View {
                     .font(.title3)
                     .foregroundStyle(Theme.text)
             }
-            .background(Theme.listBackground)
+            .background(Theme.panelBackground)
         }
         .sheet(isPresented: $isNewMessagePresented) {
             NewDirectMessageSheet(onOpened: onOpen)

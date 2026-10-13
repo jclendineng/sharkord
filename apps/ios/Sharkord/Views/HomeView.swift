@@ -18,22 +18,17 @@ struct HomeView: View {
 
                 panel
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .clipShape(UnevenRoundedRectangle(topLeadingRadius: 20, style: .continuous))
                     .background {
-                        // the rail's color melts into the list's instead of meeting an edge, and
-                        // both run under the status bar and the user bar
-                        LinearGradient(
-                            stops: [
-                                .init(color: Theme.deepBackground, location: 0),
-                                .init(color: Theme.listBackground, location: 0.12)
-                            ],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                        .ignoresSafeArea()
+                        // runs on under the user bar, so the bottom has no strip of the rail's color
+                        UnevenRoundedRectangle(topLeadingRadius: 20, style: .continuous)
+                            .fill(Theme.panelBackground)
+                            .stroke(Theme.panelEdge, lineWidth: 1)
+                            .ignoresSafeArea(edges: .bottom)
                     }
                     .id(ObjectIdentifier(session))
             }
-            .background(Theme.deepBackground.ignoresSafeArea())
+            .background(Theme.railBackground.ignoresSafeArea())
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 VStack(spacing: 6) {
                     if let voiceSession = servers.voiceSession {
@@ -45,17 +40,6 @@ struct HomeView: View {
                 }
                 .padding(.horizontal, 8)
                 .padding(.top, 6)
-                .background {
-                    // the list fades out under the floating bars rather than stopping at a band
-                    LinearGradient(
-                        colors: [Theme.deepBackground.opacity(0), Theme.deepBackground.opacity(0.85)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .padding(.top, -48)
-                    .ignoresSafeArea()
-                    .allowsHitTesting(false)
-                }
             }
             .toolbarVisibility(.hidden, for: .navigationBar)
             .chatDestinations()

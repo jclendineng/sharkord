@@ -9,6 +9,14 @@ enum Theme {
     static let hover = Color(hex: "#404249")
     static let divider = Color(hex: "#3F4147")
 
+    // the home screen's darker set, from discord's current app: the server rail, the channel
+    // panel a shade above it, its controls and its selected row
+    static let railBackground = Color(hex: "#121214")
+    static let panelBackground = Color(hex: "#1A1A1E")
+    static let panelControl = Color(hex: "#242429")
+    static let panelSelected = Color(hex: "#2C2D32")
+    static let panelEdge = Color.white.opacity(0.06)
+
     static let text = Color(hex: "#DBDEE1")
     static let header = Color(hex: "#F2F3F5")
     static let muted = Color(hex: "#949BA4")

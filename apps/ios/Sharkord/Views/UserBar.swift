@@ -65,7 +65,7 @@ struct UserBar: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
-        .background(Color(hex: "#2B2C31"), in: .rect(cornerRadius: 28, style: .continuous))
+        .background(Color(hex: "#202125"), in: .rect(cornerRadius: 28, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 28, style: .continuous)
                 .strokeBorder(.white.opacity(0.06), lineWidth: 1)
