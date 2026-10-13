@@ -192,6 +192,12 @@ const users = sqliteTable(
     allowDirectMessages: integer('allow_direct_messages', { mode: 'boolean' })
       .notNull()
       .default(true),
+    // the status the user picked, shown while they are connected. invisible reads as
+    // offline to everyone else, so it never leaves the server
+    presence: text('presence', { enum: ['online', 'idle', 'dnd', 'invisible'] })
+      .notNull()
+      .default('online'),
+    customStatus: text('custom_status'),
     oidcSub: text('oidc_sub').unique(),
     oidcIssuer: text('oidc_issuer'),
     passwordSet: integer('password_set', { mode: 'boolean' })

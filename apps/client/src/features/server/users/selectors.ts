@@ -10,6 +10,7 @@ import { createCachedSelector } from 're-reselect';
 const STATUS_ORDER: Record<string, number> = {
   online: 0,
   idle: 1,
+  dnd: 1,
   offline: 2
 };
 

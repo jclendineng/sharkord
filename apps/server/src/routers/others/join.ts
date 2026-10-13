@@ -1,9 +1,4 @@
-import {
-  ActivityLogType,
-  ServerEvents,
-  UserStatus,
-  zLocale
-} from '@sharkord/shared';
+import { ActivityLogType, ServerEvents, zLocale } from '@sharkord/shared';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { config } from '../../config';
@@ -30,6 +25,7 @@ import { enqueueLogin } from '../../queues/logins';
 import { VoiceRuntime } from '../../runtimes/voice';
 import { invariant } from '../../utils/invariant';
 import { publicProcedure, rateLimitedProcedure } from '../../utils/trpc';
+import { setUserPresence } from '../../utils/wss';
 
 const joinServerRoute = rateLimitedProcedure(publicProcedure, {
   maxRequests: config.rateLimiters.joinServer.maxRequests,
@@ -81,6 +77,7 @@ const joinServerRoute = rateLimitedProcedure(publicProcedure, {
 
     ctx.authenticated = true;
     ctx.setWsUserId(ctx.user.id);
+    setUserPresence(ctx.user.id, ctx.user.presence);
 
     if (input.locale) ctx.locale = input.locale;
 
@@ -131,7 +128,7 @@ const joinServerRoute = rateLimitedProcedure(publicProcedure, {
 
     ctx.pubsub.publish(ServerEvents.USER_JOIN, {
       ...foundPublicUser,
-      status: UserStatus.ONLINE
+      status: ctx.getStatusById(ctx.user.id)
     });
 
     if (connectionInfo?.ip) {

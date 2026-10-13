@@ -37,6 +37,30 @@ const usersIpMap = new Map<number, string>();
 
 const userSockets = new Map<number, Set<WebSocket>>();
 
+type TPresence = 'online' | 'idle' | 'dnd' | 'invisible';
+
+// the status each connected user picked, loaded when they join
+const userPresence = new Map<number, TPresence>();
+
+const PRESENCE_STATUS: Record<TPresence, UserStatus> = {
+  online: UserStatus.ONLINE,
+  idle: UserStatus.IDLE,
+  dnd: UserStatus.DND,
+  // invisible is offline to everyone else
+  invisible: UserStatus.OFFLINE
+};
+
+const setUserPresence = (userId: number, presence: TPresence) => {
+  userPresence.set(userId, presence);
+};
+
+// what everyone else sees: nothing but offline unless connected, then the status picked
+const getUserStatus = (userId: number): UserStatus => {
+  if (!userSockets.has(userId)) return UserStatus.OFFLINE;
+
+  return PRESENCE_STATUS[userPresence.get(userId) ?? 'online'];
+};
+
 const trackUserSocket = (userId: number, ws: WebSocket) => {
   const sockets = userSockets.get(userId) ?? new Set<WebSocket>();
 
@@ -56,6 +80,7 @@ const untrackUserSocket = (userId: number, ws: WebSocket) => {
 
 const clearUserSocketsForTests = () => {
   userSockets.clear();
+  userPresence.clear();
   usersIpMap.clear();
 };
 
@@ -149,8 +174,7 @@ const createContext = async ({
     return Array.from(wss.clients).filter((client) => client.userId === userId);
   };
 
-  const getStatusById = (userId: number) =>
-    userSockets.has(userId) ? UserStatus.ONLINE : UserStatus.OFFLINE;
+  const getStatusById = (userId: number) => getUserStatus(userId);
 
   const setWsUserId = (userId: number) => {
     if (!ws) return;
@@ -254,6 +278,7 @@ const handleSocketClose = async (ws: WebSocket) => {
     }
 
     usersIpMap.delete(user.id);
+    userPresence.delete(user.id);
     pubsub.publish(ServerEvents.USER_LEAVE, user.id);
 
     eventBus.emit('user:left', {
@@ -325,7 +350,9 @@ export {
   disconnectUser,
   getOnlineUserIds,
   getUserIp,
+  getUserStatus,
   getUserWsCount,
   handleSocketClose,
+  setUserPresence,
   trackUserSocket
 };

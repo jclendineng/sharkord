@@ -288,6 +288,13 @@
       "when": 1791895901576,
       "tag": "0040_gifted_sentinels",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "6",
+      "when": 1791897022027,
+      "tag": "0041_far_mephisto",
+      "breakpoints": true
     }
   ]
 }

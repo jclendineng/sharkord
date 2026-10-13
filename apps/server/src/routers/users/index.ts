@@ -19,7 +19,9 @@ import { unbanRoute } from './unban';
 import { updatePasswordRoute } from './update-password';
 import { updateUserRoute } from './update-user';
 
+import { getPresenceRoute } from './get-presence';
 import { getPrivacyRoute } from './get-privacy';
+import { setPresenceRoute } from './set-presence';
 import { updatePrivacyRoute } from './update-privacy';
 
 export const usersRouter = t.router({
@@ -30,6 +32,8 @@ export const usersRouter = t.router({
   update: updateUserRoute,
   updatePassword: updatePasswordRoute,
   getPrivacy: getPrivacyRoute,
+  getPresence: getPresenceRoute,
+  setPresence: setPresenceRoute,
   updatePrivacy: updatePrivacyRoute,
   getInfo: getUserInfoRoute,
   getAll: getUsersRoute,

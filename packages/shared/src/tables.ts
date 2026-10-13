@@ -107,6 +107,8 @@ type TPublicUser = Pick<
   | 'createdAt'
 > & {
   status?: UserStatus;
+  // only where the profile is loaded in full, a creator embedded in an invite leaves it out
+  customStatus?: string | null;
   _identity?: string;
 };
 

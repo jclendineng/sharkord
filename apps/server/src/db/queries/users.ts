@@ -30,7 +30,8 @@ const getPublicUserById = async (
       bannerId: users.bannerId,
       avatar: avatarFiles,
       banner: bannerFiles,
-      createdAt: users.createdAt
+      createdAt: users.createdAt,
+      customStatus: users.customStatus
     })
     .from(users)
     .leftJoin(avatarFiles, eq(users.avatarId, avatarFiles.id))
@@ -68,6 +69,7 @@ const getPublicUserById = async (
       storageSignedUrlsTtlSeconds
     ),
     createdAt: results.createdAt,
+    customStatus: results.customStatus,
     banned: results.banned,
     roleIds: roles.map((r) => r.roleId)
   };
@@ -95,6 +97,7 @@ const getPublicUsers = async (
         avatar: avatarFiles,
         banner: bannerFiles,
         createdAt: users.createdAt,
+        customStatus: users.customStatus,
         _identity: users.identity
       })
       .from(users)
@@ -138,6 +141,7 @@ const getPublicUsers = async (
         storageSignedUrlsTtlSeconds
       ),
       createdAt: result.createdAt,
+      customStatus: result.customStatus,
       _identity: result._identity,
       roleIds: rolesMap[result.id] || []
     }));
@@ -153,7 +157,8 @@ const getPublicUsers = async (
         bannerId: users.bannerId,
         avatar: avatarFiles,
         banner: bannerFiles,
-        createdAt: users.createdAt
+        createdAt: users.createdAt,
+        customStatus: users.customStatus
       })
       .from(users)
       .leftJoin(avatarFiles, eq(users.avatarId, avatarFiles.id))
@@ -197,6 +202,7 @@ const getPublicUsers = async (
         storageSignedUrlsTtlSeconds
       ),
       createdAt: result.createdAt,
+      customStatus: result.customStatus,
       roleIds: rolesMap[result.id] || []
     }));
   }
@@ -238,6 +244,7 @@ const getJoinedUser = async (
       password: users.password,
       profileColor: users.profileColor,
       createdAt: users.createdAt,
+      customStatus: users.customStatus,
       updatedAt: users.updatedAt,
       lastLoginAt: users.lastLoginAt,
       banned: users.banned,
@@ -245,6 +252,7 @@ const getJoinedUser = async (
       bannedAt: users.bannedAt,
       tokenVersion: users.tokenVersion,
       allowDirectMessages: users.allowDirectMessages,
+      presence: users.presence,
       oidcSub: users.oidcSub,
       oidcIssuer: users.oidcIssuer,
       passwordSet: users.passwordSet,
@@ -346,6 +354,7 @@ const getUsers = async (): Promise<TJoinedUser[]> => {
           bannerId: users.bannerId,
           updatedAt: users.updatedAt,
           createdAt: users.createdAt,
+          customStatus: users.customStatus,
           identity: users.identity,
           password: users.password,
           lastLoginAt: users.lastLoginAt,
@@ -354,6 +363,7 @@ const getUsers = async (): Promise<TJoinedUser[]> => {
           bannedAt: users.bannedAt,
           tokenVersion: users.tokenVersion,
           allowDirectMessages: users.allowDirectMessages,
+          presence: users.presence,
           oidcSub: users.oidcSub,
           oidcIssuer: users.oidcIssuer,
           passwordSet: users.passwordSet,
@@ -412,6 +422,8 @@ const getUsers = async (): Promise<TJoinedUser[]> => {
     bannedAt: result.bannedAt,
     tokenVersion: result.tokenVersion,
     allowDirectMessages: result.allowDirectMessages,
+    presence: result.presence,
+    customStatus: result.customStatus,
     oidcSub: result.oidcSub,
     oidcIssuer: result.oidcIssuer,
     passwordSet: result.passwordSet,

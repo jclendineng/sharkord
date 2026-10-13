@@ -100,6 +100,7 @@ export type TMessageMetadata =
 export enum UserStatus {
   ONLINE = 'online',
   IDLE = 'idle',
+  DND = 'dnd',
   OFFLINE = 'offline'
 }
 
