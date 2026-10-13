@@ -19,7 +19,7 @@ import { db } from '../../db';
 import { publishMessage, publishReplyCount } from '../../db/publishers';
 import { assertDmChannel } from '../../db/queries/dms';
 import { getSettings } from '../../db/queries/server';
-import { messageFiles, messages } from '../../db/schema';
+import { messageFiles, messages, stickers } from '../../db/schema';
 import { fileManager } from '../../helpers/file-manager';
 import { getInvokerCtxFromTrpcCtx } from '../../helpers/get-invoker-ctx-from-trpc-ctx';
 import { parseCommandArgs } from '../../helpers/parse-command-args';
@@ -46,7 +46,9 @@ const sendMessageRoute = rateLimitedProcedure(protectedProcedure, {
       channelId: z.number(),
       files: z.array(z.string()).max(STORAGE_MAX_FILES_PER_MESSAGE).default([]),
       parentMessageId: z.number().optional(),
-      replyToMessageId: z.number().optional()
+      replyToMessageId: z.number().optional(),
+      // one of the server's stickers, the message's text can then be empty
+      stickerId: z.number().optional()
     })
   )
   .mutation(async ({ input, ctx }) => {
@@ -109,6 +111,20 @@ const sendMessageRoute = rateLimitedProcedure(protectedProcedure, {
       });
     }
 
+    if (input.stickerId) {
+      const sticker = await db
+        .select({ id: stickers.id })
+        .from(stickers)
+        .where(eq(stickers.id, input.stickerId))
+        .limit(1)
+        .get();
+
+      invariant(sticker, {
+        code: 'NOT_FOUND',
+        message: 'That sticker is no longer on this server.'
+      });
+    }
+
     // assertDmChannel already had to resolve whether this is a DM, so it hands
     // the answer back rather than the route asking for the same row again
     const [settings, isDmChannel] = await Promise.all([
@@ -139,14 +155,16 @@ const sendMessageRoute = rateLimitedProcedure(protectedProcedure, {
       }
     }
 
-    invariant(!isEmptyMessage(input.content) || input.files.length != 0, {
+    const hasAttachment = input.files.length != 0 || !!input.stickerId;
+
+    invariant(!isEmptyMessage(input.content) || hasAttachment, {
       code: 'BAD_REQUEST',
       message: 'Message cannot be empty.'
     });
 
     let targetContent = sanitizeMessageHtml(input.content);
 
-    invariant(!isEmptyMessage(targetContent) || input.files.length != 0, {
+    invariant(!isEmptyMessage(targetContent) || hasAttachment, {
       code: 'BAD_REQUEST',
       message:
         'Your message only contained unsupported or removed content, so there was nothing to send.'
@@ -291,6 +309,7 @@ const sendMessageRoute = rateLimitedProcedure(protectedProcedure, {
           editable,
           parentMessageId: input.parentMessageId ?? null,
           replyToMessageId: input.replyToMessageId ?? null,
+          stickerId: input.stickerId ?? null,
           createdAt: Date.now()
         })
         .returning()

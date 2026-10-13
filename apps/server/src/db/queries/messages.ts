@@ -21,6 +21,7 @@ import {
   pollVotes
 } from '../schema';
 import { getSettings } from './server';
+import { getStickersByIds } from './stickers';
 
 const getReplyPreviewByMessageId = async (rows: TMessage[]) => {
   const replyToMessageIds = [
@@ -133,7 +134,11 @@ const joinMessagesWithRelations = async (
   const { storageSignedUrlsEnabled, storageSignedUrlsTtlSeconds } =
     await getSettings();
 
-  const [fileRows, reactionRows, replyToMap, pollsByMessage] =
+  const stickerIds = Array.from(
+    new Set(rows.flatMap((m) => (m.stickerId ? [m.stickerId] : [])))
+  );
+
+  const [fileRows, reactionRows, replyToMap, pollsByMessage, stickersById] =
     await Promise.all([
       db
         .select({
@@ -157,7 +162,8 @@ const joinMessagesWithRelations = async (
         .leftJoin(files, eq(messageReactions.fileId, files.id))
         .where(inArray(messageReactions.messageId, messageIds)),
       getReplyPreviewByMessageId(rows),
-      getPollsByMessageId(messageIds)
+      getPollsByMessageId(messageIds),
+      getStickersByIds(stickerIds)
     ]);
 
   const filesByMessage = fileRows.reduce<Record<number, TFile[]>>(
@@ -210,6 +216,7 @@ const joinMessagesWithRelations = async (
     files: filesByMessage[msg.id] ?? [],
     reactions: reactionsByMessage[msg.id] ?? [],
     poll: pollsByMessage.get(msg.id) ?? null,
+    sticker: msg.stickerId ? (stickersById.get(msg.stickerId) ?? null) : null,
     replyTo:
       msg.replyToMessageId !== null
         ? (replyToMap[msg.replyToMessageId] ?? null)

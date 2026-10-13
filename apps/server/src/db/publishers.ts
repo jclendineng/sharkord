@@ -19,6 +19,7 @@ import { getEmojiById } from './queries/emojis';
 import { getMessage } from './queries/messages';
 import { getRole } from './queries/roles';
 import { getPublicSettings } from './queries/server';
+import { getStickerById } from './queries/stickers';
 import { getAllUserIds, getPublicUserById } from './queries/users';
 import { categories, channels, messages } from './schema';
 
@@ -90,6 +91,27 @@ const publishEmoji = async (
     type === 'create' ? ServerEvents.EMOJI_CREATE : ServerEvents.EMOJI_UPDATE;
 
   pubsub.publish(targetEvent, emoji);
+};
+
+const publishSticker = async (
+  stickerId: number,
+  type: 'create' | 'update' | 'delete'
+) => {
+  if (type === 'delete') {
+    pubsub.publish(ServerEvents.STICKER_DELETE, stickerId);
+    return;
+  }
+
+  const sticker = await getStickerById(stickerId);
+
+  if (!sticker) return;
+
+  pubsub.publish(
+    type === 'create'
+      ? ServerEvents.STICKER_CREATE
+      : ServerEvents.STICKER_UPDATE,
+    sticker
+  );
 };
 
 const publishRole = async (
@@ -401,6 +423,7 @@ export {
   publishReplyCount,
   publishRole,
   publishSettings,
+  publishSticker,
   publishUser,
   unpublishHiddenChannelFromUser
 };

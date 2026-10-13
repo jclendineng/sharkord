@@ -13,6 +13,7 @@ import {
   messages,
   polls,
   pushDevices,
+  stickers,
   userRoles,
   users
 } from '../../db/schema';
@@ -28,6 +29,7 @@ type TPushMessage = {
   pluginId: string | null;
   content: string | null;
   pollQuestion: string | null;
+  stickerName: string | null;
   parentMessageId: number | null;
   replyToMessageId: number | null;
 };
@@ -50,12 +52,14 @@ const getPushMessage = (messageId: number): TPushMessage | undefined =>
       pluginId: messages.pluginId,
       content: messages.content,
       pollQuestion: polls.question,
+      stickerName: stickers.name,
       parentMessageId: messages.parentMessageId,
       replyToMessageId: messages.replyToMessageId
     })
     .from(messages)
     .innerJoin(channels, eq(channels.id, messages.channelId))
     .leftJoin(polls, eq(polls.messageId, messages.id))
+    .leftJoin(stickers, eq(stickers.id, messages.stickerId))
     .where(eq(messages.id, messageId))
     .limit(1)
     .get();
@@ -170,6 +174,8 @@ const getPreviewAlert = (message: TPushMessage, senderName: string) => {
 
   if (message.pollQuestion) {
     body = `Poll: ${message.pollQuestion}`;
+  } else if (message.stickerName && !text) {
+    body = `Sent a sticker: ${message.stickerName}`;
   }
 
   if (body.length > BODY_MAX_LENGTH) {

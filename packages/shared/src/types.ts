@@ -71,6 +71,29 @@ export type TPublicServerSettings = Pick<
   | 'storageSignedUrlsEnabled'
 > & {
   webRtcMaxBitrate: number;
+  // a gif provider key is set, so the pickers offer gifs
+  gifsEnabled: boolean;
+};
+
+// one gif from the provider, sized for the picker and for the message it is sent in
+export type TGif = {
+  id: string;
+  title: string;
+  url: string;
+  previewUrl: string;
+  width: number;
+  height: number;
+};
+
+export type TGifPage = {
+  gifs: TGif[];
+  hasMore: boolean;
+};
+
+// a tile the gif picker opens with, the search it runs and a gif to show behind it
+export type TGifCategory = {
+  term: string;
+  previewUrl: string;
 };
 
 export type TMessageMediaMetadata = {

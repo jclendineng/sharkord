@@ -4,6 +4,7 @@ import { channelsRouter } from './channels';
 import { dmsRouter } from './dms';
 import { emojisRouter } from './emojis';
 import { filesRouter } from './files';
+import { gifsRouter } from './gifs';
 import { invitesRouter } from './invites';
 import { messagesRouter } from './messages';
 import { notificationsRouter } from './notifications';
@@ -12,6 +13,7 @@ import { pluginsRouter } from './plugins';
 import { pollsRouter } from './polls';
 import { rolesRouter } from './roles';
 import { sessionsRouter } from './sessions';
+import { stickersRouter } from './stickers';
 import { usersRouter } from './users';
 import { voiceRouter } from './voice';
 
@@ -30,7 +32,9 @@ const appRouter = t.router({
   plugins: pluginsRouter,
   notifications: notificationsRouter,
   sessions: sessionsRouter,
-  polls: pollsRouter
+  polls: pollsRouter,
+  stickers: stickersRouter,
+  gifs: gifsRouter
 });
 
 type AppRouter = typeof appRouter;

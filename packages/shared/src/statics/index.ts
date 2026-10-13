@@ -2,6 +2,7 @@ export * from './locales';
 export * from './metrics';
 export * from './permissions';
 export * from './polls';
+export * from './stickers';
 export * from './storage';
 export * from './upload';
 

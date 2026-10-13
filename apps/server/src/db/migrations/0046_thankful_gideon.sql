@@ -1,0 +1,1 @@
+ALTER TABLE `settings` ADD `klipy_api_key` text;

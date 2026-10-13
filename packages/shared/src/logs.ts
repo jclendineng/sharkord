@@ -35,6 +35,10 @@ export enum ActivityLogType {
   CREATED_EMOJI = 'CREATED_EMOJI',
   DELETED_EMOJI = 'DELETED_EMOJI',
   UPDATED_EMOJI = 'UPDATED_EMOJI',
+  // -------------------- STICKERS --------------------
+  CREATED_STICKER = 'CREATED_STICKER',
+  DELETED_STICKER = 'DELETED_STICKER',
+  UPDATED_STICKER = 'UPDATED_STICKER',
   // -------------------- CATEGORIES --------------------
   CREATED_CATEGORY = 'CREATED_CATEGORY',
   DELETED_CATEGORY = 'DELETED_CATEGORY',
@@ -160,6 +164,17 @@ export type TActivityLogDetailsMap = {
     name: string;
   };
   [ActivityLogType.UPDATED_EMOJI]: {
+    fromName: string;
+    toName: string;
+  };
+  // -------------------- STICKERS --------------------
+  [ActivityLogType.CREATED_STICKER]: {
+    name: string;
+  };
+  [ActivityLogType.DELETED_STICKER]: {
+    name: string;
+  };
+  [ActivityLogType.UPDATED_STICKER]: {
     fromName: string;
     toName: string;
   };

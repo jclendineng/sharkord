@@ -19,6 +19,7 @@ import {
   rolePermissions,
   roles,
   settings,
+  stickers,
   userRoles,
   users
 } from '../../../apps/server/src/db/schema';
@@ -127,6 +128,12 @@ export type TMessageReplyPreview = Pick<
   'id' | 'content' | 'userId' | 'pluginId'
 >;
 
+export type TSticker = InferSelectModel<typeof stickers>;
+
+export type TJoinedSticker = TSticker & {
+  file: TFile;
+};
+
 export type TPoll = InferSelectModel<typeof polls>;
 export type TPollAnswer = InferSelectModel<typeof pollAnswers>;
 
@@ -145,6 +152,7 @@ export type TJoinedMessage = TMessage & {
   files: TFile[];
   reactions: TJoinedMessageReaction[];
   poll: TJoinedPoll | null;
+  sticker: TJoinedSticker | null;
   replyCount?: number;
   replyTo?: TMessageReplyPreview | null;
 };

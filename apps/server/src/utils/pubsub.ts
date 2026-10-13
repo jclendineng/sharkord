@@ -10,6 +10,7 @@ import type {
   TJoinedMessage,
   TJoinedPublicUser,
   TJoinedRole,
+  TJoinedSticker,
   TLogEntry,
   TPluginCapabilityAccessRule,
   TPluginMetadata,
@@ -120,6 +121,10 @@ type Events = {
   [ServerEvents.EMOJI_CREATE]: TJoinedEmoji;
   [ServerEvents.EMOJI_UPDATE]: TJoinedEmoji;
   [ServerEvents.EMOJI_DELETE]: number;
+
+  [ServerEvents.STICKER_CREATE]: TJoinedSticker;
+  [ServerEvents.STICKER_UPDATE]: TJoinedSticker;
+  [ServerEvents.STICKER_DELETE]: number;
 
   [ServerEvents.ROLE_CREATE]: TJoinedRole;
   [ServerEvents.ROLE_UPDATE]: TJoinedRole;

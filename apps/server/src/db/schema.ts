@@ -91,6 +91,8 @@ const settings = sqliteTable(
       .notNull()
       .default(true),
     reportEmail: text('report_email'),
+    // the klipy api key the server searches gifs with, never sent to members
+    klipyApiKey: text('klipy_api_key'),
     pushShowMessageContent: integer('push_show_message_content', {
       mode: 'boolean'
     })
@@ -306,7 +308,12 @@ const messages = sqliteTable(
     editedAt: integer('edited_at'),
     editedBy: integer('edited_by').references(() => users.id, {
       onDelete: 'set null'
-    })
+    }),
+    // a deleted sticker leaves its message behind, showing that it is gone
+    stickerId: integer('sticker_id').references(
+      (): AnySQLiteColumn => stickers.id,
+      { onDelete: 'set null' }
+    )
   },
   (t) => [
     index('messages_user_idx').on(t.userId),
@@ -318,6 +325,7 @@ const messages = sqliteTable(
       t.createdAt
     ),
     index('messages_parent_idx').on(t.parentMessageId),
+    index('messages_sticker_idx').on(t.stickerId),
     index('messages_reply_to_idx').on(t.replyToMessageId),
     index('messages_parent_channel_id_idx').on(
       t.parentMessageId,
@@ -409,6 +417,27 @@ const messageReactions = sqliteTable(
     index('reaction_emoji_idx').on(t.emoji),
     index('reaction_user_idx').on(t.userId),
     index('reaction_msg_emoji_idx').on(t.messageId, t.emoji)
+  ]
+);
+
+const stickers = sqliteTable(
+  'stickers',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    name: text('name').notNull(),
+    description: text('description'),
+    fileId: integer('file_id')
+      .notNull()
+      .references(() => files.id, { onDelete: 'cascade' }),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: integer('created_at').notNull(),
+    updatedAt: integer('updated_at')
+  },
+  (t) => [
+    index('stickers_user_idx').on(t.userId),
+    index('stickers_file_idx').on(t.fileId)
   ]
 );
 
@@ -779,6 +808,7 @@ export {
   roles,
   sessions,
   settings,
+  stickers,
   userRoles,
   users
 };

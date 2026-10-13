@@ -274,7 +274,8 @@ const searchMessagesRoute = rateLimitedProcedure(protectedProcedure, {
         plainContent: row.plainContent,
         files: preparedFiles,
         reactions: [],
-        poll: null
+        poll: null,
+        sticker: null
       };
     });
 

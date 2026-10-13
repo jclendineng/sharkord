@@ -30,6 +30,9 @@ export enum ServerEvents {
   EMOJI_CREATE = 'emojiCreate',
   EMOJI_UPDATE = 'emojiUpdate',
   EMOJI_DELETE = 'emojiDelete',
+  STICKER_CREATE = 'stickerCreate',
+  STICKER_UPDATE = 'stickerUpdate',
+  STICKER_DELETE = 'stickerDelete',
 
   ROLE_CREATE = 'roleCreate',
   ROLE_UPDATE = 'roleUpdate',

@@ -58,7 +58,8 @@ const zGeneralSettings = z.object({
     .email('Enter a valid email address.')
     .max(254)
     .nullable()
-    .optional()
+    .optional(),
+  klipyApiKey: z.string().trim().min(1).max(200).nullable().optional()
 });
 
 const STORAGE_SETTING_KEYS = Object.keys(zStorageSettings.shape);
@@ -109,8 +110,9 @@ const updateSettingsRoute = protectedProcedure
 
     publishSettings();
 
+    // secrets stay out of the log
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, ...loggedValues } = input;
+    const { password, klipyApiKey, ...loggedValues } = input;
 
     enqueueActivityLog({
       type: ActivityLogType.EDIT_SERVER_SETTINGS,
