@@ -5,6 +5,9 @@ struct SearchScreen: View {
     // the server's bounds for a search query
     private static let queryLength = 2...24
 
+    // the channel it was opened from, put in as an in: filter that can be removed
+    var channelId: Int?
+
     @Environment(ServerListStore.self) private var servers
     @Environment(SessionStore.self) private var session
 
@@ -16,6 +19,8 @@ struct SearchScreen: View {
     @State private var results: SearchResults?
     @State private var errorMessage: String?
     @State private var isSearching = false
+    // the opening channel goes in once, so removing its chip sticks
+    @State private var hasAppliedChannel = false
     @FocusState private var isFieldFocused: Bool
 
     // while a token is up, what is typed narrows its choices rather than searching
@@ -37,6 +42,19 @@ struct SearchScreen: View {
             .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
             .prefix(8)
             .map { $0 }
+    }
+
+    // discord names the channel being searched, or the server when it is all of it
+    private var prompt: String {
+        guard token == nil else {
+            return ""
+        }
+
+        guard let channel = filters.channel else {
+            return "Search \(session.displayName)"
+        }
+
+        return "Search \(FilterChips.place(channel, in: session))"
     }
 
     private var searchKey: [AnyHashable] {
@@ -81,6 +99,12 @@ struct SearchScreen: View {
             await search()
         }
         .onAppear {
+            if !hasAppliedChannel, let channelId, let channel = session.channel(channelId) {
+                filters.channel = channel
+            }
+
+            hasAppliedChannel = true
+
             isFieldFocused = true
         }
     }
@@ -104,7 +128,7 @@ struct SearchScreen: View {
                     .accessibilityLabel("Remove \(token.token) filter")
                 }
 
-                TextField("", text: $query, prompt: Text(token == nil ? "Search \(session.displayName)" : "").foregroundStyle(Theme.muted))
+                TextField("", text: $query, prompt: Text(prompt).foregroundStyle(Theme.muted))
                     .focused($isFieldFocused)
                     .foregroundStyle(Theme.header)
                     .textInputAutocapitalization(.never)

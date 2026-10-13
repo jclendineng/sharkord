@@ -72,7 +72,9 @@ press option.
 Discord's filters: `from:`, `in:`, `mentions:`, `has:`, `before:`, `after:` and `during:`.
 `has:` takes `image`, `video`, `link`, `file`, `poll` or `sticker`. Direct messages are
 searched too. In the app, picking a filter puts its token in the search box with the choices
-listed under it. Route `messages.search`.
+listed under it. Searching from a channel or a direct message starts with an `in:` filter
+for it, which can be removed to search everything; searching from the server's channel
+list covers the whole server. Route `messages.search`.
 
 ## Voice messages
 

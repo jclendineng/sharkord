@@ -61,7 +61,7 @@ struct ChatScreen: View {
             }
 
             ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink(value: SearchRoute()) {
+                NavigationLink(value: SearchRoute(channelId: channelId)) {
                     Image(systemName: "magnifyingglass")
                         .foregroundStyle(Theme.text)
                 }

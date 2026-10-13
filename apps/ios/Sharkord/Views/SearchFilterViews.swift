@@ -78,6 +78,17 @@ struct FilterMenu: View {
 struct FilterChips: View {
     @Binding var filters: SearchFilters
 
+    @Environment(SessionStore.self) private var session
+
+    // a direct message goes by the other person, a channel by its name
+    static func place(_ channel: Channel, in session: SessionStore) -> String {
+        guard channel.isDm else {
+            return "#\(channel.name)"
+        }
+
+        return "@\(session.directMessagePartner(for: channel.id)?.name ?? "Direct Message")"
+    }
+
     var body: some View {
         ScrollView(.horizontal) {
             HStack(spacing: 8) {
@@ -86,7 +97,7 @@ struct FilterChips: View {
                 }
 
                 if let channel = filters.channel {
-                    Chip(label: "in: #\(channel.name)") { filters.channel = nil }
+                    Chip(label: "in: \(Self.place(channel, in: session))") { filters.channel = nil }
                 }
 
                 if let mentions = filters.mentions {

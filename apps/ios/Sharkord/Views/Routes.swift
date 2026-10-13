@@ -8,7 +8,10 @@ struct ThreadRoute: Hashable {
     let parent: Message
 }
 
-struct SearchRoute: Hashable {}
+// from a channel the search starts in it, from the server it covers everything
+struct SearchRoute: Hashable {
+    var channelId: Int?
+}
 
 extension View {
     func chatDestinations() -> some View {
@@ -18,8 +21,8 @@ extension View {
         .navigationDestination(for: ThreadRoute.self) { route in
             ThreadScreen(parent: route.parent)
         }
-        .navigationDestination(for: SearchRoute.self) { _ in
-            SearchScreen()
+        .navigationDestination(for: SearchRoute.self) { route in
+            SearchScreen(channelId: route.channelId)
         }
     }
 }
