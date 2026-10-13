@@ -189,13 +189,18 @@ struct ComposerView: View {
     private var inputRow: some View {
         HStack(alignment: .bottom, spacing: 8) {
             if canUpload && store.editing == nil {
-                Button("Attach", systemImage: isAttachPanelOpen ? "xmark" : "plus", action: toggleAttachPanel)
-                    .labelStyle(.iconOnly)
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(Theme.text)
-                    .frame(width: 38, height: 38)
-                    .background(Theme.inputBackground, in: .circle)
-                    .contentTransition(.symbolEffect(.replace))
+                // one plus turned into an x, a swapped symbol animates apart from the row as
+                // it slides with the panel
+                Button(action: toggleAttachPanel) {
+                    Image(systemName: "plus")
+                        .font(.body.weight(.semibold))
+                        .rotationEffect(.degrees(isAttachPanelOpen ? 45 : 0))
+                        .foregroundStyle(Theme.text)
+                        .frame(width: 38, height: 38)
+                        .background(Theme.inputBackground, in: .circle)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(isAttachPanelOpen ? "Close Attachments" : "Attach")
             }
 
             HStack(alignment: .bottom, spacing: 10) {
