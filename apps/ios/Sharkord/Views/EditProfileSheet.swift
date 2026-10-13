@@ -1,7 +1,8 @@
 import PhotosUI
 import SwiftUI
 
-// users.update for the name, bio and profile color, users.changeAvatar for the picture
+// users.update for the name, bio and profile color, users.changeAvatar and changeBanner for the
+// pictures, each of which can be removed again
 struct EditProfileSheet: View {
     // the server's limit for a bio
     private static let bioLimit = 160
@@ -13,6 +14,7 @@ struct EditProfileSheet: View {
     @State private var bio = ""
     @State private var color = Color(hex: "#5865F2")
     @State private var avatarItem: PhotosPickerItem?
+    @State private var bannerItem: PhotosPickerItem?
     @State private var errorMessage: String?
     @State private var isSaving = false
 
@@ -24,11 +26,29 @@ struct EditProfileSheet: View {
         NavigationStack {
             Form {
                 Section {
-                    HStack {
-                        Spacer()
+                    // discord's profile header: the banner, the avatar over its bottom edge
+                    ZStack(alignment: .bottomLeading) {
+                        PhotosPicker(selection: $bannerItem, matching: .images) {
+                            banner
+                                .frame(height: 120)
+                                .frame(maxWidth: .infinity)
+                                .clipShape(.rect(cornerRadius: 14))
+                                .overlay(alignment: .topTrailing) {
+                                    Image(systemName: "photo.fill")
+                                        .font(.caption)
+                                        .foregroundStyle(.white)
+                                        .padding(8)
+                                        .background(.black.opacity(0.5), in: .circle)
+                                        .padding(8)
+                                }
+                                .padding(.bottom, 44)
+                        }
+                        .accessibilityLabel("Change Banner")
 
                         PhotosPicker(selection: $avatarItem, matching: .images) {
                             AvatarView(user: session.ownUser, size: 88)
+                                .padding(5)
+                                .background(Theme.deepBackground, in: .circle)
                                 .overlay(alignment: .bottomTrailing) {
                                     Image(systemName: "camera.fill")
                                         .font(.caption)
@@ -37,10 +57,24 @@ struct EditProfileSheet: View {
                                         .background(Theme.blurple, in: .circle)
                                 }
                         }
-
-                        Spacer()
+                        .accessibilityLabel("Change Avatar")
+                        .padding(.leading, 16)
                     }
+                    .buttonStyle(.plain)
                     .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets())
+                }
+
+                if session.ownUser?.avatar != nil || session.ownUser?.banner != nil {
+                    Section {
+                        if session.ownUser?.avatar != nil {
+                            Button("Remove Avatar", role: .destructive, action: removeAvatar)
+                        }
+
+                        if session.ownUser?.banner != nil {
+                            Button("Remove Banner", role: .destructive, action: removeBanner)
+                        }
+                    }
                 }
 
                 Section("Display Name") {
@@ -90,7 +124,12 @@ struct EditProfileSheet: View {
             .onAppear(perform: fill)
             .onChange(of: avatarItem) { _, item in
                 if let item {
-                    uploadAvatar(item)
+                    upload(item, as: .avatar)
+                }
+            }
+            .onChange(of: bannerItem) { _, item in
+                if let item {
+                    upload(item, as: .banner)
                 }
             }
         }
@@ -127,30 +166,64 @@ struct EditProfileSheet: View {
         }
     }
 
+    @ViewBuilder
+    private var banner: some View {
+        if let file = session.ownUser?.banner, let address = session.address {
+            AsyncImage(url: address.fileURL(file)) { image in
+                image
+                    .resizable()
+                    .scaledToFill()
+            } placeholder: {
+                color
+            }
+        } else {
+            color
+        }
+    }
+
     // the picker hands over data, the upload endpoint streams a file, so it goes through tmp
-    private func uploadAvatar(_ item: PhotosPickerItem) {
+    private func upload(_ item: PhotosPickerItem, as kind: SessionStore.ProfileImage) {
+        change(kind) {
+            guard let data = try await item.loadTransferable(type: Data.self) else {
+                throw AuthAPI.RequestError(message: "Could not read that picture.")
+            }
+
+            let fileURL = FileManager.default.temporaryDirectory.appending(path: "\(kind == .avatar ? "avatar" : "banner")-\(UUID().uuidString).jpg")
+
+            try data.write(to: fileURL)
+
+            return fileURL
+        }
+    }
+
+    private func removeAvatar() {
+        change(.avatar) { nil }
+    }
+
+    private func removeBanner() {
+        change(.banner) { nil }
+    }
+
+    private func change(_ kind: SessionStore.ProfileImage, file: @escaping () async throws -> URL?) {
         isSaving = true
         errorMessage = nil
 
         Task {
+            var fileURL: URL?
+
             do {
-                guard let data = try await item.loadTransferable(type: Data.self) else {
-                    throw AuthAPI.RequestError(message: "Could not read that picture.")
-                }
-
-                let fileURL = FileManager.default.temporaryDirectory.appending(path: "avatar-\(UUID().uuidString).jpg")
-
-                try data.write(to: fileURL)
-
-                defer {
-                    try? FileManager.default.removeItem(at: fileURL)
-                }
-
-                try await session.changeAvatar(fileAt: fileURL, name: "avatar.jpg")
+                fileURL = try await file()
+                try await session.changeProfileImage(kind, fileAt: fileURL)
             } catch {
                 errorMessage = error.localizedDescription
             }
 
+            if let fileURL {
+                try? FileManager.default.removeItem(at: fileURL)
+            }
+
+            avatarItem = nil
+            bannerItem = nil
             isSaving = false
         }
     }

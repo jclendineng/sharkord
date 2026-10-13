@@ -27,6 +27,16 @@ final class ServerListStore {
     @ObservationIgnored private var backgroundTask: UIBackgroundTaskIdentifier = .invalid
 
     init() {
+        #if DEBUG
+        if DebugLaunch.startsSignedOut {
+            for address in CredentialStore.serverURLs.compactMap(ServerAddress.init(userInput:)) {
+                CredentialStore.deleteToken(for: address)
+            }
+
+            CredentialStore.serverURLs = []
+        }
+        #endif
+
         sessions = CredentialStore.serverURLs
             .compactMap(ServerAddress.init(userInput:))
             .map(makeSession)

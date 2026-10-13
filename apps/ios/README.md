@@ -27,7 +27,11 @@ sending, live new/edited/deleted messages, auto reconnect, DMs, threads, reactio
 picker, uploads, rich message rendering, push notifications, voice with webcams and watching
 screen shares, sharing your own screen, profile editing, settings (account, devices, voice and
 video, notifications), the full server settings, polls, voice messages, and Discord's
-attachment and expression panels (emoji, GIFs, stickers). See
+attachment and expression panels (emoji, GIFs, stickers), typing indicators, pinning messages
+and a channel's pinned list, profile banners, voice reactions, moving people between voice
+channels, a member's activity for moderators, and posting locked where a private channel does
+not allow it. Not in the app: plugin slash commands, actions and plugin panels, which are web
+only. See
 [docs/features.md](../../docs/features.md) for what the server side of each needs.
 
 ## The composer's panels
@@ -94,3 +98,25 @@ comment in that file).
 `Info.plist` allows plain http so a server on the local network or Tailscale can be reached
 without TLS, but `ServerAddress.isInsecure` refuses plain http to anything else before
 signing in or connecting.
+
+## Tests
+
+`SharkordTests` holds unit tests (Swift Testing) for what the app decodes from the server and
+its logic: addresses and the plain http rule, search inputs and links, typing, HTML to text.
+`SharkordUITests` signs in through the welcome and login screens and opens the main screens,
+against a real server and account taken from the environment, so nothing is committed. It
+only reads, it never posts, edits or deletes.
+
+```bash
+# unit tests
+xcodebuild test -project Sharkord.xcodeproj -scheme Sharkord \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:SharkordTests
+
+# ui tests against a server, skipped when the variables are missing
+TEST_RUNNER_SHARKORD_TEST_SERVER=chat.example.com \
+TEST_RUNNER_SHARKORD_TEST_IDENTITY=someone TEST_RUNNER_SHARKORD_TEST_PASSWORD=... \
+xcodebuild test -project Sharkord.xcodeproj -scheme Sharkord \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:SharkordUITests
+```
+
+Screenshots of every step are kept in the result bundle.

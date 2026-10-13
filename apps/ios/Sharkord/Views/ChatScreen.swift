@@ -5,6 +5,8 @@ struct ChatScreen: View {
 
     @Environment(SessionStore.self) private var session
 
+    @State private var isPinsPresented = false
+
     private var store: ChannelMessagesStore {
         session.messages(for: channelId)
     }
@@ -38,11 +40,15 @@ struct ChatScreen: View {
             ChannelWelcome(title: title, isDirectMessage: channel?.isDm == true, partner: partner)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            ComposerView(
-                placeholder: channel?.isDm == true ? "Message @\(title)" : "Message #\(title)",
-                canUpload: canUpload,
-                store: store
-            )
+            if session.can("SEND_MESSAGES", inChannel: channelId) {
+                ComposerView(
+                    placeholder: channel?.isDm == true ? "Message @\(title)" : "Message #\(title)",
+                    canUpload: canUpload,
+                    store: store
+                )
+            } else {
+                ReadOnlyComposer()
+            }
         }
         // while the keyboard and the attachment panel trade places, see AttachPanelModel
         .ignoresSafeArea(store.attachPanel.isHandingOff ? .keyboard : [], edges: .bottom)
@@ -61,11 +67,23 @@ struct ChatScreen: View {
             }
 
             ToolbarItem(placement: .topBarTrailing) {
+                Button(action: showPins) {
+                    Image(systemName: "pin")
+                        .foregroundStyle(Theme.text)
+                }
+                .accessibilityLabel("Pinned Messages")
+            }
+
+            ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink(value: SearchRoute(channelId: channelId)) {
                     Image(systemName: "magnifyingglass")
                         .foregroundStyle(Theme.text)
                 }
+                .accessibilityLabel("Search")
             }
+        }
+        .sheet(isPresented: $isPinsPresented) {
+            PinnedMessagesSheet(channelId: channelId)
         }
         .task {
             session.rememberChannel(channelId)
@@ -76,6 +94,10 @@ struct ChatScreen: View {
         .onDisappear {
             store.isVisible = false
         }
+    }
+
+    private func showPins() {
+        isPinsPresented = true
     }
 }
 
@@ -195,5 +217,26 @@ private struct ChannelWelcome: View {
         }
         .padding(16)
         .padding(.top, 24)
+    }
+}
+
+// where the message box would be in a channel this account can read but not post in
+private struct ReadOnlyComposer: View {
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "lock.fill")
+
+            Text("You do not have permission to send messages in this channel.")
+                .lineLimit(2)
+        }
+        .font(.subheadline)
+        .foregroundStyle(Theme.muted)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity)
+        .background(Theme.inputBackground, in: .rect(cornerRadius: 20))
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Theme.chatBackground.ignoresSafeArea())
     }
 }

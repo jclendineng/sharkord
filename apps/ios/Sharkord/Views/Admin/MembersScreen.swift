@@ -129,6 +129,7 @@ private struct MemberDetail: View {
     @State private var wipe = false
     @State private var errorMessage: String?
     @State private var isWorking = false
+    @State private var info: AdminUserInfo?
 
     private var isSelf: Bool {
         user.id == session.ownUserId
@@ -173,6 +174,10 @@ private struct MemberDetail: View {
                 }
             }
 
+            if let info {
+                MemberActivity(info: info)
+            }
+
             if !isSelf {
                 Section {
                     if user.banned {
@@ -211,6 +216,9 @@ private struct MemberDetail: View {
         }
         .onAppear {
             roleIds = Set(user.roleIds)
+        }
+        .task {
+            info = try? await session.request("users.getInfo", ["userId": user.id])
         }
     }
 
@@ -359,5 +367,126 @@ private struct ConfirmModeration: View {
 
     private func close() {
         dismiss()
+    }
+}
+
+// the web's mod view: how much they store, where they logged in from, what they posted
+private struct MemberActivity: View {
+    private static let shownCount = 10
+
+    let info: AdminUserInfo
+
+    @Environment(SessionStore.self) private var session
+
+    private var storageText: String {
+        let used = info.storage.usedStorage.formatted(.byteCount(style: .file))
+
+        guard info.storage.quota > 0 else {
+            return used
+        }
+
+        return "\(used) of \(info.storage.quota.formatted(.byteCount(style: .file)))"
+    }
+
+    var body: some View {
+        Section("Storage") {
+            LabeledContent("Used", value: storageText)
+            LabeledContent("Files", value: "\(info.storage.fileCount)")
+        }
+
+        if !info.logins.isEmpty {
+            Section("Recent Logins") {
+                ForEach(info.logins) { login in
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(Date(timeIntervalSince1970: TimeInterval(login.createdAt) / 1000).formatted(date: .abbreviated, time: .shortened))
+                            .foregroundStyle(Theme.header)
+
+                        Text([login.device, login.os].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "))
+                            .font(.caption)
+                            .foregroundStyle(Theme.muted)
+
+                        if let place = login.place {
+                            Text(place)
+                                .font(.caption)
+                                .foregroundStyle(Theme.muted)
+                        }
+
+                        if let ip = login.ip {
+                            Text(ip)
+                                .font(.caption.monospaced())
+                                .foregroundStyle(Theme.muted)
+                        }
+                    }
+                }
+            }
+        }
+
+        if !info.files.isEmpty {
+            Section {
+                ForEach(info.files.prefix(Self.shownCount)) { file in
+                    OpenFileButton(file: file) { isLoading in
+                        HStack(spacing: 12) {
+                            Image(systemName: file.symbol)
+                                .foregroundStyle(Theme.blurple)
+                                .frame(width: 24)
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(file.originalName)
+                                    .foregroundStyle(Theme.header)
+                                    .lineLimit(1)
+
+                                Text(file.size.formatted(.byteCount(style: .file)))
+                                    .font(.caption)
+                                    .foregroundStyle(Theme.muted)
+                            }
+
+                            Spacer(minLength: 0)
+
+                            if isLoading {
+                                ProgressView()
+                            }
+                        }
+                        .contentShape(.rect)
+                    }
+                }
+            } header: {
+                Text("Files")
+            } footer: {
+                if info.files.count > Self.shownCount {
+                    Text("The latest \(Self.shownCount) of \(info.files.count).")
+                }
+            }
+        }
+
+        if !info.messages.isEmpty {
+            Section {
+                ForEach(info.messages.prefix(Self.shownCount)) { message in
+                    VStack(alignment: .leading, spacing: 3) {
+                        HStack {
+                            Text("#\(session.channel(message.channelId)?.name ?? "deleted-channel")")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(Theme.muted)
+
+                            Spacer()
+
+                            Text(MessageDate.timestamp(Date(timeIntervalSince1970: TimeInterval(message.createdAt) / 1000)))
+                                .font(.caption2)
+                                .foregroundStyle(Theme.muted)
+                        }
+
+                        Text(HTMLText.plainText(from: message.content ?? ""))
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.text)
+                            .lineLimit(3)
+                    }
+                }
+            } header: {
+                Text("Messages")
+            } footer: {
+                if info.messages.count > Self.shownCount {
+                    Text("The latest \(Self.shownCount) of \(info.messages.count).")
+                }
+            }
+        }
     }
 }

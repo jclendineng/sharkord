@@ -30,9 +30,17 @@ struct JoinResult: Decodable {
     let emojis: [CustomEmoji]
     let stickers: [Sticker]?
     let publicSettings: PublicSettings
+    // this account's resolved permissions in each channel, keyed by channel id
+    let channelPermissions: [String: ChannelPermissions]?
     // keyed by channel id, sent as strings since it is a JSON object
     let readStates: [String: Int]
     let voiceMap: [String: VoiceChannelUsers]
+}
+
+// one channel's entry in the join payload and in channels.onPermissionsUpdate
+struct ChannelPermissions: Decodable {
+    let channelId: Int
+    let permissions: [String: Bool]
 }
 
 struct ReadStateUpdate: Decodable {

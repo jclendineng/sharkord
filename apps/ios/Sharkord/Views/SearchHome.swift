@@ -253,6 +253,8 @@ private struct SearchTabPage: View {
             LazyVStack(alignment: .leading, spacing: 0) {
                 content
             }
+            // full width, or the rows hug the middle when every one is narrow
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, 12)
         }
         .scrollDismissesKeyboard(.interactively)
@@ -642,7 +644,7 @@ private struct VideoThumbnail: View {
     }
 }
 
-private struct PinnedMessageRow: View {
+struct PinnedMessageRow: View {
     let message: Message
     let onOpen: () -> Void
 

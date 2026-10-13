@@ -56,6 +56,12 @@ struct ComposerView: View {
             // mic button drags the panel instead of pressing them, taps still reach them
             composer
                 .highPriorityGesture(panelDrag, including: store.attachPanel.isOpen ? .all : .subviews)
+                // sits over the bottom of the messages, so it coming and going moves nothing
+                .overlay(alignment: .top) {
+                    TypingIndicator(place: store.typingPlace)
+                        .alignmentGuide(.top) { $0[.bottom] }
+                        .allowsHitTesting(false)
+                }
 
             // laid out right under the composer so the two move as one, whatever the panel
             // grows to past its resting height is drawn up over the composer
@@ -105,6 +111,12 @@ struct ComposerView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)) { _ in
             if store.attachPanel.isHandingOff && store.attachPanel.isOpen {
                 store.attachPanel.finishHandoffToPanel()
+            }
+        }
+        // typing more than was there, not the field being cleared or a draft being loaded
+        .onChange(of: text) { old, new in
+            if new.count > old.count && store.editing == nil {
+                session.signalTyping(channelId: store.channelId, parentMessageId: store.typingPlace.parentMessageId)
             }
         }
         .onChange(of: store.editing) { _, message in
@@ -455,6 +467,7 @@ struct ComposerView: View {
                     try await store.edit(editing, to: draft)
                 } else {
                     try await store.send(draft, files: files)
+                    session.typing.resetSignal(in: store.typingPlace)
                 }
 
                 text = ""
@@ -761,5 +774,91 @@ private struct PanelSlide: ViewModifier {
 
     func body(content: Content) -> some View {
         content.offset(y: model.slideOffset)
+    }
+}
+
+// discord's "someone is typing…" with its three dots, just above the message box
+private struct TypingIndicator: View {
+    let place: TypingTracker.Place
+
+    @Environment(SessionStore.self) private var session
+
+    private var names: [String] {
+        session.typing.userIds(in: place).compactMap { session.usersById[$0]?.name }
+    }
+
+    private var text: AttributedString? {
+        let names = names
+
+        func bold(_ name: String) -> AttributedString {
+            var part = AttributedString(name)
+
+            part.font = .caption.bold()
+            part.foregroundColor = Theme.header
+
+            return part
+        }
+
+        switch names.count {
+        case 0:
+            return nil
+        case 1:
+            return bold(names[0]) + AttributedString(" is typing…")
+        case 2:
+            return bold(names[0]) + AttributedString(" and ") + bold(names[1]) + AttributedString(" are typing…")
+        case 3:
+            return bold(names[0]) + AttributedString(", ") + bold(names[1]) + AttributedString(" and ") + bold(names[2]) + AttributedString(" are typing…")
+        default:
+            return AttributedString("Several people are typing…")
+        }
+    }
+
+    var body: some View {
+        ZStack(alignment: .leading) {
+            if let text {
+                HStack(spacing: 6) {
+                    TypingDots()
+
+                    Text(text)
+                        .font(.caption)
+                        .foregroundStyle(Theme.muted)
+                        .lineLimit(1)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 4)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background {
+                    LinearGradient(
+                        colors: [Theme.chatBackground.opacity(0), Theme.chatBackground],
+                        startPoint: .top,
+                        endPoint: .center
+                    )
+                }
+                .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: text == nil)
+    }
+}
+
+private struct TypingDots: View {
+    var body: some View {
+        TimelineView(.animation) { timeline in
+            let time = timeline.date.timeIntervalSinceReferenceDate
+
+            HStack(spacing: 3) {
+                ForEach(0..<3) { index in
+                    // each dot rises and fades a third of a beat after the one before
+                    let phase = (sin((time * 2 * .pi / 1.2) - Double(index) * 0.9) + 1) / 2
+
+                    Circle()
+                        .fill(Theme.header)
+                        .frame(width: 5, height: 5)
+                        .opacity(0.35 + 0.65 * phase)
+                        .offset(y: -2 * phase)
+                }
+            }
+        }
+        .frame(height: 10)
     }
 }

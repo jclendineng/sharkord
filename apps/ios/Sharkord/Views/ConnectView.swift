@@ -139,6 +139,8 @@ struct ConnectView: View {
                 .autocorrectionDisabled()
                 .submitLabel(.next)
                 .onSubmit { checkServer(for: intent) }
+                .accessibilityLabel("Server Address")
+                .accessibilityIdentifier("serverAddress")
         }
 
         if let serverError {
@@ -215,6 +217,8 @@ struct ConnectView: View {
     private func credentialFields(passwordContent: UITextContentType) -> some View {
         AuthField(label: "Username") {
             TextField("", text: $identity)
+                .accessibilityLabel("Username")
+                .accessibilityIdentifier("username")
                 .textContentType(.username)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
@@ -492,6 +496,8 @@ private struct PasswordField: View {
             .textContentType(contentType)
             .submitLabel(.go)
             .onSubmit(onSubmit)
+            .accessibilityLabel("Password")
+            .accessibilityIdentifier("password")
 
             Button(isRevealed ? "Hide Password" : "Show Password", systemImage: isRevealed ? "eye.slash" : "eye", action: toggle)
                 .labelStyle(.iconOnly)

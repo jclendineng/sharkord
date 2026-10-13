@@ -5,6 +5,7 @@ import Foundation
 //   SIMCTL_CHILD_SHARKORD_DEV_SERVER=http://localhost:4991 SIMCTL_CHILD_SHARKORD_DEV_IDENTITY=alice
 //   SIMCTL_CHILD_SHARKORD_DEV_PASSWORD=... SIMCTL_CHILD_SHARKORD_DEV_CHANNEL=1 xcrun simctl launch <device> com.sharkord.ios
 // SHARKORD_DEV_VOICE=<channel id> joins that voice channel once connected
+// SHARKORD_DEV_SIGNED_OUT=1 forgets every saved server first, so a ui test starts at welcome
 enum DebugLaunch {
     private static var environment: [String: String] {
         ProcessInfo.processInfo.environment
@@ -24,6 +25,10 @@ enum DebugLaunch {
 
     static var channelId: Int? {
         environment["SHARKORD_DEV_CHANNEL"].flatMap(Int.init)
+    }
+
+    static var startsSignedOut: Bool {
+        environment["SHARKORD_DEV_SIGNED_OUT"] == "1"
     }
 
     static var voiceChannelId: Int? {

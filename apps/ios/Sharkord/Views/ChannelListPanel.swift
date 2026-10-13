@@ -29,6 +29,7 @@ struct ChannelListPanel: View {
                             unreadCount: session.unreadCounts[channel.id, default: 0],
                             isSelected: channel.id == session.lastChannelId
                         )
+                        .accessibilityIdentifier("\(channel.type == .text ? "channel" : "voice")-\(channel.id)")
 
                         if channel.type == .voice {
                             VoiceParticipants(channelId: channel.id)
@@ -305,6 +306,42 @@ private struct VoiceParticipants: View {
             .padding(.leading, 40)
             .padding(.trailing, 8)
             .padding(.vertical, 3)
+            .contentShape(.rect)
+            .contextMenu {
+                if let user = participant.user, session.can(.moveMembers) {
+                    MoveToVoiceMenu(user: user, fromChannelId: channelId)
+                }
+            }
+        }
+    }
+}
+
+// the web's drag of a member to another voice channel, for anyone who can move members
+struct MoveToVoiceMenu: View {
+    let user: PublicUser
+    let fromChannelId: Int
+
+    @Environment(SessionStore.self) private var session
+
+    private var targets: [Channel] {
+        session.channelSections
+            .flatMap(\.channels)
+            .filter { $0.type == .voice && $0.id != fromChannelId }
+    }
+
+    var body: some View {
+        Menu("Move To", systemImage: "arrow.right.arrow.left") {
+            ForEach(targets) { channel in
+                Button(channel.name, systemImage: "speaker.wave.2.fill") {
+                    move(to: channel.id)
+                }
+            }
+        }
+    }
+
+    private func move(to channelId: Int) {
+        Task {
+            await session.moveToVoice(userId: user.id, channelId: channelId)
         }
     }
 }

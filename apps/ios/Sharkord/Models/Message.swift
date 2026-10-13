@@ -25,6 +25,9 @@ struct Message: Codable, Hashable, Identifiable {
     // link previews the server worked out, a gif's link is one
     var metadata: [MessageMetadata]?
     var replyCount: Int?
+    var pinned: Bool?
+    var pinnedAt: Int?
+    var pinnedBy: Int?
     // the message this one answers, or nil when it was deleted since
     let replyTo: ReplyPreview?
 
@@ -53,6 +56,13 @@ struct MessagesPage: Decodable {
 struct MessageDeletedEvent: Decodable {
     let messageId: Int
     let channelId: Int
+}
+
+// messages.onTyping
+struct TypingEvent: Decodable {
+    let channelId: Int
+    let userId: Int
+    let parentMessageId: Int?
 }
 
 struct ThreadReplyCountUpdate: Decodable {

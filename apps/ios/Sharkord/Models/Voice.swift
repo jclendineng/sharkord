@@ -23,6 +23,19 @@ struct VoiceLeaveEvent: Decodable {
     let userId: Int
 }
 
+// voice.onReaction
+struct VoiceReactionEvent: Decodable {
+    let channelId: Int
+    let userId: Int
+    let emoji: String
+}
+
+// one emoji floating over someone's tile for a moment
+struct VoiceReaction: Identifiable, Hashable {
+    let id: Int
+    let emoji: String
+}
+
 struct VoiceMovedEvent: Decodable {
     let channelId: Int
     let fromChannelId: Int

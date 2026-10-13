@@ -60,14 +60,20 @@ final class SessionStore {
     private(set) var customEmojis: [CustomEmoji] = []
     private(set) var stickers: [Sticker] = []
     private(set) var settings: PublicSettings?
+    // keyed by channel id, only private channels are bound by it, as on the web
+    private(set) var channelPermissions: [Int: [String: Bool]] = [:]
     private(set) var directMessages: [DirectMessageConversation] = []
     private(set) var client: TRPCClient?
+    let typing = TypingTracker()
     private(set) var token: String?
     // set when a notification is tapped, the tab owning that channel opens it and clears it
     var requestedChannelId: Int?
     // who is in which voice channel, keyed by channel id then user id
     private(set) var voiceUsers: [Int: [Int: VoiceUserState]] = [:]
     private(set) var currentVoiceChannelId: Int?
+    // the emoji each person in the call just sent, VOICE_REACTION_DURATION_MS on the web
+    private(set) var voiceReactions: [Int: [VoiceReaction]] = [:]
+    @ObservationIgnored private var nextVoiceReactionId = 0
     private(set) var isJoiningVoice = false
     private(set) var micMuted = false
     private(set) var soundMuted = false
@@ -146,6 +152,28 @@ final class SessionStore {
         isOwner || ownPermissions.contains(permission.rawValue)
     }
 
+    // useChannelCan on the web: public channels and direct messages are not bound by channel
+    // permissions, in a private one view has to hold before anything else counts
+    func can(_ permission: String, inChannel channelId: Int) -> Bool {
+        guard !isOwner, let channel = channel(channelId), channel.private, !channel.isDm else {
+            return true
+        }
+
+        let permissions = channelPermissions[channelId] ?? [:]
+
+        if permissions["VIEW_CHANNEL"] == false {
+            return false
+        }
+
+        return permissions[permission] == true
+    }
+
+    private func applyChannelPermissions(_ map: [String: ChannelPermissions]) {
+        channelPermissions = map.values.reduce(into: [:]) { result, entry in
+            result[entry.channelId] = entry.permissions
+        }
+    }
+
     // the logo and description live in /info, read again after an admin changes them
     func refreshServerInfo() async {
         if let address, let info = try? await AuthAPI.fetchInfo(address) {
@@ -169,6 +197,22 @@ final class SessionStore {
         }
 
         return try await client.query(path, input: input)
+    }
+
+    // tells the others in a channel or thread that this account is typing, throttled
+    func signalTyping(channelId: Int, parentMessageId: Int?) {
+        struct TypingInput: Encodable {
+            let channelId: Int
+            let parentMessageId: Int?
+        }
+
+        guard typing.shouldSignal(in: .init(channelId: channelId, parentMessageId: parentMessageId)) else {
+            return
+        }
+
+        Task {
+            try? await perform("messages.signalTyping", TypingInput(channelId: channelId, parentMessageId: parentMessageId))
+        }
     }
 
     func perform<Input: Encodable>(_ path: String, _ input: Input) async throws {
@@ -587,6 +631,46 @@ final class SessionStore {
         reconnectTask?.cancel()
         reconnectTask = Task {
             await connect(address, token: token)
+        }
+    }
+
+    // the quick picks the web shows, QUICK_VOICE_REACTION_EMOJIS
+    static let quickVoiceReactions = ["sparkling_heart", "+1", "tada", "clap", "smile", "open_mouth", "cry", "thinking", "-1"]
+
+    func sendVoiceReaction(_ emoji: String) async {
+        do {
+            try await perform("voice.sendReaction", ["emoji": emoji])
+        } catch {
+            showError(error)
+        }
+    }
+
+    // at most five at once per person, each gone after a little over two and a half seconds
+    private func showVoiceReaction(_ emoji: String, from userId: Int) {
+        nextVoiceReactionId += 1
+
+        let reaction = VoiceReaction(id: nextVoiceReactionId, emoji: emoji)
+
+        voiceReactions[userId, default: []].append(reaction)
+        voiceReactions[userId] = Array(voiceReactions[userId, default: []].suffix(5))
+
+        Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(2600))
+            self?.voiceReactions[userId]?.removeAll { $0.id == reaction.id }
+        }
+    }
+
+    // MOVE_MEMBERS: puts someone in another voice channel, the web's drag between channels
+    func moveToVoice(userId: Int, channelId: Int) async {
+        struct MoveInput: Encodable {
+            let userId: Int
+            let channelId: Int
+        }
+
+        do {
+            try await perform("voice.moveUser", MoveInput(userId: userId, channelId: channelId))
+        } catch {
+            showError(error)
         }
     }
 
@@ -1016,6 +1100,7 @@ final class SessionStore {
         customEmojis = result.emojis
         stickers = result.stickers ?? []
         settings = result.publicSettings
+        applyChannelPermissions(result.channelPermissions ?? [:])
         unreadCounts = Dictionary(
             uniqueKeysWithValues: result.readStates.compactMap { key, count in
                 Int(key).map { ($0, count) }
@@ -1208,14 +1293,28 @@ final class SessionStore {
         try await client.mutation("users.update", input: ProfileInput(name: name, profileColor: profileColor, bio: bio))
     }
 
-    func changeAvatar(fileAt fileURL: URL, name: String) async throws {
+    enum ProfileImage: String {
+        case avatar = "users.changeAvatar"
+        case banner = "users.changeBanner"
+    }
+
+    // uploads the picture and sets it, or with no file removes the one there is
+    func changeProfileImage(_ kind: ProfileImage, fileAt fileURL: URL?) async throws {
+        struct ImageInput: Encodable {
+            let fileId: String?
+        }
+
         guard let client, let address, let token else {
             return
         }
 
-        let file = try await UploadAPI.upload(fileAt: fileURL, name: name, to: address, token: token)
+        var fileId: String?
 
-        try await client.mutation("users.changeAvatar", input: ["fileId": file.id])
+        if let fileURL {
+            fileId = try await UploadAPI.upload(fileAt: fileURL, name: fileURL.lastPathComponent, to: address, token: token).id
+        }
+
+        try await client.mutation(kind.rawValue, input: ImageInput(fileId: fileId))
     }
 
     private func stopVoice() {
@@ -1290,6 +1389,22 @@ final class SessionStore {
 
         client.subscribe("messages.onDelete") { [weak self] (event: MessageDeletedEvent) in
             self?.storesShowing(channelId: event.channelId).forEach { $0.remove(event.messageId) }
+        }
+
+        client.subscribe("others.onServerSettingsUpdate") { [weak self] (settings: PublicSettings) in
+            self?.settings = settings
+        }
+
+        client.subscribe("channels.onPermissionsUpdate") { [weak self] (map: [String: ChannelPermissions]) in
+            self?.applyChannelPermissions(map)
+        }
+
+        client.subscribe("messages.onTyping") { [weak self] (event: TypingEvent) in
+            guard let self, event.userId != self.ownUserId else {
+                return
+            }
+
+            self.typing.add(event.userId, in: .init(channelId: event.channelId, parentMessageId: event.parentMessageId))
         }
 
         client.subscribe("messages.onThreadReplyCountUpdate") { [weak self] (update: ThreadReplyCountUpdate) in
@@ -1445,6 +1560,14 @@ final class SessionStore {
             self.voice?.closeConsumer(VoiceStreamKey(kind: kind, remoteId: event.remoteId))
         }
 
+        client.subscribe("voice.onReaction") { [weak self] (event: VoiceReactionEvent) in
+            guard let self, event.channelId == self.currentVoiceChannelId else {
+                return
+            }
+
+            self.showVoiceReaction(event.emoji, from: event.userId)
+        }
+
         client.subscribe("voice.onMoved") { [weak self] (event: VoiceMovedEvent) in
             guard let self, event.fromChannelId == self.currentVoiceChannelId else {
                 return
@@ -1475,6 +1598,10 @@ final class SessionStore {
 
     private func receive(_ message: Message) {
         storesShowing(channelId: message.channelId).forEach { $0.insert(message) }
+
+        if let userId = message.userId {
+            typing.remove(userId, from: .init(channelId: message.channelId, parentMessageId: message.parentMessageId))
+        }
 
         guard channel(message.channelId)?.isDm == true, message.parentMessageId == nil else {
             return

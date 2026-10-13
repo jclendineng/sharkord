@@ -19,6 +19,20 @@
 			remoteGlobalIDString = B50000000000000000000001;
 			remoteInfo = SharkordBroadcast;
 		};
+		C70000000000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A70000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A50000000000000000000001;
+			remoteInfo = Sharkord;
+		};
+		D70000000000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A70000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A50000000000000000000001;
+			remoteInfo = Sharkord;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -40,6 +54,8 @@
 		A10000000000000000000002 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B10000000000000000000001 /* SharkordBroadcast.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SharkordBroadcast.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B10000000000000000000002 /* SharkordBroadcast-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "SharkordBroadcast-Info.plist"; sourceTree = "<group>"; };
+		C10000000000000000000001 /* SharkordTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SharkordTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D10000000000000000000001 /* SharkordUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SharkordUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -51,6 +67,16 @@
 		B20000000000000000000001 /* SharkordBroadcast */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = SharkordBroadcast;
+			sourceTree = "<group>";
+		};
+		C20000000000000000000001 /* SharkordTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = SharkordTests;
+			sourceTree = "<group>";
+		};
+		D20000000000000000000001 /* SharkordUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = SharkordUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -71,6 +97,20 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C30000000000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D30000000000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -81,6 +121,8 @@
 				B10000000000000000000002 /* SharkordBroadcast-Info.plist */,
 				A20000000000000000000001 /* Sharkord */,
 				B20000000000000000000001 /* SharkordBroadcast */,
+				C20000000000000000000001 /* SharkordTests */,
+				D20000000000000000000001 /* SharkordUITests */,
 				A40000000000000000000002 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -90,6 +132,8 @@
 			children = (
 				A10000000000000000000001 /* Sharkord.app */,
 				B10000000000000000000001 /* SharkordBroadcast.appex */,
+				C10000000000000000000001 /* SharkordTests.xctest */,
+				D10000000000000000000001 /* SharkordUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -142,6 +186,48 @@
 			productReference = B10000000000000000000001 /* SharkordBroadcast.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		C50000000000000000000001 /* SharkordTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C80000000000000000000001 /* Build configuration list for PBXNativeTarget "SharkordTests" */;
+			buildPhases = (
+				C60000000000000000000001 /* Sources */,
+				C30000000000000000000001 /* Frameworks */,
+				C60000000000000000000002 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C70000000000000000000002 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				C20000000000000000000001 /* SharkordTests */,
+			);
+			name = SharkordTests;
+			productName = SharkordTests;
+			productReference = C10000000000000000000001 /* SharkordTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		D50000000000000000000001 /* SharkordUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D80000000000000000000001 /* Build configuration list for PBXNativeTarget "SharkordUITests" */;
+			buildPhases = (
+				D60000000000000000000001 /* Sources */,
+				D30000000000000000000001 /* Frameworks */,
+				D60000000000000000000002 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D70000000000000000000002 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				D20000000000000000000001 /* SharkordUITests */,
+			);
+			name = SharkordUITests;
+			productName = SharkordUITests;
+			productReference = D10000000000000000000001 /* SharkordUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -171,6 +257,8 @@
 			targets = (
 				A50000000000000000000001 /* Sharkord */,
 				B50000000000000000000001 /* SharkordBroadcast */,
+				C50000000000000000000001 /* SharkordTests */,
+				D50000000000000000000001 /* SharkordUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -184,6 +272,20 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		B60000000000000000000002 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C60000000000000000000002 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D60000000000000000000002 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -207,6 +309,20 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C60000000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D60000000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -214,6 +330,16 @@
 			isa = PBXTargetDependency;
 			target = B50000000000000000000001 /* SharkordBroadcast */;
 			targetProxy = B70000000000000000000001 /* PBXContainerItemProxy */;
+		};
+		C70000000000000000000002 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A50000000000000000000001 /* Sharkord */;
+			targetProxy = C70000000000000000000001 /* PBXContainerItemProxy */;
+		};
+		D70000000000000000000002 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A50000000000000000000001 /* Sharkord */;
+			targetProxy = D70000000000000000000001 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -378,6 +504,78 @@
 			};
 			name = Release;
 		};
+		C90000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sharkord.ios.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Sharkord.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Sharkord";
+			};
+			name = Debug;
+		};
+		C90000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sharkord.ios.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Sharkord.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Sharkord";
+			};
+			name = Release;
+		};
+		D90000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sharkord.ios.uitests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Sharkord;
+			};
+			name = Debug;
+		};
+		D90000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sharkord.ios.uitests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Sharkord;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -404,6 +602,24 @@
 			buildConfigurations = (
 				B90000000000000000000001 /* Debug */,
 				B90000000000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C80000000000000000000001 /* Build configuration list for PBXNativeTarget "SharkordTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C90000000000000000000001 /* Debug */,
+				C90000000000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D80000000000000000000001 /* Build configuration list for PBXNativeTarget "SharkordUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D90000000000000000000001 /* Debug */,
+				D90000000000000000000002 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

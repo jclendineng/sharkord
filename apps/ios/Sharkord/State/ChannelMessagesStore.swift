@@ -27,6 +27,16 @@ final class ChannelMessagesStore {
     // the composer's attachment panel, which the message list can drag away too
     let attachPanel = AttachPanelModel()
 
+    // where typing here is signalled and shown
+    var typingPlace: TypingTracker.Place {
+        switch scope {
+        case .channel:
+            TypingTracker.Place(channelId: channelId, parentMessageId: nil)
+        case .thread(let parentMessageId):
+            TypingTracker.Place(channelId: channelId, parentMessageId: parentMessageId)
+        }
+    }
+
     private var nextCursor: MessagesCursor?
     private unowned let session: SessionStore
 

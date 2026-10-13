@@ -41,6 +41,11 @@ struct MessageActionsSheet: View {
         message.userId != nil && message.userId == session.ownUserId
     }
 
+    // the author, or anyone who can manage messages, as on the web
+    private var canDelete: Bool {
+        isOwn || session.can(.manageMessages)
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
@@ -97,15 +102,25 @@ struct MessageActionsSheet: View {
                         ActionRow(title: "Mark Unread", systemImage: "envelope.badge", action: markUnread)
                     }
 
+                    if session.can(.pinMessages) {
+                        ActionRow(
+                            title: message.pinned == true ? "Unpin Message" : "Pin Message",
+                            systemImage: message.pinned == true ? "pin.slash" : "pin",
+                            action: togglePin
+                        )
+                    }
+
                     if !isOwn, message.userId != nil {
                         ActionRow(title: "Mention", systemImage: "at", action: mention)
                     }
                 }
 
                 ActionGroup {
-                    if isOwn {
+                    if canDelete {
                         ActionRow(title: "Delete Message", systemImage: "trash", tint: Theme.red, action: delete)
-                    } else {
+                    }
+
+                    if !isOwn {
                         ActionRow(title: "Report", systemImage: "flag.fill", tint: Theme.red, action: report)
                     }
                 }
@@ -178,6 +193,20 @@ struct MessageActionsSheet: View {
         Task {
             do {
                 try await store.markUnread(from: message)
+            } catch {
+                session.showError(error)
+            }
+        }
+    }
+
+    private func togglePin() {
+        let messageId = message.id
+
+        dismiss()
+
+        Task {
+            do {
+                try await session.perform("messages.togglePin", ["messageId": messageId])
             } catch {
                 session.showError(error)
             }

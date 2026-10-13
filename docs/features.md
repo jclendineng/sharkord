@@ -170,6 +170,17 @@ refused while config.ini holds the lock, so the settings screens always show wha
 server does. Code
 `apps/server/src/helpers/registration.ts`.
 
+## Web features in the app
+
+The app also has what the web client does with routes that predate this fork: typing
+indicators (`messages.signalTyping`, `messages.onTyping`), pinning messages and the pinned
+list (`messages.togglePin`, `messages.getPinned`), profile banners (`users.changeBanner`),
+voice reactions (`voice.sendReaction`, `voice.onReaction`), moving someone to another voice
+channel (`voice.moveUser`), a member's logins, files and messages for moderators
+(`users.getInfo`), live server settings (`others.onServerSettingsUpdate`) and channel
+permissions (`channels.onPermissionsUpdate`), which lock the message box where a private
+channel does not allow posting. Plugin commands, actions and panels stay web only.
+
 ## Server settings in the app
 
 Overview, roles, members, invites, channels with per channel permissions, emoji, stickers,

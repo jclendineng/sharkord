@@ -6,6 +6,8 @@ struct VoiceRoomScreen: View {
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
 
+    @State private var isReactionBarShown = false
+
     private var channelName: String {
         session.currentVoiceChannelId.flatMap { session.channel($0)?.name } ?? "Voice"
     }
@@ -24,6 +26,11 @@ struct VoiceRoomScreen: View {
     var body: some View {
         VStack(spacing: 0) {
             header
+
+            if isReactionBarShown {
+                ReactionBar()
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
 
             ScrollView {
                 VStack(spacing: 10) {
@@ -81,9 +88,24 @@ struct VoiceRoomScreen: View {
             }
 
             Spacer()
+
+            if session.can(.sendVoiceReaction) {
+                Button("Reactions", systemImage: "face.smiling", action: toggleReactionBar)
+                    .labelStyle(.iconOnly)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(isReactionBarShown ? Color.black : Theme.header)
+                    .frame(width: 40, height: 40)
+                    .background(isReactionBarShown ? Color.white : Theme.listBackground, in: .circle)
+            }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
+    }
+
+    private func toggleReactionBar() {
+        withAnimation(.smooth(duration: 0.25)) {
+            isReactionBarShown.toggle()
+        }
     }
 
     private func close() {
@@ -126,6 +148,11 @@ private struct ParticipantTile: View {
         }
         .aspectRatio(3 / 4, contentMode: .fit)
         .clipShape(.rect(cornerRadius: 14))
+        .overlay {
+            if let user {
+                FloatingReactions(reactions: session.voiceReactions[user.id] ?? [])
+            }
+        }
         .overlay(alignment: .bottomLeading) {
             HStack(spacing: 4) {
                 if state.micMuted {
@@ -254,5 +281,75 @@ private struct ControlButton: View {
             .foregroundStyle(isActive ? Color.black : Theme.header)
             .frame(width: 56, height: 56)
             .background(isActive ? Color.white : Theme.listBackground, in: .circle)
+    }
+}
+
+// the web's quick voice reactions, one tap sends one to everyone in the call
+private struct ReactionBar: View {
+    @Environment(SessionStore.self) private var session
+
+    var body: some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: 8) {
+                ForEach(SessionStore.quickVoiceReactions, id: \.self) { emoji in
+                    Button {
+                        send(emoji)
+                    } label: {
+                        EmojiView(value: emoji, size: 26)
+                            .frame(width: 46, height: 46)
+                            .background(Theme.listBackground, in: .circle)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(emoji)
+                }
+            }
+            .padding(.horizontal, 12)
+        }
+        .scrollIndicators(.hidden)
+        .padding(.bottom, 6)
+    }
+
+    private func send(_ emoji: String) {
+        Task {
+            await session.sendVoiceReaction(emoji)
+        }
+    }
+}
+
+// each reaction rises from the bottom of the tile and fades out
+private struct FloatingReactions: View {
+    let reactions: [VoiceReaction]
+
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            ForEach(reactions) { reaction in
+                FloatingReaction(reaction: reaction)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+        .allowsHitTesting(false)
+    }
+}
+
+private struct FloatingReaction: View {
+    let reaction: VoiceReaction
+
+    @State private var hasRisen = false
+
+    // spreads reactions sent together across the tile
+    private var drift: CGFloat {
+        CGFloat((reaction.id * 37) % 60) - 30
+    }
+
+    var body: some View {
+        EmojiView(value: reaction.emoji, size: 34)
+            .offset(x: drift, y: hasRisen ? -150 : -20)
+            .opacity(hasRisen ? 0 : 1)
+            .scaleEffect(hasRisen ? 1.15 : 0.8)
+            .onAppear {
+                withAnimation(.easeOut(duration: 2.5)) {
+                    hasRisen = true
+                }
+            }
     }
 }

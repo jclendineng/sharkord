@@ -11,6 +11,11 @@ struct ServerAddress: Hashable {
             text.removeLast()
         }
 
+        // "https://" alone, which would otherwise become a server named https
+        if text.hasSuffix(":") {
+            return nil
+        }
+
         if !text.contains("://") {
             text = "https://\(text)"
         }

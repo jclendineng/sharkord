@@ -299,3 +299,43 @@ struct MarketplaceEntry: Decodable, Identifiable {
             .max { $0.timestamp < $1.timestamp }
     }
 }
+
+// users.getInfo, what the web's mod view shows about a member
+struct AdminUserInfo: Decodable {
+    struct Login: Decodable, Identifiable {
+        let id: Int
+        let os: String?
+        let device: String?
+        let userAgent: String?
+        // null without VIEW_USER_SENSITIVE_DATA
+        let ip: String?
+        let city: String?
+        let region: String?
+        let country: String?
+        let createdAt: Int
+
+        var place: String? {
+            let parts = [city, region, country].compactMap { $0 }.filter { !$0.isEmpty }
+
+            return parts.isEmpty ? nil : parts.joined(separator: ", ")
+        }
+    }
+
+    struct Activity: Decodable, Identifiable {
+        let id: Int
+        let channelId: Int
+        let content: String?
+        let createdAt: Int
+    }
+
+    struct Storage: Decodable {
+        let fileCount: Int
+        let usedStorage: Int
+        let quota: Int
+    }
+
+    let logins: [Login]
+    let files: [SharkordFile]
+    let messages: [Activity]
+    let storage: Storage
+}
