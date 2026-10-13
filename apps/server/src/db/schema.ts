@@ -579,6 +579,26 @@ const sessions = sqliteTable(
   (t) => [index('sessions_user_active_idx').on(t.userId, t.lastActiveAt)]
 );
 
+// a person's choice for one channel. no row means the default: mentions and replies, and
+// every message in a direct message
+const channelNotificationSettings = sqliteTable(
+  'channel_notification_settings',
+  {
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    channelId: integer('channel_id')
+      .notNull()
+      .references(() => channels.id, { onDelete: 'cascade' }),
+    level: text('level', { enum: ['all', 'mentions', 'none'] }).notNull(),
+    updatedAt: integer('updated_at').notNull()
+  },
+  (t) => [
+    primaryKey({ columns: [t.channelId, t.userId] }),
+    index('channel_notification_settings_user_idx').on(t.userId)
+  ]
+);
+
 const pushDevices = sqliteTable(
   'push_devices',
   {
@@ -667,6 +687,7 @@ const pluginCapabilityRoles = sqliteTable(
 export {
   activityLog,
   categories,
+  channelNotificationSettings,
   channelReadStates,
   channelRolePermissions,
   channels,

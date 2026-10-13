@@ -318,3 +318,135 @@ describe('push notifications for new messages', () => {
     expect(spy).not.toHaveBeenCalled();
   });
 });
+
+describe('channel notification settings', () => {
+  const MENTION_USER_2 =
+    '<p><span data-type="mention" data-user-id="2" class="mention">@Test User</span> look</p>';
+
+  test('should store a channel setting and forget it when set back to the default', async () => {
+    const { caller } = await initTest(2);
+
+    await caller.notifications.setChannelSetting({
+      channelId: 1,
+      level: 'all'
+    });
+
+    expect(await caller.notifications.getChannelSettings()).toEqual([
+      { channelId: 1, level: 'all' }
+    ]);
+
+    await caller.notifications.setChannelSetting({
+      channelId: 1,
+      level: 'none'
+    });
+
+    expect(await caller.notifications.getChannelSettings()).toEqual([
+      { channelId: 1, level: 'none' }
+    ]);
+
+    await caller.notifications.setChannelSetting({
+      channelId: 1,
+      level: 'mentions'
+    });
+
+    expect(await caller.notifications.getChannelSettings()).toEqual([]);
+  });
+
+  test("should only list the caller's own settings", async () => {
+    const { caller: owner } = await initTest(1);
+    const { caller: member } = await initTest(2);
+
+    await owner.notifications.setChannelSetting({
+      channelId: 1,
+      level: 'none'
+    });
+
+    expect(await member.notifications.getChannelSettings()).toEqual([]);
+  });
+
+  test('should refuse a channel the caller cannot see', async () => {
+    const { caller } = await initTest(2);
+
+    // user 2 is denied viewing channel 5
+    await expect(
+      caller.notifications.setChannelSetting({ channelId: 5, level: 'all' })
+    ).rejects.toThrow('Insufficient channel permissions');
+  });
+
+  test('should refuse an unknown level', async () => {
+    const { caller } = await initTest(2);
+
+    await expect(
+      caller.notifications.setChannelSetting({
+        channelId: 1,
+        // @ts-expect-error not one of the levels
+        level: 'loud'
+      })
+    ).rejects.toThrow();
+  });
+
+  test('should push every message in a channel set to all', async () => {
+    await registerDevices(2, 3);
+
+    const { caller: member } = await initTest(2);
+
+    await member.notifications.setChannelSetting({
+      channelId: 1,
+      level: 'all'
+    });
+
+    const spy = spyOnApns();
+    const { caller } = await initTest(1);
+
+    await caller.messages.send({
+      channelId: 1,
+      content: '<p>nothing special</p>',
+      files: []
+    });
+    await drainPushNotificationsQueue();
+
+    expect(notifiedTokens(spy)).toEqual([deviceToken(2)]);
+  });
+
+  test('should push nothing from a muted channel, mentions included', async () => {
+    await registerDevices(2);
+
+    const { caller: member } = await initTest(2);
+
+    await member.notifications.setChannelSetting({
+      channelId: 1,
+      level: 'none'
+    });
+
+    const spy = spyOnApns();
+    const { caller } = await initTest(1);
+
+    await caller.messages.send({
+      channelId: 1,
+      content: MENTION_USER_2,
+      files: []
+    });
+    await drainPushNotificationsQueue();
+
+    expect(notifiedTokens(spy)).toEqual([]);
+  });
+
+  test('should push nothing from a muted direct message', async () => {
+    await registerDevices(4);
+
+    const { caller: userB } = await initTest(4);
+
+    await userB.notifications.setChannelSetting({
+      channelId: 3,
+      level: 'none'
+    });
+
+    const spy = spyOnApns();
+    const { caller } = await initTest(3);
+
+    await caller.messages.send({ channelId: 3, content: 'hey b', files: [] });
+    await drainPushNotificationsQueue();
+
+    expect(notifiedTokens(spy)).toEqual([]);
+  });
+});

@@ -8,6 +8,7 @@ import { db } from '../../db';
 import { getAffectedUserIdsForChannel } from '../../db/queries/channels';
 import { getSettings } from '../../db/queries/server';
 import {
+  channelNotificationSettings,
   channels,
   messages,
   pushDevices,
@@ -77,7 +78,7 @@ const getActiveDevices = (senderId: number | null) =>
     .all();
 
 // mirrors what the web client notifies for: direct messages, mentions and replies, and only
-// for people who can see the channel at all
+// for people who can see the channel at all. a channel's notification setting overrides it
 const getRecipientDevices = async (
   message: TPushMessage
 ): Promise<TPushDevice[]> => {
@@ -87,7 +88,7 @@ const getRecipientDevices = async (
 
   const deviceUserIds = [...new Set(devices.map(({ userId }) => userId))];
 
-  const [roleRows, repliedTo] = await Promise.all([
+  const [roleRows, repliedTo, settingRows] = await Promise.all([
     db
       .select({ userId: userRoles.userId, roleId: userRoles.roleId })
       .from(userRoles)
@@ -100,8 +101,25 @@ const getRecipientDevices = async (
           .where(eq(messages.id, message.replyToMessageId))
           .limit(1)
           .get()
-      : undefined
+      : undefined,
+    db
+      .select({
+        userId: channelNotificationSettings.userId,
+        level: channelNotificationSettings.level
+      })
+      .from(channelNotificationSettings)
+      .where(
+        and(
+          eq(channelNotificationSettings.channelId, message.channelId),
+          inArray(channelNotificationSettings.userId, deviceUserIds)
+        )
+      )
+      .all()
   ]);
+
+  const levelByUser = new Map(
+    settingRows.map(({ userId, level }) => [userId, level])
+  );
 
   const roleIdsByUser = new Map<number, number[]>();
 
@@ -112,12 +130,19 @@ const getRecipientDevices = async (
     roleIdsByUser.set(userId, roleIds);
   }
 
-  const candidateIds = deviceUserIds.filter(
-    (userId) =>
+  // muted sends nothing, mentions included. "all" sends every message
+  const candidateIds = deviceUserIds.filter((userId) => {
+    const level = levelByUser.get(userId);
+
+    if (level === 'none') return false;
+    if (level === 'all') return true;
+
+    return (
       message.isDm ||
       userId === repliedTo?.userId ||
       hasMention(message.content, userId, roleIdsByUser.get(userId))
-  );
+    );
+  });
 
   if (candidateIds.length === 0) return [];
 
