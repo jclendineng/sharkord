@@ -256,9 +256,10 @@ struct ComposerView: View {
     }
 
     private func toggleAttachPanel() {
+        // closing slides the panel away with the composer coming down along, calling the
+        // keyboard up in the same moment made the composer drop and jump back
         if store.attachPanel.isOpen {
-            store.attachPanel.dismiss()
-            isFieldFocused = true
+            store.attachPanel.close()
         } else {
             isFieldFocused = false
             store.attachPanel.open()
