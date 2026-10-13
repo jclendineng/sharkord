@@ -34,6 +34,10 @@ Sharkord is a self-hosted communication platform that brings the most important 
 - **Invites** with usage limits and automatic role assignment
 - **File uploads** with per-user storage quotas and optional signed URLs
 - **Plugins** that extend both server and client, through the [plugin SDK](packages/plugin-sdk)
+- **Polls, stickers and GIFs**, with GIFs searched through [Klipy](https://klipy.com) once an admin adds a key
+- **A native iOS app** with push notifications, in [apps/ios](apps/ios)
+
+This fork's additions, and how to turn each one on, are described in [docs/features.md](docs/features.md).
 
 ## Docs
 

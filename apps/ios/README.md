@@ -26,7 +26,19 @@ sign in, server password, channel list with unread counts, message history with 
 sending, live new/edited/deleted messages, auto reconnect, DMs, threads, reactions with emoji
 picker, uploads, rich message rendering, push notifications, voice with webcams and watching
 screen shares, sharing your own screen, profile editing, settings (account, devices, voice and
-video, notifications).
+video, notifications), the full server settings, polls, voice messages, and Discord's
+attachment and expression panels (emoji, GIFs, stickers). See
+[docs/features.md](../../docs/features.md) for what the server side of each needs.
+
+## The composer's panels
+
+The attachment panel and the expression panel take the keyboard's place under the
+composer. They share one model, `AttachPanelModel`, and one frame, `ComposerPanel`: the panel
+is exactly the keyboard's last height (`KeyboardMetrics`), so the two trade places with the
+composer holding still, the screen ignoring the keyboard while they do. A drag up grows the
+panel over the conversation, a drag down slides the composer and panel together as an
+offset, so nothing is laid out again under the finger. `AnimatedImage` plays GIFs, APNGs and
+animated WebPs, decoding frames off the main thread at the size they are shown.
 
 ## Screen sharing
 
@@ -79,4 +91,6 @@ In debug builds, `Helpers/DebugLaunch.swift` reads `SHARKORD_DEV_*` environment 
 so a simulator launch can sign in and open a tab or channel without typing (see the
 comment in that file).
 
-`Info.plist` allows plain http, since self-hosted servers often run without TLS.
+`Info.plist` allows plain http so a server on the local network or Tailscale can be reached
+without TLS, but `ServerAddress.isInsecure` refuses plain http to anything else before
+signing in or connecting.
