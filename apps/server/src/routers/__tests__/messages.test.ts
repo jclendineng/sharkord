@@ -2756,3 +2756,215 @@ describe('messages.getMentions', () => {
     ).toEqual(sentIds);
   });
 });
+
+describe('messages.search filters', () => {
+  test('should only return messages from the chosen person', async () => {
+    const { caller } = await initTest(1);
+    const now = Date.now();
+
+    await tdb.insert(messages).values([
+      {
+        channelId: 1,
+        userId: 1,
+        content: '<p>zebra from the owner</p>',
+        createdAt: now
+      },
+      {
+        channelId: 1,
+        userId: 2,
+        content: '<p>zebra from the member</p>',
+        createdAt: now + 1
+      }
+    ]);
+
+    const result = await caller.messages.search({
+      query: 'zebra',
+      fromUserId: 2
+    });
+
+    expect(result.messages.map(({ userId }) => userId)).toEqual([2]);
+  });
+
+  test('should only search the chosen channel, and only one the caller can see', async () => {
+    const { caller: owner } = await initTest(1);
+    const { caller: member } = await initTest(2);
+    const now = Date.now();
+
+    await tdb.insert(messages).values([
+      {
+        channelId: 1,
+        userId: 1,
+        content: '<p>giraffe in general</p>',
+        createdAt: now
+      },
+      {
+        channelId: 5,
+        userId: 1,
+        content: '<p>giraffe in restricted</p>',
+        createdAt: now + 1
+      }
+    ]);
+
+    const ownerResult = await owner.messages.search({
+      query: 'giraffe',
+      channelId: 5
+    });
+    // user 2 is denied viewing channel 5
+    const memberResult = await member.messages.search({
+      query: 'giraffe',
+      channelId: 5
+    });
+
+    expect(ownerResult.messages.map(({ channelId }) => channelId)).toEqual([5]);
+    expect(memberResult.messages).toEqual([]);
+  });
+
+  test('should find mentions of someone without any words to search for', async () => {
+    const { caller } = await initTest(1);
+    const now = Date.now();
+
+    await tdb.insert(messages).values([
+      {
+        channelId: 1,
+        userId: 1,
+        content:
+          '<p><span data-type="mention" data-user-id="2">@Test User</span> hi</p>',
+        createdAt: now
+      },
+      {
+        channelId: 1,
+        userId: 1,
+        content: '<p>nobody mentioned</p>',
+        createdAt: now + 1
+      }
+    ]);
+
+    const result = await caller.messages.search({ mentionsUserId: 2 });
+
+    expect(result.messages.map(({ content }) => content)).toEqual([
+      '<p><span data-type="mention" data-user-id="2">@Test User</span> hi</p>'
+    ]);
+    expect(result.files).toEqual([]);
+  });
+
+  test('should find messages that have a link, a file or an image', async () => {
+    const { caller } = await initTest(1);
+    const now = Date.now();
+
+    const [linkMessage, fileMessage, imageMessage] = await tdb
+      .insert(messages)
+      .values([
+        {
+          channelId: 1,
+          userId: 1,
+          content: '<p><a href="https://example.com">site</a></p>',
+          createdAt: now
+        },
+        {
+          channelId: 1,
+          userId: 1,
+          content: '<p>see attached</p>',
+          createdAt: now + 1
+        },
+        {
+          channelId: 1,
+          userId: 1,
+          content: '<p>see picture</p>',
+          createdAt: now + 2
+        }
+      ])
+      .returning({ id: messages.id });
+
+    const [pdf, png] = await tdb
+      .insert(files)
+      .values([
+        {
+          name: `filter-${now}.pdf`,
+          originalName: 'report.pdf',
+          md5: `md5-filter-${now}`,
+          userId: 1,
+          size: 10,
+          mimeType: 'application/pdf',
+          extension: 'pdf',
+          createdAt: now
+        },
+        {
+          name: `filter-${now}.png`,
+          originalName: 'picture.png',
+          md5: `md5-filter-png-${now}`,
+          userId: 1,
+          size: 10,
+          mimeType: 'image/png',
+          extension: 'png',
+          createdAt: now
+        }
+      ])
+      .returning({ id: files.id });
+
+    await tdb.insert(messageFiles).values([
+      { messageId: fileMessage!.id, fileId: pdf!.id, createdAt: now },
+      { messageId: imageMessage!.id, fileId: png!.id, createdAt: now }
+    ]);
+
+    const links = await caller.messages.search({ has: 'link' });
+    const withFiles = await caller.messages.search({ has: 'file' });
+    const images = await caller.messages.search({ has: 'image' });
+
+    expect(links.messages.map(({ id }) => id)).toEqual([linkMessage!.id]);
+    expect(links.files).toEqual([]);
+    expect(withFiles.messages.map(({ id }) => id).sort()).toEqual(
+      [fileMessage!.id, imageMessage!.id].sort()
+    );
+    expect(images.messages.map(({ id }) => id)).toEqual([imageMessage!.id]);
+    expect(images.files.map(({ file }) => file.originalName)).toEqual([
+      'picture.png'
+    ]);
+  });
+
+  test('should limit results to before, after or on a date', async () => {
+    const { caller } = await initTest(1);
+    const day = Date.UTC(2026, 0, 15);
+
+    await tdb.insert(messages).values([
+      {
+        channelId: 1,
+        userId: 1,
+        content: '<p>otter early</p>',
+        createdAt: day - 1000
+      },
+      {
+        channelId: 1,
+        userId: 1,
+        content: '<p>otter during</p>',
+        createdAt: day + 1000
+      },
+      {
+        channelId: 1,
+        userId: 1,
+        content: '<p>otter late</p>',
+        createdAt: day + 2 * 86_400_000
+      }
+    ]);
+
+    const contents = async (filters: {
+      before?: number;
+      after?: number;
+      on?: number;
+    }) =>
+      (
+        await caller.messages.search({ query: 'otter', ...filters })
+      ).messages.map(({ plainContent }) => plainContent);
+
+    expect(await contents({ before: day })).toEqual(['otter early']);
+    expect(await contents({ after: day + 86_400_000 })).toEqual(['otter late']);
+    expect(await contents({ on: day })).toEqual(['otter during']);
+  });
+
+  test('should refuse a search with neither words nor filters', async () => {
+    const { caller } = await initTest(1);
+
+    await expect(caller.messages.search({})).rejects.toThrow(
+      'Enter something to search for or pick a filter.'
+    );
+  });
+});

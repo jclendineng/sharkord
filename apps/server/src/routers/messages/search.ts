@@ -1,5 +1,5 @@
-import { getPlainTextFromHtml, type TFile } from '@sharkord/shared';
-import { and, desc, eq, inArray, sql } from 'drizzle-orm';
+import { getPlainTextFromHtml, hasMention, type TFile } from '@sharkord/shared';
+import { and, desc, eq, exists, gt, gte, inArray, lt, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { config } from '../../config';
 import { db } from '../../db';
@@ -23,6 +23,7 @@ const MESSAGE_FETCH_MULTIPLIER = 4; // multiplier to fetch more messages than re
 const MAX_MESSAGE_FETCH_LIMIT = 100; // absolute maximum number of messages to fetch from the database before filtering, to prevent performance issues
 
 const MESSAGES_LIMIT = 25;
+const DAY_MS = 24 * 60 * 60 * 1000;
 const FILES_LIMIT = 25;
 
 const GLOB_SPECIAL_CHARS = new Set(['*', '?', '[']);
@@ -51,14 +52,31 @@ const searchMessagesRoute = rateLimitedProcedure(protectedProcedure, {
   logLabel: 'search'
 })
   .input(
-    z.object({
-      query: z
-        .string()
-        .trim()
-        .toLowerCase()
-        .min(SEARCH_QUERY_MIN_LENGTH)
-        .max(SEARCH_QUERY_MAX_LENGTH)
-    })
+    z
+      .object({
+        query: z
+          .string()
+          .trim()
+          .toLowerCase()
+          .min(SEARCH_QUERY_MIN_LENGTH)
+          .max(SEARCH_QUERY_MAX_LENGTH)
+          .optional(),
+        // discord's filters: from:, in:, mentions:, has:, before:, after: and during:
+        fromUserId: z.number().int().positive().optional(),
+        channelId: z.number().int().positive().optional(),
+        mentionsUserId: z.number().int().positive().optional(),
+        has: z.enum(['file', 'image', 'link']).optional(),
+        before: z.number().int().nonnegative().optional(),
+        after: z.number().int().nonnegative().optional(),
+        // the start of a day, the whole day from there is searched
+        on: z.number().int().nonnegative().optional()
+      })
+      .refine(
+        ({ query, ...filters }) =>
+          query !== undefined ||
+          Object.values(filters).some((value) => value !== undefined),
+        { message: 'Enter something to search for or pick a filter.' }
+      )
   )
   .query(async ({ ctx, input }) => {
     const settings = await getSettings();
@@ -72,9 +90,9 @@ const searchMessagesRoute = rateLimitedProcedure(protectedProcedure, {
 
     // getChannelsForUser only returns the direct messages the caller takes part in, the
     // owner included, so their conversations are searched along with the channels
-    const accessibleChannelIds = accessibleChannels.map(
-      (channel) => channel.id
-    );
+    const accessibleChannelIds = accessibleChannels
+      .map((channel) => channel.id)
+      .filter((id) => input.channelId === undefined || id === input.channelId);
 
     if (accessibleChannelIds.length === 0) {
       return {
@@ -84,7 +102,50 @@ const searchMessagesRoute = rateLimitedProcedure(protectedProcedure, {
       };
     }
 
-    const globPattern = buildCaseInsensitiveGlob(input.query);
+    const globPattern = input.query
+      ? buildCaseInsensitiveGlob(input.query)
+      : undefined;
+
+    // the filters that narrow messages and files alike
+    const shared = [
+      inArray(messages.channelId, accessibleChannelIds),
+      input.fromUserId ? eq(messages.userId, input.fromUserId) : undefined,
+      input.before ? lt(messages.createdAt, input.before) : undefined,
+      input.after ? gt(messages.createdAt, input.after) : undefined,
+      input.on !== undefined ? gte(messages.createdAt, input.on) : undefined,
+      input.on !== undefined
+        ? lt(messages.createdAt, input.on + DAY_MS)
+        : undefined
+    ];
+
+    const hasFilter = {
+      file: exists(
+        db
+          .select({ id: messageFiles.messageId })
+          .from(messageFiles)
+          .where(eq(messageFiles.messageId, messages.id))
+      ),
+      image: exists(
+        db
+          .select({ id: messageFiles.messageId })
+          .from(messageFiles)
+          .innerJoin(files, eq(files.id, messageFiles.fileId))
+          .where(
+            and(
+              eq(messageFiles.messageId, messages.id),
+              sql`${files.mimeType} GLOB 'image/*'`
+            )
+          )
+      ),
+      link: sql`${messages.content} GLOB '*href="http*'`
+    };
+
+    // a mention or a link lives in a message, not in a file, so those leave no file results
+    const searchesFiles =
+      input.mentionsUserId === undefined &&
+      input.has !== 'link' &&
+      (globPattern !== undefined || input.has !== undefined);
+
     const messageFetchLimit = Math.min(
       MESSAGES_LIMIT * MESSAGE_FETCH_MULTIPLIER,
       MAX_MESSAGE_FETCH_LIMIT
@@ -101,34 +162,47 @@ const searchMessagesRoute = rateLimitedProcedure(protectedProcedure, {
         .innerJoin(channels, eq(channels.id, messages.channelId))
         .where(
           and(
-            inArray(messages.channelId, accessibleChannelIds),
-            sql`${messages.content} GLOB ${globPattern}`
+            ...shared,
+            globPattern
+              ? sql`${messages.content} GLOB ${globPattern}`
+              : undefined,
+            input.mentionsUserId
+              ? sql`${messages.content} GLOB ${`*data-user-id="${input.mentionsUserId}"*`}`
+              : undefined,
+            input.has ? hasFilter[input.has] : undefined
           )
         )
         .orderBy(desc(messages.createdAt))
         .limit(messageFetchLimit),
-      db
-        .select({
-          file: files,
-          messageId: messages.id,
-          channelId: messages.channelId,
-          messageContent: messages.content,
-          messageCreatedAt: messages.createdAt,
-          channelName: channels.name,
-          channelIsDm: channels.isDm
-        })
-        .from(messageFiles)
-        .innerJoin(files, eq(files.id, messageFiles.fileId))
-        .innerJoin(messages, eq(messages.id, messageFiles.messageId))
-        .innerJoin(channels, eq(channels.id, messages.channelId))
-        .where(
-          and(
-            inArray(messages.channelId, accessibleChannelIds),
-            sql`${files.originalName} GLOB ${globPattern}`
-          )
-        )
-        .orderBy(desc(messages.createdAt))
-        .limit(FILES_LIMIT)
+      searchesFiles
+        ? db
+            .select({
+              file: files,
+              messageId: messages.id,
+              channelId: messages.channelId,
+              messageContent: messages.content,
+              messageCreatedAt: messages.createdAt,
+              channelName: channels.name,
+              channelIsDm: channels.isDm
+            })
+            .from(messageFiles)
+            .innerJoin(files, eq(files.id, messageFiles.fileId))
+            .innerJoin(messages, eq(messages.id, messageFiles.messageId))
+            .innerJoin(channels, eq(channels.id, messages.channelId))
+            .where(
+              and(
+                ...shared,
+                globPattern
+                  ? sql`${files.originalName} GLOB ${globPattern}`
+                  : undefined,
+                input.has === 'image'
+                  ? sql`${files.mimeType} GLOB 'image/*'`
+                  : undefined
+              )
+            )
+            .orderBy(desc(messages.createdAt))
+            .limit(FILES_LIMIT)
+        : []
     ]);
 
     const matchedMessages = messageRows
@@ -143,8 +217,16 @@ const searchMessagesRoute = rateLimitedProcedure(protectedProcedure, {
         };
       })
       .filter((row) => {
-        if (!row.plainContent) {
+        if (
+          input.mentionsUserId &&
+          !hasMention(row.message.content, input.mentionsUserId)
+        ) {
           return false;
+        }
+
+        // without words to look for, the filters alone decide
+        if (!input.query) {
+          return true;
         }
 
         return row.plainContent.toLowerCase().includes(input.query);

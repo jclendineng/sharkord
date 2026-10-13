@@ -174,6 +174,7 @@ private struct ChannelRow: View {
 
     @State private var isVoiceSheetPresented = false
     @State private var isActionsSheetPresented = false
+    @State private var isPressed = false
 
     let channel: Channel
     let unreadCount: Int
@@ -201,30 +202,33 @@ private struct ChannelRow: View {
     }
 
     var body: some View {
-        row
-            .simultaneousGesture(LongPressGesture().onEnded(showActions))
+        // plain gestures rather than a link or button: a recognised long press cancels the
+        // tap, where a button still fires when the finger lifts after one
+        label
+            .background(isPressed ? Theme.hover : .clear, in: .rect(cornerRadius: 6))
+            .onTapGesture(perform: open)
+            .onLongPressGesture(minimumDuration: 0.35, perform: showActions, onPressingChanged: setPressed)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction(named: "More Options", showActions)
             .sheet(isPresented: $isActionsSheetPresented) {
                 ChannelActionsSheet(channel: channel)
             }
-    }
-
-    @ViewBuilder
-    private var row: some View {
-        switch channel.type {
-        case .text:
-            NavigationLink(value: ChatRoute(channelId: channel.id)) {
-                label
-            }
-            .buttonStyle(ChannelRowButtonStyle())
-        case .voice:
-            Button(action: showVoiceSheet) {
-                label
-            }
-            .buttonStyle(ChannelRowButtonStyle())
             .sheet(isPresented: $isVoiceSheetPresented) {
                 VoiceChannelSheet(channel: channel)
             }
+    }
+
+    private func open() {
+        switch channel.type {
+        case .text:
+            session.requestedChannelId = channel.id
+        case .voice:
+            showVoiceSheet()
         }
+    }
+
+    private func setPressed(_ pressed: Bool) {
+        isPressed = pressed
     }
 
     // like discord, a voice channel shows who is in it before anyone joins
@@ -232,7 +236,8 @@ private struct ChannelRow: View {
         isVoiceSheetPresented = true
     }
 
-    private func showActions(_: Bool) {
+    private func showActions() {
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         isActionsSheetPresented = true
     }
 
@@ -301,12 +306,5 @@ private struct VoiceParticipants: View {
             .padding(.trailing, 8)
             .padding(.vertical, 3)
         }
-    }
-}
-
-private struct ChannelRowButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .background(configuration.isPressed ? Theme.hover : .clear, in: .rect(cornerRadius: 6))
     }
 }
