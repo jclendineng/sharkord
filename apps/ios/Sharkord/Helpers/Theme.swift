@@ -27,6 +27,8 @@ enum Theme {
             green
         case .idle:
             yellow
+        case .dnd:
+            red
         case .offline, nil:
             muted
         }

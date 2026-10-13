@@ -39,6 +39,9 @@ final class SessionStore {
     private(set) var pinnedChannelIds: [Int] = []
     private(set) var hidesMutedChannels = false
     private(set) var allowsDirectMessages = true
+    // what this account picked, which the member list cannot say for invisible
+    private(set) var ownPresence = Presence.online
+    private(set) var ownCustomStatus: String?
     private(set) var ownUserId: Int?
     private(set) var categories: [ChannelCategory] = []
     private(set) var channels: [Channel] = []
@@ -202,6 +205,88 @@ final class SessionStore {
         if let privacy: PrivacySettings = try? await client.query("users.getPrivacy") {
             allowsDirectMessages = privacy.allowDirectMessages
         }
+
+        if let presence: PresenceState = try? await client.query("users.getPresence") {
+            ownPresence = presence.presence
+            ownCustomStatus = presence.customStatus
+            applyOwnPresence()
+        }
+    }
+
+    func setPresence(_ presence: Presence, customStatus: String?) async throws {
+        guard let client else {
+            return
+        }
+
+        struct PresenceInput: Encodable {
+            let presence: Presence
+            let customStatus: String?
+        }
+
+        try await client.mutation("users.setPresence", input: PresenceInput(presence: presence, customStatus: customStatus))
+
+        ownPresence = presence
+        ownCustomStatus = customStatus?.isEmpty == true ? nil : customStatus
+        applyOwnPresence()
+    }
+
+    // the own entry shows the status picked, invisible as offline the way others see it
+    private func applyOwnPresence() {
+        guard let ownUserId else {
+            return
+        }
+
+        usersById[ownUserId]?.status = ownPresence.status
+        usersById[ownUserId]?.customStatus = ownCustomStatus
+    }
+
+    // MARK: server emoji
+
+    // images from the photo library or files app, at most 20 per request on the server
+    func addEmojis(_ uploads: [(fileURL: URL, name: String)]) async throws {
+        guard let client, let address, let token else {
+            return
+        }
+
+        struct NewEmoji: Encodable {
+            let fileId: String
+            let name: String
+        }
+
+        var pending: [NewEmoji] = []
+
+        for upload in uploads {
+            let file = try await UploadAPI.upload(fileAt: upload.fileURL, name: upload.fileURL.lastPathComponent, to: address, token: token)
+
+            pending.append(NewEmoji(fileId: file.id, name: upload.name))
+        }
+
+        for start in stride(from: 0, to: pending.count, by: 20) {
+            let batch = Array(pending[start..<min(start + 20, pending.count)])
+
+            try await client.mutation("emojis.add", input: batch)
+        }
+    }
+
+    func renameEmoji(_ emojiId: Int, to name: String) async throws {
+        guard let client else {
+            return
+        }
+
+        struct RenameInput: Encodable {
+            let emojiId: Int
+            let name: String
+        }
+
+        try await client.mutation("emojis.update", input: RenameInput(emojiId: emojiId, name: name))
+    }
+
+    func deleteEmoji(_ emojiId: Int) async throws {
+        guard let client else {
+            return
+        }
+
+        try await client.mutation("emojis.delete", input: ["emojiId": emojiId])
     }
 
     // the channel opened last on this server, like discord, or the first text channel
@@ -1145,6 +1230,24 @@ final class SessionStore {
 
         client.subscribe("users.onDelete") { [weak self] (event: UserDeletedEvent) in
             self?.usersById[event.userId] = nil
+        }
+
+        for path in ["emojis.onCreate", "emojis.onUpdate"] {
+            client.subscribe(path) { [weak self] (emoji: CustomEmoji) in
+                guard let self else {
+                    return
+                }
+
+                if let index = self.customEmojis.firstIndex(where: { $0.id == emoji.id }) {
+                    self.customEmojis[index] = emoji
+                } else {
+                    self.customEmojis.append(emoji)
+                }
+            }
+        }
+
+        client.subscribe("emojis.onDelete") { [weak self] (emojiId: Int) in
+            self?.customEmojis.removeAll { $0.id == emojiId }
         }
 
         client.subscribe("users.onLeave") { [weak self] (userId: Int) in

@@ -7,15 +7,13 @@ struct UserBar: View {
     @State private var isProfilePresented = false
     @State private var isUnreadsPresented = false
 
+    // the message when there is one, like discord, otherwise what was picked
     private var statusText: String {
-        switch session.ownUser?.status {
-        case .online:
-            "Online"
-        case .idle:
-            "Idle"
-        case .offline, nil:
-            "Offline"
+        if let customStatus = session.ownCustomStatus, !customStatus.isEmpty {
+            return customStatus
         }
+
+        return session.ownPresence.title
     }
 
     private var hasUnread: Bool {

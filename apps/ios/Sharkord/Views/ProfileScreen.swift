@@ -8,6 +8,7 @@ struct ProfileScreen: View {
 
     @State private var isEditPresented = false
     @State private var isSettingsPresented = false
+    @State private var isStatusPresented = false
 
     private var user: PublicUser? {
         session.ownUser
@@ -22,12 +23,34 @@ struct ProfileScreen: View {
             VStack(alignment: .leading, spacing: 0) {
                 ProfileBanner(user: user)
 
-                AvatarView(user: user, size: 92, showsStatus: true)
-                    .padding(6)
-                    .background(Theme.deepBackground, in: .circle)
-                    .padding(.leading, 12)
-                    .offset(y: -50)
-                    .padding(.bottom, -50)
+                HStack(alignment: .bottom, spacing: 6) {
+                    AvatarView(user: user, size: 92, showsStatus: true)
+                        .padding(6)
+                        .background(Theme.deepBackground, in: .circle)
+
+                    // discord's thought bubble beside the avatar, the status message or a nudge
+                    Button(action: setStatus) {
+                        Label(
+                            session.ownCustomStatus ?? "Set a status",
+                            systemImage: session.ownCustomStatus == nil ? "plus.circle.fill" : "bubble.left.fill"
+                        )
+                        .font(.subheadline.italic())
+                        .foregroundStyle(session.ownCustomStatus == nil ? Theme.muted : Theme.text)
+                        .lineLimit(2)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .background(Theme.listBackground, in: .capsule)
+                        .overlay {
+                            Capsule().stroke(Theme.divider, lineWidth: 1)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.bottom, 18)
+                }
+                .padding(.leading, 12)
+                .padding(.trailing, 16)
+                .offset(y: -50)
+                .padding(.bottom, -50)
 
                 VStack(alignment: .leading, spacing: 16) {
                     VStack(alignment: .leading, spacing: 4) {
@@ -119,10 +142,17 @@ struct ProfileScreen: View {
         .sheet(isPresented: $isSettingsPresented) {
             SettingsSheet()
         }
+        .sheet(isPresented: $isStatusPresented) {
+            SetStatusSheet()
+        }
         .presentationDragIndicator(.visible)
         .sheet(isPresented: $isEditPresented) {
             EditProfileSheet()
         }
+    }
+
+    private func setStatus() {
+        isStatusPresented = true
     }
 
     private func showSettings() {

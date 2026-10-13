@@ -57,7 +57,7 @@ const getPushMessage = (messageId: number): TPushMessage | undefined =>
     .get();
 
 // a device belongs to a session: a banned user, or one whose sessions were ended since it
-// registered, no longer receives anything on it
+// registered, no longer receives anything on it. do not disturb silences every device
 const getActiveDevices = (senderId: number | null) =>
   db
     .select({
@@ -72,6 +72,7 @@ const getActiveDevices = (senderId: number | null) =>
       and(
         eq(users.tokenVersion, pushDevices.tokenVersion),
         eq(users.banned, false),
+        ne(users.presence, 'dnd'),
         senderId === null ? undefined : ne(pushDevices.userId, senderId)
       )
     )

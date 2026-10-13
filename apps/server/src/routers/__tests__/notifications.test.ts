@@ -450,3 +450,21 @@ describe('channel notification settings', () => {
     expect(notifiedTokens(spy)).toEqual([]);
   });
 });
+
+describe('do not disturb', () => {
+  test('should push nothing to someone set to do not disturb', async () => {
+    await registerDevices(4);
+
+    const { caller: userB } = await initTest(4);
+
+    await userB.users.setPresence({ presence: 'dnd', customStatus: null });
+
+    const spy = spyOnApns();
+    const { caller } = await initTest(3);
+
+    await caller.messages.send({ channelId: 3, content: 'hey b', files: [] });
+    await drainPushNotificationsQueue();
+
+    expect(notifiedTokens(spy)).toEqual([]);
+  });
+});

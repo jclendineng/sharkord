@@ -13,6 +13,7 @@ struct ServerSheet: View {
     @State private var isEditProfilePresented = false
     @State private var isAddressCopied = false
     @State private var isReportUnavailable = false
+    @State private var isEmojiManagerPresented = false
 
     @Environment(\.openURL) private var openURL
 
@@ -89,9 +90,7 @@ struct ServerSheet: View {
                 .tint(Theme.blurple)
                 .foregroundStyle(Theme.header)
 
-                if !session.customEmojis.isEmpty {
-                    ServerEmojiGrid()
-                }
+                ServerEmojiGrid(onManage: manageEmoji)
 
                 ActionGroup {
                     if let host = session.address?.baseURL.absoluteString {
@@ -120,6 +119,9 @@ struct ServerSheet: View {
         .sheet(isPresented: $isEditProfilePresented) {
             EditProfileSheet()
         }
+        .sheet(isPresented: $isEmojiManagerPresented) {
+            EmojiManagerScreen()
+        }
         .alert("Reporting isn't set up yet", isPresented: $isReportUnavailable) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -142,6 +144,10 @@ struct ServerSheet: View {
 
     private func showInbox() {
         isInboxPresented = true
+    }
+
+    private func manageEmoji() {
+        isEmojiManagerPresented = true
     }
 
     private func showNotifications() {
@@ -239,14 +245,39 @@ private struct SheetAction: View {
 private struct ServerEmojiGrid: View {
     private static let shown = 32
 
+    let onManage: () -> Void
+
     @Environment(SessionStore.self) private var session
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Server Emoji")
-                .font(.subheadline)
-                .foregroundStyle(Theme.muted)
+            HStack {
+                Text("Server Emoji")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.muted)
 
+                Spacer()
+
+                Button("Manage", action: onManage)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Theme.link)
+            }
+
+            if session.customEmojis.isEmpty {
+                Text("No emoji yet. Add some, or a whole pack, from Manage.")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.muted)
+                    .padding(14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Theme.listBackground, in: .rect(cornerRadius: 14))
+            } else {
+                emojiGrid
+            }
+        }
+    }
+
+    private var emojiGrid: some View {
+        VStack(alignment: .leading, spacing: 0) {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 8), spacing: 8) {
                 ForEach(session.customEmojis.prefix(Self.shown)) { emoji in
                     if let address = session.address {

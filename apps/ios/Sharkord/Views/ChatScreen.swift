@@ -112,6 +112,8 @@ private struct ChatTitle: View {
                 return "Online"
             case .idle:
                 return "Idle"
+            case .dnd:
+                return "Do Not Disturb"
             case .offline, nil:
                 return "Offline"
             }

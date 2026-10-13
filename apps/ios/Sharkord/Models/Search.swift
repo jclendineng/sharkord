@@ -40,3 +40,62 @@ struct MentionsPage: Decodable {
     let messages: [Message]
     let nextCursor: MessagesCursor?
 }
+
+// messages.search's filters, chosen from the search screen's filter menu
+struct SearchFilters: Hashable {
+    enum Has: String, CaseIterable {
+        case file
+        case image
+        case link
+
+        var title: String {
+            switch self {
+            case .file:
+                "File"
+            case .image:
+                "Image"
+            case .link:
+                "Link"
+            }
+        }
+    }
+
+    var from: PublicUser?
+    var channel: Channel?
+    var mentions: PublicUser?
+    var has: Has?
+    var on: Date?
+    var before: Date?
+    var after: Date?
+
+    var isEmpty: Bool {
+        self == SearchFilters()
+    }
+}
+
+// what goes to the server, nil fields are left out of the json
+struct SearchInput: Encodable {
+    let query: String?
+    let fromUserId: Int?
+    let channelId: Int?
+    let mentionsUserId: Int?
+    let has: String?
+    let before: Int?
+    let after: Int?
+    let on: Int?
+
+    init(query: String?, filters: SearchFilters) {
+        let calendar = Calendar.current
+        let milliseconds = { (date: Date) in Int(date.timeIntervalSince1970 * 1000) }
+
+        self.query = query
+        fromUserId = filters.from?.id
+        channelId = filters.channel?.id
+        mentionsUserId = filters.mentions?.id
+        has = filters.has?.rawValue
+        // whole days in the phone's own time zone
+        before = filters.before.map { milliseconds(calendar.startOfDay(for: $0)) }
+        after = filters.after.map { milliseconds(calendar.startOfDay(for: $0).addingTimeInterval(86_400)) - 1 }
+        on = filters.on.map { milliseconds(calendar.startOfDay(for: $0)) }
+    }
+}

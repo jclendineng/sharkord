@@ -9,6 +9,8 @@ struct SearchScreen: View {
     @Environment(SessionStore.self) private var session
 
     @State private var query = ""
+    @State private var filters = SearchFilters()
+    @State private var picker: FilterPicker?
     @State private var results: SearchResults?
     @State private var errorMessage: String?
     @State private var isSearching = false
@@ -29,8 +31,18 @@ struct SearchScreen: View {
             .map { $0 }
     }
 
+    private var searchKey: [AnyHashable] {
+        [trimmedQuery, filters]
+    }
+
     var body: some View {
         List {
+            if !filters.isEmpty {
+                FilterChips(filters: $filters)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+            }
+
             if let errorMessage {
                 Text(errorMessage)
                     .foregroundStyle(Theme.red)
@@ -89,7 +101,15 @@ struct SearchScreen: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(Theme.deepBackground, for: .navigationBar)
         .toolbarBackgroundVisibility(.visible, for: .navigationBar)
-        .task(id: trimmedQuery) {
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                FilterMenu(filters: $filters, picker: $picker)
+            }
+        }
+        .sheet(item: $picker) { picker in
+            FilterPickerSheet(picker: picker, filters: $filters)
+        }
+        .task(id: searchKey) {
             await search()
         }
     }
@@ -108,13 +128,15 @@ struct SearchScreen: View {
 
         errorMessage = nil
 
-        guard Self.queryLength.contains(text.count) else {
+        if text.count > Self.queryLength.upperBound {
             results = nil
+            errorMessage = "Searches can be at most \(Self.queryLength.upperBound) characters."
+            return
+        }
 
-            if text.count > Self.queryLength.upperBound {
-                errorMessage = "Searches can be at most \(Self.queryLength.upperBound) characters."
-            }
-
+        // a filter alone is enough, words need two characters at least
+        guard Self.queryLength.contains(text.count) || (text.isEmpty && !filters.isEmpty) else {
+            results = nil
             return
         }
 
@@ -131,7 +153,8 @@ struct SearchScreen: View {
         }
 
         do {
-            let found: SearchResults = try await client.query("messages.search", input: ["query": text])
+            let input = SearchInput(query: text.isEmpty ? nil : text, filters: filters)
+            let found: SearchResults = try await client.query("messages.search", input: input)
 
             if !Task.isCancelled {
                 results = found

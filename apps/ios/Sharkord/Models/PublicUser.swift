@@ -3,7 +3,47 @@ import Foundation
 enum UserStatus: String, Codable {
     case online
     case idle
+    case dnd
     case offline
+}
+
+// what the user picked for themselves, users.getPresence. invisible is offline to others
+enum Presence: String, Codable, CaseIterable {
+    case online
+    case idle
+    case dnd
+    case invisible
+
+    var title: String {
+        switch self {
+        case .online:
+            "Online"
+        case .idle:
+            "Idle"
+        case .dnd:
+            "Do Not Disturb"
+        case .invisible:
+            "Invisible"
+        }
+    }
+
+    var status: UserStatus {
+        switch self {
+        case .online:
+            .online
+        case .idle:
+            .idle
+        case .dnd:
+            .dnd
+        case .invisible:
+            .offline
+        }
+    }
+}
+
+struct PresenceState: Codable {
+    let presence: Presence
+    let customStatus: String?
 }
 
 struct PublicUser: Codable, Hashable, Identifiable {
@@ -21,6 +61,7 @@ struct PublicUser: Codable, Hashable, Identifiable {
     // optional so a server that leaves it out still decodes
     let createdAt: Int?
     let banned: Bool?
+    var customStatus: String?
     let isDeleted: Bool
 
     var memberSince: Date? {
@@ -33,7 +74,7 @@ struct PublicUser: Codable, Hashable, Identifiable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, name, profileColor, bio, avatar, banner, status, roleIds, createdAt, banned
+        case id, name, profileColor, bio, avatar, banner, status, roleIds, createdAt, banned, customStatus
     }
 
     init(from decoder: Decoder) throws {
@@ -51,6 +92,7 @@ struct PublicUser: Codable, Hashable, Identifiable {
         roleIds = try container.decode([Int].self, forKey: .roleIds)
         createdAt = try container.decodeIfPresent(Int.self, forKey: .createdAt)
         banned = try container.decodeIfPresent(Bool.self, forKey: .banned)
+        customStatus = try container.decodeIfPresent(String.self, forKey: .customStatus)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -66,6 +108,7 @@ struct PublicUser: Codable, Hashable, Identifiable {
         try container.encode(roleIds, forKey: .roleIds)
         try container.encodeIfPresent(createdAt, forKey: .createdAt)
         try container.encodeIfPresent(banned, forKey: .banned)
+        try container.encodeIfPresent(customStatus, forKey: .customStatus)
     }
 }
 
