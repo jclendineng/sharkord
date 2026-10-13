@@ -9,6 +9,7 @@ import { messagesRouter } from './messages';
 import { notificationsRouter } from './notifications';
 import { othersRouter } from './others';
 import { pluginsRouter } from './plugins';
+import { pollsRouter } from './polls';
 import { rolesRouter } from './roles';
 import { sessionsRouter } from './sessions';
 import { usersRouter } from './users';
@@ -28,7 +29,8 @@ const appRouter = t.router({
   categories: categoriesRouter,
   plugins: pluginsRouter,
   notifications: notificationsRouter,
-  sessions: sessionsRouter
+  sessions: sessionsRouter,
+  polls: pollsRouter
 });
 
 type AppRouter = typeof appRouter;

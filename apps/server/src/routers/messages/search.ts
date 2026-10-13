@@ -273,7 +273,8 @@ const searchMessagesRoute = rateLimitedProcedure(protectedProcedure, {
         channelIsDm: row.channelIsDm,
         plainContent: row.plainContent,
         files: preparedFiles,
-        reactions: []
+        reactions: [],
+        poll: null
       };
     });
 

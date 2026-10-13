@@ -19,6 +19,8 @@ struct Message: Codable, Hashable, Identifiable {
     let editedAt: Int?
     let files: [SharkordFile]
     let reactions: [MessageReaction]
+    // missing from a server without polls
+    var poll: Poll?
     var replyCount: Int?
     // the message this one answers, or nil when it was deleted since
     let replyTo: ReplyPreview?
@@ -61,4 +63,40 @@ struct TemporaryFile: Decodable, Hashable {
     let id: String
     let originalName: String
     let size: Int
+}
+
+// polls.create, a message's poll with who picked each answer
+struct Poll: Codable, Hashable {
+    struct Answer: Codable, Hashable, Identifiable {
+        let id: Int
+        let text: String
+        let emoji: String?
+        let userIds: [Int]
+    }
+
+    let question: String
+    let allowMultiple: Bool
+    let expiresAt: Int
+    let endedAt: Int?
+    let answers: [Answer]
+
+    var expiresDate: Date {
+        Date(timeIntervalSince1970: TimeInterval(expiresAt) / 1000)
+    }
+
+    func isClosed(at now: Date = .now) -> Bool {
+        endedAt != nil || expiresDate <= now
+    }
+
+    var voterCount: Int {
+        Set(answers.flatMap(\.userIds)).count
+    }
+
+    func votes(of userId: Int?) -> Set<Int> {
+        guard let userId else {
+            return []
+        }
+
+        return Set(answers.filter { $0.userIds.contains(userId) }.map(\.id))
+    }
 }

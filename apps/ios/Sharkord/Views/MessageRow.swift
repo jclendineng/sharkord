@@ -54,6 +54,10 @@ struct MessageRow: View {
                         .foregroundStyle(Theme.muted)
                 }
 
+                if let poll = message.poll {
+                    PollView(message: message, poll: poll)
+                }
+
                 ForEach(message.files) { file in
                     AttachmentView(file: file)
                 }

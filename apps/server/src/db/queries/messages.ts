@@ -2,11 +2,12 @@ import type {
   TFile,
   TJoinedMessage,
   TJoinedMessageReaction,
+  TJoinedPoll,
   TMessage,
   TMessageReaction,
   TMessageReplyPreview
 } from '@sharkord/shared';
-import { and, count, desc, eq, inArray, notExists } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, notExists } from 'drizzle-orm';
 import { db } from '..';
 import { attachFileToken, signFile } from '../../helpers/files-crypto';
 import {
@@ -14,7 +15,10 @@ import {
   files,
   messageFiles,
   messageReactions,
-  messages
+  messages,
+  pollAnswers,
+  polls,
+  pollVotes
 } from '../schema';
 import { getSettings } from './server';
 
@@ -61,6 +65,64 @@ const getMessageByFileId = async (
   return row?.message;
 };
 
+// polls, their answers and votes for a page of messages, three queries whatever its size
+const getPollsByMessageId = async (
+  messageIds: number[]
+): Promise<Map<number, TJoinedPoll>> => {
+  const result = new Map<number, TJoinedPoll>();
+
+  const [pollRows, answerRows, voteRows] = await Promise.all([
+    db
+      .select({
+        messageId: polls.messageId,
+        question: polls.question,
+        allowMultiple: polls.allowMultiple,
+        expiresAt: polls.expiresAt,
+        endedAt: polls.endedAt
+      })
+      .from(polls)
+      .where(inArray(polls.messageId, messageIds)),
+    db
+      .select({
+        id: pollAnswers.id,
+        messageId: pollAnswers.messageId,
+        text: pollAnswers.text,
+        emoji: pollAnswers.emoji
+      })
+      .from(pollAnswers)
+      .where(inArray(pollAnswers.messageId, messageIds))
+      .orderBy(asc(pollAnswers.messageId), asc(pollAnswers.position)),
+    db
+      .select({ answerId: pollVotes.answerId, userId: pollVotes.userId })
+      .from(pollVotes)
+      .where(inArray(pollVotes.messageId, messageIds))
+  ]);
+
+  if (pollRows.length === 0) return result;
+
+  const votersByAnswer = new Map<number, number[]>();
+
+  for (const vote of voteRows) {
+    const voters = votersByAnswer.get(vote.answerId) ?? [];
+
+    voters.push(vote.userId);
+    votersByAnswer.set(vote.answerId, voters);
+  }
+
+  for (const { messageId, ...poll } of pollRows) {
+    result.set(messageId, { ...poll, answers: [] });
+  }
+
+  for (const { messageId, ...answer } of answerRows) {
+    result.get(messageId)?.answers.push({
+      ...answer,
+      userIds: votersByAnswer.get(answer.id) ?? []
+    });
+  }
+
+  return result;
+};
+
 const joinMessagesWithRelations = async (
   rows: TMessage[]
 ): Promise<TJoinedMessage[]> => {
@@ -71,30 +133,32 @@ const joinMessagesWithRelations = async (
   const { storageSignedUrlsEnabled, storageSignedUrlsTtlSeconds } =
     await getSettings();
 
-  const [fileRows, reactionRows, replyToMap] = await Promise.all([
-    db
-      .select({
-        messageId: messageFiles.messageId,
-        file: files
-      })
-      .from(messageFiles)
-      .innerJoin(files, eq(messageFiles.fileId, files.id))
-      .where(inArray(messageFiles.messageId, messageIds)),
-    db
-      .select({
-        messageId: messageReactions.messageId,
-        userId: messageReactions.userId,
-        pluginId: messageReactions.pluginId,
-        emoji: messageReactions.emoji,
-        createdAt: messageReactions.createdAt,
-        fileId: messageReactions.fileId,
-        file: files
-      })
-      .from(messageReactions)
-      .leftJoin(files, eq(messageReactions.fileId, files.id))
-      .where(inArray(messageReactions.messageId, messageIds)),
-    getReplyPreviewByMessageId(rows)
-  ]);
+  const [fileRows, reactionRows, replyToMap, pollsByMessage] =
+    await Promise.all([
+      db
+        .select({
+          messageId: messageFiles.messageId,
+          file: files
+        })
+        .from(messageFiles)
+        .innerJoin(files, eq(messageFiles.fileId, files.id))
+        .where(inArray(messageFiles.messageId, messageIds)),
+      db
+        .select({
+          messageId: messageReactions.messageId,
+          userId: messageReactions.userId,
+          pluginId: messageReactions.pluginId,
+          emoji: messageReactions.emoji,
+          createdAt: messageReactions.createdAt,
+          fileId: messageReactions.fileId,
+          file: files
+        })
+        .from(messageReactions)
+        .leftJoin(files, eq(messageReactions.fileId, files.id))
+        .where(inArray(messageReactions.messageId, messageIds)),
+      getReplyPreviewByMessageId(rows),
+      getPollsByMessageId(messageIds)
+    ]);
 
   const filesByMessage = fileRows.reduce<Record<number, TFile[]>>(
     (acc, row) => {
@@ -145,6 +209,7 @@ const joinMessagesWithRelations = async (
     ...msg,
     files: filesByMessage[msg.id] ?? [],
     reactions: reactionsByMessage[msg.id] ?? [],
+    poll: pollsByMessage.get(msg.id) ?? null,
     replyTo:
       msg.replyToMessageId !== null
         ? (replyToMap[msg.replyToMessageId] ?? null)

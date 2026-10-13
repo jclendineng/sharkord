@@ -122,5 +122,21 @@
   "reconnectingAbort": "Přestat se připojovat",
   "removeImage": "Odebrat obrázek",
   "channelMutedTooltip": "Kanál je ztlumen, kliknutím zrušíte ztlumení",
-  "unknownRole": "Neznámá role"
+  "unknownRole": "Neznámá role",
+  "pollSelectOne": "Vyber jednu odpověď",
+  "pollSelectMany": "Vyber jednu nebo více odpovědí",
+  "pollVote": "Hlasovat",
+  "pollRemoveVote": "Zrušit hlas",
+  "pollEnd": "Ukončit anketu",
+  "pollClosed": "Anketa ukončena",
+  "pollVotes_one": "{{count}} hlas",
+  "pollVotes_other": "{{count}} hlasů",
+  "pollDaysLeft_one": "Zbývá {{count}} d",
+  "pollDaysLeft_other": "Zbývá {{count}} d",
+  "pollHoursLeft_one": "Zbývá {{count}} h",
+  "pollHoursLeft_other": "Zbývá {{count}} h",
+  "pollMinutesLeft_one": "Zbývá {{count}} min",
+  "pollMinutesLeft_other": "Zbývá {{count}} min",
+  "pollVoteFailed": "Hlas se nepodařilo uložit",
+  "pollEndFailed": "Anketu se nepodařilo ukončit"
 }

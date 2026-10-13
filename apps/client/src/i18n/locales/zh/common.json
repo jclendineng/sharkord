@@ -122,5 +122,21 @@
   "reconnectingAbort": "停止重新连接",
   "removeImage": "移除图片",
   "channelMutedTooltip": "频道已静音，点击取消静音",
-  "unknownRole": "未知角色"
+  "unknownRole": "未知角色",
+  "pollSelectOne": "选择一个答案",
+  "pollSelectMany": "选择一个或多个答案",
+  "pollVote": "投票",
+  "pollRemoveVote": "撤回投票",
+  "pollEnd": "结束投票",
+  "pollClosed": "投票已结束",
+  "pollVotes_one": "{{count}} 票",
+  "pollVotes_other": "{{count}} 票",
+  "pollDaysLeft_one": "剩余 {{count}} 天",
+  "pollDaysLeft_other": "剩余 {{count}} 天",
+  "pollHoursLeft_one": "剩余 {{count}} 小时",
+  "pollHoursLeft_other": "剩余 {{count}} 小时",
+  "pollMinutesLeft_one": "剩余 {{count}} 分钟",
+  "pollMinutesLeft_other": "剩余 {{count}} 分钟",
+  "pollVoteFailed": "无法记录你的投票",
+  "pollEndFailed": "无法结束投票"
 }

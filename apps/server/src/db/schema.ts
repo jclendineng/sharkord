@@ -411,6 +411,55 @@ const messageReactions = sqliteTable(
   ]
 );
 
+// a message can carry one poll, its answers in order and who picked which
+const polls = sqliteTable('polls', {
+  messageId: integer('message_id')
+    .primaryKey()
+    .references(() => messages.id, { onDelete: 'cascade' }),
+  question: text('question').notNull(),
+  allowMultiple: integer('allow_multiple', { mode: 'boolean' }).notNull(),
+  expiresAt: integer('expires_at').notNull(),
+  endedAt: integer('ended_at'),
+  createdAt: integer('created_at').notNull()
+});
+
+const pollAnswers = sqliteTable(
+  'poll_answers',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    messageId: integer('message_id')
+      .notNull()
+      .references(() => polls.messageId, { onDelete: 'cascade' }),
+    position: integer('position').notNull(),
+    text: text('text').notNull(),
+    emoji: text('emoji')
+  },
+  (t) => [
+    index('poll_answers_message_position_idx').on(t.messageId, t.position)
+  ]
+);
+
+const pollVotes = sqliteTable(
+  'poll_votes',
+  {
+    answerId: integer('answer_id')
+      .notNull()
+      .references(() => pollAnswers.id, { onDelete: 'cascade' }),
+    messageId: integer('message_id')
+      .notNull()
+      .references(() => polls.messageId, { onDelete: 'cascade' }),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: integer('created_at').notNull()
+  },
+  (t) => [
+    primaryKey({ columns: [t.answerId, t.userId] }),
+    index('poll_votes_message_user_idx').on(t.messageId, t.userId),
+    index('poll_votes_user_idx').on(t.userId)
+  ]
+);
+
 const invites = sqliteTable(
   'invites',
   {
@@ -721,6 +770,9 @@ export {
   pluginCapabilityRoles,
   pluginData,
   pluginUserData,
+  pollAnswers,
+  polls,
+  pollVotes,
   pushDevices,
   rolePermissions,
   roles,

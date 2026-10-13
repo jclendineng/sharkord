@@ -20,6 +20,7 @@ struct ComposerView: View {
     @State private var isPhotoPickerPresented = false
     @State private var isFileImporterPresented = false
     @State private var isCameraPresented = false
+    @State private var isPollCreatorPresented = false
     @State private var photoSelection: [PhotosPickerItem] = []
     @FocusState private var isFieldFocused: Bool
     @State private var recorder = VoiceMessageRecorder()
@@ -55,16 +56,7 @@ struct ComposerView: View {
             composer
 
             if isAttachPanelOpen {
-                AttachmentPanel(
-                    selectedIds: selectedAssetIds,
-                    canAddMore: attachments.count < maxFiles,
-                    onToggle: toggleAsset,
-                    onCamera: openCamera,
-                    onPhotos: openPhotoPicker,
-                    onFiles: openFileImporter
-                )
-                .background(Theme.deepBackground.ignoresSafeArea(edges: .bottom))
-                .transition(.move(edge: .bottom))
+                attachmentPanel
             }
         }
         .animation(.snappy(duration: 0.25), value: isAttachPanelOpen)
@@ -83,6 +75,9 @@ struct ComposerView: View {
             allowsMultipleSelection: true,
             onCompletion: importFiles
         )
+        .sheet(isPresented: $isPollCreatorPresented) {
+            PollCreatorSheet(channelId: store.channelId)
+        }
         .fullScreenCover(isPresented: $isCameraPresented) {
             CameraPicker(onCapture: importCapture)
                 .ignoresSafeArea()
@@ -108,6 +103,29 @@ struct ComposerView: View {
             text += insert
             store.pendingInsert = nil
         }
+    }
+
+    // a poll is a message of its own, so not one inside a thread
+    private var pollAction: (() -> Void)? {
+        guard store.scope == .channel else {
+            return nil
+        }
+
+        return openPollCreator
+    }
+
+    private var attachmentPanel: some View {
+        AttachmentPanel(
+            selectedIds: selectedAssetIds,
+            canAddMore: attachments.count < maxFiles,
+            onToggle: toggleAsset,
+            onCamera: openCamera,
+            onPhotos: openPhotoPicker,
+            onPoll: pollAction,
+            onFiles: openFileImporter,
+            onClose: closeAttachPanel
+        )
+        .transition(.move(edge: .bottom))
     }
 
     private var composer: some View {
@@ -231,6 +249,15 @@ struct ComposerView: View {
             isFieldFocused = false
             isAttachPanelOpen = true
         }
+    }
+
+    private func closeAttachPanel() {
+        isAttachPanelOpen = false
+    }
+
+    private func openPollCreator() {
+        isAttachPanelOpen = false
+        isPollCreatorPresented = true
     }
 
     private func openPhotoPicker() {

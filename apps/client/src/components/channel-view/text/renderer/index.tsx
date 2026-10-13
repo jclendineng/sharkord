@@ -21,6 +21,7 @@ import { AudioCard } from '../audio-card';
 import { FileCard } from '../file-card';
 import { MessageReactions } from '../message-reactions';
 import { YoutubeOverride } from '../overrides/youtube';
+import { Poll } from '../poll';
 import {
   getIsEmojiOnly,
   getParsedMessageHtml,
@@ -141,6 +142,14 @@ const MessageRenderer = memo(
         ))}
         <Media media={allMedia} />
         <OpenGraph previews={openGraphPreviews} />
+
+        {message.poll && (
+          <Poll
+            messageId={message.id}
+            authorId={message.userId}
+            poll={message.poll}
+          />
+        )}
 
         {!disableReactions && (
           <MessageReactions

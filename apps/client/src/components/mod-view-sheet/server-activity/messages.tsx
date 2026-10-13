@@ -43,7 +43,8 @@ const Messages = memo(() => {
               message={{
                 ...message,
                 files: [],
-                reactions: []
+                reactions: [],
+                poll: null
               }}
             />
           </div>

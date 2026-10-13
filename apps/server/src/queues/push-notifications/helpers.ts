@@ -11,6 +11,7 @@ import {
   channelNotificationSettings,
   channels,
   messages,
+  polls,
   pushDevices,
   userRoles,
   users
@@ -26,6 +27,7 @@ type TPushMessage = {
   userId: number | null;
   pluginId: string | null;
   content: string | null;
+  pollQuestion: string | null;
   parentMessageId: number | null;
   replyToMessageId: number | null;
 };
@@ -47,11 +49,13 @@ const getPushMessage = (messageId: number): TPushMessage | undefined =>
       userId: messages.userId,
       pluginId: messages.pluginId,
       content: messages.content,
+      pollQuestion: polls.question,
       parentMessageId: messages.parentMessageId,
       replyToMessageId: messages.replyToMessageId
     })
     .from(messages)
     .innerJoin(channels, eq(channels.id, messages.channelId))
+    .leftJoin(polls, eq(polls.messageId, messages.id))
     .where(eq(messages.id, messageId))
     .limit(1)
     .get();
@@ -163,6 +167,10 @@ const getPreviewAlert = (message: TPushMessage, senderName: string) => {
   const text = getPlainTextFromHtml(message.content ?? '').trim();
 
   let body = text || 'Sent an attachment';
+
+  if (message.pollQuestion) {
+    body = `Poll: ${message.pollQuestion}`;
+  }
 
   if (body.length > BODY_MAX_LENGTH) {
     body = `${body.slice(0, BODY_MAX_LENGTH - 1)}…`;

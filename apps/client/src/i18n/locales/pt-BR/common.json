@@ -124,5 +124,21 @@
   "reconnectingAbort": "Parar de tentar reconectar",
   "removeImage": "Remover imagem",
   "channelMutedTooltip": "Canal silenciado, clique para reativar",
-  "unknownRole": "Cargo desconhecido"
+  "unknownRole": "Cargo desconhecido",
+  "pollSelectOne": "Escolha uma resposta",
+  "pollSelectMany": "Escolha uma ou mais respostas",
+  "pollVote": "Votar",
+  "pollRemoveVote": "Remover voto",
+  "pollEnd": "Encerrar enquete",
+  "pollClosed": "Enquete encerrada",
+  "pollVotes_one": "{{count}} voto",
+  "pollVotes_other": "{{count}} votos",
+  "pollDaysLeft_one": "Falta {{count}} d",
+  "pollDaysLeft_other": "Faltam {{count}} d",
+  "pollHoursLeft_one": "Falta {{count}} h",
+  "pollHoursLeft_other": "Faltam {{count}} h",
+  "pollMinutesLeft_one": "Falta {{count}} min",
+  "pollMinutesLeft_other": "Faltam {{count}} min",
+  "pollVoteFailed": "Não foi possível registrar seu voto",
+  "pollEndFailed": "Não foi possível encerrar a enquete"
 }

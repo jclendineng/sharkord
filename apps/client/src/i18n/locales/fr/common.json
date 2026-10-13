@@ -122,5 +122,21 @@
   "reconnectingAbort": "Arrêter la reconnexion",
   "removeImage": "Supprimer l'image",
   "channelMutedTooltip": "Salon en sourdine, cliquez pour le réactiver",
-  "unknownRole": "Rôle inconnu"
+  "unknownRole": "Rôle inconnu",
+  "pollSelectOne": "Choisis une reponse",
+  "pollSelectMany": "Choisis une ou plusieurs reponses",
+  "pollVote": "Voter",
+  "pollRemoveVote": "Retirer le vote",
+  "pollEnd": "Terminer le sondage",
+  "pollClosed": "Sondage termine",
+  "pollVotes_one": "{{count}} vote",
+  "pollVotes_other": "{{count}} votes",
+  "pollDaysLeft_one": "{{count}} j restant",
+  "pollDaysLeft_other": "{{count}} j restants",
+  "pollHoursLeft_one": "{{count}} h restante",
+  "pollHoursLeft_other": "{{count}} h restantes",
+  "pollMinutesLeft_one": "{{count}} min restante",
+  "pollMinutesLeft_other": "{{count}} min restantes",
+  "pollVoteFailed": "Impossible d'enregistrer ton vote",
+  "pollEndFailed": "Impossible de terminer le sondage"
 }

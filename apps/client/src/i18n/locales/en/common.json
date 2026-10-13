@@ -124,5 +124,21 @@
   "reconnectingAbort": "Stop trying to reconnect",
   "removeImage": "Remove image",
   "channelMutedTooltip": "Channel muted, click to unmute",
-  "unknownRole": "Unknown Role"
+  "unknownRole": "Unknown Role",
+  "pollSelectOne": "Select one answer",
+  "pollSelectMany": "Select one or more answers",
+  "pollVote": "Vote",
+  "pollRemoveVote": "Remove Vote",
+  "pollEnd": "End Poll",
+  "pollClosed": "Poll closed",
+  "pollVotes_one": "{{count}} vote",
+  "pollVotes_other": "{{count}} votes",
+  "pollDaysLeft_one": "{{count}}d left",
+  "pollDaysLeft_other": "{{count}}d left",
+  "pollHoursLeft_one": "{{count}}h left",
+  "pollHoursLeft_other": "{{count}}h left",
+  "pollMinutesLeft_one": "{{count}}m left",
+  "pollMinutesLeft_other": "{{count}}m left",
+  "pollVoteFailed": "Could not record your vote",
+  "pollEndFailed": "Could not end the poll"
 }

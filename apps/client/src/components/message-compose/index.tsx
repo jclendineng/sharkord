@@ -6,6 +6,7 @@ import type { TEmojiItem } from '@/components/tiptap-input/helpers';
 import { LocalStorageKey } from '@/helpers/storage';
 import type { MouseEvent as ReactMouseEvent } from 'react';
 
+import { openDialog } from '@/features/dialogs/actions';
 import { useChannelById } from '@/features/server/channels/hooks';
 import {
   useCan,
@@ -26,7 +27,7 @@ import {
 } from '@sharkord/shared';
 import { Button, Spinner } from '@sharkord/ui';
 import { filesize } from 'filesize';
-import { Paperclip, Reply, Send, Smile, X } from 'lucide-react';
+import { ChartBar, Paperclip, Reply, Send, Smile, X } from 'lucide-react';
 import {
   memo,
   useCallback,
@@ -44,6 +45,7 @@ import { DEFAULT_MAX_HEIGHT_VH } from '../channel-view/text/helpers';
 import { useMessageAuthorName } from '../channel-view/text/hooks/use-message-author-name';
 import { PreviewFile } from '../channel-view/text/preview-file';
 import { UsersTypingIndicator } from '../channel-view/text/users-typing';
+import { Dialog } from '../dialogs/dialogs';
 import { useFileAwareHeight } from './hooks';
 
 type TMessageComposeProps = {
@@ -54,6 +56,7 @@ type TMessageComposeProps = {
   onTyping: () => void;
   typingUsers: TJoinedPublicUser[];
   showPluginSlot?: boolean;
+  allowPolls?: boolean;
   composeContainerRef?: RefObject<HTMLDivElement | null>;
   inputStorageKey?: LocalStorageKey;
   inputDefaultMaxHeightVh?: number;
@@ -79,6 +82,7 @@ const MessageCompose = memo(
     onTyping,
     typingUsers,
     showPluginSlot = false,
+    allowPolls = false,
     composeContainerRef,
     inputStorageKey = LocalStorageKey.CHAT_INPUT_HEIGHT_VH,
     inputDefaultMaxHeightVh = DEFAULT_MAX_HEIGHT_VH,
@@ -220,6 +224,12 @@ const MessageCompose = memo(
 
     const chatActionsProps = useMemo(() => ({ channelId }), [channelId]);
 
+    // a poll is a message of its own, so a thread's composer leaves the button out
+    const onCreatePollClick = useCallback(
+      () => openDialog(Dialog.CREATE_POLL, { channelId }),
+      [channelId]
+    );
+
     const insertEmoji = useCallback((emoji: TEmojiItem) => {
       tiptapRef.current?.insertEmoji(emoji);
     }, []);
@@ -342,6 +352,16 @@ const MessageCompose = memo(
                 <Smile className="h-4 w-4" />
               </Button>
             </EmojiPicker>
+            {allowPolls && (
+              <Button
+                size="icon"
+                variant="ghost"
+                disabled={uploading || !canSendMessages}
+                onClick={onCreatePollClick}
+              >
+                <ChartBar className="h-4 w-4" />
+              </Button>
+            )}
             <Button
               size="icon"
               variant="ghost"

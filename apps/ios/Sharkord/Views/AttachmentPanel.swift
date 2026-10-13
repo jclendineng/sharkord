@@ -3,63 +3,94 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 // discord's attachment panel, in the keyboard's place under the composer: the camera and the
-// latest photos to tap straight into the message, the full pickers in a bar below. with access
-// to only some photos it says so and offers to change them
+// latest photos to tap straight into the message, the full pickers in a bar floating over the
+// bottom. drag it up to fill the screen, down to put it away. with access to only some photos
+// it says so and offers to change them
 struct AttachmentPanel: View {
-    static let height: CGFloat = 330
+    static let height: CGFloat = 340
+
+    // the one color the whole panel is, down behind the home indicator
+    static let background = Theme.listBackground
 
     let selectedIds: Set<String>
     let canAddMore: Bool
     let onToggle: (PHAsset) -> Void
     let onCamera: () -> Void
     let onPhotos: () -> Void
+    let onPoll: (() -> Void)?
     let onFiles: () -> Void
+    let onClose: () -> Void
 
     @Environment(\.openURL) private var openURL
 
     @State private var library = PhotoLibrary()
     @State private var isManagePresented = false
+    @State private var isExpanded = false
+    @State private var dragOffset: CGFloat = 0
 
     private var isLimited: Bool {
         library.status == .limited
     }
 
+    // the screen less the navigation bar and the composer, which stays above the panel
+    private var expandedHeight: CGFloat {
+        let screen = UIApplication.shared.topViewController?.view.window?.bounds.height ?? 800
+
+        return screen * 0.72
+    }
+
+    private var height: CGFloat {
+        let resting = isExpanded ? expandedHeight : Self.height
+
+        return min(max(resting - dragOffset, Self.height * 0.6), expandedHeight)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            if isLimited {
-                HStack(spacing: 12) {
-                    Text("You've given Sharkord access to a select number of photos and videos.")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.muted)
+            VStack(spacing: 0) {
+                Capsule()
+                    .fill(Theme.muted.opacity(0.5))
+                    .frame(width: 36, height: 5)
+                    .padding(.top, 8)
+                    .padding(.bottom, isLimited ? 6 : 10)
 
-                    Spacer(minLength: 0)
+                if isLimited {
+                    HStack(spacing: 12) {
+                        Text("You've given Sharkord access to a select number of photos and videos.")
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.text)
 
-                    Button("Manage", action: manage)
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(Theme.header)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 7)
-                        .background(Theme.inputBackground, in: .capsule)
-                        .buttonStyle(.plain)
+                        Spacer(minLength: 0)
+
+                        Button("Manage", action: manage)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Theme.header)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(Theme.inputBackground, in: .rect(cornerRadius: 10))
+                            .buttonStyle(.plain)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.bottom, 10)
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
             }
+            .frame(maxWidth: .infinity)
+            .contentShape(.rect)
+            .gesture(resize)
 
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-            HStack(spacing: 0) {
-                PanelButton(title: "Photos", systemImage: "photo", action: onPhotos)
-                PanelButton(title: "Files", systemImage: "paperclip", action: onFiles)
-            }
-            .padding(.vertical, 8)
-            .background(Theme.chatBackground, in: .rect(cornerRadius: 16))
-            .padding(.horizontal, 12)
-            .padding(.bottom, 6)
         }
-        .frame(height: Self.height)
-        .background(Theme.deepBackground)
+        .frame(height: height)
+        .overlay(alignment: .bottom) {
+            bar
+        }
+        .background {
+            UnevenRoundedRectangle(topLeadingRadius: 24, topTrailingRadius: 24)
+                .fill(Self.background)
+                .ignoresSafeArea(edges: .bottom)
+        }
+        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: isExpanded)
         .confirmationDialog("Photo Access", isPresented: $isManagePresented, titleVisibility: .hidden) {
             Button("Select More Photos", action: selectMore)
             Button("Allow Access to All Photos", action: openSettings)
@@ -69,6 +100,48 @@ struct AttachmentPanel: View {
         .task {
             await library.load()
         }
+    }
+
+    private var bar: some View {
+        HStack(spacing: 0) {
+            PanelButton(title: "Photos", systemImage: "photo", action: onPhotos)
+
+            if let onPoll {
+                PanelButton(title: "Poll", systemImage: "text.alignleft", action: onPoll)
+            }
+
+            PanelButton(title: "Files", systemImage: "paperclip", action: onFiles)
+        }
+        .padding(.vertical, 10)
+        .background(Theme.chatBackground, in: .rect(cornerRadius: 18))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18).stroke(Theme.divider.opacity(0.6), lineWidth: 1)
+        }
+        .padding(.horizontal, 24)
+        .padding(.bottom, 4)
+    }
+
+    // the grabber drags the panel taller or shorter, a flick down from its resting size closes it
+    private var resize: some Gesture {
+        DragGesture()
+            .onChanged { value in
+                dragOffset = value.translation.height
+            }
+            .onEnded { value in
+                let travel = value.predictedEndTranslation.height
+
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                    dragOffset = 0
+
+                    if travel < -80 {
+                        isExpanded = true
+                    } else if travel > 80 && isExpanded {
+                        isExpanded = false
+                    } else if travel > 80 {
+                        onClose()
+                    }
+                }
+            }
     }
 
     @ViewBuilder
@@ -94,7 +167,7 @@ struct AttachmentPanel: View {
                                 .font(.title2)
                                 .foregroundStyle(Theme.text)
                         }
-                        .background(Theme.inputBackground, in: .rect(cornerRadius: 8))
+                        .background(Theme.inputBackground, in: .rect(cornerRadius: 10))
                 }
                 .buttonStyle(.plain)
 
@@ -108,17 +181,31 @@ struct AttachmentPanel: View {
                     }
                 }
             }
-            .padding(.horizontal, 8)
-            .padding(.top, isLimited ? 0 : 10)
+            .padding(.horizontal, 10)
 
             if isLimited {
-                Text("Not what you're looking for? Browse your photo library for that.")
-                    .font(.footnote)
-                    .foregroundStyle(Theme.muted)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(12)
+                VStack(spacing: 14) {
+                    Text("Not what you're looking for? Browse your photo library for that perfect picture.")
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.text)
+                        .multilineTextAlignment(.center)
+
+                    Button(action: onPhotos) {
+                        Text("Browse Photos")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 18)
+                            .padding(.vertical, 10)
+                            .background(Theme.blurple, in: .rect(cornerRadius: 10))
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 20)
             }
         }
+        // room to scroll the last row out from under the floating bar
+        .contentMargins(.bottom, 96, for: .scrollContent)
         .scrollIndicators(.hidden)
     }
 
@@ -312,7 +399,7 @@ private struct AssetCell: View {
                     Theme.inputBackground
                 }
             }
-            .clipShape(.rect(cornerRadius: 8))
+            .clipShape(.rect(cornerRadius: 10))
             .overlay(alignment: .bottomTrailing) {
                 if asset.mediaType == .video {
                     Text(duration)

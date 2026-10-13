@@ -247,6 +247,7 @@ const TextChannel = memo(({ channelId, onClose }: TChannelProps) => {
         onTyping={sendTypingSignal}
         typingUsers={typingUsers}
         showPluginSlot
+        allowPolls
         onCancelReply={handleCancelReply}
         replyTarget={replyTarget}
         onArrowUp={handleArrowUpEdit}

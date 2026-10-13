@@ -122,5 +122,21 @@
   "reconnectingAbort": "Прекратить переподключение",
   "removeImage": "Удалить изображение",
   "channelMutedTooltip": "Канал заглушён, нажмите, чтобы включить звук",
-  "unknownRole": "Неизвестная роль"
+  "unknownRole": "Неизвестная роль",
+  "pollSelectOne": "Выберите один ответ",
+  "pollSelectMany": "Выберите один или несколько ответов",
+  "pollVote": "Голосовать",
+  "pollRemoveVote": "Отменить голос",
+  "pollEnd": "Завершить опрос",
+  "pollClosed": "Опрос завершён",
+  "pollVotes_one": "{{count}} голос",
+  "pollVotes_other": "{{count}} голосов",
+  "pollDaysLeft_one": "Осталось {{count}} д",
+  "pollDaysLeft_other": "Осталось {{count}} д",
+  "pollHoursLeft_one": "Остался {{count}} ч",
+  "pollHoursLeft_other": "Осталось {{count}} ч",
+  "pollMinutesLeft_one": "Осталась {{count}} мин",
+  "pollMinutesLeft_other": "Осталось {{count}} мин",
+  "pollVoteFailed": "Не удалось сохранить голос",
+  "pollEndFailed": "Не удалось завершить опрос"
 }

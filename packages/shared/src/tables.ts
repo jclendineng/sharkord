@@ -14,6 +14,8 @@ import {
   messageFiles,
   messageReactions,
   messages,
+  pollAnswers,
+  polls,
   rolePermissions,
   roles,
   settings,
@@ -125,9 +127,24 @@ export type TMessageReplyPreview = Pick<
   'id' | 'content' | 'userId' | 'pluginId'
 >;
 
+export type TPoll = InferSelectModel<typeof polls>;
+export type TPollAnswer = InferSelectModel<typeof pollAnswers>;
+
+export type TJoinedPollAnswer = Pick<TPollAnswer, 'id' | 'text' | 'emoji'> & {
+  userIds: number[];
+};
+
+export type TJoinedPoll = Pick<
+  TPoll,
+  'question' | 'allowMultiple' | 'expiresAt' | 'endedAt'
+> & {
+  answers: TJoinedPollAnswer[];
+};
+
 export type TJoinedMessage = TMessage & {
   files: TFile[];
   reactions: TJoinedMessageReaction[];
+  poll: TJoinedPoll | null;
   replyCount?: number;
   replyTo?: TMessageReplyPreview | null;
 };

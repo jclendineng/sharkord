@@ -6,6 +6,7 @@ import { ConfirmActionDialog } from './confirm-action';
 import { CreateCategoryDialog } from './create-category';
 import { CreateChannelDialog } from './create-channel';
 import { CreateInviteDialog } from './create-invite-dialog';
+import { CreatePollDialog } from './create-poll';
 import { DeleteUserDialog } from './delete-user';
 import { Dialog } from './dialogs';
 import { PluginInstallConfirmDialog } from './plugin-install-confirm';
@@ -26,6 +27,7 @@ const DialogsMap: any = {
   [Dialog.ASSIGN_ROLE]: AssignRoleDialog,
   [Dialog.CREATE_INVITE]: CreateInviteDialog,
   [Dialog.CREATE_CATEGORY]: CreateCategoryDialog,
+  [Dialog.CREATE_POLL]: CreatePollDialog,
   [Dialog.PLUGIN_INSTALL_CONFIRM]: PluginInstallConfirmDialog,
   [Dialog.DELETE_USER]: DeleteUserDialog,
   [Dialog.SEARCH]: SearchDialog,
