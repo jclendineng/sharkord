@@ -1,6 +1,6 @@
 import Foundation
 
-// messages.search, which only looks through server channels, never direct messages
+// messages.search, over the channels and direct messages the caller can see
 struct SearchResults: Decodable {
     let messages: [SearchMessage]
     let files: [SearchFile]
@@ -15,6 +15,28 @@ struct SearchMessage: Decodable, Identifiable {
     let channelName: String
     let channelIsDm: Bool
     let plainContent: String
+    // the html, which still holds the links plainContent drops
+    let content: String?
+
+    // every web link in it, in order and each once
+    var links: [URL] {
+        guard let content else {
+            return []
+        }
+
+        let matches = content.matches(of: /href="(https?:[^"]+)"/)
+        var seen = Set<String>()
+
+        return matches.compactMap { match in
+            let raw = String(match.1).replacingOccurrences(of: "&amp;", with: "&")
+
+            guard seen.insert(raw).inserted else {
+                return nil
+            }
+
+            return URL(string: raw)
+        }
+    }
 
     var createdDate: Date {
         Date(timeIntervalSince1970: TimeInterval(createdAt) / 1000)
@@ -26,9 +48,16 @@ struct SearchFile: Decodable, Identifiable {
     let messageId: Int
     let channelId: Int
     let channelName: String
+    let messageCreatedAt: Int?
 
     // the same file can be attached to more than one message
     var id: String { "\(messageId)-\(file.id)" }
+}
+
+// channels.getActivity
+struct ChannelActivity: Decodable {
+    let channelId: Int
+    let lastMessageAt: Int
 }
 
 struct Invite: Decodable {

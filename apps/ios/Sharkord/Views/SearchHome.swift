@@ -1,0 +1,836 @@
+import AVFoundation
+import SwiftUI
+
+// discord's search before anything is typed: tabs for what the server, or the channel it was
+// opened from, holds. each tab loads the first time it shows and keeps what it got
+enum SearchTab: String, Identifiable {
+    case recent
+    case members
+    case channels
+    case media
+    case pins
+    case links
+    case files
+
+    var id: String { rawValue }
+
+    var title: String {
+        rawValue.capitalized
+    }
+
+    // pins belong to one channel, the channel list only makes sense for the whole server
+    static func tabs(inChannel: Bool) -> [SearchTab] {
+        if inChannel {
+            return [.recent, .members, .media, .pins, .links, .files]
+        }
+
+        return [.recent, .members, .channels, .media, .links, .files]
+    }
+}
+
+@MainActor
+@Observable
+final class SearchHomeModel {
+    let scope: Channel?
+
+    var tab: SearchTab = .recent
+    // nil until loaded
+    private(set) var media: [SearchFile]?
+    private(set) var files: [SearchFile]?
+    private(set) var links: [SearchMessage]?
+    private(set) var pins: [Message]?
+    private(set) var memberIds: Set<Int>?
+    private(set) var activity: [Int: Date]?
+    private(set) var errorMessage: String?
+
+    private var loading: Set<SearchTab> = []
+
+    init(scope: Channel?) {
+        self.scope = scope
+    }
+
+    func load(_ tab: SearchTab, session: SessionStore) async {
+        guard !loading.contains(tab), let client = session.client else {
+            return
+        }
+
+        loading.insert(tab)
+
+        defer {
+            loading.remove(tab)
+        }
+
+        do {
+            switch tab {
+            case .recent:
+                // only the "active" times hang on it, a server without the route still shows the rest
+                if scope == nil, activity == nil {
+                    activity = (try? await Self.fetchActivity(client)) ?? [:]
+                }
+
+                if media == nil {
+                    media = try await mediaFiles(client)
+                }
+            case .members:
+                if let scope, memberIds == nil {
+                    let ids: [Int] = try await client.query("channels.getMembers", input: ["channelId": scope.id])
+
+                    memberIds = Set(ids)
+                }
+            case .channels:
+                if activity == nil {
+                    activity = try await Self.fetchActivity(client)
+                }
+            case .media:
+                if media == nil {
+                    media = try await mediaFiles(client)
+                }
+            case .pins:
+                if let scope, pins == nil {
+                    pins = try await client.query("messages.getPinned", input: ["channelId": scope.id])
+                }
+            case .links:
+                if links == nil {
+                    links = try await search(client, has: .link).messages
+                }
+            case .files:
+                if files == nil {
+                    // pictures and videos have their own tab
+                    files = try await search(client, has: .file).files.filter { !$0.file.isImage && !$0.file.isVideo }
+                }
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private static func fetchActivity(_ client: TRPCClient) async throws -> [Int: Date] {
+        let rows: [ChannelActivity] = try await client.query("channels.getActivity")
+
+        return Dictionary(
+            rows.map { ($0.channelId, Date(timeIntervalSince1970: TimeInterval($0.lastMessageAt) / 1000)) },
+            uniquingKeysWith: max
+        )
+    }
+
+    private func search(_ client: TRPCClient, has: SearchFilters.Has) async throws -> SearchResults {
+        var filters = SearchFilters()
+
+        filters.channel = scope
+        filters.has = has
+
+        return try await client.query("messages.search", input: SearchInput(query: nil, filters: filters))
+    }
+
+    // pictures and videos together, newest first
+    private func mediaFiles(_ client: TRPCClient) async throws -> [SearchFile] {
+        async let images = search(client, has: .image)
+        async let videos = search(client, has: .video)
+
+        let found = try await images.files + videos.files
+
+        return found.sorted { ($0.messageCreatedAt ?? 0) > ($1.messageCreatedAt ?? 0) }
+    }
+}
+
+// the models outlive the landing page, so typing a search and clearing it does not load again
+final class SearchHomeCache {
+    private var models: [Int: SearchHomeModel] = [:]
+
+    @MainActor
+    func model(for scope: Channel?) -> SearchHomeModel {
+        let key = scope?.id ?? 0
+
+        if let model = models[key] {
+            return model
+        }
+
+        let model = SearchHomeModel(scope: scope)
+
+        models[key] = model
+
+        return model
+    }
+}
+
+struct SearchHome: View {
+    let model: SearchHomeModel
+    let onOpenChannel: (Int) -> Void
+    let onOpenUser: (PublicUser) -> Void
+
+    private var tabs: [SearchTab] {
+        SearchTab.tabs(inChannel: model.scope != nil)
+    }
+
+    var body: some View {
+        @Bindable var model = model
+
+        VStack(spacing: 0) {
+            SearchTabBar(tabs: tabs, selection: $model.tab)
+
+            TabView(selection: $model.tab) {
+                ForEach(tabs) { tab in
+                    SearchTabPage(model: model, tab: tab, onOpenChannel: onOpenChannel, onOpenUser: onOpenUser)
+                        .tag(tab)
+                }
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+        }
+    }
+}
+
+private struct SearchTabBar: View {
+    let tabs: [SearchTab]
+    @Binding var selection: SearchTab
+
+    @Namespace private var underline
+
+    var body: some View {
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal) {
+                HStack(spacing: 28) {
+                    ForEach(tabs) { tab in
+                        Button {
+                            select(tab)
+                        } label: {
+                            VStack(spacing: 10) {
+                                Text(tab.title)
+                                    .font(.system(size: 17, weight: .medium))
+                                    .foregroundStyle(selection == tab ? Theme.blurple : Theme.muted)
+
+                                ZStack {
+                                    Capsule()
+                                        .fill(.clear)
+
+                                    if selection == tab {
+                                        Capsule()
+                                            .fill(Theme.blurple)
+                                            .matchedGeometryEffect(id: "underline", in: underline)
+                                    }
+                                }
+                                .frame(height: 3)
+                            }
+                            .fixedSize()
+                        }
+                        .buttonStyle(.plain)
+                        .id(tab)
+                    }
+                }
+                .padding(.horizontal, 18)
+                .padding(.top, 10)
+            }
+            .scrollIndicators(.hidden)
+            .onChange(of: selection) { _, tab in
+                withAnimation(.smooth(duration: 0.3)) {
+                    proxy.scrollTo(tab, anchor: .center)
+                }
+            }
+        }
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(Theme.divider)
+                .frame(height: 1)
+        }
+    }
+
+    private func select(_ tab: SearchTab) {
+        withAnimation(.smooth(duration: 0.3)) {
+            selection = tab
+        }
+    }
+}
+
+private struct SearchTabPage: View {
+    let model: SearchHomeModel
+    let tab: SearchTab
+    let onOpenChannel: (Int) -> Void
+    let onOpenUser: (PublicUser) -> Void
+
+    @Environment(SessionStore.self) private var session
+
+    var body: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 0) {
+                content
+            }
+            .padding(.vertical, 12)
+        }
+        .scrollDismissesKeyboard(.interactively)
+        .task {
+            await model.load(tab, session: session)
+        }
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        switch tab {
+        case .recent:
+            RecentPage(model: model, onOpenChannel: onOpenChannel)
+        case .members:
+            MembersPage(model: model, onOpenUser: onOpenUser)
+        case .channels:
+            ChannelsPage(model: model, onOpenChannel: onOpenChannel)
+        case .media:
+            if let media = model.media {
+                if media.isEmpty {
+                    EmptyTab(title: "No media yet", systemImage: "photo.on.rectangle")
+                } else {
+                    MediaGrid(files: media)
+                }
+            } else {
+                LoadingTab(errorMessage: model.errorMessage)
+            }
+        case .pins:
+            if let pins = model.pins {
+                if pins.isEmpty {
+                    EmptyTab(title: "No pinned messages", systemImage: "pin")
+                } else {
+                    ForEach(pins) { message in
+                        PinnedMessageRow(message: message, onOpen: { onOpenChannel(message.channelId) })
+                    }
+                }
+            } else {
+                LoadingTab(errorMessage: model.errorMessage)
+            }
+        case .links:
+            if let links = model.links {
+                LinksPage(messages: links, onOpenChannel: onOpenChannel)
+            } else {
+                LoadingTab(errorMessage: model.errorMessage)
+            }
+        case .files:
+            if let files = model.files {
+                if files.isEmpty {
+                    EmptyTab(title: "No files yet", systemImage: "doc")
+                } else {
+                    ForEach(files) { file in
+                        FileRow(file: file)
+                    }
+                }
+            } else {
+                LoadingTab(errorMessage: model.errorMessage)
+            }
+        }
+    }
+}
+
+// discord's "active 58m ago"
+enum ChannelActivityText {
+    static func text(_ date: Date) -> String {
+        let seconds = max(0, Date.now.timeIntervalSince(date))
+        let minutes = Int(seconds / 60)
+        let hours = minutes / 60
+        let days = hours / 24
+
+        if minutes < 1 {
+            return "Active just now"
+        }
+
+        if hours < 1 {
+            return "Active \(minutes)m ago"
+        }
+
+        if days < 1 {
+            return "Active \(hours)h ago"
+        }
+
+        if days < 30 {
+            return "Active \(days)d ago"
+        }
+
+        return "Active \(date.formatted(.dateTime.month(.abbreviated).day()))"
+    }
+}
+
+private struct SectionTitle: View {
+    let title: String
+    var actionTitle: String?
+    var action: (() -> Void)?
+
+    var body: some View {
+        HStack {
+            Text(title)
+                .font(.system(size: 17, weight: .medium))
+                .foregroundStyle(Theme.muted)
+
+            Spacer()
+
+            if let actionTitle, let action {
+                Button(actionTitle, action: action)
+                    .font(.system(size: 17, weight: .medium))
+                    .foregroundStyle(Theme.link)
+            }
+        }
+        .padding(.horizontal, 18)
+        .padding(.top, 14)
+        .padding(.bottom, 8)
+    }
+}
+
+private struct RecentPage: View {
+    let model: SearchHomeModel
+    let onOpenChannel: (Int) -> Void
+
+    @Environment(SessionStore.self) private var session
+
+    // the three server channels with the latest messages
+    private var suggested: [(Channel, Date)] {
+        guard model.scope == nil, let activity = model.activity else {
+            return []
+        }
+
+        return session.channelSections
+            .flatMap(\.channels)
+            .filter { $0.type == .text }
+            .compactMap { channel in activity[channel.id].map { (channel, $0) } }
+            .sorted { $0.1 > $1.1 }
+            .prefix(3)
+            .map { $0 }
+    }
+
+    var body: some View {
+        if !suggested.isEmpty {
+            SectionTitle(title: "Suggested")
+
+            ForEach(suggested, id: \.0.id) { channel, date in
+                ChannelRow(channel: channel, activity: date, onOpen: { onOpenChannel(channel.id) })
+            }
+        }
+
+        if let media = model.media {
+            if !media.isEmpty {
+                SectionTitle(title: "Photos & Media", actionTitle: "View all", action: showMedia)
+
+                MediaGrid(files: Array(media.prefix(6)))
+            } else if suggested.isEmpty {
+                EmptyTab(title: "Nothing here yet", systemImage: "magnifyingglass")
+            }
+        } else {
+            LoadingTab(errorMessage: model.errorMessage)
+        }
+    }
+
+    private func showMedia() {
+        withAnimation(.smooth(duration: 0.3)) {
+            model.tab = .media
+        }
+    }
+}
+
+private struct ChannelRow: View {
+    let channel: Channel
+    let activity: Date?
+    let onOpen: () -> Void
+
+    var body: some View {
+        Button(action: onOpen) {
+            HStack(spacing: 18) {
+                Image(systemName: "number")
+                    .font(.system(size: 24, weight: .medium))
+                    .foregroundStyle(Theme.muted)
+                    .frame(width: 30)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(channel.name)
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundStyle(Theme.header)
+                        .lineLimit(1)
+
+                    if let activity {
+                        Text(ChannelActivityText.text(activity))
+                            .font(.system(size: 16))
+                            .foregroundStyle(Theme.muted)
+                    }
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 18)
+            .padding(.vertical, 10)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct ChannelsPage: View {
+    let model: SearchHomeModel
+    let onOpenChannel: (Int) -> Void
+
+    @Environment(SessionStore.self) private var session
+
+    var body: some View {
+        let channels = session.channelSections
+            .flatMap(\.channels)
+            .filter { $0.type == .text }
+
+        if channels.isEmpty {
+            EmptyTab(title: "No channels", systemImage: "number")
+        } else {
+            ForEach(channels) { channel in
+                ChannelRow(channel: channel, activity: model.activity?[channel.id], onOpen: { onOpenChannel(channel.id) })
+            }
+        }
+    }
+}
+
+private struct MembersPage: View {
+    let model: SearchHomeModel
+    let onOpenUser: (PublicUser) -> Void
+
+    @Environment(SessionStore.self) private var session
+
+    // in a channel only the people who can see it, online first like the member list
+    private var members: [PublicUser]? {
+        var members = session.members
+
+        if model.scope != nil {
+            guard let memberIds = model.memberIds else {
+                return nil
+            }
+
+            members = members.filter { memberIds.contains($0.id) }
+        }
+
+        return members.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
+    var body: some View {
+        if let members {
+            let online = members.filter { $0.status != nil && $0.status != .offline }
+            let offline = members.filter { $0.status == nil || $0.status == .offline }
+
+            if !online.isEmpty {
+                SectionTitle(title: "Online · \(online.count)")
+
+                ForEach(online) { user in
+                    MemberRow(user: user, onOpen: { onOpenUser(user) })
+                }
+            }
+
+            if !offline.isEmpty {
+                SectionTitle(title: "Offline · \(offline.count)")
+
+                ForEach(offline) { user in
+                    MemberRow(user: user, onOpen: { onOpenUser(user) })
+                }
+            }
+        } else {
+            LoadingTab(errorMessage: model.errorMessage)
+        }
+    }
+}
+
+private struct MemberRow: View {
+    let user: PublicUser
+    let onOpen: () -> Void
+
+    @Environment(SessionStore.self) private var session
+
+    var body: some View {
+        Button(action: onOpen) {
+            HStack(spacing: 14) {
+                AvatarView(user: user, size: 40, showsStatus: true)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(user.name)
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(Color(hex: session.roleColor(for: user) ?? "#F2F3F5"))
+                        .lineLimit(1)
+
+                    if let customStatus = user.customStatus, !customStatus.isEmpty {
+                        Text(customStatus)
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.muted)
+                            .lineLimit(1)
+                    }
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 18)
+            .padding(.vertical, 7)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// three across, each opening in quick look
+private struct MediaGrid: View {
+    let files: [SearchFile]
+
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 3)
+
+    var body: some View {
+        LazyVGrid(columns: columns, spacing: 4) {
+            ForEach(files) { file in
+                MediaTile(file: file.file)
+            }
+        }
+        .padding(.horizontal, 14)
+    }
+}
+
+private struct MediaTile: View {
+    let file: SharkordFile
+
+    @Environment(SessionStore.self) private var session
+
+    var body: some View {
+        OpenFileButton(file: file) { isLoading in
+            Color.clear
+                .aspectRatio(1, contentMode: .fit)
+                .overlay {
+                    if let address = session.address {
+                        if file.isVideo {
+                            VideoThumbnail(url: address.fileURL(file))
+                        } else {
+                            AsyncImage(url: address.fileURL(file)) { image in
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                            } placeholder: {
+                                Theme.listBackground
+                            }
+                        }
+                    }
+                }
+                .overlay {
+                    if isLoading {
+                        ProgressView()
+                            .tint(.white)
+                    }
+                }
+                .clipShape(.rect(cornerRadius: 6))
+                .contentShape(.rect)
+        }
+    }
+}
+
+// a still from the start of a video, with a play mark over it
+private struct VideoThumbnail: View {
+    let url: URL
+
+    @State private var image: UIImage?
+
+    var body: some View {
+        ZStack {
+            Theme.listBackground
+
+            if let image {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+            }
+
+            Image(systemName: "play.fill")
+                .font(.title2)
+                .foregroundStyle(.white)
+                .shadow(radius: 4)
+        }
+        .task(id: url) {
+            let generator = AVAssetImageGenerator(asset: AVURLAsset(url: url))
+
+            generator.appliesPreferredTrackTransform = true
+            generator.maximumSize = CGSize(width: 400, height: 400)
+
+            if let (still, _) = try? await generator.image(at: .zero) {
+                image = UIImage(cgImage: still)
+            }
+        }
+    }
+}
+
+private struct PinnedMessageRow: View {
+    let message: Message
+    let onOpen: () -> Void
+
+    @Environment(SessionStore.self) private var session
+
+    private var author: PublicUser? {
+        message.userId.flatMap { session.usersById[$0] }
+    }
+
+    private var text: String {
+        HTMLText.plainText(from: message.content ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var body: some View {
+        Button(action: onOpen) {
+            HStack(alignment: .top, spacing: 12) {
+                AvatarView(user: author, size: 40)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 6) {
+                        Text(author?.name ?? "Unknown")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(Color(hex: session.roleColor(for: author) ?? "#F2F3F5"))
+
+                        Text(MessageDate.timestamp(message.createdDate))
+                            .font(.caption)
+                            .foregroundStyle(Theme.muted)
+                    }
+                    .lineLimit(1)
+
+                    if !text.isEmpty {
+                        Text(text)
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.text)
+                            .lineLimit(4)
+                            .multilineTextAlignment(.leading)
+                    }
+
+                    if !message.files.isEmpty {
+                        Label("\(message.files.count) attachment\(message.files.count == 1 ? "" : "s")", systemImage: "paperclip")
+                            .font(.caption)
+                            .foregroundStyle(Theme.muted)
+                    }
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 18)
+            .padding(.vertical, 10)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct LinksPage: View {
+    let messages: [SearchMessage]
+    let onOpenChannel: (Int) -> Void
+
+    private struct Entry: Identifiable {
+        let message: SearchMessage
+        let url: URL
+
+        var id: String { "\(message.id)-\(url.absoluteString)" }
+    }
+
+    private var entries: [Entry] {
+        messages.flatMap { message in
+            message.links.map { Entry(message: message, url: $0) }
+        }
+    }
+
+    var body: some View {
+        let entries = entries
+
+        if entries.isEmpty {
+            EmptyTab(title: "No links yet", systemImage: "link")
+        } else {
+            ForEach(entries) { entry in
+                LinkRow(url: entry.url, channelName: entry.message.channelName)
+            }
+        }
+    }
+}
+
+private struct LinkRow: View {
+    let url: URL
+    let channelName: String
+
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        Button(action: open) {
+            HStack(spacing: 14) {
+                Image(systemName: "link")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(Theme.muted)
+                    .frame(width: 48, height: 48)
+                    .background(Theme.listBackground, in: .rect(cornerRadius: 10))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(url.host() ?? url.absoluteString)
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(Theme.header)
+                        .lineLimit(1)
+
+                    Text(url.absoluteString)
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.link)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 18)
+            .padding(.vertical, 8)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func open() {
+        openURL(url)
+    }
+}
+
+private struct FileRow: View {
+    let file: SearchFile
+
+    var body: some View {
+        OpenFileButton(file: file.file) { isLoading in
+            HStack(spacing: 14) {
+                Image(systemName: file.file.symbol)
+                    .font(.system(size: 22))
+                    .foregroundStyle(Theme.blurple)
+                    .frame(width: 48, height: 48)
+                    .background(Theme.listBackground, in: .rect(cornerRadius: 10))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(file.file.originalName)
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(Theme.header)
+                        .lineLimit(1)
+
+                    Text("\(file.file.size.formatted(.byteCount(style: .file))) · #\(file.channelName)")
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.muted)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 0)
+
+                if isLoading {
+                    ProgressView()
+                }
+            }
+            .padding(.horizontal, 18)
+            .padding(.vertical, 8)
+            .contentShape(.rect)
+        }
+    }
+}
+
+private struct EmptyTab: View {
+    let title: String
+    let systemImage: String
+
+    var body: some View {
+        ContentUnavailableView(title, systemImage: systemImage)
+            .padding(.top, 60)
+            .frame(maxWidth: .infinity)
+    }
+}
+
+private struct LoadingTab: View {
+    let errorMessage: String?
+
+    var body: some View {
+        Group {
+            if let errorMessage {
+                Text(errorMessage)
+                    .foregroundStyle(Theme.red)
+                    .padding(.horizontal, 18)
+            } else {
+                ProgressView()
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 60)
+    }
+}

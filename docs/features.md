@@ -76,6 +76,24 @@ listed under it. Searching from a channel or a direct message starts with an `in
 for it, which can be removed to search everything; searching from the server's channel
 list covers the whole server. Route `messages.search`.
 
+Before anything is typed, the app shows Discord's tabs: Recent (the busiest channels with
+when each was last active, and the latest photos and media), Members, Channels, Media,
+Links and Files. Opened from a channel they cover just that channel, with Pins in place of
+Channels and Members narrowed to the people who can see it. Routes `channels.getActivity`
+(when each visible channel last had a message) and `channels.getMembers` (who can see a
+channel), plus `messages.search` and `messages.getPinned`.
+
+## Files in the app
+
+A file attached to a message opens on the phone in Quick Look, not in a web page: PDFs,
+Office and iWork documents, text, video and audio, with Quick Look's share and save. It is
+downloaded once into the app's cache.
+
+Uploaded files are stored under their own name and served from `/public/<name>`. With
+**Signed File Links** off (the default) anyone who has or guesses that link can open the
+file without signing in. Turn it on in Server Settings, Storage, and every link carries a
+token that expires.
+
 ## Voice messages
 
 A recording from the app goes up as an audio file and plays in place in the message, in the

@@ -42,16 +42,18 @@ struct AttachmentView: View {
     }
 }
 
+// opens on the phone in quick look, not in a web page
 private struct FileCard: View {
     let file: SharkordFile
     let url: URL
 
     var body: some View {
-        Link(destination: url) {
+        OpenFileButton(file: file) { isLoading in
             HStack(spacing: 10) {
-                Image(systemName: "doc.fill")
+                Image(systemName: file.symbol)
                     .font(.title)
                     .foregroundStyle(Theme.blurple)
+                    .frame(width: 32)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(file.originalName)
@@ -65,8 +67,12 @@ private struct FileCard: View {
 
                 Spacer(minLength: 0)
 
-                Image(systemName: "arrow.down.circle")
-                    .foregroundStyle(Theme.muted)
+                if isLoading {
+                    ProgressView()
+                } else {
+                    Image(systemName: "chevron.right")
+                        .foregroundStyle(Theme.muted)
+                }
             }
             .padding(12)
             .frame(maxWidth: 320)
@@ -75,6 +81,7 @@ private struct FileCard: View {
                 RoundedRectangle(cornerRadius: 8)
                     .stroke(Theme.deepBackground)
             }
+            .contentShape(.rect)
         }
     }
 }

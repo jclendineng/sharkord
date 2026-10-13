@@ -2981,13 +2981,11 @@ describe('messages.search filters', () => {
       content: 'watch this'
     });
 
-    await tdb
-      .insert(messageFiles)
-      .values({
-        messageId: videoMessageId,
-        fileId: videoFile!.id,
-        createdAt: now
-      });
+    await tdb.insert(messageFiles).values({
+      messageId: videoMessageId,
+      fileId: videoFile!.id,
+      createdAt: now
+    });
 
     const withPolls = await caller.messages.search({ has: 'poll' });
     const withStickers = await caller.messages.search({ has: 'sticker' });

@@ -21,6 +21,7 @@ struct SearchScreen: View {
     @State private var isSearching = false
     // the opening channel goes in once, so removing its chip sticks
     @State private var hasAppliedChannel = false
+    @State private var homes = SearchHomeCache()
     @FocusState private var isFieldFocused: Bool
 
     // while a token is up, what is typed narrows its choices rather than searching
@@ -51,10 +52,31 @@ struct SearchScreen: View {
         }
 
         guard let channel = filters.channel else {
-            return "Search \(session.displayName)"
+            return "Search in \(session.displayName)"
         }
 
-        return "Search \(FilterChips.place(channel, in: session))"
+        return "Search in \(FilterChips.place(channel, in: session))"
+    }
+
+    // nothing typed and no filter beyond the channel it was opened from shows discord's tabs
+    private var isBrowsing: Bool {
+        var rest = filters
+
+        if rest.channel?.id == channelId {
+            rest.channel = nil
+        }
+
+        return token == nil && trimmedQuery.isEmpty && rest.isEmpty
+    }
+
+    // the opening channel before onAppear has put it in the filters, so the first frame does
+    // not load the whole server's tabs
+    private var browsingScope: Channel? {
+        guard hasAppliedChannel else {
+            return channelId.flatMap { session.channel($0) }
+        }
+
+        return filters.channel
     }
 
     private var searchKey: [AnyHashable] {
@@ -71,6 +93,8 @@ struct SearchScreen: View {
                     onPickChannel: pick,
                     onPickHas: pick
                 )
+            } else if isBrowsing {
+                SearchHome(model: homes.model(for: browsingScope), onOpenChannel: openChannel, onOpenUser: openDirectMessage(with:))
             } else {
                 resultsList
             }
@@ -277,6 +301,11 @@ struct SearchScreen: View {
             return
         }
 
+        guard !isBrowsing else {
+            results = nil
+            return
+        }
+
         // a filter alone is enough, words need two characters at least
         guard Self.queryLength.contains(text.count) || (text.isEmpty && !filters.isEmpty) else {
             results = nil
@@ -315,6 +344,10 @@ struct SearchScreen: View {
     }
 
     private func openDirectMessage(with user: PublicUser) {
+        guard user.id != session.ownUserId else {
+            return
+        }
+
         Task {
             do {
                 let channelId = try await session.openDirectMessage(with: user.id)

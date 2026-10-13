@@ -1451,3 +1451,103 @@ describe('channels.markAsUnread', () => {
     );
   });
 });
+
+describe('channels.getActivity', () => {
+  test('should list when each visible channel last had a message', async () => {
+    const { caller } = await initTest(1);
+
+    const message = await tdb
+      .select()
+      .from(messages)
+      .where(eq(messages.id, 1))
+      .get();
+
+    const activity = await caller.channels.getActivity();
+
+    expect(activity).toEqual([
+      { channelId: 1, lastMessageAt: message!.createdAt }
+    ]);
+  });
+
+  test('should leave out direct messages and thread replies', async () => {
+    const { caller } = await initTest(3);
+
+    const message = await tdb
+      .select()
+      .from(messages)
+      .where(eq(messages.id, 1))
+      .get();
+
+    await tdb.insert(messages).values({
+      channelId: 1,
+      userId: 3,
+      content: 'a reply in a thread',
+      parentMessageId: 1,
+      createdAt: message!.createdAt + 60_000
+    });
+
+    const activity = await caller.channels.getActivity();
+
+    expect(activity).toEqual([
+      { channelId: 1, lastMessageAt: message!.createdAt }
+    ]);
+  });
+
+  test('should leave out channels the caller cannot see', async () => {
+    const { caller } = await initTest(2);
+
+    await tdb.insert(messages).values({
+      channelId: 5,
+      userId: 1,
+      content: 'in the restricted channel',
+      createdAt: Date.now()
+    });
+
+    const activity = await caller.channels.getActivity();
+    const channelIds = activity.map(({ channelId }) => channelId);
+
+    expect(channelIds).toEqual([1]);
+  });
+});
+
+describe('channels.getMembers', () => {
+  test('should list everyone who can see a private channel', async () => {
+    const { caller } = await initTest(1);
+
+    const userIds = await caller.channels.getMembers({ channelId: 5 });
+
+    expect(userIds.sort()).toEqual([1, 3, 4]);
+  });
+
+  test('should list both people in a direct message', async () => {
+    const { caller } = await initTest(3);
+
+    const userIds = await caller.channels.getMembers({ channelId: 3 });
+
+    expect(userIds.sort()).toEqual([3, 4]);
+  });
+
+  test('should throw when the caller cannot see the channel', async () => {
+    const { caller } = await initTest(2);
+
+    await expect(caller.channels.getMembers({ channelId: 5 })).rejects.toThrow(
+      'Insufficient channel permissions'
+    );
+  });
+
+  test('should throw for a direct message the caller is not in', async () => {
+    const { caller } = await initTest(2);
+
+    await expect(
+      caller.channels.getMembers({ channelId: 3 })
+    ).rejects.toThrow();
+  });
+
+  test('should reject an invalid channel id', async () => {
+    const { caller } = await initTest(1);
+
+    await expect(
+      caller.channels.getMembers({ channelId: 0 })
+    ).rejects.toThrow();
+  });
+});
