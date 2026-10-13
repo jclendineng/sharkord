@@ -12,7 +12,6 @@ import {
   type TJoinedEmoji,
   type TJoinedInvite,
   type TJoinedRole,
-  type TJoinedSettings,
   type TLogin,
   type TMessage,
   type TPluginInfo,
@@ -31,7 +30,7 @@ export type TAdminUserInfo = TRouterOutputs['users']['getInfo']['user'];
 export const useAdminGeneral = () => {
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState<
-    Omit<TJoinedSettings, 'secretToken'> | undefined
+    TRouterOutputs['others']['getSettings'] | undefined
   >(undefined);
 
   const fetchSettings = useCallback(async () => {

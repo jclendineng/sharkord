@@ -1,7 +1,7 @@
 import type { TServerInfo } from '@sharkord/shared';
 import { afterEach, describe, expect, test } from 'bun:test';
 import { eq } from 'drizzle-orm';
-import { login } from '../../__tests__/helpers';
+import { initTest, login } from '../../__tests__/helpers';
 import { tdb, testsBaseUrl } from '../../__tests__/setup';
 import { config } from '../../config';
 import { invites, users } from '../../db/schema';
@@ -78,5 +78,17 @@ describe('registration.inviteOnly', () => {
         { userInfoFailed: false }
       )
     ).rejects.toThrow('new user registrations are disabled');
+  });
+});
+
+describe('others.getSettings', () => {
+  test('should tell admins when config.ini locks sign ups to invites', async () => {
+    const { caller } = await initTest(1);
+
+    expect((await caller.others.getSettings()).inviteOnly).toBe(false);
+
+    config.registration.inviteOnly = true;
+
+    expect((await caller.others.getSettings()).inviteOnly).toBe(true);
   });
 });

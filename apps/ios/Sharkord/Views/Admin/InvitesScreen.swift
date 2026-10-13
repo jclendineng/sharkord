@@ -237,7 +237,7 @@ private struct CreateInviteSheet: View {
             }
             .task {
                 if session.can(.manageRoles), let loaded: [AdminRole] = try? await session.request("roles.getAll") {
-                    roles = loaded.filter { !$0.isDefault }
+                    roles = loaded
                 }
             }
         }

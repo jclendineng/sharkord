@@ -139,6 +139,7 @@
   "onlyAskForPasswordOnFirstJoinDesc": "Se abilitato, gli utenti devono inserire la password del server solo la prima volta che entrano.",
   "allowNewUsersLabel": "Consenti nuovi utenti",
   "allowNewUsersDesc": "Consenti a chiunque di registrarsi e unirsi al server. Se disabilitato, potranno entrare solo gli utenti invitati.",
+  "allowNewUsersLockedDesc": "Bloccato da inviteOnly in config.ini. Possono entrare solo gli utenti invitati.",
   "pluginsLabel": "Plugin",
   "pluginsDesc": "Abilita o disabilita i plugin del server.",
   "directMessagesEnabledLabel": "Messaggi diretti",

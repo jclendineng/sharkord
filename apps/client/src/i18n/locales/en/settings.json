@@ -139,6 +139,7 @@
   "onlyAskForPasswordOnFirstJoinDesc": "When enabled, users only need to enter the server password the first time they join.",
   "allowNewUsersLabel": "Allow New Users",
   "allowNewUsersDesc": "Allow anyone to register and join your server. If disabled, only users you invite can join.",
+  "allowNewUsersLockedDesc": "Locked off by inviteOnly in config.ini. Only people you invite can join.",
   "pluginsLabel": "Plugins",
   "pluginsDesc": "Enable or disable plugins for your server.",
   "simulcastLabel": "Simulcast",

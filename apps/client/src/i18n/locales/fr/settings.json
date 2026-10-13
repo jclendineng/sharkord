@@ -139,6 +139,7 @@
   "onlyAskForPasswordOnFirstJoinDesc": "Lorsqu'elle est activée, les utilisateurs n'ont besoin de saisir le mot de passe du serveur qu'à leur première connexion.",
   "allowNewUsersLabel": "Autoriser les nouveaux utilisateurs",
   "allowNewUsersDesc": "Permet à quiconque de s'inscrire et de rejoindre votre serveur. Si désactivé, seuls les utilisateurs que vous invitez peuvent rejoindre.",
+  "allowNewUsersLockedDesc": "Verrouillé par inviteOnly dans config.ini. Seuls les utilisateurs que vous invitez peuvent rejoindre.",
   "pluginsLabel": "Extensions",
   "pluginsDesc": "Activez ou désactivez les extensions pour votre serveur.",
   "directMessagesEnabledLabel": "Messages privés",

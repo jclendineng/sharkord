@@ -107,6 +107,11 @@ const General = memo(() => {
     (checked: boolean) => onChange('onlyAskForPasswordOnFirstJoin', checked),
     [onChange]
   );
+  const inviteOnly = settings?.inviteOnly ?? false;
+  const allowNewUsersDesc = inviteOnly
+    ? t('allowNewUsersLockedDesc')
+    : t('allowNewUsersDesc');
+
   const handleAllowNewUsersChange = useCallback(
     (checked: boolean) => onChange('allowNewUsers', checked),
     [onChange]
@@ -183,12 +188,10 @@ const General = memo(() => {
         onChange={handleLogoChange}
       />
 
-      <Group
-        label={t('allowNewUsersLabel')}
-        description={t('allowNewUsersDesc')}
-      >
+      <Group label={t('allowNewUsersLabel')} description={allowNewUsersDesc}>
         <Switch
-          checked={values.allowNewUsers}
+          checked={values.allowNewUsers && !inviteOnly}
+          disabled={inviteOnly}
           onCheckedChange={handleAllowNewUsersChange}
         />
       </Group>

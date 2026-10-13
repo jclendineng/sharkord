@@ -139,6 +139,7 @@
   "onlyAskForPasswordOnFirstJoinDesc": "Cuando está activado, los usuarios solo necesitan introducir la contraseña del servidor la primera vez que se unen.",
   "allowNewUsersLabel": "Permitir nuevos usuarios",
   "allowNewUsersDesc": "Permite que cualquiera se registre y se una a tu servidor. Si está desactivado, solo los usuarios que invites podrán unirse.",
+  "allowNewUsersLockedDesc": "Bloqueado por inviteOnly en config.ini. Solo pueden unirse los usuarios que invites.",
   "pluginsLabel": "Plugins",
   "pluginsDesc": "Habilita o deshabilita plugins para tu servidor.",
   "directMessagesEnabledLabel": "Mensajes directos",

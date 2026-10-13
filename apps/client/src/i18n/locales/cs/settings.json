@@ -139,6 +139,7 @@
   "onlyAskForPasswordOnFirstJoinDesc": "Pokud je tato možnost povolena, uživatelé musí zadat heslo serveru pouze při svém prvním připojení.",
   "allowNewUsersLabel": "Povolit nové uživatele",
   "allowNewUsersDesc": "Povolit komukoli zaregistrovat se a připojit k vašemu serveru. Pokud je tato možnost zakázána, mohou se připojit pouze uživatelé, které pozvete.",
+  "allowNewUsersLockedDesc": "Uzamčeno volbou inviteOnly v config.ini. Připojit se mohou pouze uživatelé, které pozvete.",
   "pluginsLabel": "Rozšíření",
   "pluginsDesc": "Povolit nebo zakázat rozšíření pro váš server.",
   "directMessagesEnabledLabel": "Přímé zprávy",
