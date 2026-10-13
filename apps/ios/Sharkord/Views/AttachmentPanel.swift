@@ -177,7 +177,7 @@ struct AttachmentPanel: View {
 
     private var grid: some View {
         ScrollView {
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 4), spacing: 4) {
                 Button(action: onCamera) {
                     Color.clear
                         .aspectRatio(1, contentMode: .fit)
