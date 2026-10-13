@@ -5,6 +5,7 @@ struct MessageRow: View {
     let showsHeader: Bool
     var showsThreadLink = true
     let onLongPress: () -> Void
+    let onDoubleTap: () -> Void
 
     @Environment(SessionStore.self) private var session
 
@@ -21,6 +22,16 @@ struct MessageRow: View {
     }
 
     var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            if message.replyToMessageId != nil {
+                ReplyLine(preview: message.replyTo)
+            }
+
+            row
+        }
+    }
+
+    private var row: some View {
         HStack(alignment: .top, spacing: 12) {
             if showsHeader {
                 AvatarView(user: author, size: 40)
@@ -65,6 +76,7 @@ struct MessageRow: View {
         .padding(.horizontal, 16)
         .padding(.top, showsHeader ? 16 : 2)
         .contentShape(.rect)
+        .onTapGesture(count: 2, perform: onDoubleTap)
         .onLongPressGesture(perform: onLongPress)
     }
 
@@ -114,3 +126,43 @@ struct DaySeparator: View {
         Theme.divider.frame(height: 1)
     }
 }
+
+// discord's line above a reply: who it answers and the start of what they said
+private struct ReplyLine: View {
+    let preview: ReplyPreview?
+
+    @Environment(SessionStore.self) private var session
+
+    private var author: PublicUser? {
+        preview?.userId.flatMap { session.usersById[$0] }
+    }
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "arrow.turn.up.right")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(Theme.muted)
+                .scaleEffect(x: -1)
+                .padding(.leading, 18)
+
+            if let preview {
+                AvatarView(user: author, size: 16)
+
+                Text(author?.name ?? preview.pluginId ?? "Unknown")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color(hex: session.roleColor(for: author) ?? "#F2F3F5"))
+
+                Text(HTMLText.plainText(from: preview.content ?? "").replacingOccurrences(of: "\n", with: " "))
+                    .font(.caption)
+                    .foregroundStyle(Theme.muted)
+                    .lineLimit(1)
+            } else {
+                Text("Original message was deleted")
+                    .font(.caption.italic())
+                    .foregroundStyle(Theme.muted)
+            }
+        }
+        .padding(.leading, 12)
+    }
+}
+

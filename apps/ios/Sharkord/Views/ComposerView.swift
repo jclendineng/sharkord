@@ -17,6 +17,10 @@ struct ComposerView: View {
     @State private var isPhotoPickerPresented = false
     @State private var isFileImporterPresented = false
     @State private var isEmojiPickerPresented = false
+    @State private var isAttachPanelPresented = false
+    @State private var recorder = VoiceMessageRecorder()
+
+    @Environment(ServerListStore.self) private var servers
 
     private var uploadedFiles: [TemporaryFile] {
         attachments.compactMap(\.uploaded)
@@ -46,6 +50,10 @@ struct ComposerView: View {
                     .foregroundStyle(Theme.red)
             }
 
+            if let mode = modeTitle {
+                ModeBar(title: mode, onCancel: cancelMode)
+            }
+
             if !attachments.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
@@ -56,38 +64,11 @@ struct ComposerView: View {
                 }
             }
 
-            HStack(alignment: .bottom, spacing: 8) {
-                if canUpload {
-                    attachMenu
-                }
-
-                HStack(alignment: .bottom, spacing: 4) {
-                    TextField(placeholder, text: $text, axis: .vertical)
-                        .lineLimit(1...6)
-                        .foregroundStyle(Theme.text)
-                        .padding(.vertical, 9)
-
-                    Button("Emoji", systemImage: "face.smiling.inverse", action: openEmojiPicker)
-                        .labelStyle(.iconOnly)
-                        .font(.title3)
-                        .foregroundStyle(Theme.muted)
-                        .padding(.bottom, 7)
-                }
-                .padding(.leading, 14)
-                .padding(.trailing, 8)
-                .background(Theme.inputBackground, in: .rect(cornerRadius: 20))
-
-                if canSend {
-                    Button("Send", systemImage: "paperplane.fill", action: send)
-                        .labelStyle(.iconOnly)
-                        .font(.body)
-                        .foregroundStyle(.white)
-                        .frame(width: 38, height: 38)
-                        .background(Theme.blurple, in: .circle)
-                        .transition(.scale.combined(with: .opacity))
-                }
+            if recorder.isRecording {
+                RecordingBar(recorder: recorder, onCancel: cancelRecording, onSend: sendRecording)
+            } else {
+                inputRow
             }
-            .animation(.snappy(duration: 0.2), value: canSend)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
@@ -107,23 +88,100 @@ struct ComposerView: View {
         .sheet(isPresented: $isEmojiPickerPresented) {
             EmojiPickerView(includesCustom: false, onPick: insertEmoji)
         }
+        .sheet(isPresented: $isAttachPanelPresented) {
+            AttachmentPanel(
+                selection: $photoSelection,
+                maxSelection: max(1, maxFiles - attachments.count),
+                onPhotos: openPhotoPicker,
+                onFiles: openFileImporter
+            )
+        }
         .onChange(of: photoSelection) { _, items in
+            isAttachPanelPresented = false
             importPhotos(items)
+        }
+        .onChange(of: store.editing) { _, message in
+            if let message {
+                text = HTMLText.plainText(from: message.content ?? "")
+            }
+        }
+        .onChange(of: store.pendingInsert) { _, insert in
+            guard let insert else {
+                return
+            }
+
+            text += insert
+            store.pendingInsert = nil
         }
     }
 
-    private var attachMenu: some View {
-        Menu {
-            Button("Photo Library", systemImage: "photo.on.rectangle", action: openPhotoPicker)
-            Button("Files", systemImage: "folder", action: openFileImporter)
-        } label: {
-            Image(systemName: "plus")
-                .font(.body.weight(.semibold))
-                .foregroundStyle(Theme.text)
-                .frame(width: 38, height: 38)
-                .background(Theme.inputBackground, in: .circle)
+    private var modeTitle: String? {
+        if store.editing != nil {
+            return "Editing message"
         }
-        .disabled(attachments.count >= maxFiles)
+
+        if let reply = store.replyingTo {
+            let name = reply.userId.flatMap { session.usersById[$0]?.name } ?? "a message"
+
+            return "Replying to \(name)"
+        }
+
+        return nil
+    }
+
+    // discord's row: attach, the field with emoji and the mic inside, send once there is text
+    private var inputRow: some View {
+        HStack(alignment: .bottom, spacing: 8) {
+            if canUpload && store.editing == nil {
+                Button("Attach", systemImage: "plus", action: openAttachPanel)
+                    .labelStyle(.iconOnly)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(Theme.text)
+                    .frame(width: 38, height: 38)
+                    .background(Theme.inputBackground, in: .circle)
+                    .disabled(attachments.count >= maxFiles)
+            }
+
+            HStack(alignment: .bottom, spacing: 10) {
+                TextField(placeholder, text: $text, axis: .vertical)
+                    .lineLimit(1...6)
+                    .foregroundStyle(Theme.text)
+                    .padding(.vertical, 9)
+
+                Button("Emoji", systemImage: "face.smiling.inverse", action: openEmojiPicker)
+                    .labelStyle(.iconOnly)
+                    .font(.title3)
+                    .foregroundStyle(Theme.muted)
+                    .padding(.bottom, 7)
+
+                if canRecord {
+                    Button("Voice Message", systemImage: "mic.fill", action: startRecording)
+                        .labelStyle(.iconOnly)
+                        .font(.title3)
+                        .foregroundStyle(Theme.muted)
+                        .padding(.bottom, 7)
+                }
+            }
+            .padding(.leading, 14)
+            .padding(.trailing, 10)
+            .background(Theme.inputBackground, in: .rect(cornerRadius: 20))
+
+            if canSend {
+                Button("Send", systemImage: store.editing == nil ? "paperplane.fill" : "checkmark", action: send)
+                    .labelStyle(.iconOnly)
+                    .font(.body)
+                    .foregroundStyle(.white)
+                    .frame(width: 38, height: 38)
+                    .background(Theme.blurple, in: .circle)
+                    .transition(.scale.combined(with: .opacity))
+            }
+        }
+        .animation(.snappy(duration: 0.2), value: canSend)
+    }
+
+    // a voice message is a file, so it needs uploads, and there is nothing to record over text
+    private var canRecord: Bool {
+        canUpload && !hasText && attachments.isEmpty && store.editing == nil
     }
 
     private func openPhotoPicker() {
@@ -144,6 +202,67 @@ struct ComposerView: View {
         text += entry?.emoji ?? ":\(shortcode):"
     }
 
+    private func openAttachPanel() {
+        isAttachPanelPresented = true
+    }
+
+    private func cancelMode() {
+        if store.editing != nil {
+            text = ""
+        }
+
+        store.editing = nil
+        store.replyingTo = nil
+    }
+
+    // the call already holds the microphone
+    private func startRecording() {
+        guard servers.voiceSession == nil else {
+            errorMessage = "Leave the voice channel to record a voice message."
+            return
+        }
+
+        errorMessage = nil
+
+        Task {
+            do {
+                try await recorder.start()
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    private func cancelRecording() {
+        recorder.cancel()
+    }
+
+    // sent straight away like discord's, it goes up as an ordinary audio file
+    private func sendRecording() {
+        guard let url = recorder.finish() else {
+            return
+        }
+
+        guard let address = session.address, let token = session.token else {
+            return
+        }
+
+        isSending = true
+
+        Task {
+            do {
+                let file = try await UploadAPI.upload(fileAt: url, name: "voice-message.m4a", to: address, token: token)
+
+                try await store.send("", files: [file])
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+
+            try? FileManager.default.removeItem(at: url)
+            isSending = false
+        }
+    }
+
     private func send() {
         let draft = text
         let files = uploadedFiles
@@ -153,7 +272,12 @@ struct ComposerView: View {
 
         Task {
             do {
-                try await store.send(draft, files: files)
+                if let editing = store.editing {
+                    try await store.edit(editing, to: draft)
+                } else {
+                    try await store.send(draft, files: files)
+                }
+
                 text = ""
                 attachments = []
             } catch {
@@ -338,5 +462,147 @@ private nonisolated enum TemporaryCopy {
         try FileManager.default.copyItem(at: url, to: target)
 
         return target
+    }
+}
+
+// what the composer is doing besides a new message, replying or editing, with a way out
+private struct ModeBar: View {
+    let title: String
+    let onCancel: () -> Void
+
+    var body: some View {
+        HStack {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Theme.muted)
+                .lineLimit(1)
+
+            Spacer()
+
+            Button("Cancel", systemImage: "xmark.circle.fill", action: onCancel)
+                .labelStyle(.iconOnly)
+                .foregroundStyle(Theme.muted)
+        }
+        .padding(.horizontal, 4)
+    }
+}
+
+private struct RecordingBar: View {
+    let recorder: VoiceMessageRecorder
+    let onCancel: () -> Void
+    let onSend: () -> Void
+
+    private var elapsedText: String {
+        let seconds = Int(recorder.elapsed)
+
+        return String(format: "%d:%02d", seconds / 60, seconds % 60)
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Button("Cancel", systemImage: "trash.fill", action: onCancel)
+                .labelStyle(.iconOnly)
+                .font(.title3)
+                .foregroundStyle(Theme.red)
+                .frame(width: 38, height: 38)
+
+            HStack(spacing: 10) {
+                Circle()
+                    .fill(Theme.red)
+                    .frame(width: 8, height: 8)
+
+                Text(elapsedText)
+                    .font(.subheadline.monospacedDigit())
+                    .foregroundStyle(Theme.header)
+
+                HStack(alignment: .center, spacing: 2) {
+                    ForEach(Array(recorder.levels.enumerated()), id: \.offset) { _, level in
+                        Capsule()
+                            .fill(Theme.blurple)
+                            .frame(width: 3, height: max(3, CGFloat(level) * 26))
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: 28, alignment: .trailing)
+                .clipped()
+            }
+            .padding(.horizontal, 14)
+            .frame(height: 38)
+            .background(Theme.inputBackground, in: .rect(cornerRadius: 20))
+
+            Button("Send Voice Message", systemImage: "arrow.up", action: onSend)
+                .labelStyle(.iconOnly)
+                .font(.body.weight(.bold))
+                .foregroundStyle(.white)
+                .frame(width: 38, height: 38)
+                .background(Theme.blurple, in: .circle)
+        }
+    }
+}
+
+// discord's attachment panel: recent photos right there, and the full pickers below
+private struct AttachmentPanel: View {
+    @Binding var selection: [PhotosPickerItem]
+    let maxSelection: Int
+    let onPhotos: () -> Void
+    let onFiles: () -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(spacing: 0) {
+            PhotosPicker(
+                selection: $selection,
+                maxSelectionCount: maxSelection,
+                matching: .any(of: [.images, .videos]),
+                photoLibrary: .shared()
+            ) {
+                EmptyView()
+            }
+            .photosPickerStyle(.inline)
+            .photosPickerDisabledCapabilities([.selectionActions, .search, .collectionNavigation])
+            .photosPickerAccessoryVisibility(.hidden, edges: .all)
+            .frame(maxHeight: .infinity)
+
+            HStack {
+                PanelButton(title: "Photos", systemImage: "photo") {
+                    dismiss()
+                    onPhotos()
+                }
+
+                PanelButton(title: "Files", systemImage: "paperclip") {
+                    dismiss()
+                    onFiles()
+                }
+            }
+            .padding(.vertical, 10)
+            .padding(.horizontal, 24)
+            .background(Theme.listBackground, in: .rect(cornerRadius: 22))
+            .padding(.horizontal, 16)
+            .padding(.bottom, 8)
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+        .presentationBackground(Theme.deepBackground)
+    }
+}
+
+private struct PanelButton: View {
+    let title: String
+    let systemImage: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 6) {
+                Image(systemName: systemImage)
+                    .font(.title3)
+
+                Text(title)
+                    .font(.caption)
+            }
+            .foregroundStyle(Theme.header)
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.plain)
     }
 }

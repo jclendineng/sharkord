@@ -4,6 +4,8 @@ struct MessageListView<Header: View>: View {
     let store: ChannelMessagesStore
     @ViewBuilder let header: Header
 
+    @Environment(SessionStore.self) private var session
+
     @State private var actionsMessage: Message?
     @State private var openedThread: Message?
 
@@ -33,7 +35,8 @@ struct MessageListView<Header: View>: View {
                         message: message,
                         showsHeader: showsHeader(at: index),
                         showsThreadLink: store.scope == .channel,
-                        onLongPress: { actionsMessage = message }
+                        onLongPress: { actionsMessage = message },
+                        onDoubleTap: { react(to: message) }
                     )
                 }
             }
@@ -51,6 +54,7 @@ struct MessageListView<Header: View>: View {
         .sheet(item: $actionsMessage) { message in
             MessageActionsSheet(
                 message: message,
+                store: store,
                 canOpenThread: store.scope == .channel,
                 onOpenThread: { openThread(message) }
             )
@@ -66,6 +70,19 @@ struct MessageListView<Header: View>: View {
             ContentUnavailableView("Couldn't load messages", systemImage: "exclamationmark.bubble", description: Text(errorMessage))
         } else {
             ProgressView()
+        }
+    }
+
+    // discord's double tap, the first quick reaction
+    private func react(to message: Message) {
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+
+        Task {
+            do {
+                try await session.toggleReaction(messageId: message.id, emoji: MessageActionsSheet.quickReactions[0])
+            } catch {
+                session.showError(error)
+            }
         }
     }
 
@@ -92,7 +109,9 @@ struct MessageListView<Header: View>: View {
         let message = store.messages[index]
         let previous = store.messages[index - 1]
 
-        return previous.userId != message.userId
+        // a reply always starts its own block, the reply line sits above the name
+        return message.replyToMessageId != nil
+            || previous.userId != message.userId
             || previous.pluginId != message.pluginId
             || message.createdAt - previous.createdAt > Self.groupingWindow
     }

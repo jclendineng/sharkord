@@ -16,7 +16,7 @@ struct ThreadScreen: View {
     var body: some View {
         MessageListView(store: store) {
             VStack(alignment: .leading, spacing: 0) {
-                MessageRow(message: parent, showsHeader: true, showsThreadLink: false, onLongPress: {})
+                MessageRow(message: parent, showsHeader: true, showsThreadLink: false, onLongPress: {}, onDoubleTap: {})
 
                 Theme.divider
                     .frame(height: 1)

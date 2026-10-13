@@ -20,10 +20,19 @@ struct Message: Codable, Hashable, Identifiable {
     let files: [SharkordFile]
     let reactions: [MessageReaction]
     var replyCount: Int?
+    // the message this one answers, or nil when it was deleted since
+    let replyTo: ReplyPreview?
 
     var createdDate: Date {
         Date(timeIntervalSince1970: TimeInterval(createdAt) / 1000)
     }
+}
+
+struct ReplyPreview: Codable, Hashable {
+    let id: Int
+    let content: String?
+    let userId: Int?
+    let pluginId: String?
 }
 
 struct MessagesCursor: Codable, Hashable {

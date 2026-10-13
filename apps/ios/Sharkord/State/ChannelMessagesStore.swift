@@ -19,6 +19,11 @@ final class ChannelMessagesStore {
     private(set) var isLoading = false
     var errorMessage: String?
     var isVisible = false
+    // the composer's mode, set from a message's long press sheet
+    var replyingTo: Message?
+    var editing: Message?
+    // text the composer adds where the cursor is, a mention for instance
+    var pendingInsert: String?
 
     private var nextCursor: MessagesCursor?
     private unowned let session: SessionStore
@@ -44,6 +49,7 @@ final class ChannelMessagesStore {
         let content: String
         let files: [String]
         let parentMessageId: Int?
+        let replyToMessageId: Int?
     }
 
     func loadIfNeeded() async {
@@ -96,9 +102,44 @@ final class ChannelMessagesStore {
                 channelId: channelId,
                 content: trimmed.isEmpty ? "" : HTMLText.paragraphs(from: trimmed),
                 files: files.map(\.id),
-                parentMessageId: parentMessageId
+                parentMessageId: parentMessageId,
+                replyToMessageId: replyingTo?.id
             )
         )
+
+        replyingTo = nil
+    }
+
+    func edit(_ message: Message, to text: String) async throws {
+        guard let client = session.client else {
+            throw TRPCError(message: "Not connected to the server.", code: nil)
+        }
+
+        struct EditInput: Encodable {
+            let messageId: Int
+            let content: String
+        }
+
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        try await client.mutation("messages.edit", input: EditInput(messageId: message.id, content: HTMLText.paragraphs(from: trimmed)))
+        editing = nil
+    }
+
+    func delete(_ message: Message) async throws {
+        guard let client = session.client else {
+            throw TRPCError(message: "Not connected to the server.", code: nil)
+        }
+
+        try await client.mutation("messages.delete", input: ["messageId": message.id])
+    }
+
+    func markUnread(from message: Message) async throws {
+        guard let client = session.client else {
+            throw TRPCError(message: "Not connected to the server.", code: nil)
+        }
+
+        try await client.mutation("channels.markAsUnread", input: ["messageId": message.id])
     }
 
     func belongs(_ message: Message) -> Bool {

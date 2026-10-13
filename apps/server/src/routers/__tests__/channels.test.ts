@@ -1,7 +1,10 @@
 import { ChannelPermission, ChannelType, ServerEvents } from '@sharkord/shared';
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, spyOn, test } from 'bun:test';
+import { eq } from 'drizzle-orm';
 import { createFakeSocket, initTest } from '../../__tests__/helpers';
+import { tdb } from '../../__tests__/setup';
 import { getChannelsReadStatesForUser } from '../../db/queries/channels';
+import { messages } from '../../db/schema';
 import { VoiceRuntime } from '../../runtimes/voice';
 import { pubsub } from '../../utils/pubsub';
 
@@ -1326,5 +1329,125 @@ describe('channels router', () => {
         roleId: 1
       })
     ).rejects.toThrow('Cannot delete DM channel permissions');
+  });
+});
+
+describe('channels.markAsUnread', () => {
+  test('should make the channel unread from the chosen message on', async () => {
+    const { caller } = await initTest(2);
+    const now = Date.now();
+
+    const [, second] = await tdb
+      .insert(messages)
+      .values([
+        { channelId: 1, userId: 1, content: '<p>one</p>', createdAt: now },
+        { channelId: 1, userId: 1, content: '<p>two</p>', createdAt: now + 1 },
+        { channelId: 1, userId: 1, content: '<p>three</p>', createdAt: now + 2 }
+      ])
+      .returning({ id: messages.id });
+
+    await caller.channels.markAsRead({ channelId: 1 });
+    await caller.channels.markAsUnread({ messageId: second!.id });
+
+    const readStates = await getChannelsReadStatesForUser(2, 1);
+
+    expect(readStates[1]).toBe(2);
+  });
+
+  test("should make every message unread from the channel's first one", async () => {
+    const { caller } = await initTest(2);
+
+    const first = await tdb
+      .select({ id: messages.id })
+      .from(messages)
+      .where(eq(messages.channelId, 1))
+      .orderBy(messages.id)
+      .limit(1)
+      .get();
+    const total = await tdb
+      .select({ id: messages.id })
+      .from(messages)
+      .where(eq(messages.channelId, 1));
+
+    await caller.channels.markAsRead({ channelId: 1 });
+    await caller.channels.markAsUnread({ messageId: first!.id });
+
+    expect((await getChannelsReadStatesForUser(2, 1))[1]).toBe(total.length);
+  });
+
+  test("should tell the caller's other sessions", async () => {
+    const { caller } = await initTest(2);
+    const publishFor = spyOn(pubsub, 'publishFor');
+
+    const first = await tdb
+      .select({ id: messages.id })
+      .from(messages)
+      .where(eq(messages.channelId, 1))
+      .limit(1)
+      .get();
+
+    await caller.channels.markAsUnread({ messageId: first!.id });
+
+    expect(
+      publishFor.mock.calls.some(
+        ([, event]) => event === ServerEvents.CHANNEL_READ_STATES_UPDATE
+      )
+    ).toBe(true);
+  });
+
+  test('should refuse a message that does not exist', async () => {
+    const { caller } = await initTest(2);
+
+    await expect(
+      caller.channels.markAsUnread({ messageId: 999_999 })
+    ).rejects.toThrow('Message not found');
+  });
+
+  test('should refuse a message in a channel the caller cannot see', async () => {
+    const { caller } = await initTest(2);
+    const [hidden] = await tdb
+      .insert(messages)
+      .values({
+        channelId: 5,
+        userId: 1,
+        content: '<p>hidden</p>',
+        createdAt: Date.now()
+      })
+      .returning({ id: messages.id });
+
+    // user 2 is denied viewing channel 5
+    await expect(
+      caller.channels.markAsUnread({ messageId: hidden!.id })
+    ).rejects.toThrow('Insufficient channel permissions');
+  });
+
+  test('should refuse a reply inside a thread', async () => {
+    const { caller } = await initTest(2);
+    const now = Date.now();
+    const [parent] = await tdb
+      .insert(messages)
+      .values({
+        channelId: 1,
+        userId: 1,
+        content: '<p>parent</p>',
+        createdAt: now
+      })
+      .returning({ id: messages.id });
+    const [reply] = await tdb
+      .insert(messages)
+      .values({
+        channelId: 1,
+        userId: 1,
+        content: '<p>reply</p>',
+        parentMessageId: parent!.id,
+        createdAt: now + 1
+      })
+      .returning({ id: messages.id });
+
+    await expect(
+      caller.channels.markAsUnread({ messageId: reply!.id })
+    ).rejects.toThrow(
+      'Only a message in the channel itself can be marked unread.'
+    );
   });
 });
