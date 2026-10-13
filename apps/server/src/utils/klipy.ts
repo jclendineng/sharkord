@@ -1,8 +1,13 @@
 import type { TGif, TGifPage } from '@sharkord/shared';
+import { config } from '../config';
 
 // klipy, the gif provider discord uses. the key stays on the server, members' searches reach
 // klipy from here, each tagged with an id that tells members apart without naming them
 const KLIPY_BASE_URL = 'https://api.klipy.com/api/v1';
+
+// the key from the settings screen, or from config.ini when none is saved there
+const resolveKlipyApiKey = (settingsKey: string | null): string | null =>
+  settingsKey || config.gifs.klipyApiKey || null;
 
 type TKlipyRendition = {
   url?: string;
@@ -83,4 +88,4 @@ const fetchKlipyGifs = async (params: {
   return { gifs, hasMore };
 };
 
-export { fetchKlipyGifs };
+export { fetchKlipyGifs, resolveKlipyApiKey };

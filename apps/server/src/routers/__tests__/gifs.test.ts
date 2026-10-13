@@ -1,8 +1,9 @@
 import { Permission } from '@sharkord/shared';
-import { beforeEach, describe, expect, spyOn, test } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test';
 import { and, eq } from 'drizzle-orm';
 import { initTest } from '../../__tests__/helpers';
 import { tdb } from '../../__tests__/setup';
+import { config } from '../../config';
 import { activityLog, rolePermissions, settings } from '../../db/schema';
 import { clearGifCategoryCache } from '../../helpers/gifs';
 import { drainActivityLogQueue } from '../../queues/activity-log';
@@ -73,6 +74,10 @@ const setKey = async () => {
 
 beforeEach(() => {
   clearGifCategoryCache();
+});
+
+afterEach(() => {
+  config.gifs.klipyApiKey = '';
 });
 
 describe('gifs.trending', () => {
@@ -247,5 +252,37 @@ describe('gifs in server settings', () => {
 
     expect(logs.length).toBeGreaterThan(0);
     expect(JSON.stringify(logs)).not.toContain('test-key');
+  });
+});
+
+describe('gifs from config.ini', () => {
+  test('should use the key from config.ini when none is saved', async () => {
+    config.gifs.klipyApiKey = 'ini-key';
+
+    const { requests } = spyOnKlipy();
+    const { caller } = await initTest(2);
+
+    await caller.gifs.trending({ page: 1 });
+
+    expect(requests[0]!.pathname).toBe('/api/v1/ini-key/gifs/trending');
+
+    const { handshakeHash } = await caller.others.handshake();
+    const joined = await caller.others.joinServer({ handshakeHash });
+
+    expect(joined.publicSettings.gifsEnabled).toBe(true);
+    expect(JSON.stringify(joined)).not.toContain('ini-key');
+  });
+
+  test('should prefer the key saved in settings', async () => {
+    config.gifs.klipyApiKey = 'ini-key';
+
+    await setKey();
+
+    const { requests } = spyOnKlipy();
+    const { caller } = await initTest(2);
+
+    await caller.gifs.trending({ page: 1 });
+
+    expect(requests[0]!.pathname).toBe('/api/v1/test-key/gifs/trending');
   });
 });

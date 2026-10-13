@@ -69,6 +69,10 @@ const zConfig = z.object({
     apnsKeyPath: z.string(),
     apnsBundleId: z.string()
   }),
+  // a klipy key set here turns gifs on without the settings screen, one saved there wins
+  gifs: z.object({
+    klipyApiKey: z.string().trim()
+  }),
   webRtc: z.object({
     port: z.coerce.number().int().positive(),
     announcedAddress: z.string(),
@@ -137,6 +141,9 @@ const defaultConfig: TConfig = {
     apnsTeamId: '',
     apnsKeyPath: '',
     apnsBundleId: 'com.sharkord.ios'
+  },
+  gifs: {
+    klipyApiKey: ''
   },
   webRtc: {
     port: 40000,
@@ -301,6 +308,7 @@ const envOverridesMap: Record<string, string> = {
   'push.apnsTeamId': 'SHARKORD_PUSH_APNS_TEAM_ID',
   'push.apnsKeyPath': 'SHARKORD_PUSH_APNS_KEY_PATH',
   'push.apnsBundleId': 'SHARKORD_PUSH_APNS_BUNDLE_ID',
+  'gifs.klipyApiKey': 'SHARKORD_KLIPY_API_KEY',
   'webRtc.port': 'SHARKORD_WEBRTC_PORT',
   'webRtc.announcedAddress': 'SHARKORD_WEBRTC_ANNOUNCED_ADDRESS',
   'webRtc.maxBitrate': 'SHARKORD_WEBRTC_MAX_BITRATE'

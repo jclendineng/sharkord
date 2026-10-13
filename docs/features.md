@@ -126,14 +126,23 @@ Routes `stickers.add`, `stickers.update`, `stickers.delete`, `stickers.getAll` a
 
 The GIFs tab of the expression picker searches [Klipy](https://klipy.com), the provider
 Discord uses. To turn it on, get a free API key at
-[klipy.com/developers](https://klipy.com/developers) and paste it into Server Settings,
-Overview, Klipy API Key.
+[klipy.com/developers](https://klipy.com/developers) and either paste it into Server
+Settings, Overview, Klipy API Key, or put it in `config.ini`:
+
+```ini
+[gifs]
+klipyApiKey=your-key
+```
+
+or set `SHARKORD_KLIPY_API_KEY`. The `[gifs]` section is added to `config.ini` on the first
+start of a server that has it. A key saved in the settings screen wins over the one in the
+file.
 
 Searches go through the server, so the key never reaches members and stays out of the
 activity log. Klipy sees one hashed id per member and server, not who anyone is. A GIF is
 sent as its link, which the apps show as the GIF alone.
 
-Routes `gifs.categories`, `gifs.trending`, `gifs.search`. Column `settings.klipy_api_key`,
+Routes `gifs.categories`, `gifs.trending`, `gifs.search`. Column `settings.klipy_api_key`, config `gifs.klipyApiKey`,
 public flag `gifsEnabled`. Code `apps/server/src/utils/klipy.ts`,
 `apps/server/src/helpers/gifs.ts`.
 
