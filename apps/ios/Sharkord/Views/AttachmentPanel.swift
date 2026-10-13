@@ -4,9 +4,9 @@ import UniformTypeIdentifiers
 
 // discord's attachment panel, in the keyboard's place under the composer: the camera and the
 // latest photos to tap straight into the message, the full pickers in a bar floating over the
-// bottom. it follows the finger between its resting and full heights, up over the composer
-// and the conversation, which dims behind it. a tap or a scroll on the conversation puts it
-// away, like discord's, see MessageListView. with access to only some photos it says so and offers to change them
+// bottom. it follows the finger, up over the composer and the conversation, which dims behind
+// it, or down and away. a tap or a scroll on the conversation puts it away too, like discord's,
+// see MessageListView. with access to only some photos it says so and offers to change them
 struct AttachmentPanel: View {
     static let height: CGFloat = 340
 
@@ -44,15 +44,8 @@ struct AttachmentPanel: View {
         return height - insets.top - insets.bottom - 110
     }
 
-    // a drag down past the resting height gives a little, then holds
     private var height: CGFloat {
-        let raw = settledHeight - dragOffset
-
-        if raw < Self.height {
-            return Self.height - (Self.height - raw) * 0.15
-        }
-
-        return min(raw, expandedHeight)
+        min(max(settledHeight - dragOffset, 0), expandedHeight)
     }
 
     // the grid only scrolls once the panel is as tall as it gets, before that a drag on the
@@ -195,12 +188,27 @@ struct AttachmentPanel: View {
             }
     }
 
-    // the panel's own drags only move it between resting and full height, putting it away
-    // is for the conversation outside it
+    // one swipe moves one step: from full height a swipe down lands at the resting height,
+    // from the resting height it follows the finger down and puts the panel away
     private func settle(predicted translation: CGFloat) {
         let projected = settledHeight - translation
-        let stops: [CGFloat] = [Self.height, expandedHeight]
+        let startedExpanded = settledHeight > Self.height
+        let stops: [CGFloat] = startedExpanded ? [Self.height, expandedHeight] : [0, Self.height, expandedHeight]
         let target = stops.min { abs($0 - projected) < abs($1 - projected) } ?? Self.height
+
+        // slides the rest of the way down from under the finger, then goes
+        if target == 0 {
+            withAnimation(.easeOut(duration: 0.2)) {
+                dragOffset = settledHeight
+            }
+
+            Task {
+                try? await Task.sleep(for: .milliseconds(200))
+                onClose()
+            }
+
+            return
+        }
 
         withAnimation(.spring(response: 0.4, dampingFraction: 0.86)) {
             dragOffset = 0
