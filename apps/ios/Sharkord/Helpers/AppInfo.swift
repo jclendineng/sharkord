@@ -19,9 +19,3 @@ enum AppInfo {
         return "Mozilla/5.0 (\(model); CPU \(model) OS \(os) like Mac OS X) Sharkord/\(version)"
     }()
 }
-
-extension AppInfo {
-    // where "report server" sends its email. empty until there is an address, the button
-    // then says reporting is not set up yet
-    static let reportEmail = ""
-}

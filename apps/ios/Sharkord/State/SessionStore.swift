@@ -33,6 +33,15 @@ final class SessionStore {
     private(set) var serverName = ""
     private(set) var serverId: String?
     private(set) var serverInfo: ServerInfo?
+
+    // the address the server's admins set for reports, nil while they haven't
+    var reportEmail: String? {
+        guard let email = serverInfo?.reportEmail, !email.isEmpty else {
+            return nil
+        }
+
+        return email
+    }
     // highlighted in the channel list and opened when the server is picked in the rail
     private(set) var lastChannelId: Int?
     private(set) var notificationLevels: [Int: ChannelNotificationLevel] = [:]

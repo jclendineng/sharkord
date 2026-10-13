@@ -16,6 +16,8 @@ const infoRouteHandler = async (
     description: settings.description,
     logo: settings.logo,
     allowNewUsers: settings.allowNewUsers,
+    // public so a report can be sent before signing in, and without an account at all
+    reportEmail: settings.reportEmail,
     pushEnabled: config.push.enabled,
     ...getOidcServerInfo()
   };

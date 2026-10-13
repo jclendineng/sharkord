@@ -90,6 +90,7 @@ const settings = sqliteTable(
     })
       .notNull()
       .default(true),
+    reportEmail: text('report_email'),
     pushShowMessageContent: integer('push_show_message_content', {
       mode: 'boolean'
     })

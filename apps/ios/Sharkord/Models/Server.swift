@@ -10,6 +10,8 @@ struct ServerInfo: Decodable {
     let oidcEnabled: Bool?
     let oidcDisableLocalLogin: Bool?
     let pushEnabled: Bool?
+    // where reports about the server or a message on it go, set by its admins
+    let reportEmail: String?
 }
 
 struct Handshake: Decodable {

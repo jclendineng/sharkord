@@ -115,6 +115,21 @@ struct GeneralSettingsScreen: View {
                 Toggle("Simulcast for Video", isOn: settings.webRtcSimulcastEnabled)
             }
 
+            Section {
+                TextField("reports@example.com", text: Binding(
+                    get: { settings.wrappedValue.reportEmail ?? "" },
+                    set: { settings.wrappedValue.reportEmail = $0 }
+                ))
+                .keyboardType(.emailAddress)
+                .textContentType(.emailAddress)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+            } header: {
+                Text("Report Email")
+            } footer: {
+                Text("Where people send reports about this server or a message on it. Report in the apps opens an email to this address.")
+            }
+
             if let showsContent = settings.wrappedValue.pushShowMessageContent {
                 Section {
                     Toggle("Show Message Text", isOn: Binding(
@@ -184,6 +199,7 @@ struct GeneralSettingsScreen: View {
             let showWelcomeDialog: Bool
             let webRtcSimulcastEnabled: Bool
             let pushShowMessageContent: Bool?
+            let reportEmail: String?
 
             // a null password clears it, which a nil optional would leave out of the json
             func encode(to encoder: Encoder) throws {
@@ -200,12 +216,14 @@ struct GeneralSettingsScreen: View {
                 try container.encode(showWelcomeDialog, forKey: .showWelcomeDialog)
                 try container.encode(webRtcSimulcastEnabled, forKey: .webRtcSimulcastEnabled)
                 try container.encodeIfPresent(pushShowMessageContent, forKey: .pushShowMessageContent)
+                // null clears it, an older server drops the key it doesn't know
+                try container.encode(reportEmail, forKey: .reportEmail)
             }
 
             private enum CodingKeys: String, CodingKey {
                 case name, description, password, onlyAskForPasswordOnFirstJoin, allowNewUsers
                 case directMessagesEnabled, enablePlugins, enableSearch, showWelcomeDialog, webRtcSimulcastEnabled
-                case pushShowMessageContent
+                case pushShowMessageContent, reportEmail
             }
         }
 
@@ -220,7 +238,8 @@ struct GeneralSettingsScreen: View {
             enableSearch: settings.enableSearch,
             showWelcomeDialog: settings.showWelcomeDialog,
             webRtcSimulcastEnabled: settings.webRtcSimulcastEnabled,
-            pushShowMessageContent: settings.pushShowMessageContent
+            pushShowMessageContent: settings.pushShowMessageContent,
+            reportEmail: trimmedReportEmail(settings.reportEmail)
         )
 
         isSaving = true
@@ -237,6 +256,12 @@ struct GeneralSettingsScreen: View {
 
             isSaving = false
         }
+    }
+
+    private func trimmedReportEmail(_ email: String?) -> String? {
+        let trimmed = (email ?? "").trimmingCharacters(in: .whitespaces)
+
+        return trimmed.isEmpty ? nil : trimmed
     }
 
     private func uploadLogo(_ item: PhotosPickerItem) {

@@ -595,3 +595,47 @@ describe('others router', () => {
     ).rejects.toThrow('Too many requests. Please try again shortly.');
   });
 });
+
+describe('report address', () => {
+  test('should be set and cleared by an admin', async () => {
+    const { caller } = await initTest(1);
+
+    await caller.others.updateSettings({ reportEmail: 'reports@example.com' });
+
+    expect((await getSettings()).reportEmail).toBe('reports@example.com');
+
+    await caller.others.updateSettings({ reportEmail: null });
+
+    expect((await getSettings()).reportEmail).toBeNull();
+  });
+
+  test('should come back with the admin settings', async () => {
+    const { caller } = await initTest(1);
+
+    await caller.others.updateSettings({ reportEmail: 'reports@example.com' });
+
+    const settings = await caller.others.getSettings();
+
+    expect(settings.reportEmail).toBe('reports@example.com');
+  });
+
+  test('should refuse something that is not an email address', async () => {
+    const { caller } = await initTest(1);
+
+    await expect(
+      caller.others.updateSettings({ reportEmail: 'not an email' })
+    ).rejects.toThrow('Enter a valid email address.');
+
+    expect((await getSettings()).reportEmail).toBeNull();
+  });
+
+  test('should refuse someone without permission to manage settings', async () => {
+    const { caller } = await initTest(2);
+
+    await expect(
+      caller.others.updateSettings({ reportEmail: 'reports@example.com' })
+    ).rejects.toThrow('Insufficient permissions');
+
+    expect((await getSettings()).reportEmail).toBeNull();
+  });
+});

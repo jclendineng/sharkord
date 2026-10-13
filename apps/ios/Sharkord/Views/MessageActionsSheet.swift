@@ -124,10 +124,10 @@ struct MessageActionsSheet: View {
         .sheet(isPresented: $isForwardPresented, onDismiss: close) {
             ForwardSheet(message: message)
         }
-        .alert("Reporting isn't set up yet", isPresented: $isReportUnavailable) {
+        .alert("Reporting isn't set up", isPresented: $isReportUnavailable) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("A contact address for reports will be added in a later version.")
+            Text("This server's admins haven't added an address for reports yet. They can add one in Server Settings, under Overview.")
         }
     }
 
@@ -197,11 +197,11 @@ struct MessageActionsSheet: View {
         onDelete(message)
     }
 
-    // by email, like reporting a server, AppInfo.reportEmail
+    // by email to the address the server's admins set, like reporting the server
     private func report() {
         guard
-            !AppInfo.reportEmail.isEmpty,
-            var components = URLComponents(string: "mailto:\(AppInfo.reportEmail)")
+            let reportEmail = session.reportEmail,
+            var components = URLComponents(string: "mailto:\(reportEmail)")
         else {
             isReportUnavailable = true
             return

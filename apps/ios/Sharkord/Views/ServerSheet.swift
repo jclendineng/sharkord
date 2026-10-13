@@ -128,10 +128,10 @@ struct ServerSheet: View {
         .sheet(isPresented: $isSettingsPresented) {
             ServerSettingsScreen()
         }
-        .alert("Reporting isn't set up yet", isPresented: $isReportUnavailable) {
+        .alert("Reporting isn't set up", isPresented: $isReportUnavailable) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("A contact address for reports will be added in a later version.")
+            Text("This server's admins haven't added an address for reports yet. They can add one in Server Settings, under Overview.")
         }
     }
 
@@ -168,11 +168,11 @@ struct ServerSheet: View {
         isSettingsPresented = true
     }
 
-    // the report goes by email to whoever runs reports, AppInfo.reportEmail
+    // the report goes by email to the address the server's admins set
     private func report() {
         guard
-            !AppInfo.reportEmail.isEmpty,
-            var components = URLComponents(string: "mailto:\(AppInfo.reportEmail)")
+            let reportEmail = session.reportEmail,
+            var components = URLComponents(string: "mailto:\(reportEmail)")
         else {
             isReportUnavailable = true
             return

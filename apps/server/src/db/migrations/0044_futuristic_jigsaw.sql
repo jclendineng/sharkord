@@ -1,0 +1,1 @@
+ALTER TABLE `settings` ADD `report_email` text;

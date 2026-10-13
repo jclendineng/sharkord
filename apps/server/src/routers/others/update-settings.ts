@@ -52,7 +52,13 @@ const zGeneralSettings = z.object({
   webRtcSimulcastEnabled: z.boolean().optional(),
   enableSearch: z.boolean().optional(),
   showWelcomeDialog: z.boolean().optional(),
-  pushShowMessageContent: z.boolean().optional()
+  pushShowMessageContent: z.boolean().optional(),
+  // where people send reports about the server or a message on it, shown in the apps
+  reportEmail: z
+    .email('Enter a valid email address.')
+    .max(254)
+    .nullable()
+    .optional()
 });
 
 const STORAGE_SETTING_KEYS = Object.keys(zStorageSettings.shape);

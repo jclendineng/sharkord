@@ -1,5 +1,6 @@
 import type { TServerInfo } from '@sharkord/shared';
 import { afterEach, describe, expect, test } from 'bun:test';
+import { initTest } from '../../__tests__/helpers';
 import { testsBaseUrl } from '../../__tests__/setup';
 import { config } from '../../config';
 
@@ -20,6 +21,24 @@ describe('/info', () => {
     expect(data.name).toBe('Test Server');
     expect(data.description).toBe('Test server description');
     expect(data.allowNewUsers).toBe(true);
+  });
+
+  test('should publish the report address once an admin sets one', async () => {
+    const before = (await (
+      await fetch(`${testsBaseUrl}/info`)
+    ).json()) as TServerInfo;
+
+    expect(before.reportEmail).toBeNull();
+
+    const { caller } = await initTest(1);
+
+    await caller.others.updateSettings({ reportEmail: 'reports@example.com' });
+
+    const after = (await (
+      await fetch(`${testsBaseUrl}/info`)
+    ).json()) as TServerInfo;
+
+    expect(after.reportEmail).toBe('reports@example.com');
   });
 
   test('should not publish the server version pre-auth', async () => {

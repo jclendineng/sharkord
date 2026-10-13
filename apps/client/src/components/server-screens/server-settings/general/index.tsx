@@ -21,6 +21,7 @@ type TServerGeneralValues = {
   enableSearch: boolean;
   showWelcomeDialog: boolean;
   pushShowMessageContent: boolean;
+  reportEmail: string;
   // undefined means untouched, null means remove
   logo?: TPickedImage | null;
 };
@@ -36,7 +37,8 @@ const INITIAL_VALUES: TServerGeneralValues = {
   webRtcSimulcastEnabled: false,
   enableSearch: true,
   showWelcomeDialog: true,
-  pushShowMessageContent: true
+  pushShowMessageContent: true,
+  reportEmail: ''
 };
 
 const General = memo(() => {
@@ -57,7 +59,8 @@ const General = memo(() => {
       webRtcSimulcastEnabled: values.webRtcSimulcastEnabled,
       enableSearch: values.enableSearch,
       showWelcomeDialog: values.showWelcomeDialog,
-      pushShowMessageContent: values.pushShowMessageContent
+      pushShowMessageContent: values.pushShowMessageContent,
+      reportEmail: values.reportEmail.trim() || null
     });
 
     if (values.logo !== undefined) {
@@ -87,7 +90,8 @@ const General = memo(() => {
       webRtcSimulcastEnabled: settings.webRtcSimulcastEnabled ?? false,
       enableSearch: settings.enableSearch ?? true,
       showWelcomeDialog: settings.showWelcomeDialog ?? true,
-      pushShowMessageContent: settings.pushShowMessageContent ?? true
+      pushShowMessageContent: settings.pushShowMessageContent ?? true,
+      reportEmail: settings.reportEmail ?? ''
     });
   }, [settings, reset]);
 
@@ -226,6 +230,14 @@ const General = memo(() => {
         <Switch
           checked={values.showWelcomeDialog}
           onCheckedChange={handleWelcomeDialogChange}
+        />
+      </Group>
+
+      <Group label={t('reportEmailLabel')} description={t('reportEmailDesc')}>
+        <Input
+          {...r('reportEmail')}
+          type="email"
+          placeholder={t('reportEmailPlaceholder')}
         />
       </Group>
 
