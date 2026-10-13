@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `allow_direct_messages` integer DEFAULT true NOT NULL;

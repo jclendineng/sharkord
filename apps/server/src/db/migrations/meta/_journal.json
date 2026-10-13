@@ -281,6 +281,13 @@
       "when": 1791895780684,
       "tag": "0039_ambiguous_jack_flag",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "6",
+      "when": 1791895901576,
+      "tag": "0040_gifted_sentinels",
+      "breakpoints": true
     }
   ]
 }

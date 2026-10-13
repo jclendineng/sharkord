@@ -213,3 +213,49 @@ describe('dms router', () => {
     ).resolves.toBeDefined();
   });
 });
+
+describe('direct message privacy', () => {
+  test('should allow direct messages until the user turns them off', async () => {
+    const { caller } = await initTest(2);
+
+    expect(await caller.users.getPrivacy()).toEqual({
+      allowDirectMessages: true
+    });
+
+    await caller.users.updatePrivacy({ allowDirectMessages: false });
+
+    expect(await caller.users.getPrivacy()).toEqual({
+      allowDirectMessages: false
+    });
+  });
+
+  test('should refuse a new conversation with someone not accepting them', async () => {
+    const { caller: member } = await initTest(2);
+    const { caller: owner } = await initTest(1);
+
+    await member.users.updatePrivacy({ allowDirectMessages: false });
+
+    await expect(owner.dms.open({ userId: 2 })).rejects.toThrow(
+      "This person isn't accepting direct messages."
+    );
+  });
+
+  test('should keep an existing conversation open after they are turned off', async () => {
+    const { caller: userA } = await initTest(3);
+    const { caller: userB } = await initTest(4);
+
+    await userB.users.updatePrivacy({ allowDirectMessages: false });
+
+    // users 3 and 4 share the seeded DM channel 3
+    expect(await userA.dms.open({ userId: 4 })).toEqual({ channelId: 3 });
+  });
+
+  test('should refuse a privacy setting that is not a boolean', async () => {
+    const { caller } = await initTest(2);
+
+    await expect(
+      // @ts-expect-error not a boolean
+      caller.users.updatePrivacy({ allowDirectMessages: 'no' })
+    ).rejects.toThrow();
+  });
+});

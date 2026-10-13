@@ -36,7 +36,8 @@ const openDirectMessageRoute = rateLimitedProcedure(protectedProcedure, {
     const targetUser = await db
       .select({
         id: users.id,
-        banned: users.banned
+        banned: users.banned,
+        allowDirectMessages: users.allowDirectMessages
       })
       .from(users)
       .where(eq(users.id, input.userId))
@@ -55,6 +56,12 @@ const openDirectMessageRoute = rateLimitedProcedure(protectedProcedure, {
     if (existing) {
       return { channelId: existing.channelId };
     }
+
+    // a conversation that already exists stays open, only new ones are refused
+    invariant(targetUser.allowDirectMessages, {
+      code: 'FORBIDDEN',
+      message: "This person isn't accepting direct messages."
+    });
 
     const now = Date.now();
 

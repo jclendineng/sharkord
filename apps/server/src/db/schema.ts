@@ -188,6 +188,10 @@ const users = sqliteTable(
     banReason: text('ban_reason'),
     bannedAt: integer('banned_at'),
     tokenVersion: integer('token_version').notNull().default(0),
+    // whether people on the server can start a new direct message with this user
+    allowDirectMessages: integer('allow_direct_messages', { mode: 'boolean' })
+      .notNull()
+      .default(true),
     oidcSub: text('oidc_sub').unique(),
     oidcIssuer: text('oidc_issuer'),
     passwordSet: integer('password_set', { mode: 'boolean' })
