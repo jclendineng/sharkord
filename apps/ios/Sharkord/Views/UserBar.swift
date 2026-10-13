@@ -65,10 +65,12 @@ struct UserBar: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
-        .background(Theme.listBackground, in: .rect(cornerRadius: 28))
+        .background(Color(hex: "#2B2C31"), in: .rect(cornerRadius: 28, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 28).stroke(Theme.divider, lineWidth: 1)
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .strokeBorder(.white.opacity(0.06), lineWidth: 1)
         }
+        .shadow(color: .black.opacity(0.4), radius: 20, y: 8)
         .sheet(isPresented: $isProfilePresented) {
             ProfileScreen()
         }
