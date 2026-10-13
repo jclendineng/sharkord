@@ -68,6 +68,7 @@ struct AdminServerSettings: Codable {
     // missing on a server from before the setting existed
     var pushShowMessageContent: Bool?
     var reportEmail: String?
+    var klipyApiKey: String?
 }
 
 // users.getAll

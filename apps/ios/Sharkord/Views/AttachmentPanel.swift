@@ -12,8 +12,9 @@ struct AttachmentPanel: View {
         AttachPanelModel.restingHeight
     }
 
-    // the one color the whole panel is, down behind the home indicator
-    static let background = Color(hex: "#232428")
+    static var background: Color {
+        ComposerPanel<EmptyView, EmptyView>.background
+    }
 
     let selectedIds: Set<String>
     let canAddMore: Bool
@@ -34,39 +35,10 @@ struct AttachmentPanel: View {
     }
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            Color.black
-                .opacity(model.expansion * 0.5)
-                .frame(height: 2400)
-                .allowsHitTesting(false)
-
-            panel
-        }
-        .frame(height: Self.height, alignment: .bottom)
-    }
-
-    private var panel: some View {
-        content
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            // photos fade out under the grabber instead of meeting an edge
-            .overlay(alignment: .top) {
-                grabber
-            }
-            .clipShape(UnevenRoundedRectangle(topLeadingRadius: 24, topTrailingRadius: 24, style: .continuous))
-            .frame(height: model.height)
-        .overlay(alignment: .bottom) {
+        ComposerPanel(model: model) {
+            content
+        } bar: {
             bar
-        }
-        .background {
-            UnevenRoundedRectangle(topLeadingRadius: 24, topTrailingRadius: 24, style: .continuous)
-                .fill(Self.background)
-                .ignoresSafeArea(edges: .bottom)
-        }
-        .overlay {
-            Theme.chatBackground
-                .opacity(model.isCoveredByKeyboard ? 1 : 0)
-                .ignoresSafeArea(edges: .bottom)
-                .allowsHitTesting(false)
         }
         .confirmationDialog("Photo Access", isPresented: $isManagePresented, titleVisibility: .hidden) {
             Button("Select More Photos", action: selectMore)
@@ -77,28 +49,6 @@ struct AttachmentPanel: View {
         .task {
             await library.load()
         }
-    }
-
-    // the drag handle, over a fade the photos scroll up into
-    private var grabber: some View {
-        Capsule()
-            .fill(Theme.muted.opacity(0.5))
-            .frame(width: 36, height: 5)
-            .padding(.top, 8)
-            .frame(maxWidth: .infinity, minHeight: 34, alignment: .top)
-            .background {
-                LinearGradient(
-                    stops: [
-                        .init(color: Self.background, location: 0),
-                        .init(color: Self.background, location: 0.45),
-                        .init(color: Self.background.opacity(0), location: 1)
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            }
-            .contentShape(.rect)
-            .gesture(resize)
     }
 
     // floats over the photos, which fade into the panel behind it rather than meeting an edge
@@ -135,16 +85,6 @@ struct AttachmentPanel: View {
                 .ignoresSafeArea(edges: .bottom)
                 .allowsHitTesting(false)
         }
-    }
-
-    private var resize: some Gesture {
-        DragGesture(coordinateSpace: .global)
-            .onChanged { value in
-                model.drag(value.translation.height)
-            }
-            .onEnded { value in
-                model.release(predicted: value.predictedEndTranslation.height)
-            }
     }
 
     @ViewBuilder
@@ -626,7 +566,14 @@ final class AttachPanelModel {
         KeyboardMetrics.heightAboveSafeArea
     }
 
+    // the composer has two panels in the keyboard's place, they share this one position
+    enum Kind {
+        case attachments
+        case expressions
+    }
+
     private(set) var isOpen = false
+    private(set) var kind = Kind.attachments
     private(set) var settledHeight = restingHeight
     private(set) var dragOffset: CGFloat = 0
     // while the keyboard and the panel trade places the conversation stops making room for the
@@ -672,19 +619,30 @@ final class AttachPanelModel {
         Double(max(0, min(1, (height - Self.restingHeight) / (expandedHeight - Self.restingHeight))))
     }
 
-    func open() {
+    func open(_ kind: Kind) {
         settledHeight = Self.restingHeight
         dragOffset = 0
         returnsToKeyboard = false
+        self.kind = kind
 
         withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
             isOpen = true
         }
     }
 
-    // in place under the keyboard at once, the keyboard then slides down off it
-    func openUnderKeyboard() {
+    // one panel swapped for the other in place, as discord switches attachments and emoji
+    func switchTo(_ kind: Kind) {
         withoutAnimation {
+            self.kind = kind
+            settledHeight = Self.restingHeight
+            dragOffset = 0
+        }
+    }
+
+    // in place under the keyboard at once, the keyboard then slides down off it
+    func openUnderKeyboard(_ kind: Kind) {
+        withoutAnimation {
+            self.kind = kind
             settledHeight = Self.restingHeight
             dragOffset = 0
             returnsToKeyboard = true

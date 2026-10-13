@@ -130,6 +130,19 @@ struct GeneralSettingsScreen: View {
                 Text("Where people send reports about this server or a message on it. Report in the apps opens an email to this address.")
             }
 
+            Section {
+                SecureField("Paste a key to turn on GIFs", text: Binding(
+                    get: { settings.wrappedValue.klipyApiKey ?? "" },
+                    set: { settings.wrappedValue.klipyApiKey = $0 }
+                ))
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+            } header: {
+                Text("Klipy API Key")
+            } footer: {
+                Text("Turns on GIFs. Get a free key at klipy.com/developers. Searches go through this server, so the key stays private.")
+            }
+
             if let showsContent = settings.wrappedValue.pushShowMessageContent {
                 Section {
                     Toggle("Show Message Text", isOn: Binding(
@@ -200,6 +213,7 @@ struct GeneralSettingsScreen: View {
             let webRtcSimulcastEnabled: Bool
             let pushShowMessageContent: Bool?
             let reportEmail: String?
+            let klipyApiKey: String?
 
             // a null password clears it, which a nil optional would leave out of the json
             func encode(to encoder: Encoder) throws {
@@ -218,12 +232,13 @@ struct GeneralSettingsScreen: View {
                 try container.encodeIfPresent(pushShowMessageContent, forKey: .pushShowMessageContent)
                 // null clears it, an older server drops the key it doesn't know
                 try container.encode(reportEmail, forKey: .reportEmail)
+                try container.encode(klipyApiKey, forKey: .klipyApiKey)
             }
 
             private enum CodingKeys: String, CodingKey {
                 case name, description, password, onlyAskForPasswordOnFirstJoin, allowNewUsers
                 case directMessagesEnabled, enablePlugins, enableSearch, showWelcomeDialog, webRtcSimulcastEnabled
-                case pushShowMessageContent, reportEmail
+                case pushShowMessageContent, reportEmail, klipyApiKey
             }
         }
 
@@ -239,7 +254,8 @@ struct GeneralSettingsScreen: View {
             showWelcomeDialog: settings.showWelcomeDialog,
             webRtcSimulcastEnabled: settings.webRtcSimulcastEnabled,
             pushShowMessageContent: settings.pushShowMessageContent,
-            reportEmail: trimmedReportEmail(settings.reportEmail)
+            reportEmail: trimmedOrNil(settings.reportEmail),
+            klipyApiKey: trimmedOrNil(settings.klipyApiKey)
         )
 
         isSaving = true
@@ -258,8 +274,8 @@ struct GeneralSettingsScreen: View {
         }
     }
 
-    private func trimmedReportEmail(_ email: String?) -> String? {
-        let trimmed = (email ?? "").trimmingCharacters(in: .whitespaces)
+    private func trimmedOrNil(_ value: String?) -> String? {
+        let trimmed = (value ?? "").trimmingCharacters(in: .whitespaces)
 
         return trimmed.isEmpty ? nil : trimmed
     }

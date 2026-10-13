@@ -52,6 +52,7 @@ final class ChannelMessagesStore {
         let files: [String]
         let parentMessageId: Int?
         let replyToMessageId: Int?
+        var stickerId: Int?
     }
 
     func loadIfNeeded() async {
@@ -102,7 +103,7 @@ final class ChannelMessagesStore {
             "messages.send",
             input: SendInput(
                 channelId: channelId,
-                content: trimmed.isEmpty ? "" : HTMLText.paragraphs(from: trimmed),
+                content: trimmed.isEmpty ? "" : customEmojiSpans(in: HTMLText.paragraphs(from: trimmed)),
                 files: files.map(\.id),
                 parentMessageId: parentMessageId,
                 replyToMessageId: replyingTo?.id
@@ -110,6 +111,61 @@ final class ChannelMessagesStore {
         )
 
         replyingTo = nil
+    }
+
+    // the server's own emoji are picked as :name:, the web client stores them as spans it can
+    // draw, so a name that matches one becomes that span. other colons stay text
+    private func customEmojiSpans(in html: String) -> String {
+        guard
+            !session.customEmojis.isEmpty,
+            let pattern = try? NSRegularExpression(pattern: ":([A-Za-z0-9_]+):")
+        else {
+            return html
+        }
+
+        let names = Set(session.customEmojis.map(\.name))
+        var result = html
+
+        for match in pattern.matches(in: html, range: NSRange(html.startIndex..., in: html)).reversed() {
+            guard
+                let whole = Range(match.range, in: html),
+                let nameRange = Range(match.range(at: 1), in: html),
+                names.contains(String(html[nameRange]))
+            else {
+                continue
+            }
+
+            // the name stays inside as text, a message of one emoji is then not an empty one
+            result.replaceSubrange(whole, with: "<span data-type=\"emoji\" data-name=\"\(html[nameRange])\">\(html[whole])</span>")
+        }
+
+        return result
+    }
+
+    // a gif goes as its link, which shows as the gif alone, a sticker as a message of its own.
+    // neither touches what is being typed or replied to
+    func sendExpression(content: String, stickerId: Int?) async throws {
+        guard let client = session.client else {
+            throw TRPCError(message: "Not connected to the server.", code: nil)
+        }
+
+        var parentMessageId: Int?
+
+        if case .thread(let id) = scope {
+            parentMessageId = id
+        }
+
+        try await client.mutation(
+            "messages.send",
+            input: SendInput(
+                channelId: channelId,
+                content: content,
+                files: [],
+                parentMessageId: parentMessageId,
+                replyToMessageId: nil,
+                stickerId: stickerId
+            )
+        )
     }
 
     func edit(_ message: Message, to text: String) async throws {

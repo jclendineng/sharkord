@@ -32,6 +32,12 @@ struct ServerSettingsScreen: View {
                         } label: {
                             SettingsRow(title: "Emoji", systemImage: "face.smiling.inverse")
                         }
+
+                        NavigationLink {
+                            StickersScreen()
+                        } label: {
+                            SettingsRow(title: "Stickers", systemImage: "seal.fill")
+                        }
                     }
                 }
 

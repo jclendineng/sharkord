@@ -28,6 +28,7 @@ struct JoinResult: Decodable {
     let ownUserId: Int
     let roles: [Role]
     let emojis: [CustomEmoji]
+    let stickers: [Sticker]?
     let publicSettings: PublicSettings
     // keyed by channel id, sent as strings since it is a JSON object
     let readStates: [String: Int]
@@ -50,6 +51,8 @@ struct PublicSettings: Decodable {
     let storageUploadMaxFileSize: Int
     let storageFileSharingInDirectMessages: Bool
     let storageMaxFilesPerMessage: Int
+    // missing on a server from before gifs
+    let gifsEnabled: Bool?
 }
 
 struct Role: Decodable, Hashable, Identifiable {

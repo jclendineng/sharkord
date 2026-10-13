@@ -21,6 +21,21 @@ struct MessageRow: View {
         session.roleColor(for: author).map { Color(hex: $0) } ?? Theme.header
     }
 
+    // gifs and images the server found at links in the message
+    private var mediaImages: [MessageMetadata] {
+        (message.metadata ?? []).filter(\.isImage)
+    }
+
+    // a message that is just the link to the gif it shows, like one from the picker: the gif
+    // says it all, the link above it would only repeat it
+    private var isMediaLinkOnly: Bool {
+        guard mediaImages.count == 1, let content = message.content else {
+            return false
+        }
+
+        return HTMLText.plainText(from: content).trimmingCharacters(in: .whitespacesAndNewlines) == mediaImages[0].url
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             if message.replyToMessageId != nil {
@@ -44,8 +59,20 @@ struct MessageRow: View {
                     header
                 }
 
-                if let content = message.content, !content.isEmpty {
+                if let content = message.content, !content.isEmpty, !isMediaLinkOnly {
                     MessageContentView(html: content)
+                }
+
+                if let sticker = message.sticker {
+                    AnimatedImage(url: session.address?.fileURL(sticker.file), maxPointSize: 160, contentMode: .scaleAspectFit)
+                        .frame(width: 160, height: 160)
+                        .accessibilityLabel(sticker.name)
+                }
+
+                ForEach(mediaImages, id: \.url) { media in
+                    AnimatedImage(url: URL(string: media.url), maxPointSize: 300, contentMode: .scaleAspectFit, sizesToImage: true)
+                        .frame(maxWidth: 280, maxHeight: 320, alignment: .leading)
+                        .clipShape(.rect(cornerRadius: 8))
                 }
 
                 if message.editedAt != nil {

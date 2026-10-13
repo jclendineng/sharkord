@@ -14,7 +14,6 @@ struct ComposerView: View {
     @State private var attachments: [PendingAttachment] = []
     @State private var isSending = false
     @State private var errorMessage: String?
-    @State private var isEmojiPickerPresented = false
     // the attachment panel takes the keyboard's place, so the two never show together
     @State private var isPhotoPickerPresented = false
     @State private var isFileImporterPresented = false
@@ -61,7 +60,7 @@ struct ComposerView: View {
             // laid out right under the composer so the two move as one, whatever the panel
             // grows to past its resting height is drawn up over the composer
             if store.attachPanel.isOpen {
-                attachmentPanel
+                openPanel
                     .frame(height: AttachPanelModel.restingHeight, alignment: .bottom)
                     .transition(.move(edge: .bottom))
             }
@@ -70,9 +69,6 @@ struct ComposerView: View {
         // runs on behind the keyboard, whose rounded top corners would otherwise show the
         // window's black
         .background(Theme.chatBackground.ignoresSafeArea())
-        .sheet(isPresented: $isEmojiPickerPresented) {
-            EmojiPickerView(includesCustom: false, onPick: insertEmoji)
-        }
         .photosPicker(
             isPresented: $isPhotoPickerPresented,
             selection: $photoSelection,
@@ -133,6 +129,30 @@ struct ComposerView: View {
         }
 
         return openPollCreator
+    }
+
+    private var areAttachmentsOpen: Bool {
+        store.attachPanel.isOpen && store.attachPanel.kind == .attachments
+    }
+
+    private var areExpressionsOpen: Bool {
+        store.attachPanel.isOpen && store.attachPanel.kind == .expressions
+    }
+
+    @ViewBuilder
+    private var openPanel: some View {
+        switch store.attachPanel.kind {
+        case .attachments:
+            attachmentPanel
+        case .expressions:
+            ExpressionPanel(
+                model: store.attachPanel,
+                onEmoji: insertEmoji,
+                onBackspace: deleteBackward,
+                onGif: sendGif,
+                onSticker: sendSticker
+            )
+        }
     }
 
     private var attachmentPanel: some View {
@@ -204,13 +224,13 @@ struct ComposerView: View {
                 Button(action: toggleAttachPanel) {
                     Image(systemName: "plus")
                         .font(.body.weight(.semibold))
-                        .rotationEffect(.degrees(store.attachPanel.isOpen ? 45 : 0))
+                        .rotationEffect(.degrees(areAttachmentsOpen ? 45 : 0))
                         .foregroundStyle(Theme.text)
                         .frame(width: 38, height: 38)
                         .background(Theme.inputBackground, in: .circle)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(store.attachPanel.isOpen ? "Close Attachments" : "Attach")
+                .accessibilityLabel(areAttachmentsOpen ? "Close Attachments" : "Attach")
             }
 
             HStack(alignment: .bottom, spacing: 10) {
@@ -220,7 +240,12 @@ struct ComposerView: View {
                     .foregroundStyle(Theme.text)
                     .padding(.vertical, 9)
 
-                Button("Emoji", systemImage: "face.smiling.inverse", action: openEmojiPicker)
+                // discord's emoji button turns into a keyboard one while the panel is up
+                Button(
+                    areExpressionsOpen ? "Keyboard" : "Emoji",
+                    systemImage: areExpressionsOpen ? "keyboard" : "face.smiling.inverse",
+                    action: toggleExpressions
+                )
                     .labelStyle(.iconOnly)
                     .font(.title3)
                     .foregroundStyle(Theme.muted)
@@ -256,8 +281,45 @@ struct ComposerView: View {
         canUpload && !hasText && attachments.isEmpty && store.editing == nil
     }
 
-    private func openEmojiPicker() {
-        isEmojiPickerPresented = true
+    // the expression panel in the keyboard's place, or the keyboard back in the panel's
+    private func toggleExpressions() {
+        if areExpressionsOpen {
+            store.attachPanel.beginHandoffToKeyboard()
+            isFieldFocused = true
+        } else if areAttachmentsOpen {
+            store.attachPanel.switchTo(.expressions)
+        } else if isFieldFocused {
+            store.attachPanel.openUnderKeyboard(.expressions)
+            isFieldFocused = false
+        } else {
+            store.attachPanel.open(.expressions)
+        }
+    }
+
+    private func deleteBackward() {
+        if !text.isEmpty {
+            text.removeLast()
+        }
+    }
+
+    private func sendGif(_ gif: Gif) {
+        sendExpression(content: gif.url, stickerId: nil)
+    }
+
+    private func sendSticker(_ sticker: Sticker) {
+        sendExpression(content: "", stickerId: sticker.id)
+    }
+
+    private func sendExpression(content: String, stickerId: Int?) {
+        errorMessage = nil
+
+        Task {
+            do {
+                try await store.sendExpression(content: content, stickerId: stickerId)
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        }
     }
 
     private func insertEmoji(_ shortcode: String) {
@@ -270,7 +332,9 @@ struct ComposerView: View {
         // with the keyboard up the panel takes its place and the x gives it back, each sliding
         // over the other at the same height so the composer holds still. otherwise the panel
         // slides in and out on its own, the composer riding on it
-        if store.attachPanel.isOpen {
+        if areExpressionsOpen {
+            store.attachPanel.switchTo(.attachments)
+        } else if store.attachPanel.isOpen {
             if store.attachPanel.returnsToKeyboard {
                 store.attachPanel.beginHandoffToKeyboard()
                 isFieldFocused = true
@@ -278,10 +342,10 @@ struct ComposerView: View {
                 store.attachPanel.close()
             }
         } else if isFieldFocused {
-            store.attachPanel.openUnderKeyboard()
+            store.attachPanel.openUnderKeyboard(.attachments)
             isFieldFocused = false
         } else {
-            store.attachPanel.open()
+            store.attachPanel.open(.attachments)
         }
     }
 

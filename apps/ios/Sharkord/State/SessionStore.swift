@@ -58,6 +58,7 @@ final class SessionStore {
     private(set) var unreadCounts: [Int: Int] = [:]
     private(set) var rolesById: [Int: Role] = [:]
     private(set) var customEmojis: [CustomEmoji] = []
+    private(set) var stickers: [Sticker] = []
     private(set) var settings: PublicSettings?
     private(set) var directMessages: [DirectMessageConversation] = []
     private(set) var client: TRPCClient?
@@ -570,6 +571,7 @@ final class SessionStore {
         directMessages = []
         rolesById = [:]
         customEmojis = []
+        stickers = []
         settings = nil
         errorMessage = message
         hideReconnectingBanner()
@@ -1012,6 +1014,7 @@ final class SessionStore {
         usersById[result.ownUserId]?.status = .online
         rolesById = Dictionary(uniqueKeysWithValues: result.roles.map { ($0.id, $0) })
         customEmojis = result.emojis
+        stickers = result.stickers ?? []
         settings = result.publicSettings
         unreadCounts = Dictionary(
             uniqueKeysWithValues: result.readStates.compactMap { key, count in
@@ -1334,6 +1337,24 @@ final class SessionStore {
 
         client.subscribe("emojis.onDelete") { [weak self] (emojiId: Int) in
             self?.customEmojis.removeAll { $0.id == emojiId }
+        }
+
+        for path in ["stickers.onCreate", "stickers.onUpdate"] {
+            client.subscribe(path) { [weak self] (sticker: Sticker) in
+                guard let self else {
+                    return
+                }
+
+                if let index = self.stickers.firstIndex(where: { $0.id == sticker.id }) {
+                    self.stickers[index] = sticker
+                } else {
+                    self.stickers.append(sticker)
+                }
+            }
+        }
+
+        client.subscribe("stickers.onDelete") { [weak self] (stickerId: Int) in
+            self?.stickers.removeAll { $0.id == stickerId }
         }
 
         for path in ["roles.onCreate", "roles.onUpdate"] {

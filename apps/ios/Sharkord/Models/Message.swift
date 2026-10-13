@@ -21,6 +21,9 @@ struct Message: Codable, Hashable, Identifiable {
     let reactions: [MessageReaction]
     // missing from a server without polls
     var poll: Poll?
+    var sticker: Sticker?
+    // link previews the server worked out, a gif's link is one
+    var metadata: [MessageMetadata]?
     var replyCount: Int?
     // the message this one answers, or nil when it was deleted since
     let replyTo: ReplyPreview?
@@ -99,4 +102,47 @@ struct Poll: Codable, Hashable {
 
         return Set(answers.filter { $0.userIds.contains(userId) }.map(\.id))
     }
+}
+
+// a server sticker, sent as a message of its own
+struct Sticker: Codable, Hashable, Identifiable {
+    let id: Int
+    let name: String
+    let description: String?
+    let file: SharkordFile
+}
+
+// what the server found at a link in a message: the media itself, or a page's preview
+struct MessageMetadata: Codable, Hashable {
+    let kind: String
+    let url: String
+    let mediaType: String?
+    let title: String?
+
+    var isImage: Bool {
+        kind == "media" && mediaType == "image"
+    }
+}
+
+// gifs.trending and gifs.search
+struct Gif: Decodable, Hashable, Identifiable {
+    let id: String
+    let title: String
+    let url: String
+    let previewUrl: String
+    let width: Double
+    let height: Double
+}
+
+struct GifPage: Decodable {
+    let gifs: [Gif]
+    let hasMore: Bool
+}
+
+// gifs.categories, a tile and the search it runs
+struct GifCategory: Decodable, Hashable, Identifiable {
+    let term: String
+    let previewUrl: String
+
+    var id: String { term }
 }
