@@ -44,6 +44,8 @@ struct ChatScreen: View {
                 store: store
             )
         }
+        // while the keyboard and the attachment panel trade places, see AttachPanelModel
+        .ignoresSafeArea(store.attachPanel.isHandingOff ? .keyboard : [], edges: .bottom)
         .safeAreaInset(edge: .top, spacing: 0) {
             if session.showsReconnectingBanner {
                 ReconnectingBanner()

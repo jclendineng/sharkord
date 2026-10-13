@@ -11,6 +11,7 @@ struct SharkordApp: App {
             RootView()
                 .environment(servers)
                 .task {
+                    KeyboardMetrics.start()
                     appDelegate.servers = servers
                     await servers.restore()
                 }

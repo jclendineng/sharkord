@@ -8,7 +8,9 @@ import UniformTypeIdentifiers
 // it, or down and away, and a swipe down on the composer or the conversation drags it the same
 // way, like the keyboard. with access to only some photos it says so and offers to change them
 struct AttachmentPanel: View {
-    static let height = AttachPanelModel.restingHeight
+    static var height: CGFloat {
+        AttachPanelModel.restingHeight
+    }
 
     // the one color the whole panel is, down behind the home indicator
     static let background = Color(hex: "#232428")
@@ -26,7 +28,6 @@ struct AttachmentPanel: View {
 
     @State private var library = PhotoLibrary()
     @State private var isManagePresented = false
-    @State private var scrollOffset: CGFloat = 0
 
     private var isLimited: Bool {
         library.status == .limited
@@ -140,24 +141,6 @@ struct AttachmentPanel: View {
             }
     }
 
-    // on the photos: moves the panel until it is full height, then only a pull down from the
-    // top of the grid does, everything else is the grid scrolling
-    private var gridDrag: some Gesture {
-        DragGesture(minimumDistance: 8, coordinateSpace: .global)
-            .onChanged { value in
-                let pullsDownFromTop = scrollOffset <= 1 && value.translation.height > 0
-
-                if model.isDragging || !model.isFullHeight || pullsDownFromTop {
-                    model.drag(value.translation.height)
-                }
-            }
-            .onEnded { value in
-                if model.isDragging {
-                    model.release(predicted: value.predictedEndTranslation.height)
-                }
-            }
-    }
-
     @ViewBuilder
     private var content: some View {
         switch library.status {
@@ -170,28 +153,74 @@ struct AttachmentPanel: View {
         }
     }
 
-    // the banner scrolls away with the photos rather than staying pinned
-    private var limitedBanner: some View {
-        HStack(spacing: 12) {
-            Text("You've given Sharkord access to a select number of photos and videos.")
-                .font(.subheadline)
-                .foregroundStyle(Theme.text)
-
-            Spacer(minLength: 0)
-
-            Button("Manage", action: manage)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Theme.header)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
-                .background(Theme.inputBackground, in: .rect(cornerRadius: 10))
-                .buttonStyle(.plain)
-        }
-        .padding(.horizontal, 14)
-        .padding(.bottom, 12)
+    // its own view with plain values in, so a drag that only moves the panel never rebuilds it
+    private var grid: some View {
+        PhotoGrid(
+            library: library,
+            selectedIds: selectedIds,
+            canAddMore: canAddMore,
+            isScrollEnabled: model.isFullHeight,
+            model: model,
+            onToggle: onToggle,
+            onCamera: onCamera,
+            onPhotos: onPhotos,
+            onManage: manage
+        )
+        .equatable()
     }
 
-    private var grid: some View {
+    private func manage() {
+        isManagePresented = true
+    }
+
+    private func openSettings() {
+        if let url = URL(string: UIApplication.openSettingsURLString) {
+            openURL(url)
+        }
+    }
+
+    // apple's own picker for which photos a limited library shares, adding or removing them
+    private func selectMore() {
+        guard let presenter = UIApplication.shared.topViewController else {
+            return
+        }
+
+        PHPhotoLibrary.shared().presentLimitedLibraryPicker(from: presenter) { _ in
+            Task {
+                await library.load()
+            }
+        }
+    }
+}
+
+// the camera tile and the photos, scrolling only once the panel is full height, before that a
+// drag on them moves the panel. compared by its values, the closures left out, so it is not
+// rebuilt on every frame of a drag
+private struct PhotoGrid: View, Equatable {
+    let library: PhotoLibrary
+    let selectedIds: Set<String>
+    let canAddMore: Bool
+    let isScrollEnabled: Bool
+    let model: AttachPanelModel
+    let onToggle: (PHAsset) -> Void
+    let onCamera: () -> Void
+    let onPhotos: () -> Void
+    let onManage: () -> Void
+
+    @State private var scrollOffset: CGFloat = 0
+
+    private var isLimited: Bool {
+        library.status == .limited
+    }
+
+    static func == (lhs: PhotoGrid, rhs: PhotoGrid) -> Bool {
+        lhs.library === rhs.library
+            && lhs.selectedIds == rhs.selectedIds
+            && lhs.canAddMore == rhs.canAddMore
+            && lhs.isScrollEnabled == rhs.isScrollEnabled
+    }
+
+    var body: some View {
         ScrollView {
             if isLimited {
                 limitedBanner
@@ -247,7 +276,7 @@ struct AttachmentPanel: View {
         .contentMargins(.top, 30, for: .scrollContent)
         .contentMargins(.bottom, 96, for: .scrollContent)
         .scrollIndicators(.hidden)
-        .scrollDisabled(!model.isFullHeight)
+        .scrollDisabled(!isScrollEnabled)
         .onScrollGeometryChange(for: CGFloat.self) { geometry in
             geometry.contentOffset.y + geometry.contentInsets.top
         } action: { _, offset in
@@ -256,28 +285,45 @@ struct AttachmentPanel: View {
         .simultaneousGesture(gridDrag)
     }
 
-    private func manage() {
-        isManagePresented = true
+    // the banner scrolls away with the photos rather than staying pinned
+    private var limitedBanner: some View {
+        HStack(spacing: 12) {
+            Text("You've given Sharkord access to a select number of photos and videos.")
+                .font(.subheadline)
+                .foregroundStyle(Theme.text)
+
+            Spacer(minLength: 0)
+
+            Button("Manage", action: onManage)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Theme.header)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(Theme.inputBackground, in: .rect(cornerRadius: 10))
+                .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 14)
+        .padding(.bottom, 12)
     }
 
-    private func openSettings() {
-        if let url = URL(string: UIApplication.openSettingsURLString) {
-            openURL(url)
-        }
-    }
+    // on the photos: moves the panel until it is full height, then only a pull down from the
+    // top of the grid does, everything else is the grid scrolling
+    private var gridDrag: some Gesture {
+        DragGesture(minimumDistance: 8, coordinateSpace: .global)
+            .onChanged { value in
+                let pullsDownFromTop = scrollOffset <= 1 && value.translation.height > 0
 
-    // apple's own picker for which photos a limited library shares, adding or removing them
-    private func selectMore() {
-        guard let presenter = UIApplication.shared.topViewController else {
-            return
-        }
-
-        PHPhotoLibrary.shared().presentLimitedLibraryPicker(from: presenter) { _ in
-            Task {
-                await library.load()
+                if model.isDragging || !isScrollEnabled || pullsDownFromTop {
+                    model.drag(value.translation.height)
+                }
             }
-        }
+            .onEnded { value in
+                if model.isDragging {
+                    model.release(predicted: value.predictedEndTranslation.height)
+                }
+            }
     }
+
 }
 
 // the latest photos and videos, newest first, and thumbnails for them
@@ -569,11 +615,19 @@ extension UIApplication {
 // rather than a new layout, which is what keeps it smooth under the finger
 @Observable
 final class AttachPanelModel {
-    static let restingHeight: CGFloat = 340
+    // exactly the keyboard's height, so the two trade places without the composer moving
+    static var restingHeight: CGFloat {
+        KeyboardMetrics.heightAboveSafeArea
+    }
 
     private(set) var isOpen = false
     private(set) var settledHeight = restingHeight
     private(set) var dragOffset: CGFloat = 0
+    // while the keyboard and the panel trade places the conversation stops making room for the
+    // keyboard: the keyboard slides over the panel, or off it, and the composer holds still
+    private(set) var isHandingOff = false
+    // opened from the keyboard, so closing it brings the keyboard back
+    private(set) var returnsToKeyboard = false
 
     // all but a sliver of the conversation under the navigation bar, as discord leaves it
     var expandedHeight: CGFloat {
@@ -612,10 +666,54 @@ final class AttachPanelModel {
     func open() {
         settledHeight = Self.restingHeight
         dragOffset = 0
+        returnsToKeyboard = false
 
         withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
             isOpen = true
         }
+    }
+
+    // in place under the keyboard at once, the keyboard then slides down off it
+    func openUnderKeyboard() {
+        withoutAnimation {
+            settledHeight = Self.restingHeight
+            dragOffset = 0
+            returnsToKeyboard = true
+            isHandingOff = true
+            isOpen = true
+        }
+    }
+
+    // the keyboard is about to slide up over the panel
+    func beginHandoffToKeyboard() {
+        withoutAnimation {
+            isHandingOff = true
+        }
+    }
+
+    // the keyboard is fully up over the panel, which goes underneath it
+    func finishHandoffToKeyboard() {
+        withoutAnimation {
+            isOpen = false
+            dragOffset = 0
+            settledHeight = Self.restingHeight
+            returnsToKeyboard = false
+            isHandingOff = false
+        }
+    }
+
+    // the keyboard has slid off the panel
+    func finishHandoffToPanel() {
+        withoutAnimation {
+            isHandingOff = false
+        }
+    }
+
+    private func withoutAnimation(_ change: () -> Void) {
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+
+        withTransaction(transaction, change)
     }
 
     // slides away, the composer coming down with it in the same motion
@@ -628,14 +726,8 @@ final class AttachPanelModel {
             isOpen = false
             dragOffset = 0
             settledHeight = Self.restingHeight
+            returnsToKeyboard = false
         }
-    }
-
-    // a closed panel the keyboard replaces, no slide
-    func dismiss() {
-        isOpen = false
-        dragOffset = 0
-        settledHeight = Self.restingHeight
     }
 
     func drag(_ translation: CGFloat) {

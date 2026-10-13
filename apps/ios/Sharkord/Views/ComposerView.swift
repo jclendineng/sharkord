@@ -66,7 +66,7 @@ struct ComposerView: View {
                     .transition(.move(edge: .bottom))
             }
         }
-        .offset(y: store.attachPanel.slideOffset)
+        .modifier(PanelSlide(model: store.attachPanel))
         // runs on behind the keyboard, whose rounded top corners would otherwise show the
         // window's black
         .background(Theme.chatBackground.ignoresSafeArea())
@@ -95,9 +95,20 @@ struct ComposerView: View {
         .onChange(of: photoSelection) { _, items in
             importPhotos(items)
         }
+        // a tap on the field while the panel is up hands over to the keyboard
         .onChange(of: isFieldFocused) { _, isFocused in
-            if isFocused {
-                store.attachPanel.dismiss()
+            if isFocused && store.attachPanel.isOpen && !store.attachPanel.isHandingOff {
+                store.attachPanel.beginHandoffToKeyboard()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification)) { _ in
+            if store.attachPanel.isHandingOff && store.attachPanel.isOpen {
+                store.attachPanel.finishHandoffToKeyboard()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)) { _ in
+            if store.attachPanel.isHandingOff && store.attachPanel.isOpen {
+                store.attachPanel.finishHandoffToPanel()
             }
         }
         .onChange(of: store.editing) { _, message in
@@ -256,12 +267,20 @@ struct ComposerView: View {
     }
 
     private func toggleAttachPanel() {
-        // closing slides the panel away with the composer coming down along, calling the
-        // keyboard up in the same moment made the composer drop and jump back
+        // with the keyboard up the panel takes its place and the x gives it back, each sliding
+        // over the other at the same height so the composer holds still. otherwise the panel
+        // slides in and out on its own, the composer riding on it
         if store.attachPanel.isOpen {
-            store.attachPanel.close()
-        } else {
+            if store.attachPanel.returnsToKeyboard {
+                store.attachPanel.beginHandoffToKeyboard()
+                isFieldFocused = true
+            } else {
+                store.attachPanel.close()
+            }
+        } else if isFieldFocused {
+            store.attachPanel.openUnderKeyboard()
             isFieldFocused = false
+        } else {
             store.attachPanel.open()
         }
     }
@@ -670,3 +689,13 @@ private struct RecordingBar: View {
     }
 }
 
+
+// the composer and the panel pushed down together while a drag carries them, read here so only
+// this offset updates under the finger, not the composer
+private struct PanelSlide: ViewModifier {
+    let model: AttachPanelModel
+
+    func body(content: Content) -> some View {
+        content.offset(y: model.slideOffset)
+    }
+}

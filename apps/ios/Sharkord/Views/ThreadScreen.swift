@@ -26,6 +26,8 @@ struct ThreadScreen: View {
         .safeAreaInset(edge: .bottom, spacing: 0) {
             ComposerView(placeholder: "Reply in thread", canUpload: canUpload, store: store)
         }
+        // while the keyboard and the attachment panel trade places, see AttachPanelModel
+        .ignoresSafeArea(store.attachPanel.isHandingOff ? .keyboard : [], edges: .bottom)
         .navigationTitle("Thread")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(Theme.chatBackground, for: .navigationBar)
