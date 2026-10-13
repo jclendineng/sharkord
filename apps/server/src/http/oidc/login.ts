@@ -7,12 +7,17 @@ import {
   TRANSACTION_TTL_SECONDS
 } from '../../helpers/oidc/manager';
 import { logger } from '../../logger';
-import { buildStateCookie, guardOidcRoute, redirectWithError } from './common';
+import {
+  buildStateCookie,
+  guardOidcRoute,
+  redirectWithError,
+  zAppChallenge
+} from './common';
 
 const oidcLoginRouteHandler = async (
   req: http.IncomingMessage,
   res: http.ServerResponse,
-  { info }: { info: ReturnType<typeof getWsInfo> }
+  { info, url }: { info: ReturnType<typeof getWsInfo>; url: URL }
 ) => {
   const guarded = guardOidcRoute(req, res, {
     ip: info?.ip,
@@ -21,6 +26,14 @@ const oidcLoginRouteHandler = async (
   });
 
   if (!guarded) return;
+
+  const appChallenge = url.searchParams.get('app_challenge');
+
+  if (appChallenge !== null && !zAppChallenge.safeParse(appChallenge).success) {
+    redirectWithError(req, res, OidcError.SERVER_ERROR);
+
+    return;
+  }
 
   try {
     const oidcConfig = await oidcManager.getConfiguration();
@@ -31,7 +44,12 @@ const oidcLoginRouteHandler = async (
     const codeChallenge = await client.calculatePKCECodeChallenge(codeVerifier);
     const redirectUri = oidcManager.resolveRedirectUri(req);
 
-    oidcManager.startTransaction(state, { nonce, codeVerifier, redirectUri });
+    oidcManager.startTransaction(state, {
+      nonce,
+      codeVerifier,
+      redirectUri,
+      appChallenge
+    });
 
     const authorizationUrl = client.buildAuthorizationUrl(oidcConfig, {
       redirect_uri: redirectUri,

@@ -537,6 +537,7 @@ const oidcTransactions = sqliteTable(
     nonce: text('nonce').notNull(),
     codeVerifier: text('code_verifier').notNull(),
     redirectUri: text('redirect_uri').notNull(),
+    appChallenge: text('app_challenge'),
     expiresAt: integer('expires_at').notNull()
   },
   (t) => [index('oidc_transactions_expires_idx').on(t.expiresAt)]
@@ -548,9 +549,31 @@ const oidcHandoffs = sqliteTable(
     code: text('code').primaryKey(),
     token: text('token').notNull(),
     state: text('state').notNull(),
+    appChallenge: text('app_challenge'),
     expiresAt: integer('expires_at').notNull()
   },
   (t) => [index('oidc_handoffs_expires_idx').on(t.expiresAt)]
+);
+
+// tokenVersion is copied from the user at registration, so a kick or a password change that
+// ends the user's sessions also stops pushes to the devices those sessions registered
+const pushDevices = sqliteTable(
+  'push_devices',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    token: text('token').notNull(),
+    tokenVersion: integer('token_version').notNull(),
+    // a development build's token is only accepted by the apns sandbox
+    sandbox: integer('sandbox', { mode: 'boolean' }).notNull().default(false),
+    createdAt: integer('created_at').notNull()
+  },
+  (t) => [
+    uniqueIndex('push_devices_token_idx').on(t.token),
+    index('push_devices_user_idx').on(t.userId)
+  ]
 );
 
 const pluginData = sqliteTable('plugin_data', {
@@ -635,6 +658,7 @@ export {
   pluginCapabilityRoles,
   pluginData,
   pluginUserData,
+  pushDevices,
   rolePermissions,
   roles,
   settings,

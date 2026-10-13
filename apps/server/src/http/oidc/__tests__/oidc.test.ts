@@ -12,6 +12,7 @@ import {
   expect,
   test
 } from 'bun:test';
+import { createHash } from 'crypto';
 import { eq } from 'drizzle-orm';
 import jwt from 'jsonwebtoken';
 import { createMockContext } from '../../../__tests__/context';
@@ -64,10 +65,16 @@ const getHandoffCode = (target: URL) =>
 
 // walks the redirects a browser would follow: our login route, the provider's authorization
 // endpoint, then back into our callback carrying the state cookie
-const runOidcFlow = async (options: { cookie?: string } = {}) => {
-  const loginResponse = await fetch(`${testsBaseUrl}/oidc/login`, {
-    redirect: 'manual'
-  });
+const runOidcFlow = async (
+  options: { cookie?: string; appChallenge?: string } = {}
+) => {
+  const loginUrl = new URL(`${testsBaseUrl}/oidc/login`);
+
+  if (options.appChallenge) {
+    loginUrl.searchParams.set('app_challenge', options.appChallenge);
+  }
+
+  const loginResponse = await fetch(loginUrl, { redirect: 'manual' });
 
   const authorizeUrl = loginResponse.headers.get('location')!;
   const cookie = options.cookie ?? getStateCookie(loginResponse);
@@ -87,19 +94,25 @@ const runOidcFlow = async (options: { cookie?: string } = {}) => {
   return {
     code: getHandoffCode(target),
     error: target.searchParams.get('oidc_error'),
-    cookie
+    cookie,
+    target
   };
 };
 
-const exchange = async (code: string, cookie?: string) =>
+const exchange = async (code: string, cookie?: string, verifier?: string) =>
   fetch(`${testsBaseUrl}/oidc/exchange`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       ...(cookie ? { cookie } : {})
     },
-    body: JSON.stringify({ code })
+    body: JSON.stringify({ code, verifier })
   });
+
+const APP_VERIFIER = 'an-app-held-verifier-that-is-long-enough-for-pkce';
+const APP_CHALLENGE = createHash('sha256')
+  .update(APP_VERIFIER)
+  .digest('base64url');
 
 const signIn = async () => {
   const { code, error, cookie } = await runOidcFlow();
@@ -1265,6 +1278,100 @@ describe('/oidc/exchange', () => {
     const response = await exchange('anything');
 
     expect(response.status).toBe(404);
+  });
+});
+
+describe('a login started by the native app', () => {
+  test('should hand the code back on the app scheme', async () => {
+    const { target } = await runOidcFlow({ appChallenge: APP_CHALLENGE });
+
+    expect(target.protocol).toBe('sharkord:');
+    expect(target.host).toBe('oidc');
+    expect(target.searchParams.get('code')).toBeTruthy();
+    expect(target.hash).toBe('');
+  });
+
+  test('should exchange the code for a token with the matching verifier', async () => {
+    const { target } = await runOidcFlow({ appChallenge: APP_CHALLENGE });
+
+    const response = await exchange(
+      target.searchParams.get('code')!,
+      undefined,
+      APP_VERIFIER
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.getSetCookie()).toHaveLength(0);
+
+    const data = (await response.json()) as { token: string };
+    const payload = jwt.verify(data.token, await sha256(TEST_SECRET_TOKEN)) as {
+      userId: number;
+    };
+
+    const [user] = await tdb
+      .select()
+      .from(users)
+      .where(eq(users.oidcSub, 'oidc-subject-1'));
+
+    expect(payload.userId).toBe(user!.id);
+  });
+
+  test('should reject the code with a verifier that does not match', async () => {
+    const { target } = await runOidcFlow({ appChallenge: APP_CHALLENGE });
+
+    const response = await exchange(
+      target.searchParams.get('code')!,
+      undefined,
+      `${APP_VERIFIER}-but-not-quite`
+    );
+
+    expect(response.status).toBe(401);
+  });
+
+  // whoever intercepts the custom scheme redirect only has the code, and the cookie must not
+  // stand in for the verifier the app holds
+  test('should reject the code without a verifier even with the state cookie', async () => {
+    const { target, cookie } = await runOidcFlow({
+      appChallenge: APP_CHALLENGE
+    });
+
+    const response = await exchange(target.searchParams.get('code')!, cookie);
+
+    expect(response.status).toBe(401);
+  });
+
+  test('should send a failure back to the app scheme', async () => {
+    const loginResponse = await fetch(
+      `${testsBaseUrl}/oidc/login?app_challenge=${APP_CHALLENGE}`,
+      { redirect: 'manual' }
+    );
+
+    const cookie = getStateCookie(loginResponse);
+    const state = new URL(
+      loginResponse.headers.get('location')!
+    ).searchParams.get('state')!;
+
+    const response = await fetch(
+      `${testsBaseUrl}/oidc/callback?error=access_denied&state=${state}`,
+      { redirect: 'manual', headers: { cookie } }
+    );
+
+    const target = new URL(response.headers.get('location')!);
+
+    expect(target.protocol).toBe('sharkord:');
+    expect(target.searchParams.get('oidc_error')).toBe(OidcError.ACCESS_DENIED);
+  });
+
+  test('should refuse a challenge that is not a sha256', async () => {
+    const response = await fetch(
+      `${testsBaseUrl}/oidc/login?app_challenge=too-short`,
+      { redirect: 'manual' }
+    );
+
+    const target = new URL(response.headers.get('location')!);
+
+    expect(target.origin).not.toBe(provider.issuer);
+    expect(target.searchParams.get('oidc_error')).toBe(OidcError.SERVER_ERROR);
   });
 });
 

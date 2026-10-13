@@ -1,3 +1,4 @@
+import { getErrorMessage, type TIpInfo } from '@sharkord/shared';
 import Queue from 'queue';
 import { db } from '../../db';
 import { logins } from '../../db/schema';
@@ -22,7 +23,21 @@ const enqueueLogin = (userId: number, info: TConnectionInfo | undefined) => {
       return;
     }
     const { ip, ...rest } = info;
-    const ipInfo = ip ? await getIpInfo(ip) : undefined;
+    let ipInfo: TIpInfo | undefined;
+
+    // the location is a nice to have from a third party service. a blocked or offline lookup
+    // must not lose the login itself, which also decides whether the welcome dialog shows
+    if (ip) {
+      try {
+        ipInfo = await getIpInfo(ip);
+      } catch (error) {
+        logger.warn(
+          'Could not look up the location of %s: %s',
+          ip,
+          getErrorMessage(error)
+        );
+      }
+    }
 
     await db
       .insert(logins)

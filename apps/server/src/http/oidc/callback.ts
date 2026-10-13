@@ -12,6 +12,7 @@ import {
   clearStateCookie,
   guardOidcRoute,
   hasStateCookie,
+  OIDC_APP_REDIRECT,
   redirectWithError
 } from './common';
 
@@ -55,20 +56,14 @@ const collectClaims = async (
   }
 };
 
-const completeOidcCallback = async (
+type TOidcTransaction = NonNullable<
+  ReturnType<typeof oidcManager.takeTransaction>
+>;
+
+const takeCallbackTransaction = (
   req: http.IncomingMessage,
-  url: URL,
-  ip: string | undefined
-): Promise<{ handoffCode: string; origin: string }> => {
-  const stateParam = url.searchParams.get('state');
-
-  if (url.searchParams.has('error')) {
-    throw new OidcCallbackError(
-      OidcError.ACCESS_DENIED,
-      `Provider returned "${url.searchParams.get('error')}"`
-    );
-  }
-
+  stateParam: string | null
+): TOidcTransaction => {
   if (!stateParam || !hasStateCookie(req, stateParam)) {
     throw new OidcCallbackError(
       OidcError.INVALID_STATE,
@@ -85,6 +80,21 @@ const completeOidcCallback = async (
     );
   }
 
+  return transaction;
+};
+
+const completeOidcCallback = async (
+  transaction: TOidcTransaction,
+  url: URL,
+  ip: string | undefined
+): Promise<{ handoffCode: string; origin: string }> => {
+  if (url.searchParams.has('error')) {
+    throw new OidcCallbackError(
+      OidcError.ACCESS_DENIED,
+      `Provider returned "${url.searchParams.get('error')}"`
+    );
+  }
+
   const oidcConfig = await oidcManager.getConfiguration();
 
   const callbackUrl = new URL(transaction.redirectUri);
@@ -93,7 +103,7 @@ const completeOidcCallback = async (
 
   const tokens = await client.authorizationCodeGrant(oidcConfig, callbackUrl, {
     pkceCodeVerifier: transaction.codeVerifier,
-    expectedState: stateParam,
+    expectedState: transaction.state,
     expectedNonce: transaction.nonce
   });
 
@@ -116,7 +126,11 @@ const completeOidcCallback = async (
   );
 
   return {
-    handoffCode: oidcManager.createHandoff(token, stateParam),
+    handoffCode: oidcManager.createHandoff(
+      token,
+      transaction.state,
+      transaction.appChallenge
+    ),
     origin: callbackUrl.origin
   };
 };
@@ -135,16 +149,28 @@ const oidcCallbackRouteHandler = async (
   if (!guarded) return;
 
   const state = url.searchParams.get('state');
+  let toApp = false;
 
   try {
+    const transaction = takeCallbackTransaction(req, state);
+
+    toApp = transaction.appChallenge !== null;
+
     const { handoffCode, origin } = await completeOidcCallback(
-      req,
+      transaction,
       url,
       info?.ip
     );
-    const target = new URL(origin);
 
-    target.hash = `oidc=${handoffCode}`;
+    let target: URL;
+
+    if (toApp) {
+      target = new URL(OIDC_APP_REDIRECT);
+      target.searchParams.set('code', handoffCode);
+    } else {
+      target = new URL(origin);
+      target.hash = `oidc=${handoffCode}`;
+    }
 
     res.writeHead(302, {
       'Cache-Control': 'no-store',
@@ -170,7 +196,8 @@ const oidcCallbackRouteHandler = async (
       req,
       res,
       code,
-      state ? { 'Set-Cookie': clearStateCookie(req, state) } : {}
+      state ? { 'Set-Cookie': clearStateCookie(req, state) } : {},
+      toApp
     );
   }
 };

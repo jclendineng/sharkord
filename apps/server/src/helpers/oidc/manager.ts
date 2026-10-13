@@ -115,7 +115,12 @@ class OidcManager {
   // strand the user on the provider with a state nothing here remembers
   public startTransaction = (
     state: string,
-    data: { nonce: string; codeVerifier: string; redirectUri: string }
+    data: {
+      nonce: string;
+      codeVerifier: string;
+      redirectUri: string;
+      appChallenge: string | null;
+    }
   ) =>
     createOidcTransaction({
       ...data,
@@ -125,13 +130,18 @@ class OidcManager {
 
   public takeTransaction = (state: string) => takeOidcTransaction(state);
 
-  public createHandoff = (token: string, state: string): string => {
+  public createHandoff = (
+    token: string,
+    state: string,
+    appChallenge: string | null
+  ): string => {
     const code = randomBytes(32).toString('base64url');
 
     createOidcHandoff({
       code,
       token,
       state,
+      appChallenge,
       expiresAt: Date.now() + HANDOFF_TTL_MS
     });
 

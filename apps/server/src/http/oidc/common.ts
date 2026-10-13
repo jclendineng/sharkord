@@ -1,5 +1,6 @@
 import { OidcError } from '@sharkord/shared';
 import type http from 'http';
+import z from 'zod';
 import { config } from '../../config';
 import { isOidcEnabled } from '../../helpers/oidc/settings';
 import { logger } from '../../logger';
@@ -12,6 +13,13 @@ import { getPublicOrigin, isSecureRequest, sendJsonError } from '../helpers';
 
 const OIDC_STATE_COOKIE_PREFIX = 'sharkord_oidc_state_';
 
+// a native app cannot be handed a redirect to the server's own origin, so a login it started
+// (by sending app_challenge) comes back on this custom scheme instead
+const OIDC_APP_REDIRECT = 'sharkord://oidc';
+
+// base64url of a sha256, the same shape as a pkce S256 challenge
+const zAppChallenge = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
+
 const oidcRateLimiter = createRateLimiter({
   maxRequests: config.rateLimiters.oidc.maxRequests,
   windowMs: config.rateLimiters.oidc.windowMs
@@ -21,9 +29,10 @@ const redirectWithError = (
   req: http.IncomingMessage,
   res: http.ServerResponse,
   error: OidcError,
-  extraHeaders: Record<string, string | string[]> = {}
+  extraHeaders: Record<string, string | string[]> = {},
+  toApp = false
 ) => {
-  const target = new URL(getPublicOrigin(req));
+  const target = new URL(toApp ? OIDC_APP_REDIRECT : getPublicOrigin(req));
 
   target.searchParams.set('oidc_error', error);
 
@@ -142,6 +151,8 @@ export {
   getCookie,
   guardOidcRoute,
   hasStateCookie,
+  OIDC_APP_REDIRECT,
   OIDC_STATE_COOKIE_PREFIX,
-  redirectWithError
+  redirectWithError,
+  zAppChallenge
 };

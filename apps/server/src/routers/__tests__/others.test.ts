@@ -4,7 +4,7 @@ import {
   STORAGE_MAX_FILES_PER_MESSAGE,
   type TTempFile
 } from '@sharkord/shared';
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, spyOn, test } from 'bun:test';
 import { eq } from 'drizzle-orm';
 import {
   getCaller,
@@ -15,7 +15,8 @@ import {
 import { TEST_SECRET_TOKEN } from '../../__tests__/seed';
 import { tdb } from '../../__tests__/setup';
 import { getSettings } from '../../db/queries/server';
-import { activityLog, rolePermissions } from '../../db/schema';
+import { activityLog, logins, rolePermissions } from '../../db/schema';
+import * as loginHelpers from '../../helpers/logins';
 import { pluginManager } from '../../plugins';
 import { drainLoginsQueue } from '../../queues/logins';
 
@@ -73,6 +74,30 @@ describe('others router', () => {
     const { hasPassword: hasPasswordAfter } = await caller.others.handshake();
 
     expect(hasPasswordAfter).toBe(true);
+  });
+
+  test('should record the login when the location lookup fails', async () => {
+    // a dns blocker or an offline server, the login has to be stored without a location
+    spyOn(loginHelpers, 'getIpInfo').mockRejectedValue(
+      new Error('getaddrinfo ENOTFOUND ipinfo.io')
+    );
+
+    await initTest(2);
+    await drainLoginsQueue();
+
+    const savedLogin = await tdb
+      .select({ ip: logins.ip, country: logins.country })
+      .from(logins)
+      .where(eq(logins.userId, 2))
+      .get();
+
+    expect(savedLogin).toBeDefined();
+    expect(savedLogin?.ip).toBeTruthy();
+    expect(savedLogin?.country).toBeNull();
+
+    const { initialData } = await initTest(2);
+
+    expect(initialData.showWelcomeDialog).toBe(false);
   });
 
   test('should only ask for password on first join when setting is enabled', async () => {

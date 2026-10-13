@@ -31,6 +31,7 @@ import { pluginManager } from '../../plugins';
 import { eventBus } from '../../plugins/event-bus';
 import { enqueueActivityLog } from '../../queues/activity-log';
 import { enqueueProcessMetadata } from '../../queues/message-metadata';
+import { enqueuePushNotification } from '../../queues/push-notifications';
 import { invariant } from '../../utils/invariant';
 import { protectedProcedure, rateLimitedProcedure } from '../../utils/trpc';
 
@@ -319,6 +320,7 @@ const sendMessageRoute = rateLimitedProcedure(protectedProcedure, {
     }
 
     enqueueProcessMetadata(targetContent, message.id);
+    enqueuePushNotification(message.id);
 
     eventBus.emit('message:created', {
       messageId: message.id,

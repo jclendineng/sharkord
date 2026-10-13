@@ -7,6 +7,7 @@ type TOidcTransaction = {
   nonce: string;
   codeVerifier: string;
   redirectUri: string;
+  appChallenge: string | null;
   expiresAt: number;
 };
 
@@ -14,6 +15,7 @@ type TOidcHandoff = {
   code: string;
   token: string;
   state: string;
+  appChallenge: string | null;
   expiresAt: number;
 };
 

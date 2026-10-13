@@ -127,6 +127,7 @@ export type TServerInfo = Pick<
   version?: string;
   oidcEnabled: boolean;
   oidcDisableLocalLogin: boolean;
+  pushEnabled: boolean;
 };
 
 export enum OidcError {

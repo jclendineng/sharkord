@@ -1,0 +1,15 @@
+{
+  "originHash" : "00c1e708559b19102058e29f11c9aff03c0faaab049004dd95b7127b3fd650cf",
+  "pins" : [
+    {
+      "identity" : "mediasoup-client-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/VLprojects/mediasoup-client-swift",
+      "state" : {
+        "revision" : "bdf0a5c55ba12a22847df575501c9873425dd628",
+        "version" : "0.9.0"
+      }
+    }
+  ],
+  "version" : 3
+}

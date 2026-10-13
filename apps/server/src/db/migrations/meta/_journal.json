@@ -253,6 +253,20 @@
       "when": 1788517601742,
       "tag": "0035_grant_send_voice_reaction",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "6",
+      "when": 1791852491481,
+      "tag": "0036_oidc_app_challenge",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "6",
+      "when": 1791852768687,
+      "tag": "0037_push_devices",
+      "breakpoints": true
     }
   ]
 }

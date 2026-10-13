@@ -8,6 +8,7 @@ import { channels, messageFiles, messages } from '../../db/schema';
 import { fileManager } from '../../helpers/file-manager';
 import { sanitizeMessageHtml } from '../../helpers/sanitize-html';
 import { enqueueProcessMetadata } from '../../queues/message-metadata';
+import { enqueuePushNotification } from '../../queues/push-notifications';
 import { invariant } from '../../utils/invariant';
 import { eventBus } from '../event-bus';
 
@@ -170,6 +171,7 @@ const createPluginMessage = async (
   }
 
   if (previews) enqueueProcessMetadata(sanitizedContent, message.id);
+  enqueuePushNotification(message.id);
 
   eventBus.emit('message:created', {
     messageId: message.id,

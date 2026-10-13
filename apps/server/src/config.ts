@@ -62,6 +62,13 @@ const zConfig = z.object({
     redirectUri: z.string(),
     disableLocalLogin: z.coerce.boolean()
   }),
+  push: z.object({
+    enabled: z.coerce.boolean(),
+    apnsKeyId: z.string(),
+    apnsTeamId: z.string(),
+    apnsKeyPath: z.string(),
+    apnsBundleId: z.string()
+  }),
   webRtc: z.object({
     port: z.coerce.number().int().positive(),
     announcedAddress: z.string(),
@@ -91,7 +98,8 @@ const zConfig = z.object({
     pluginExecute: zRateLimiter,
     pluginInstall: zRateLimiter,
     pluginRoute: zRateLimiter,
-    oidc: zRateLimiter
+    oidc: zRateLimiter,
+    pushDevice: zRateLimiter
   })
 });
 
@@ -122,6 +130,13 @@ const defaultConfig: TConfig = {
     clientSecret: '',
     redirectUri: '',
     disableLocalLogin: false
+  },
+  push: {
+    enabled: false,
+    apnsKeyId: '',
+    apnsTeamId: '',
+    apnsKeyPath: '',
+    apnsBundleId: 'com.sharkord.ios'
   },
   webRtc: {
     port: 40000,
@@ -224,6 +239,10 @@ const defaultConfig: TConfig = {
     oidc: {
       maxRequests: 30,
       windowMs: 60_000
+    },
+    pushDevice: {
+      maxRequests: 10,
+      windowMs: 60_000
     }
   }
 };
@@ -277,6 +296,11 @@ const envOverridesMap: Record<string, string> = {
   'oidc.clientSecret': 'SHARKORD_OIDC_CLIENT_SECRET',
   'oidc.redirectUri': 'SHARKORD_OIDC_REDIRECT_URI',
   'oidc.disableLocalLogin': 'SHARKORD_OIDC_DISABLE_LOCAL_LOGIN',
+  'push.enabled': 'SHARKORD_PUSH_ENABLED',
+  'push.apnsKeyId': 'SHARKORD_PUSH_APNS_KEY_ID',
+  'push.apnsTeamId': 'SHARKORD_PUSH_APNS_TEAM_ID',
+  'push.apnsKeyPath': 'SHARKORD_PUSH_APNS_KEY_PATH',
+  'push.apnsBundleId': 'SHARKORD_PUSH_APNS_BUNDLE_ID',
   'webRtc.port': 'SHARKORD_WEBRTC_PORT',
   'webRtc.announcedAddress': 'SHARKORD_WEBRTC_ANNOUNCED_ADDRESS',
   'webRtc.maxBitrate': 'SHARKORD_WEBRTC_MAX_BITRATE'
