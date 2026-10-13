@@ -29,6 +29,23 @@ enum CredentialStore {
         set { UserDefaults.standard.set(newValue, forKey: "devicePushToken") }
     }
 
+    // pinning is a personal list, so it stays on this device
+    static func pinnedChannelIds(for address: ServerAddress) -> [Int] {
+        UserDefaults.standard.array(forKey: "pinnedChannels." + address.baseURL.absoluteString) as? [Int] ?? []
+    }
+
+    static func setPinnedChannelIds(_ channelIds: [Int], for address: ServerAddress) {
+        UserDefaults.standard.set(channelIds, forKey: "pinnedChannels." + address.baseURL.absoluteString)
+    }
+
+    static func hidesMutedChannels(for address: ServerAddress) -> Bool {
+        UserDefaults.standard.bool(forKey: "hideMuted." + address.baseURL.absoluteString)
+    }
+
+    static func setHidesMutedChannels(_ hides: Bool, for address: ServerAddress) {
+        UserDefaults.standard.set(hides, forKey: "hideMuted." + address.baseURL.absoluteString)
+    }
+
     static func isPushMuted(for address: ServerAddress) -> Bool {
         UserDefaults.standard.bool(forKey: "pushMuted." + address.baseURL.absoluteString)
     }

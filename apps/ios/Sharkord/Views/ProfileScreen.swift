@@ -13,6 +13,10 @@ struct ProfileScreen: View {
         session.ownUser
     }
 
+    private var roles: [Role] {
+        user?.roleIds.compactMap { session.rolesById[$0] } ?? []
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
@@ -34,6 +38,15 @@ struct ProfileScreen: View {
                         Text(session.displayName)
                             .font(.subheadline)
                             .foregroundStyle(Theme.muted)
+
+                        if !roles.isEmpty {
+                            FlowLayout(spacing: 6) {
+                                ForEach(roles) { role in
+                                    RoleChip(role: role)
+                                }
+                            }
+                            .padding(.top, 4)
+                        }
                     }
 
                     Button(action: edit) {
@@ -166,5 +179,25 @@ struct ProfileCard<Content: View>: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
         .background(Theme.listBackground, in: .rect(cornerRadius: 12))
+    }
+}
+
+// the flair beside a name, a role in its own color
+private struct RoleChip: View {
+    let role: Role
+
+    var body: some View {
+        HStack(spacing: 5) {
+            Circle()
+                .fill(Color(hex: role.color))
+                .frame(width: 9, height: 9)
+
+            Text(role.name)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Theme.text)
+        }
+        .padding(.horizontal, 9)
+        .padding(.vertical, 5)
+        .background(Theme.listBackground, in: .capsule)
     }
 }

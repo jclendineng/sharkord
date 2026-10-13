@@ -35,6 +35,10 @@ final class SessionStore {
     private(set) var serverInfo: ServerInfo?
     // highlighted in the channel list and opened when the server is picked in the rail
     private(set) var lastChannelId: Int?
+    private(set) var notificationLevels: [Int: ChannelNotificationLevel] = [:]
+    private(set) var pinnedChannelIds: [Int] = []
+    private(set) var hidesMutedChannels = false
+    private(set) var allowsDirectMessages = true
     private(set) var ownUserId: Int?
     private(set) var categories: [ChannelCategory] = []
     private(set) var channels: [Channel] = []
@@ -95,7 +99,7 @@ final class SessionStore {
     // text channels and conversations with something unread, for the unreads inbox
     var unreadChannels: [Channel] {
         channels
-            .filter { unreadCounts[$0.id, default: 0] > 0 }
+            .filter { unreadCounts[$0.id, default: 0] > 0 && !isMuted($0.id) }
             .sorted { $0.position < $1.position }
     }
 
@@ -108,8 +112,96 @@ final class SessionStore {
         members.filter { $0.status == .online || $0.status == .idle }.count
     }
 
+    // a muted channel never lights up the server, like discord
     var hasUnreadChannels: Bool {
-        channels.contains { !$0.isDm && unreadCounts[$0.id, default: 0] > 0 }
+        channels.contains { !$0.isDm && !isMuted($0.id) && unreadCounts[$0.id, default: 0] > 0 }
+    }
+
+    func notificationLevel(for channelId: Int) -> ChannelNotificationLevel {
+        notificationLevels[channelId] ?? .mentions
+    }
+
+    func isMuted(_ channelId: Int) -> Bool {
+        notificationLevel(for: channelId) == .none
+    }
+
+    func isPinned(_ channelId: Int) -> Bool {
+        pinnedChannelIds.contains(channelId)
+    }
+
+    func togglePinned(_ channelId: Int) {
+        guard let address else {
+            return
+        }
+
+        if isPinned(channelId) {
+            pinnedChannelIds.removeAll { $0 == channelId }
+        } else {
+            pinnedChannelIds.append(channelId)
+        }
+
+        CredentialStore.setPinnedChannelIds(pinnedChannelIds, for: address)
+    }
+
+    func setHidesMutedChannels(_ hides: Bool) {
+        guard let address else {
+            return
+        }
+
+        hidesMutedChannels = hides
+        CredentialStore.setHidesMutedChannels(hides, for: address)
+    }
+
+    func setNotificationLevel(_ level: ChannelNotificationLevel, for channelId: Int) async {
+        guard let client else {
+            return
+        }
+
+        struct LevelInput: Encodable {
+            let channelId: Int
+            let level: ChannelNotificationLevel
+        }
+
+        let previous = notificationLevels[channelId]
+
+        notificationLevels[channelId] = level == .mentions ? nil : level
+
+        do {
+            try await client.mutation("notifications.setChannelSetting", input: LevelInput(channelId: channelId, level: level))
+        } catch {
+            notificationLevels[channelId] = previous
+            showError(error)
+        }
+    }
+
+    func setAllowsDirectMessages(_ allows: Bool) async {
+        guard let client else {
+            return
+        }
+
+        allowsDirectMessages = allows
+
+        do {
+            try await client.mutation("users.updatePrivacy", input: ["allowDirectMessages": allows])
+        } catch {
+            allowsDirectMessages = !allows
+            showError(error)
+        }
+    }
+
+    // both are newer than some servers, which then simply keep the defaults
+    private func loadPersonalSettings() async {
+        guard let client else {
+            return
+        }
+
+        if let settings: [ChannelNotificationSetting] = try? await client.query("notifications.getChannelSettings") {
+            notificationLevels = Dictionary(uniqueKeysWithValues: settings.map { ($0.channelId, $0.level) })
+        }
+
+        if let privacy: PrivacySettings = try? await client.query("users.getPrivacy") {
+            allowsDirectMessages = privacy.allowDirectMessages
+        }
     }
 
     // the channel opened last on this server, like discord, or the first text channel
@@ -136,18 +228,24 @@ final class SessionStore {
 
     var channelSections: [ChannelSection] {
         let serverChannels = channels
-            .filter { !$0.isDm }
+            .filter { !$0.isDm && !(hidesMutedChannels && isMuted($0.id)) }
             .sorted { $0.position < $1.position }
 
         var sections: [ChannelSection] = []
-        let uncategorized = serverChannels.filter { $0.categoryId == nil }
+        let pinned = pinnedChannelIds.compactMap { id in serverChannels.first { $0.id == id } }
+
+        if !pinned.isEmpty {
+            sections.append(ChannelSection(id: -2, title: "Pinned", channels: pinned))
+        }
+        // a pinned channel moves to the top rather than showing twice
+        let uncategorized = serverChannels.filter { $0.categoryId == nil && !isPinned($0.id) }
 
         if !uncategorized.isEmpty {
             sections.append(ChannelSection(id: -1, title: nil, channels: uncategorized))
         }
 
         for category in categories.sorted(by: { $0.position < $1.position }) {
-            let categoryChannels = serverChannels.filter { $0.categoryId == category.id }
+            let categoryChannels = serverChannels.filter { $0.categoryId == category.id && !isPinned($0.id) }
 
             sections.append(ChannelSection(id: category.id, title: category.name, channels: categoryChannels))
         }
@@ -733,6 +831,8 @@ final class SessionStore {
         serverName = result.serverName
         serverId = result.serverId
         lastChannelId = address.flatMap(CredentialStore.lastChannelId(for:))
+        pinnedChannelIds = address.map(CredentialStore.pinnedChannelIds(for:)) ?? []
+        hidesMutedChannels = address.map(CredentialStore.hidesMutedChannels(for:)) ?? false
         ownUserId = result.ownUserId
         categories = result.categories
         channels = result.channels
@@ -779,6 +879,7 @@ final class SessionStore {
         }
 
         await refreshToken()
+        await loadPersonalSettings()
 
         // anything that arrived while disconnected was missed by the subscriptions
         for store in Array(messageStores.values) + Array(threadStores.values) where store.hasLoaded {

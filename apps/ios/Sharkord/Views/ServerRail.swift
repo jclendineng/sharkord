@@ -72,8 +72,46 @@ private struct ServerRailItem: View {
                 .opacity(server.phase == .signedOut ? 0.4 : 1)
         }
         .contextMenu {
+            Section(server.displayName) {
+                Button("Mark As Read", systemImage: "envelope.open", action: markAsRead)
+
+                if server.serverInfo?.pushEnabled == true {
+                    Button(
+                        server.isPushEnabled ? "Turn Off Notifications" : "Turn On Notifications",
+                        systemImage: server.isPushEnabled ? "bell.slash" : "bell",
+                        action: togglePush
+                    )
+                }
+
+                Button("More Options", systemImage: "gearshape", action: moreOptions)
+            }
+
             Button("Log Out", systemImage: "rectangle.portrait.and.arrow.right", role: .destructive, action: remove)
+        } preview: {
+            // the row itself is as wide as the rail with the pill beside it, lifted as is
+            // the icon jumps out of place
+            ServerIcon(server: server)
+                .frame(width: 64, height: 64)
+                .clipShape(.rect(cornerRadius: 18))
         }
+    }
+
+    private func markAsRead() {
+        Task {
+            await server.markAllAsRead()
+        }
+    }
+
+    private func togglePush() {
+        let enable = !server.isPushEnabled
+
+        Task {
+            await server.setPushEnabled(enable)
+        }
+    }
+
+    private func moreOptions() {
+        servers.showServerSheet(for: server)
     }
 
     private func select() {

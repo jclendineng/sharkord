@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ChannelListPanel: View {
+    @Environment(ServerListStore.self) private var servers
     @Environment(SessionStore.self) private var session
 
     @State private var collapsedCategoryIds: Set<Int> = []
@@ -49,6 +50,14 @@ struct ChannelListPanel: View {
         }
         .sheet(isPresented: $isServerSheetPresented, onDismiss: showQueuedInvite) {
             ServerSheet(onInvite: queueInvite)
+        }
+        .onChange(of: servers.serverSheetRequest, initial: true) { _, request in
+            guard request == ObjectIdentifier(session) else {
+                return
+            }
+
+            servers.serverSheetRequest = nil
+            isServerSheetPresented = true
         }
     }
 
@@ -164,13 +173,18 @@ private struct ChannelRow: View {
     @Environment(SessionStore.self) private var session
 
     @State private var isVoiceSheetPresented = false
+    @State private var isActionsSheetPresented = false
 
     let channel: Channel
     let unreadCount: Int
     let isSelected: Bool
 
+    private var isMuted: Bool {
+        session.isMuted(channel.id)
+    }
+
     private var isUnread: Bool {
-        unreadCount > 0
+        unreadCount > 0 && !isMuted
     }
 
     private var foreground: Color {
@@ -187,6 +201,15 @@ private struct ChannelRow: View {
     }
 
     var body: some View {
+        row
+            .simultaneousGesture(LongPressGesture().onEnded(showActions))
+            .sheet(isPresented: $isActionsSheetPresented) {
+                ChannelActionsSheet(channel: channel)
+            }
+    }
+
+    @ViewBuilder
+    private var row: some View {
         switch channel.type {
         case .text:
             NavigationLink(value: ChatRoute(channelId: channel.id)) {
@@ -209,6 +232,10 @@ private struct ChannelRow: View {
         isVoiceSheetPresented = true
     }
 
+    private func showActions(_: Bool) {
+        isActionsSheetPresented = true
+    }
+
     private var label: some View {
         HStack(spacing: 8) {
             Image(systemName: icon)
@@ -220,8 +247,14 @@ private struct ChannelRow: View {
                 .lineLimit(1)
 
             Spacer()
+
+            if isMuted {
+                Image(systemName: "bell.slash.fill")
+                    .font(.caption)
+            }
         }
         .foregroundStyle(foreground)
+        .opacity(isMuted && !isSelected ? 0.5 : 1)
         .padding(.horizontal, 8)
         .padding(.vertical, 8)
         .background(isSelected ? Theme.hover : .clear, in: .rect(cornerRadius: 8))

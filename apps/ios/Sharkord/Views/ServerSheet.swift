@@ -9,7 +9,30 @@ struct ServerSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var isInboxPresented = false
+    @State private var isNotificationsPresented = false
+    @State private var isEditProfilePresented = false
     @State private var isAddressCopied = false
+    @State private var isReportUnavailable = false
+
+    @Environment(\.openURL) private var openURL
+
+    private var hideMutedChannels: Binding<Bool> {
+        Binding(
+            get: { session.hidesMutedChannels },
+            set: { session.setHidesMutedChannels($0) }
+        )
+    }
+
+    private var allowDirectMessages: Binding<Bool> {
+        Binding(
+            get: { session.allowsDirectMessages },
+            set: { allows in
+                Task {
+                    await session.setAllowsDirectMessages(allows)
+                }
+            }
+        )
+    }
 
     var body: some View {
         ScrollView {
@@ -31,25 +54,48 @@ struct ServerSheet: View {
 
                 HStack(spacing: 0) {
                     SheetAction(title: "Invite", systemImage: "person.badge.plus", action: invite)
-                    SheetAction(title: "Mark Read", systemImage: "checkmark.circle", action: markAllAsRead)
-                    SheetAction(title: "Notifications", systemImage: "bell.fill", action: showInbox)
+                    SheetAction(title: "Notifications", systemImage: "bell.fill", action: showNotifications)
+                    SheetAction(title: "Inbox", systemImage: "tray.fill", action: showInbox)
+                    SheetAction(title: "Settings", systemImage: "gearshape.fill", action: openSettings)
                 }
 
-                VStack(spacing: 0) {
-                    if let host = session.address?.baseURL.absoluteString {
-                        SheetRow(title: isAddressCopied ? "Copied" : "Copy Server Address", action: { copy(host) })
+                ActionGroup {
+                    ActionRow(title: "Mark As Read", systemImage: "envelope.open", action: markAllAsRead)
+                }
+
+                ActionGroup {
+                    ActionRow(title: "Edit Server Profile", systemImage: "person.crop.circle", action: editProfile)
+
+                    Toggle(isOn: hideMutedChannels) {
+                        Label("Hide Muted Channels", systemImage: "bell.slash")
                     }
-                }
-                .background(Theme.listBackground, in: .rect(cornerRadius: 12))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
 
-                Button(action: logOut) {
-                    Text("Log Out")
-                        .foregroundStyle(Theme.red)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(14)
-                        .background(Theme.listBackground, in: .rect(cornerRadius: 12))
+                    Toggle(isOn: allowDirectMessages) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Label("Allow Direct Messages", systemImage: "bubble.left.and.bubble.right")
+
+                            Text("Anyone on the server can start a conversation with you")
+                                .font(.caption)
+                                .foregroundStyle(Theme.muted)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+
+                    ActionRow(title: "Report Server", systemImage: "flag", tint: Theme.red, action: report)
                 }
-                .buttonStyle(.plain)
+                .tint(Theme.blurple)
+                .foregroundStyle(Theme.header)
+
+                ActionGroup {
+                    if let host = session.address?.baseURL.absoluteString {
+                        ActionRow(title: isAddressCopied ? "Copied" : "Copy Server Address", systemImage: "link", action: { copy(host) })
+                    }
+
+                    ActionRow(title: "Log Out", systemImage: "rectangle.portrait.and.arrow.right", tint: Theme.red, action: logOut)
+                }
             }
             .padding(20)
         }
@@ -58,6 +104,19 @@ struct ServerSheet: View {
         .presentationBackground(Theme.deepBackground)
         .sheet(isPresented: $isInboxPresented) {
             InboxSheet()
+        }
+        .sheet(isPresented: $isNotificationsPresented) {
+            NavigationStack {
+                NotificationSettingsScreen()
+            }
+        }
+        .sheet(isPresented: $isEditProfilePresented) {
+            EditProfileSheet()
+        }
+        .alert("Reporting isn't set up yet", isPresented: $isReportUnavailable) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("A contact address for reports will be added in a later version.")
         }
     }
 
@@ -76,6 +135,44 @@ struct ServerSheet: View {
 
     private func showInbox() {
         isInboxPresented = true
+    }
+
+    private func showNotifications() {
+        isNotificationsPresented = true
+    }
+
+    private func editProfile() {
+        isEditProfilePresented = true
+    }
+
+    // server administration lives in the web client
+    private func openSettings() {
+        if let url = session.address?.baseURL {
+            openURL(url)
+        }
+    }
+
+    // the report goes by email to whoever runs reports, AppInfo.reportEmail
+    private func report() {
+        guard
+            !AppInfo.reportEmail.isEmpty,
+            var components = URLComponents(string: "mailto:\(AppInfo.reportEmail)")
+        else {
+            isReportUnavailable = true
+            return
+        }
+
+        components.queryItems = [
+            URLQueryItem(name: "subject", value: "Report: \(session.displayName)"),
+            URLQueryItem(
+                name: "body",
+                value: "Server: \(session.displayName)\nAddress: \(session.address?.baseURL.absoluteString ?? "")\nServer id: \(session.serverId ?? "")\n\nWhat happened:\n"
+            )
+        ]
+
+        if let url = components.url {
+            openURL(url)
+        }
     }
 
     private func copy(_ host: String) {
@@ -126,22 +223,6 @@ private struct SheetAction: View {
                     .foregroundStyle(Theme.muted)
             }
             .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-private struct SheetRow: View {
-    let title: String
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .foregroundStyle(Theme.text)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(14)
-                .contentShape(.rect)
         }
         .buttonStyle(.plain)
     }

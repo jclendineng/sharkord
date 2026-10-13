@@ -13,6 +13,9 @@ final class ServerListStore {
     // the sign in screen, for a new server or one whose session ended
     private(set) var signingInSession: SessionStore?
 
+    // the rail's "more options", the channel panel opens the server sheet for it
+    var serverSheetRequest: ObjectIdentifier?
+
     @ObservationIgnored private var backgroundTask: UIBackgroundTaskIdentifier = .invalid
 
     init() {
@@ -68,6 +71,11 @@ final class ServerListStore {
     func select(_ session: SessionStore) {
         selectedSession = session
         isShowingDirectMessages = false
+    }
+
+    func showServerSheet(for session: SessionStore) {
+        select(session)
+        serverSheetRequest = ObjectIdentifier(session)
     }
 
     func addServer() {

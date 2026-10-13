@@ -21,3 +21,19 @@ struct Channel: Codable, Hashable, Identifiable {
     let position: Int
     let categoryId: Int?
 }
+
+// notifications.getChannelSettings. mentions is the default, a channel without a row
+enum ChannelNotificationLevel: String, Codable, CaseIterable {
+    case all
+    case mentions
+    case none
+}
+
+struct ChannelNotificationSetting: Codable {
+    let channelId: Int
+    let level: ChannelNotificationLevel
+}
+
+struct PrivacySettings: Codable {
+    let allowDirectMessages: Bool
+}
