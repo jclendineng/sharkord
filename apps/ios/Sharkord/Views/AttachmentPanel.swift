@@ -190,9 +190,12 @@ struct AttachmentPanel: View {
             }
     }
 
+    // one swipe moves one step: down from full height lands at the resting height, only a
+    // swipe from there puts the panel away
     private func settle(predicted translation: CGFloat) {
         let projected = settledHeight - translation
-        let stops: [CGFloat] = [0, Self.height, expandedHeight]
+        let startedExpanded = settledHeight > Self.height
+        let stops: [CGFloat] = startedExpanded ? [Self.height, expandedHeight] : [0, Self.height, expandedHeight]
         let target = stops.min { abs($0 - projected) < abs($1 - projected) } ?? Self.height
 
         withAnimation(.spring(response: 0.4, dampingFraction: 0.86)) {
