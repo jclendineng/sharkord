@@ -29,6 +29,7 @@ struct AttachmentPanel: View {
     // the height it rests at between drags, and how far the current drag has moved it
     @State private var settledHeight = Self.height
     @State private var dragOffset: CGFloat = 0
+    @State private var scrollOffset: CGFloat = 0
 
     private var isLimited: Bool {
         library.status == .limited
@@ -45,6 +46,12 @@ struct AttachmentPanel: View {
 
     private var height: CGFloat {
         min(max(settledHeight - dragOffset, 0), expandedHeight)
+    }
+
+    // the grid only scrolls once the panel is as tall as it gets, before that a drag on the
+    // photos moves the panel, like a sheet
+    private var isFullHeight: Bool {
+        settledHeight >= expandedHeight - 1 && dragOffset == 0
     }
 
     // how far past its resting height the panel has been pulled, for the dimming behind it
@@ -161,19 +168,41 @@ struct AttachmentPanel: View {
                 dragOffset = value.translation.height
             }
             .onEnded { value in
-                let projected = settledHeight - value.predictedEndTranslation.height
-                let stops: [CGFloat] = [0, Self.height, expandedHeight]
-                let target = stops.min { abs($0 - projected) < abs($1 - projected) } ?? Self.height
+                settle(predicted: value.predictedEndTranslation.height)
+            }
+    }
 
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.86)) {
-                    dragOffset = 0
-                    settledHeight = max(target, Self.height)
-                }
+    // on the photos: moves the panel until it is full height, then only a pull down from the
+    // top of the grid does, everything else is the grid scrolling
+    private var gridDrag: some Gesture {
+        DragGesture(minimumDistance: 8, coordinateSpace: .global)
+            .onChanged { value in
+                let pullsDownFromTop = scrollOffset <= 1 && value.translation.height > 0
 
-                if target == 0 {
-                    onClose()
+                if dragOffset != 0 || !isFullHeight || pullsDownFromTop {
+                    dragOffset = value.translation.height
                 }
             }
+            .onEnded { value in
+                if dragOffset != 0 {
+                    settle(predicted: value.predictedEndTranslation.height)
+                }
+            }
+    }
+
+    private func settle(predicted translation: CGFloat) {
+        let projected = settledHeight - translation
+        let stops: [CGFloat] = [0, Self.height, expandedHeight]
+        let target = stops.min { abs($0 - projected) < abs($1 - projected) } ?? Self.height
+
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.86)) {
+            dragOffset = 0
+            settledHeight = max(target, Self.height)
+        }
+
+        if target == 0 {
+            onClose()
+        }
     }
 
     private func collapse() {
@@ -271,6 +300,13 @@ struct AttachmentPanel: View {
         .contentMargins(.top, 30, for: .scrollContent)
         .contentMargins(.bottom, 96, for: .scrollContent)
         .scrollIndicators(.hidden)
+        .scrollDisabled(!isFullHeight)
+        .onScrollGeometryChange(for: CGFloat.self) { geometry in
+            geometry.contentOffset.y + geometry.contentInsets.top
+        } action: { _, offset in
+            scrollOffset = offset
+        }
+        .simultaneousGesture(gridDrag)
     }
 
     private func manage() {
