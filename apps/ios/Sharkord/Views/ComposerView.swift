@@ -1,3 +1,4 @@
+import Photos
 import PhotosUI
 import SwiftUI
 import UniformTypeIdentifiers
@@ -90,14 +91,13 @@ struct ComposerView: View {
         }
         .sheet(isPresented: $isAttachPanelPresented) {
             AttachmentPanel(
-                selection: $photoSelection,
                 maxSelection: max(1, maxFiles - attachments.count),
+                onPick: importAssets,
                 onPhotos: openPhotoPicker,
                 onFiles: openFileImporter
             )
         }
         .onChange(of: photoSelection) { _, items in
-            isAttachPanelPresented = false
             importPhotos(items)
         }
         .onChange(of: store.editing) { _, message in
@@ -322,6 +322,24 @@ struct ComposerView: View {
         }
     }
 
+    private func importAssets(_ assets: [PHAsset]) {
+        for asset in assets {
+            let attachment = PendingAttachment(name: asset.mediaType == .video ? "Video" : "Photo")
+
+            attachments.append(attachment)
+
+            Task {
+                do {
+                    let url = try await PhotoLibrary.export(asset)
+
+                    await upload(attachment.id, fileURL: url)
+                } catch {
+                    fail(attachment.id, error)
+                }
+            }
+        }
+    }
+
     private func importFiles(_ result: Result<[URL], Error>) {
         guard case .success(let urls) = result else {
             return
@@ -539,70 +557,3 @@ private struct RecordingBar: View {
     }
 }
 
-// discord's attachment panel: recent photos right there, and the full pickers below
-private struct AttachmentPanel: View {
-    @Binding var selection: [PhotosPickerItem]
-    let maxSelection: Int
-    let onPhotos: () -> Void
-    let onFiles: () -> Void
-
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        VStack(spacing: 0) {
-            PhotosPicker(
-                selection: $selection,
-                maxSelectionCount: maxSelection,
-                matching: .any(of: [.images, .videos]),
-                photoLibrary: .shared()
-            ) {
-                EmptyView()
-            }
-            .photosPickerStyle(.inline)
-            .photosPickerDisabledCapabilities([.selectionActions, .search, .collectionNavigation])
-            .photosPickerAccessoryVisibility(.hidden, edges: .all)
-            .frame(maxHeight: .infinity)
-
-            HStack {
-                PanelButton(title: "Photos", systemImage: "photo") {
-                    dismiss()
-                    onPhotos()
-                }
-
-                PanelButton(title: "Files", systemImage: "paperclip") {
-                    dismiss()
-                    onFiles()
-                }
-            }
-            .padding(.vertical, 10)
-            .padding(.horizontal, 24)
-            .background(Theme.listBackground, in: .rect(cornerRadius: 22))
-            .padding(.horizontal, 16)
-            .padding(.bottom, 8)
-        }
-        .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
-        .presentationBackground(Theme.deepBackground)
-    }
-}
-
-private struct PanelButton: View {
-    let title: String
-    let systemImage: String
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 6) {
-                Image(systemName: systemImage)
-                    .font(.title3)
-
-                Text(title)
-                    .font(.caption)
-            }
-            .foregroundStyle(Theme.header)
-            .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(.plain)
-    }
-}
