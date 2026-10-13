@@ -152,6 +152,21 @@ Server Settings, Overview, Report Email. The apps' Report action on a server or 
 opens an email to this address, with the server, channel and message filled in. It is
 published in `/info` so a report can be sent without an account. Setting `reportEmail`.
 
+## Invite only
+
+`config.ini` can lock sign ups to invites, whatever the Allow New Users switch in the
+settings screen says:
+
+```ini
+[registration]
+inviteOnly=true
+```
+
+or `SHARKORD_INVITE_ONLY=true`. A new account then needs an invite made by someone with
+Manage Invites (the owner, and any role given it), single sign on cannot create accounts,
+and `/info` tells the apps registration is closed. Existing members log in as before. Code
+`apps/server/src/helpers/registration.ts`.
+
 ## Server settings in the app
 
 Overview, roles, members, invites, channels with per channel permissions, emoji, stickers,

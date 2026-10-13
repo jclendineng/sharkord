@@ -11,6 +11,7 @@ import { publishUser } from '../../db/publishers';
 import { getSettings } from '../../db/queries/server';
 import { getUserByIdentity, getUserByOidcSub } from '../../db/queries/users';
 import { enqueueActivityLog } from '../../queues/activity-log';
+import { isRegistrationOpen } from '../registration';
 import { importOidcAvatar } from './avatar';
 import { OidcCallbackError } from './error';
 
@@ -139,7 +140,7 @@ const resolveOidcUser = async (
 
   const settings = await getSettings();
 
-  if (!settings.allowNewUsers) {
+  if (!isRegistrationOpen(settings.allowNewUsers)) {
     throw new OidcCallbackError(
       OidcError.REGISTRATION_CLOSED,
       `Refusing to register "${identity}" through OIDC: new user registrations are disabled`

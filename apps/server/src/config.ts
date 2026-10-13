@@ -69,6 +69,11 @@ const zConfig = z.object({
     apnsKeyPath: z.string(),
     apnsBundleId: z.string()
   }),
+  // invite only locks sign ups to invites from people with manage invites, whatever the
+  // allow new users switch in the settings screen says
+  registration: z.object({
+    inviteOnly: z.coerce.boolean()
+  }),
   // a klipy key set here turns gifs on without the settings screen, one saved there wins
   gifs: z.object({
     klipyApiKey: z.string().trim()
@@ -141,6 +146,9 @@ const defaultConfig: TConfig = {
     apnsTeamId: '',
     apnsKeyPath: '',
     apnsBundleId: 'com.sharkord.ios'
+  },
+  registration: {
+    inviteOnly: false
   },
   gifs: {
     klipyApiKey: ''
@@ -308,6 +316,7 @@ const envOverridesMap: Record<string, string> = {
   'push.apnsTeamId': 'SHARKORD_PUSH_APNS_TEAM_ID',
   'push.apnsKeyPath': 'SHARKORD_PUSH_APNS_KEY_PATH',
   'push.apnsBundleId': 'SHARKORD_PUSH_APNS_BUNDLE_ID',
+  'registration.inviteOnly': 'SHARKORD_INVITE_ONLY',
   'gifs.klipyApiKey': 'SHARKORD_KLIPY_API_KEY',
   'webRtc.port': 'SHARKORD_WEBRTC_PORT',
   'webRtc.announcedAddress': 'SHARKORD_WEBRTC_ANNOUNCED_ADDRESS',
