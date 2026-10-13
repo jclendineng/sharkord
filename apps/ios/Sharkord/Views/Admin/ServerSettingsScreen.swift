@@ -5,7 +5,6 @@ import SwiftUI
 struct ServerSettingsScreen: View {
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.openURL) private var openURL
 
     var body: some View {
         NavigationStack {
@@ -63,12 +62,30 @@ struct ServerSettingsScreen: View {
                 }
 
                 if session.can(.manageStorage) || session.can(.managePlugins) || session.can(.manageUpdates) {
-                    Section {
-                        Button(action: openWeb) {
-                            SettingsRow(title: "Storage, Plugins & Updates", systemImage: "safari", value: "Web")
+                    Section("Server") {
+                        if session.can(.manageStorage) {
+                            NavigationLink {
+                                StorageSettingsScreen()
+                            } label: {
+                                SettingsRow(title: "Storage", systemImage: "internaldrive.fill")
+                            }
                         }
-                    } footer: {
-                        Text("These still open the web client, they come to the app next.")
+
+                        if session.can(.managePlugins) {
+                            NavigationLink {
+                                PluginsScreen()
+                            } label: {
+                                SettingsRow(title: "Plugins", systemImage: "puzzlepiece.extension.fill")
+                            }
+                        }
+
+                        if session.can(.manageUpdates) {
+                            NavigationLink {
+                                UpdatesScreen()
+                            } label: {
+                                SettingsRow(title: "Updates", systemImage: "arrow.down.circle.fill")
+                            }
+                        }
                     }
                 }
             }
@@ -82,12 +99,6 @@ struct ServerSettingsScreen: View {
             }
         }
         .presentationBackground(Theme.deepBackground)
-    }
-
-    private func openWeb() {
-        if let url = session.address?.baseURL {
-            openURL(url)
-        }
     }
 
     private func close() {

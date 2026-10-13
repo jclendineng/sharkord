@@ -110,3 +110,185 @@ struct AdminInvite: Decodable, Identifiable, Hashable {
         expiresAt.map { Date(timeIntervalSince1970: TimeInterval($0) / 1000) < .now } ?? false
     }
 }
+
+// others.getStorageSettings
+struct AdminStorage: Decodable {
+    struct Settings: Codable, Equatable {
+        var storageUploadEnabled: Bool
+        var storageFileSharingInDirectMessages: Bool
+        var storageQuota: Int
+        var storageUploadMaxFileSize: Int
+        var storageMaxAvatarSize: Int
+        var storageMaxBannerSize: Int
+        var storageMaxFilesPerMessage: Int
+        var storageSpaceQuotaByUser: Int
+        var storageOverflowAction: String
+        var storageSignedUrlsEnabled: Bool
+        var storageSignedUrlsTtlSeconds: Int
+        var storageImageOptimizationEnabled: Bool
+        var storageImageOptimizationQuality: Int
+    }
+
+    struct Disk: Decodable {
+        let totalSpace: Int
+        let usedSpace: Int
+        let freeSpace: Int
+        let sharkordUsedSpace: Int
+    }
+
+    struct PluginUsage: Decodable, Identifiable {
+        let pluginId: String
+        let fileCount: Int
+        let usedSpace: Int
+        let installed: Bool
+
+        var id: String { pluginId }
+    }
+
+    let storageSettings: Settings
+    let diskMetrics: Disk
+    let pluginStorage: [PluginUsage]
+}
+
+// others.getUpdate
+struct AdminUpdate: Decodable {
+    let canUpdate: Bool
+    let latestVersion: String
+    let hasUpdate: Bool
+    let currentVersion: String?
+}
+
+// plugins.get, TPluginInfo
+struct AdminPlugin: Decodable, Identifiable, Hashable {
+    let id: String
+    let enabled: Bool
+    let loadError: String?
+    let sdkVersion: Int?
+    let author: String?
+    let description: String?
+    let version: String?
+    let logo: String?
+    let name: String?
+    let homepage: String?
+
+    var title: String {
+        name ?? id
+    }
+}
+
+// a plugin setting holds a string, a number or a boolean
+enum PluginSettingValue: Codable, Hashable {
+    case string(String)
+    case number(Double)
+    case bool(Bool)
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+
+        if let bool = try? container.decode(Bool.self) {
+            self = .bool(bool)
+        } else if let number = try? container.decode(Double.self) {
+            self = .number(number)
+        } else {
+            self = .string(try container.decode(String.self))
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+
+        switch self {
+        case .string(let value):
+            try container.encode(value)
+        case .number(let value):
+            try container.encode(value)
+        case .bool(let value):
+            try container.encode(value)
+        }
+    }
+}
+
+// plugins.getSettings, TPluginSettingsResponse
+struct AdminPluginSettings: Decodable {
+    struct Option: Decodable, Hashable {
+        let value: String
+        let label: String
+    }
+
+    struct Definition: Decodable, Identifiable {
+        let key: String
+        let name: String
+        let description: String?
+        let type: String
+        let defaultValue: PluginSettingValue
+        let options: [Option]?
+
+        var id: String { key }
+    }
+
+    let definitions: [Definition]
+    let values: [String: PluginSettingValue?]
+    let secretsSet: [String]
+}
+
+// plugins.getCapabilities, TPluginCapability
+struct AdminPluginCapability: Decodable, Identifiable, Hashable {
+    struct Access: Decodable, Hashable {
+        let mode: String
+        let roleIds: [Int]
+    }
+
+    let type: String
+    let name: String
+    let description: String?
+    let configured: Bool
+    let requires: String?
+    let defaultAccess: Access
+    let mode: String
+    let roleIds: [Int]
+
+    var id: String { "\(type):\(name)" }
+}
+
+// plugins.getLogs, TLogEntry
+struct AdminPluginLog: Decodable, Hashable {
+    let type: String
+    let timestamp: Int
+    let message: String
+}
+
+// the marketplace registry the web client reads, packages/shared plugins/marketplace.ts
+struct MarketplaceEntry: Decodable, Identifiable {
+    // PLUGIN_SDK_VERSION, a version built for another sdk is refused at load
+    static let sdkVersion = 2
+    static let registryURL = URL(string: "https://raw.githubusercontent.com/Sharkord/plugins/refs/heads/main/plugins.json?raw=true")!
+
+    struct Plugin: Decodable {
+        let id: String
+        let name: String
+        let description: String
+        let author: String
+        let logo: String
+        let homepage: String?
+        let tags: [String]?
+        let verified: Bool
+    }
+
+    struct Version: Decodable {
+        let version: String
+        let sdkVersion: Int
+        let size: Int
+        let timestamp: Int
+    }
+
+    let plugin: Plugin
+    let versions: [Version]
+
+    var id: String { plugin.id }
+
+    var latestCompatible: Version? {
+        versions
+            .filter { $0.sdkVersion == Self.sdkVersion }
+            .max { $0.timestamp < $1.timestamp }
+    }
+}
