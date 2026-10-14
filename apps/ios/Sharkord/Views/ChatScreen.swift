@@ -21,7 +21,7 @@ struct ChatScreen: View {
 
     private var title: String {
         if channel?.isDm == true {
-            return partner?.name ?? "Direct Message"
+            return session.conversationTitle(for: channelId)
         }
 
         return channel?.name ?? ""
@@ -65,7 +65,12 @@ struct ChatScreen: View {
         .toolbar {
             PlainToolbarItem(placement: .topBarLeading) {
                 NavigationLink(value: ChannelInfoRoute(channelId: channelId)) {
-                    ChatTitle(title: title, partner: partner, isDirectMessage: channel?.isDm == true)
+                    ChatTitle(
+                        title: title,
+                        partner: partner,
+                        isDirectMessage: channel?.isDm == true,
+                        group: session.group(for: channelId)
+                    )
                 }
                 .buttonStyle(.plain)
                 .simultaneousGesture(TapGesture().onEnded(dismissKeyboard))
@@ -139,10 +144,15 @@ private struct ChatTitle: View {
     let title: String
     let partner: PublicUser?
     let isDirectMessage: Bool
+    var group: GroupInfo?
 
     @Environment(SessionStore.self) private var session
 
     private var subtitle: String {
+        if let group {
+            return "\(group.memberIds.count + 1) Members"
+        }
+
         if isDirectMessage {
             switch partner?.status {
             case .online:
@@ -165,7 +175,9 @@ private struct ChatTitle: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            if isDirectMessage {
+            if group != nil {
+                GroupAvatar(size: 30)
+            } else if isDirectMessage {
                 AvatarView(user: partner, size: 30, showsStatus: true)
             }
 

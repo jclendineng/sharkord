@@ -222,6 +222,8 @@ export type TDirectMessageConversation = {
   // null before anything was said
   lastMessagePreview: string | null;
   lastMessageUserId: number | null;
+  // a group conversation, its name and everyone in it but you. userId is then one of them
+  group: { name: string | null; memberIds: number[] } | null;
 };
 
 // createdAt alone is not unique, two messages sent in the same millisecond

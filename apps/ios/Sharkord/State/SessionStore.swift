@@ -1065,6 +1065,36 @@ final class SessionStore {
         return opened.channelId
     }
 
+    // out of a group, it leaves the list and the chat if it is open
+    func leaveGroup(_ channelId: Int) async {
+        do {
+            try await perform("dms.leaveGroup", ["channelId": channelId])
+            await loadDirectMessages()
+        } catch {
+            showError(error)
+        }
+    }
+
+    // a group conversation's details, nil for two people
+    func group(for channelId: Int) -> GroupInfo? {
+        directMessages.first { $0.channelId == channelId }?.group
+    }
+
+    // what a conversation is called: the other person, or a group's name, or its people
+    func conversationTitle(for channelId: Int) -> String {
+        if let group = group(for: channelId) {
+            if let name = group.name, !name.isEmpty {
+                return name
+            }
+
+            let names = group.memberIds.compactMap { usersById[$0]?.name }
+
+            return names.isEmpty ? "Group" : names.joined(separator: ", ")
+        }
+
+        return directMessagePartner(for: channelId)?.name ?? "Direct Message"
+    }
+
     func directMessagePartner(for channelId: Int) -> PublicUser? {
         directMessages
             .first { $0.channelId == channelId }
@@ -1693,7 +1723,8 @@ final class SessionStore {
                         userId: conversation.userId,
                         lastMessageAt: message.createdAt,
                         lastMessagePreview: HTMLText.plainText(from: message.content ?? ""),
-                        lastMessageUserId: message.userId
+                        lastMessageUserId: message.userId,
+                        group: conversation.group
                     )
                 }
                 .sorted { $0.lastMessageAt > $1.lastMessageAt }

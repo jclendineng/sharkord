@@ -58,5 +58,12 @@ const getFriendLists = async (userId: number): Promise<TFriendLists> => {
   return lists;
 };
 
-export { getFriendLists, getFriendship };
+// which of these people are the user's friends, a group can only be made of friends
+const getFriendIds = async (userId: number): Promise<Set<number>> => {
+  const { friends } = await getFriendLists(userId);
+
+  return new Set(friends);
+};
+
+export { getFriendIds, getFriendLists, getFriendship };
 export type { TFriendLists };

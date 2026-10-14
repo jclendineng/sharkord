@@ -144,6 +144,14 @@ and everyone on the server to ask) and a new message. A profile shows Add Friend
 Request, Pending or Friends beside its message button. The Messages list shows each
 conversation's last message, "You:" when it was yours.
 
+Group direct messages, as Discord's: you and up to nine friends in one conversation
+(`dms.createGroup`). Anyone in it can add their friends up to ten people (`dms.addGroupMembers`),
+rename it or clear the name back to listing its people (`dms.renameGroup`), and leave
+(`dms.leaveGroup`); the last one out removes it. A group is a direct message channel like any
+other, so privacy, search in DMs, pushes and read states treat it the same, and only its members
+can see it. `dms.get` marks a group conversation with its name and members. In the app, New Group
+is in the new message sheet, and a group's screen has Add Friends, Rename Group and Leave Group.
+
 Search from the Messages panel covers your direct messages only ("Search in DMs"), as Discord's:
 `messages.search` takes `scope: 'directMessages'`, which narrows where it looks but is not a
 filter by itself. Its tabs are Recent, People (the people you have conversations with), Media,

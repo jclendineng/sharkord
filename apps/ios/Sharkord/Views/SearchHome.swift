@@ -87,9 +87,11 @@ final class SearchHomeModel {
                 if scope == nil, inDirectMessages, memberIds == nil {
                     memberIds = Set(session.directMessages.map(\.userId))
                 } else if let scope, scope.isDm, memberIds == nil {
-                    let partnerId = session.directMessagePartner(for: scope.id)?.id
+                    // the two people, or everyone in a group
+                    let others = session.group(for: scope.id)?.memberIds
+                        ?? [session.directMessagePartner(for: scope.id)?.id].compactMap { $0 }
 
-                    memberIds = Set([session.ownUserId, partnerId].compactMap { $0 })
+                    memberIds = Set(others + [session.ownUserId].compactMap { $0 })
                 } else if let scope, memberIds == nil {
                     let ids: [Int] = try await client.query("channels.getMembers", input: ["channelId": scope.id])
 

@@ -84,8 +84,22 @@ struct DirectMessageConversation: Decodable, Hashable, Identifiable {
     // the newest message as plain text and who sent it, missing from an older server
     var lastMessagePreview: String?
     var lastMessageUserId: Int?
+    // a group conversation, missing for two people and from an older server
+    var group: GroupInfo?
 
     var id: Int { channelId }
+}
+
+struct GroupInfo: Decodable, Hashable {
+    let name: String?
+    // everyone in it but you
+    let memberIds: [Int]
+}
+
+// discord's bounds for a group, packages/shared statics/dms.ts
+enum GroupLimits {
+    static let maxMembers = 10
+    static let maxNameLength = 100
 }
 
 // friends.get: user ids

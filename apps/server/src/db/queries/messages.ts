@@ -11,7 +11,7 @@ import { and, asc, count, desc, eq, inArray, notExists } from 'drizzle-orm';
 import { db } from '..';
 import { attachFileToken, signFile } from '../../helpers/files-crypto';
 import {
-  directMessages,
+  channels,
   files,
   messageFiles,
   messageReactions,
@@ -265,11 +265,14 @@ const getNonDirectMessagesFromUserId = async (
     .where(
       and(
         eq(messages.userId, userId),
+        // groups included, every dm channel is marked as one
         notExists(
           db
             .select()
-            .from(directMessages)
-            .where(eq(directMessages.channelId, messages.channelId))
+            .from(channels)
+            .where(
+              and(eq(channels.id, messages.channelId), eq(channels.isDm, true))
+            )
         )
       )
     )

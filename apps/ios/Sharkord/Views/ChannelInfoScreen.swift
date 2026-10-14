@@ -13,6 +13,10 @@ struct ChannelInfoScreen: View {
     @State private var isInvitePresented = false
     @State private var isNotificationsPresented = false
     @State private var profileUser: PublicUser?
+    @State private var isAddingToGroup = false
+    @State private var isRenamingGroup = false
+    @State private var isConfirmingLeave = false
+    @State private var groupName = ""
 
     private static let tabs: [SearchTab] = [.members, .media, .pins, .links, .files]
 
@@ -53,6 +57,20 @@ struct ChannelInfoScreen: View {
                 Button("Notification Settings", systemImage: "bell.fill", action: showNotifications)
             }
 
+            if let group {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button("Add Friends", systemImage: "person.badge.plus", action: showAddToGroup)
+                            .disabled(group.memberIds.count + 1 >= GroupLimits.maxMembers)
+                        Button("Rename Group", systemImage: "pencil", action: showRename)
+                        Button("Leave Group", systemImage: "rectangle.portrait.and.arrow.right", role: .destructive, action: confirmLeave)
+                    } label: {
+                        Image(systemName: "ellipsis")
+                    }
+                    .accessibilityLabel("Group Options")
+                }
+            }
+
             if session.can(.manageChannels), let channel, !channel.isDm {
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {
@@ -75,11 +93,35 @@ struct ChannelInfoScreen: View {
         .sheet(item: $profileUser) { user in
             MemberProfileSheet(user: user, onMessage: { openDirectMessage(with: user) })
         }
+        .sheet(isPresented: $isAddingToGroup) {
+            if let group {
+                NavigationStack {
+                    GroupFriendPicker(mode: .add(channelId: channelId, memberIds: group.memberIds), onDone: addedToGroup)
+                }
+                .presentationBackground(Theme.deepBackground)
+            }
+        }
+        .alert("Rename Group", isPresented: $isRenamingGroup) {
+            TextField("Group name", text: $groupName)
+            Button("Save", action: rename)
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Leave it empty to show the people in it instead.")
+        }
+        .confirmationDialog("Leave this group?", isPresented: $isConfirmingLeave, titleVisibility: .visible) {
+            Button("Leave Group", role: .destructive, action: leave)
+        } message: {
+            Text("You won't see it again unless someone adds you back.")
+        }
         .onAppear(perform: makeModel)
     }
 
     private var isDirectMessage: Bool {
         channel?.isDm == true
+    }
+
+    private var group: GroupInfo? {
+        session.group(for: channelId)
     }
 
     // nobody is invited into a direct message
@@ -98,7 +140,9 @@ struct ChannelInfoScreen: View {
 
     @ViewBuilder
     private func icon(_ channel: Channel) -> some View {
-        if channel.isDm {
+        if group != nil {
+            GroupAvatar(size: 46)
+        } else if channel.isDm {
             AvatarView(user: partner, size: 46, showsStatus: true)
         } else {
             Image(systemName: "number")
@@ -114,6 +158,10 @@ struct ChannelInfoScreen: View {
             return "Text Channel"
         }
 
+        if let group {
+            return "\(group.memberIds.count + 1) Members"
+        }
+
         if let customStatus = partner?.customStatus, !customStatus.isEmpty {
             return customStatus
         }
@@ -126,7 +174,7 @@ struct ChannelInfoScreen: View {
             icon(channel)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(channel.isDm ? partner?.name ?? "Direct Message" : channel.name)
+                Text(channel.isDm ? session.conversationTitle(for: channelId) : channel.name)
                     .font(.title3.bold())
                     .foregroundStyle(Theme.header)
                     .lineLimit(1)
@@ -191,6 +239,54 @@ struct ChannelInfoScreen: View {
 
     private func showProfile(_ user: PublicUser) {
         profileUser = user
+    }
+
+    private func showAddToGroup() {
+        isAddingToGroup = true
+    }
+
+    private func addedToGroup(_ channelId: Int) {
+        isAddingToGroup = false
+        // the members tab lists who is in it, a fresh model loads them again
+        model = nil
+        makeModel()
+    }
+
+    private func showRename() {
+        groupName = group?.name ?? ""
+        isRenamingGroup = true
+    }
+
+    private func rename() {
+        struct RenameInput: Encodable {
+            let channelId: Int
+            let name: String?
+        }
+
+        let trimmed = String(groupName.trimmingCharacters(in: .whitespaces).prefix(GroupLimits.maxNameLength))
+
+        Task {
+            do {
+                try await session.perform("dms.renameGroup", RenameInput(channelId: channelId, name: trimmed.isEmpty ? nil : trimmed))
+                await session.loadDirectMessages()
+            } catch {
+                session.showError(error)
+            }
+        }
+    }
+
+    private func confirmLeave() {
+        isConfirmingLeave = true
+    }
+
+    private func leave() {
+        let channelId = channelId
+
+        dismiss()
+
+        Task {
+            await session.leaveGroup(channelId)
+        }
     }
 
     private func showInvite() {

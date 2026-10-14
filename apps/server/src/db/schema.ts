@@ -655,6 +655,36 @@ const friendships = sqliteTable(
   ]
 );
 
+// a direct message between more than two people, as discord's group dms: the channel is a dm
+// channel like any other, these say who is in it and what it is called
+const groupDms = sqliteTable('group_dms', {
+  channelId: integer('channel_id')
+    .primaryKey()
+    .references(() => channels.id, { onDelete: 'cascade' }),
+  name: text('name'),
+  ownerId: integer('owner_id').references(() => users.id, {
+    onDelete: 'set null'
+  }),
+  createdAt: integer('created_at').notNull()
+});
+
+const groupDmMembers = sqliteTable(
+  'group_dm_members',
+  {
+    channelId: integer('channel_id')
+      .notNull()
+      .references(() => channels.id, { onDelete: 'cascade' }),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    addedAt: integer('added_at').notNull()
+  },
+  (t) => [
+    primaryKey({ columns: [t.channelId, t.userId] }),
+    index('group_dm_members_user_idx').on(t.userId)
+  ]
+);
+
 // a direct message one participant closed: hidden from their list until a message newer than
 // the close arrives or they open it again, as discord's close dm
 const directMessageClosures = sqliteTable(
@@ -844,6 +874,8 @@ export {
   emojis,
   files,
   friendships,
+  groupDmMembers,
+  groupDms,
   invites,
   logins,
   messageFiles,

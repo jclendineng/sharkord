@@ -237,11 +237,15 @@ private struct ConversationRow: View {
 
     private var label: some View {
         HStack(spacing: 12) {
-            AvatarView(user: user, size: 48, showsStatus: true)
+            if conversation.group != nil {
+                GroupAvatar(size: 48)
+            } else {
+                AvatarView(user: user, size: 48, showsStatus: true)
+            }
 
             VStack(alignment: .leading, spacing: 3) {
                 HStack {
-                    Text(user?.name ?? "Unknown")
+                    Text(session.conversationTitle(for: conversation.channelId))
                         .font(.body.weight(unreadCount > 0 ? .bold : .semibold))
                         .foregroundStyle(Theme.header)
                         .lineLimit(1)
@@ -350,9 +354,13 @@ private struct DirectMessageActionsSheet: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(spacing: 12) {
-                    AvatarView(user: user, size: 48)
+                    if conversation.group != nil {
+                        GroupAvatar(size: 48)
+                    } else {
+                        AvatarView(user: user, size: 48)
+                    }
 
-                    Text("@\(user?.name ?? "Unknown")")
+                    Text(conversation.group == nil ? "@\(user?.name ?? "Unknown")" : session.conversationTitle(for: channelId))
                         .font(.title3.bold())
                         .foregroundStyle(Theme.header)
                         .lineLimit(1)
@@ -360,11 +368,15 @@ private struct DirectMessageActionsSheet: View {
                 .padding(.top, 20)
 
                 ActionGroup {
-                    if user != nil {
+                    if user != nil, conversation.group == nil {
                         ActionRow(title: "Profile", systemImage: "person.crop.circle", action: showProfile)
                     }
 
                     ActionRow(title: "Close DM", systemImage: "person.badge.minus", action: close)
+
+                    if conversation.group != nil {
+                        ActionRow(title: "Leave Group", systemImage: "rectangle.portrait.and.arrow.right", tint: Theme.red, action: leaveGroup)
+                    }
                 }
 
                 ActionGroup {
@@ -422,6 +434,14 @@ private struct DirectMessageActionsSheet: View {
     private func togglePinned() {
         session.togglePinned(channelId)
         dismiss()
+    }
+
+    private func leaveGroup() {
+        dismiss()
+
+        Task {
+            await session.leaveGroup(channelId)
+        }
     }
 
     private func markAsRead() {
@@ -496,6 +516,14 @@ private struct NewDirectMessageSheet: View {
                 if query.isEmpty {
                     Section {
                         NavigationLink {
+                            GroupFriendPicker(mode: .create, onDone: openGroup)
+                        } label: {
+                            Label("New Group", systemImage: "person.2.badge.plus")
+                                .foregroundStyle(Theme.header)
+                        }
+                        .listRowBackground(Theme.listBackground)
+
+                        NavigationLink {
                             AddFriendsScreen()
                         } label: {
                             Label("Add a Friend", systemImage: "person.badge.plus")
@@ -562,6 +590,11 @@ private struct NewDirectMessageSheet: View {
         }
         .buttonStyle(.plain)
         .listRowBackground(Theme.listBackground)
+    }
+
+    private func openGroup(_ channelId: Int) {
+        dismiss()
+        onOpened(channelId)
     }
 
     private func open(_ user: PublicUser) {

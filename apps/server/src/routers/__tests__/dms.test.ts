@@ -339,3 +339,148 @@ describe('dms.close', () => {
     );
   });
 });
+
+describe('group dms', () => {
+  // user 1 befriends 2, 3 and 4 so groups can be made of them
+  const befriend = async (...userIds: number[]) => {
+    const { caller: one } = await initTest(1);
+
+    for (const userId of userIds) {
+      const { caller: other } = await initTest(userId);
+
+      await one.friends.request({ userId });
+      await other.friends.accept({ userId: 1 });
+    }
+
+    return one;
+  };
+
+  test('should create a group everyone in it can see, message and list', async () => {
+    const one = await befriend(2, 3);
+    const { caller: two } = await initTest(2);
+    const { caller: three } = await initTest(3);
+
+    const { channelId } = await one.dms.createGroup({
+      userIds: [2, 3],
+      name: 'Weekend'
+    });
+
+    await two.messages.send({ channelId, content: 'hi all', files: [] });
+
+    const page = await three.messages.get({
+      channelId,
+      cursor: null,
+      limit: 50
+    });
+
+    expect(page.messages.map(({ content }) => content)).toEqual(['hi all']);
+
+    const listed = (await three.dms.get()).find(
+      (dm) => dm.channelId === channelId
+    );
+
+    expect(listed!.group).toEqual({ name: 'Weekend', memberIds: [1, 2] });
+  });
+
+  test('should keep a group from someone who is not in it', async () => {
+    const one = await befriend(2, 3);
+    const { caller: outsider } = await initTest(4);
+    const { channelId } = await one.dms.createGroup({ userIds: [2, 3] });
+
+    await expect(
+      outsider.messages.get({ channelId, cursor: null, limit: 50 })
+    ).rejects.toThrow('You are not a participant in this DM channel');
+
+    expect(
+      (await outsider.dms.get()).some((dm) => dm.channelId === channelId)
+    ).toBe(false);
+  });
+
+  test('should only make a group of friends', async () => {
+    const one = await befriend(2);
+
+    await expect(one.dms.createGroup({ userIds: [2, 3] })).rejects.toThrow(
+      'You can only add your friends to a group.'
+    );
+  });
+
+  test('should need two other people and refuse more than ten in all', async () => {
+    const one = await befriend(2);
+
+    await expect(one.dms.createGroup({ userIds: [2, 1] })).rejects.toThrow(
+      'A group needs at least two other people.'
+    );
+
+    await expect(
+      one.dms.createGroup({
+        userIds: Array.from({ length: 10 }, (_, index) => index + 2)
+      })
+    ).rejects.toThrow();
+  });
+
+  test('should add a friend to a group and refuse someone already in it', async () => {
+    const one = await befriend(2, 3, 4);
+    const { caller: four } = await initTest(4);
+    const { channelId } = await one.dms.createGroup({ userIds: [2, 3] });
+
+    await one.dms.addGroupMembers({ channelId, userIds: [4] });
+
+    await expect(
+      four.messages.get({ channelId, cursor: null, limit: 50 })
+    ).resolves.toBeDefined();
+
+    await expect(
+      one.dms.addGroupMembers({ channelId, userIds: [4] })
+    ).rejects.toThrow('They are already in the group.');
+  });
+
+  test('should rename a group and go back to no name', async () => {
+    const one = await befriend(2, 3);
+    const { channelId } = await one.dms.createGroup({ userIds: [2, 3] });
+
+    await one.dms.renameGroup({ channelId, name: 'Crew' });
+
+    const named = (await one.dms.get()).find(
+      (dm) => dm.channelId === channelId
+    );
+
+    expect(named!.group!.name).toBe('Crew');
+
+    await one.dms.renameGroup({ channelId, name: null });
+
+    const unnamed = (await one.dms.get()).find(
+      (dm) => dm.channelId === channelId
+    );
+
+    expect(unnamed!.group!.name).toBeNull();
+  });
+
+  test('should let someone leave, and remove the group once the last one leaves', async () => {
+    const one = await befriend(2, 3);
+    const { caller: two } = await initTest(2);
+    const { caller: three } = await initTest(3);
+    const { channelId } = await one.dms.createGroup({ userIds: [2, 3] });
+
+    await two.dms.leaveGroup({ channelId });
+
+    await expect(
+      two.messages.get({ channelId, cursor: null, limit: 50 })
+    ).rejects.toThrow('You are not a participant in this DM channel');
+
+    await one.dms.leaveGroup({ channelId });
+    await three.dms.leaveGroup({ channelId });
+
+    await expect(
+      one.dms.renameGroup({ channelId, name: 'gone' })
+    ).rejects.toThrow('Group not found');
+  });
+
+  test('should refuse group actions on a two person dm', async () => {
+    const { caller } = await initTest(3);
+
+    // the seeded dm between users 3 and 4
+    await expect(caller.dms.leaveGroup({ channelId: 3 })).rejects.toThrow(
+      'Group not found'
+    );
+  });
+});

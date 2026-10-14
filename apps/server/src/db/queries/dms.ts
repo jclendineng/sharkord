@@ -9,6 +9,8 @@ import {
   channels,
   directMessageClosures,
   directMessages,
+  groupDmMembers,
+  groupDms,
   messages
 } from '../schema';
 import { getChannelsReadStatesForUser } from './channels';
@@ -38,19 +40,57 @@ const getDirectMessageChannel = async (
 const getDirectMessageChannelIdsForUser = async (
   userId: number
 ): Promise<number[]> => {
-  const rows = await db
-    .select({
-      channelId: directMessages.channelId
-    })
-    .from(directMessages)
-    .where(
-      or(
-        eq(directMessages.userOneId, userId),
-        eq(directMessages.userTwoId, userId)
-      )
-    );
+  const [pairRows, groupRows] = await Promise.all([
+    db
+      .select({
+        channelId: directMessages.channelId
+      })
+      .from(directMessages)
+      .where(
+        or(
+          eq(directMessages.userOneId, userId),
+          eq(directMessages.userTwoId, userId)
+        )
+      ),
+    db
+      .select({ channelId: groupDmMembers.channelId })
+      .from(groupDmMembers)
+      .where(eq(groupDmMembers.userId, userId))
+  ]);
 
-  return rows.map((row) => row.channelId);
+  return [...pairRows, ...groupRows].map((row) => row.channelId);
+};
+
+// a group conversation's details and everyone in it, for the groups the user is in
+const getGroupDirectMessagesForUser = async (userId: number) => {
+  const memberships = await db
+    .select({ channelId: groupDmMembers.channelId })
+    .from(groupDmMembers)
+    .where(eq(groupDmMembers.userId, userId));
+
+  const channelIds = memberships.map(({ channelId }) => channelId);
+
+  if (channelIds.length === 0) {
+    return [];
+  }
+
+  const [groups, members] = await Promise.all([
+    db.select().from(groupDms).where(inArray(groupDms.channelId, channelIds)),
+    db
+      .select({
+        channelId: groupDmMembers.channelId,
+        userId: groupDmMembers.userId
+      })
+      .from(groupDmMembers)
+      .where(inArray(groupDmMembers.channelId, channelIds))
+  ]);
+
+  return groups.map((group) => ({
+    ...group,
+    memberIds: members
+      .filter((member) => member.channelId === group.channelId)
+      .map((member) => member.userId)
+  }));
 };
 
 // returns all DM channels the user is a participant in along with metadata
@@ -72,15 +112,38 @@ const preview = (content: string | null | undefined): string | null => {
 const getDirectMessageConversations = async (
   userId: number
 ): Promise<TDirectMessageConversation[]> => {
-  const rows = await db
-    .select()
-    .from(directMessages)
-    .where(
-      or(
-        eq(directMessages.userOneId, userId),
-        eq(directMessages.userTwoId, userId)
-      )
-    );
+  const [pairRows, groupRows] = await Promise.all([
+    db
+      .select()
+      .from(directMessages)
+      .where(
+        or(
+          eq(directMessages.userOneId, userId),
+          eq(directMessages.userTwoId, userId)
+        )
+      ),
+    getGroupDirectMessagesForUser(userId)
+  ]);
+
+  // one shape for both: a group shows as one of its other members, with the group alongside
+  const rows = [
+    ...pairRows.map((row) => ({
+      channelId: row.channelId,
+      otherUserId: row.userOneId === userId ? row.userTwoId : row.userOneId,
+      createdAt: row.createdAt,
+      group: null
+    })),
+    ...groupRows.map((row) => {
+      const memberIds = row.memberIds.filter((id) => id !== userId);
+
+      return {
+        channelId: row.channelId,
+        otherUserId: memberIds[0] ?? userId,
+        createdAt: row.createdAt,
+        group: { name: row.name, memberIds }
+      };
+    })
+  ];
 
   if (rows.length === 0) {
     return [];
@@ -145,13 +208,12 @@ const getDirectMessageConversations = async (
 
   const conversations = rows
     .map((row) => {
-      const otherUserId =
-        row.userOneId === userId ? row.userTwoId : row.userOneId;
       const lastMessageAt = lastMessageMap.get(row.channelId) ?? row.createdAt;
 
       return {
         channelId: row.channelId,
-        userId: otherUserId,
+        userId: row.otherUserId,
+        group: row.group,
         unreadCount: unreadMapRaw[row.channelId] ?? 0,
         lastMessageAt,
         lastMessagePreview: preview(
@@ -188,22 +250,35 @@ const isUserDmParticipant = async (
   channelId: number,
   userId: number
 ): Promise<boolean> => {
-  const dm = await db
-    .select({ channelId: directMessages.channelId })
-    .from(directMessages)
-    .where(
-      and(
-        eq(directMessages.channelId, channelId),
-        or(
-          eq(directMessages.userOneId, userId),
-          eq(directMessages.userTwoId, userId)
+  const [dm, groupMember] = await Promise.all([
+    db
+      .select({ channelId: directMessages.channelId })
+      .from(directMessages)
+      .where(
+        and(
+          eq(directMessages.channelId, channelId),
+          or(
+            eq(directMessages.userOneId, userId),
+            eq(directMessages.userTwoId, userId)
+          )
         )
       )
-    )
-    .limit(1)
-    .get();
+      .limit(1)
+      .get(),
+    db
+      .select({ channelId: groupDmMembers.channelId })
+      .from(groupDmMembers)
+      .where(
+        and(
+          eq(groupDmMembers.channelId, channelId),
+          eq(groupDmMembers.userId, userId)
+        )
+      )
+      .limit(1)
+      .get()
+  ]);
 
-  return !!dm;
+  return !!dm || !!groupMember;
 };
 
 // checks if the channel is a DM channel, and if so that direct messages are on
@@ -251,9 +326,17 @@ const getDirectMessageChannelParticipantIds = async (
     .limit(1)
     .get();
 
-  if (!dm) return [];
+  if (dm) {
+    return [dm.userOneId, dm.userTwoId];
+  }
 
-  return [dm.userOneId, dm.userTwoId];
+  // a group's members
+  const members = await db
+    .select({ userId: groupDmMembers.userId })
+    .from(groupDmMembers)
+    .where(eq(groupDmMembers.channelId, channelId));
+
+  return members.map(({ userId }) => userId);
 };
 
 export {
@@ -262,6 +345,7 @@ export {
   getDirectMessageChannelIdsForUser,
   getDirectMessageChannelParticipantIds,
   getDirectMessageConversations,
+  getGroupDirectMessagesForUser,
   isDirectMessageChannel,
   isUserDmParticipant,
   normalizePair
