@@ -4,6 +4,7 @@ struct ChatScreen: View {
     let channelId: Int
 
     @Environment(SessionStore.self) private var session
+    @Environment(\.dismiss) private var dismiss
 
     @State private var isPinsPresented = false
 
@@ -104,6 +105,12 @@ struct ChatScreen: View {
         }
         .onDisappear {
             store.isVisible = false
+        }
+        // a group left, or a channel deleted, takes its chat with it back to the list
+        .onChange(of: channel == nil) { _, isGone in
+            if isGone {
+                dismiss()
+            }
         }
     }
 
