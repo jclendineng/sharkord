@@ -1,7 +1,11 @@
 import { describe, expect, test } from 'bun:test';
 import { tdb } from '../../__tests__/setup';
-import { getOrphanedFileIds, getStorageUsageByPlugin } from '../queries/files';
-import { files, pluginData } from '../schema';
+import {
+  getOrphanedFileIds,
+  getStorageUsageByPlugin,
+  isFileOrphaned
+} from '../queries/files';
+import { files, pluginData, stickers } from '../schema';
 
 const ORPHAN_GRACE_MS = 15 * 60 * 1000;
 
@@ -50,6 +54,22 @@ describe('getOrphanedFileIds', () => {
     });
 
     expect(await getOrphanedFileIds()).toEqual([]);
+  });
+
+  test('should keep a file a sticker is drawn from', async () => {
+    await insertOrphans(1);
+
+    const [file] = await tdb.select({ id: files.id }).from(files).limit(1);
+
+    await tdb.insert(stickers).values({
+      name: 'wave',
+      fileId: file!.id,
+      userId: 1,
+      createdAt: Date.now()
+    });
+
+    expect(await getOrphanedFileIds()).not.toContain(file!.id);
+    expect(await isFileOrphaned(file!.id)).toBe(false);
   });
 });
 
