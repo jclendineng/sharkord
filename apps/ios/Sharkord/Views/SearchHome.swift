@@ -871,14 +871,17 @@ private struct LinkRow: View {
 private struct FileRow: View {
     let file: SearchFile
 
+    @Environment(SessionStore.self) private var session
+
+    @State private var thumbnail: UIImage?
+
     var body: some View {
         OpenFileButton(file: file.file) { isLoading in
             HStack(spacing: 14) {
-                Image(systemName: file.file.symbol)
-                    .font(.system(size: 22))
-                    .foregroundStyle(Theme.blurple)
+                icon
                     .frame(width: 48, height: 48)
-                    .background(Theme.listBackground, in: .rect(cornerRadius: 10))
+                    .background(Theme.listBackground)
+                    .clipShape(.rect(cornerRadius: 10))
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(file.file.originalName)
@@ -901,6 +904,25 @@ private struct FileRow: View {
             .padding(.horizontal, 18)
             .padding(.vertical, 8)
             .contentShape(.rect)
+        }
+        .task(id: file.id) {
+            if let address = session.address {
+                thumbnail = await FileThumbnails.thumbnail(for: file.file, from: address.fileURL(file.file))
+            }
+        }
+    }
+
+    // the first page, as in the chat, once quick look has drawn it
+    @ViewBuilder
+    private var icon: some View {
+        if let thumbnail {
+            Image(uiImage: thumbnail)
+                .resizable()
+                .scaledToFill()
+        } else {
+            Image(systemName: file.file.symbol)
+                .font(.system(size: 22))
+                .foregroundStyle(Theme.blurple)
         }
     }
 }
