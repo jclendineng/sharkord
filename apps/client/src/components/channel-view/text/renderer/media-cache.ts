@@ -83,7 +83,8 @@ const extractMessageMedia = (message: TJoinedMessage): TFoundMedia[] => {
         return {
           key: getStableMediaKey(mediaKeyCounts, `file:${file.id}`),
           type: 'image',
-          url: getFileUrl(file)
+          url: getFileUrl(file),
+          file
         };
       }
 
@@ -91,7 +92,8 @@ const extractMessageMedia = (message: TJoinedMessage): TFoundMedia[] => {
         return {
           key: getStableMediaKey(mediaKeyCounts, `file:${file.id}`),
           type: 'video',
-          url: getFileUrl(file)
+          url: getFileUrl(file),
+          file
         };
       }
 
@@ -99,7 +101,8 @@ const extractMessageMedia = (message: TJoinedMessage): TFoundMedia[] => {
         return {
           key: getStableMediaKey(mediaKeyCounts, `file:${file.id}`),
           type: 'audio',
-          url: getFileUrl(file)
+          url: getFileUrl(file),
+          file
         };
       }
 

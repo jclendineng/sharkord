@@ -113,6 +113,14 @@ file without signing in. Turn it on in Server Settings, Storage, and every link 
 token that expires. It is also `signedUrls` under `[storage]` in config.ini (see Settings in
 config.ini).
 
+A signed link only works for its lifetime, but no one has to reload for that. Every time the
+server sends a file (with its messages, a user, an emoji) it signs a new link. The web client
+and the app also keep the links of files they show fresh while open: a little before a link
+runs out they ask `files.sign` for new ones, and swap them in once the old ones have run out,
+so nothing already on screen loads again. `files.sign` answers only for files the caller can
+see (avatars, banners, emoji, stickers and the logo for anyone signed in, attachments and
+reaction files when the caller can see the channel) and leaves everything else out.
+
 ## Voice messages
 
 A recording from the app goes up as an audio file and plays in place in the message, in the

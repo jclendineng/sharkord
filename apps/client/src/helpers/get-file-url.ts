@@ -1,4 +1,5 @@
 import type { TFile } from '@sharkord/shared';
+import { getFileToken } from './file-tokens';
 
 const getHostFromServer = () => {
   if (import.meta.env.MODE === 'development') {
@@ -28,11 +29,13 @@ const getFileUrl = (file: TFile | undefined | null) => {
 
   let baseUrl = `${url}/public/${encodeURIComponent(file.name)}`;
 
-  if (file._accessToken) {
-    baseUrl += `?accessToken=${file._accessToken}`;
+  const token = getFileToken(file);
 
-    if (file._accessTokenExpiresAt) {
-      baseUrl += `&expires=${file._accessTokenExpiresAt}`;
+  if (token) {
+    baseUrl += `?accessToken=${token.accessToken}`;
+
+    if (token.expiresAt) {
+      baseUrl += `&expires=${token.expiresAt}`;
     }
   }
 

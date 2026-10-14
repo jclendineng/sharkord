@@ -3,6 +3,7 @@ import { PluginSlotRenderer } from '@/components/plugin-slot-renderer';
 import { RelativeTime } from '@/components/relative-time';
 import { requestConfirmation } from '@/features/dialogs/actions';
 import { useOwnUserId, useUserById } from '@/features/server/users/hooks';
+import { useFileTokensVersion } from '@/helpers/file-tokens';
 import { getFileUrl } from '@/helpers/get-file-url';
 import { getRenderedUsername } from '@/helpers/get-rendered-username';
 import { getTRPCClient } from '@/lib/trpc';
@@ -49,6 +50,9 @@ const MessageRenderer = memo(
       [message.userId, ownUserId]
     );
 
+    // signed links on screen run out after a while, this draws them again with fresh ones
+    const fileTokensVersion = useFileTokensVersion();
+
     const emojiOnly = useMemo(() => getIsEmojiOnly(message), [message]);
 
     const pluginProps = useMemo(
@@ -85,7 +89,17 @@ const MessageRenderer = memo(
       [t]
     );
 
-    const allMedia = useMemo(() => extractMessageMedia(message), [message]);
+    // the cache keeps what it found per message, the attachments' links are drawn here so a
+    // fresh signed link reaches them
+    const allMedia = useMemo(
+      () =>
+        extractMessageMedia(message).map((item) =>
+          item.file ? { ...item, url: getFileUrl(item.file) } : item
+        ),
+      // getFileUrl reads the fresh links, the version is how they reach this memo
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [message, fileTokensVersion]
+    );
 
     const youtubeVideoIds = useMemo(
       () => getYoutubeVideoIds(message),

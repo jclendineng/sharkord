@@ -8,6 +8,7 @@ import {
   setDisconnectInfo
 } from '@/features/server/actions';
 import { SoundType } from '@/features/server/types';
+import { setFileSigner } from '@/helpers/file-tokens';
 import { suppressOidcAutoRedirect } from '@/helpers/oidc';
 import { playSound } from '@/helpers/sounds';
 import {
@@ -121,6 +122,14 @@ const getTRPCClient = () => {
 
   return trpc;
 };
+
+// fresh signed links for files on screen, see helpers/file-tokens. without a client, during a
+// reconnect, this throws and the refresh is tried again later
+setFileSigner(async (fileIds) => {
+  const client = getTRPCClient();
+
+  return client.files.sign.query({ fileIds });
+});
 
 const closeClient = () => {
   if (wsClient) {

@@ -90,14 +90,12 @@ struct ServerAddress: Hashable {
     func fileURL(_ file: SharkordFile) -> URL {
         var components = URLComponents(url: url(path: "public/\(file.name)"), resolvingAgainstBaseURL: false)!
 
-        if let accessToken = file.accessToken {
-            var items = [URLQueryItem(name: "accessToken", value: accessToken)]
-
-            if let expires = file.accessTokenExpiresAt {
-                items.append(URLQueryItem(name: "expires", value: String(expires)))
-            }
-
-            components.queryItems = items
+        // a fresh link once the one the file came with has run out, see FileTokens
+        if let token = FileTokens.shared.token(for: file, host: baseURL.host() ?? "") {
+            components.queryItems = [
+                URLQueryItem(name: "accessToken", value: token.accessToken),
+                URLQueryItem(name: "expires", value: String(token.expiresAt))
+            ]
         }
 
         return components.url!

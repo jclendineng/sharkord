@@ -599,6 +599,10 @@ final class SessionStore {
             CredentialStore.deleteToken(for: address)
         }
 
+        if let address {
+            FileTokens.shared.setClient(nil, for: address.baseURL.host() ?? "")
+        }
+
         client = nil
         token = nil
         pushToken = nil
@@ -1045,6 +1049,7 @@ final class SessionStore {
         }
 
         self.client = client
+        FileTokens.shared.setClient(client, for: address.baseURL.host() ?? "")
 
         do {
             try await client.connect()

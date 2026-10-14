@@ -7,7 +7,8 @@ import SwiftUI
 // caches folder under its original name, which is how quick look tells what kind it is
 enum FileDownloads {
     static func localURL(for file: SharkordFile, from url: URL) async throws -> URL {
-        let directory = URL.cachesDirectory.appending(path: "files/\(file.id)", directoryHint: .isDirectory)
+        // ids are only unique on one server and the app can be signed in to several
+        let directory = URL.cachesDirectory.appending(path: "files/\(url.host() ?? "server")/\(file.id)", directoryHint: .isDirectory)
         let name = (file.originalName as NSString).lastPathComponent
         let target = directory.appending(path: name.isEmpty ? file.name : name)
 
@@ -36,10 +37,10 @@ enum FileDownloads {
 // it afterwards is instant. only files small enough that fetching one just to draw it is cheap
 enum FileThumbnails {
     private static let maxSize = 10 * 1024 * 1024
-    private static let cache = NSCache<NSNumber, UIImage>()
+    private static let cache = NSCache<NSString, UIImage>()
 
     static func thumbnail(for file: SharkordFile, from url: URL) async -> UIImage? {
-        if let cached = cache.object(forKey: NSNumber(value: file.id)) {
+        if let cached = cache.object(forKey: file.cacheKey(at: url)) {
             return cached
         }
 
@@ -61,7 +62,7 @@ enum FileThumbnails {
 
         let image = representation.uiImage
 
-        cache.setObject(image, forKey: NSNumber(value: file.id))
+        cache.setObject(image, forKey: file.cacheKey(at: url))
 
         return image
     }

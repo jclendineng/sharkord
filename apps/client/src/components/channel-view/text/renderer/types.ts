@@ -1,9 +1,11 @@
-import type { TMessageMetadata } from '@sharkord/shared';
+import type { TFile, TMessageMetadata } from '@sharkord/shared';
 
 export type TFoundMedia = {
   key: string;
   type: 'image' | 'video' | 'audio';
   url: string;
+  // an attachment, whose link is drawn again once a signed one runs out
+  file?: TFile;
 };
 
 export type TFoundOpenGraph = {
