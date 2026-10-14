@@ -1,10 +1,33 @@
 import SwiftUI
 
-// adding friends: requests waiting on you to accept, the ones you sent, and everyone on the
-// server to ask, searchable by name
+// discord's add friends, for one server: there is no central directory to share yourself into,
+// everyone you could add is already here. add by username, then requests waiting on you, the
+// ones you sent, and everyone else on the server to ask
 struct AddFriendsSheet: View {
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            AddFriendsScreen()
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done", action: close)
+                    }
+                }
+        }
+        .presentationDetents([.large])
+        .presentationBackground(Theme.deepBackground)
+    }
+
+    private func close() {
+        dismiss()
+    }
+}
+
+// the screen itself, so the new message sheet can push it too
+struct AddFriendsScreen: View {
+    @Environment(SessionStore.self) private var session
 
     @State private var query = ""
 
@@ -14,7 +37,8 @@ struct AddFriendsSheet: View {
 
     // members who are neither you nor already linked to you, filtered by the search
     private var others: [PublicUser] {
-        let linked = Set(session.friendLists.friends + session.friendLists.incoming + session.friendLists.outgoing)
+        let lists = session.friendLists
+        let linked = Set(lists.friends + lists.incoming + lists.outgoing)
         let search = query.trimmingCharacters(in: .whitespaces).lowercased()
 
         return session.members
@@ -24,62 +48,63 @@ struct AddFriendsSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
-            List {
-                let incoming = users(session.friendLists.incoming)
-                let outgoing = users(session.friendLists.outgoing)
-
-                if !incoming.isEmpty {
-                    Section("Requests") {
-                        ForEach(incoming) { user in
-                            FriendRow(user: user) {
-                                IconButton(title: "Accept", systemImage: "checkmark", tint: Theme.green) {
-                                    change("accept", user)
-                                }
-
-                                IconButton(title: "Ignore", systemImage: "xmark", tint: Theme.muted) {
-                                    change("remove", user)
-                                }
-                            }
-                        }
-                    }
+        List {
+            Section {
+                NavigationLink {
+                    AddByUsernameScreen()
+                } label: {
+                    Label("Add by Username", systemImage: "at")
+                        .foregroundStyle(Theme.header)
                 }
+                .listRowBackground(Theme.listBackground)
+            }
 
-                if !outgoing.isEmpty {
-                    Section("Sent") {
-                        ForEach(outgoing) { user in
-                            FriendRow(user: user) {
-                                IconButton(title: "Cancel Request", systemImage: "xmark", tint: Theme.muted) {
-                                    change("remove", user)
-                                }
-                            }
-                        }
-                    }
-                }
+            let incoming = users(session.friendLists.incoming)
+            let outgoing = users(session.friendLists.outgoing)
 
-                Section("Add") {
-                    ForEach(others) { user in
+            if !incoming.isEmpty {
+                Section("Requests") {
+                    ForEach(incoming) { user in
                         FriendRow(user: user) {
-                            IconButton(title: "Add Friend", systemImage: "person.badge.plus", tint: Theme.blurple) {
-                                change("request", user)
+                            RoundIconButton(title: "Accept", systemImage: "checkmark", tint: Theme.green) {
+                                change("accept", user)
+                            }
+
+                            RoundIconButton(title: "Ignore", systemImage: "xmark", tint: Theme.muted) {
+                                change("remove", user)
                             }
                         }
                     }
                 }
             }
-            .scrollContentBackground(.hidden)
-            .background(Theme.deepBackground)
-            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search members")
-            .navigationTitle("Add Friends")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done", action: close)
+
+            if !outgoing.isEmpty {
+                Section("Sent") {
+                    ForEach(outgoing) { user in
+                        FriendRow(user: user) {
+                            RoundIconButton(title: "Cancel Request", systemImage: "xmark", tint: Theme.muted) {
+                                change("remove", user)
+                            }
+                        }
+                    }
+                }
+            }
+
+            Section("People on \(session.displayName)") {
+                ForEach(others) { user in
+                    FriendRow(user: user) {
+                        RoundIconButton(title: "Add Friend", systemImage: "person.badge.plus", tint: Theme.blurple) {
+                            change("request", user)
+                        }
+                    }
                 }
             }
         }
-        .presentationDetents([.large])
-        .presentationBackground(Theme.deepBackground)
+        .scrollContentBackground(.hidden)
+        .background(Theme.deepBackground)
+        .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search people")
+        .navigationTitle("Add Friends")
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     private func change(_ action: String, _ user: PublicUser) {
@@ -87,13 +112,91 @@ struct AddFriendsSheet: View {
             await session.changeFriendship(action, with: user.id)
         }
     }
+}
 
-    private func close() {
-        dismiss()
+// discord's add by username: one field, a request to whoever on the server goes by that name
+private struct AddByUsernameScreen: View {
+    @Environment(SessionStore.self) private var session
+
+    @State private var name = ""
+    @State private var message: String?
+    @State private var isSent = false
+
+    @FocusState private var isFocused: Bool
+
+    private var canSend: Bool {
+        !name.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Who would you like to add as a friend?")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Theme.muted)
+
+            TextField("Enter a username", text: $name)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .focused($isFocused)
+                .onSubmit(send)
+                .foregroundStyle(Theme.header)
+                .padding(.horizontal, 14)
+                .frame(height: 52)
+                .background(Theme.inputBackground, in: .rect(cornerRadius: 12, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(isFocused ? Theme.blurple : Theme.divider, lineWidth: 1)
+                }
+
+            if let message {
+                Text(message)
+                    .font(.footnote)
+                    .foregroundStyle(isSent ? Theme.green : Theme.red)
+            }
+
+            Button(action: send) {
+                Text("Send Friend Request")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.white.opacity(canSend ? 1 : 0.5))
+                    .frame(maxWidth: .infinity, minHeight: 50)
+                    .background(Theme.blurple.opacity(canSend ? 1 : 0.5), in: .rect(cornerRadius: 12, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .disabled(!canSend)
+            .padding(.top, 14)
+
+            Spacer(minLength: 0)
+        }
+        .padding(18)
+        .background(Theme.deepBackground)
+        .navigationTitle("Add by Username")
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear(perform: focus)
+    }
+
+    private func focus() {
+        isFocused = true
+    }
+
+    private func send() {
+        let wanted = name.trimmingCharacters(in: .whitespaces)
+
+        guard let user = session.members.first(where: { $0.name.caseInsensitiveCompare(wanted) == .orderedSame }) else {
+            isSent = false
+            message = "Nobody on \(session.displayName) goes by \(wanted)."
+            return
+        }
+
+        Task {
+            await session.changeFriendship("request", with: user.id)
+            isSent = true
+            message = "Friend request sent to \(user.name)."
+            name = ""
+        }
     }
 }
 
-private struct FriendRow<Actions: View>: View {
+struct FriendRow<Actions: View>: View {
     let user: PublicUser
     @ViewBuilder let actions: Actions
 
@@ -113,7 +216,7 @@ private struct FriendRow<Actions: View>: View {
     }
 }
 
-private struct IconButton: View {
+struct RoundIconButton: View {
     let title: String
     let systemImage: String
     let tint: Color

@@ -447,6 +447,8 @@ private struct DirectMessageActionsSheet: View {
     }
 }
 
+// discord's new message: search everyone, add a friend, then your friends and everyone else on
+// the server, a to z under their letter. a tap opens the conversation
 private struct NewDirectMessageSheet: View {
     let onOpened: (Int) -> Void
 
@@ -456,16 +458,30 @@ private struct NewDirectMessageSheet: View {
     @State private var query = ""
     @State private var errorMessage: String?
 
-    private var users: [PublicUser] {
-        let others = session.members
-            .filter { $0.id != session.ownUserId }
-            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    private var matches: [PublicUser] {
+        let search = query.trimmingCharacters(in: .whitespaces)
 
-        guard !query.isEmpty else {
-            return others
+        return session.members
+            .filter { $0.id != session.ownUserId }
+            .filter { search.isEmpty || $0.name.localizedCaseInsensitiveContains(search) }
+            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
+    private var friends: [PublicUser] {
+        let ids = Set(session.friendLists.friends)
+
+        return matches.filter { ids.contains($0.id) }
+    }
+
+    // everyone else under the first letter of their name
+    private var others: [(letter: String, users: [PublicUser])] {
+        let ids = Set(session.friendLists.friends)
+        let rest = matches.filter { !ids.contains($0.id) }
+        let groups = Dictionary(grouping: rest) { user in
+            user.name.first.map { $0.isLetter ? String($0).uppercased() : "#" } ?? "#"
         }
 
-        return others.filter { $0.name.localizedCaseInsensitiveContains(query) }
+        return groups.keys.sorted().map { (letter: $0, users: groups[$0] ?? []) }
     }
 
     var body: some View {
@@ -474,33 +490,78 @@ private struct NewDirectMessageSheet: View {
                 if let errorMessage {
                     Text(errorMessage)
                         .foregroundStyle(Theme.red)
+                        .listRowBackground(Theme.listBackground)
                 }
 
-                ForEach(users) { user in
-                    Button(action: { open(user) }) {
-                        HStack(spacing: 12) {
-                            AvatarView(user: user, size: 36, showsStatus: true)
-
-                            Text(user.name)
+                if query.isEmpty {
+                    Section {
+                        NavigationLink {
+                            AddFriendsScreen()
+                        } label: {
+                            Label("Add a Friend", systemImage: "person.badge.plus")
                                 .foregroundStyle(Theme.header)
                         }
+                        .listRowBackground(Theme.listBackground)
                     }
-                    .listRowBackground(Theme.listBackground)
+                }
+
+                if !friends.isEmpty {
+                    Section("Friends") {
+                        ForEach(friends) { user in
+                            row(user)
+                        }
+                    }
+                }
+
+                ForEach(others, id: \.letter) { group in
+                    Section(group.letter) {
+                        ForEach(group.users) { user in
+                            row(user)
+                        }
+                    }
                 }
             }
-            .listStyle(.plain)
             .scrollContentBackground(.hidden)
-            .background(Theme.listBackground)
-            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Find a friend")
+            .background(Theme.deepBackground)
+            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "To: Search people")
             .navigationTitle("New Message")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel", action: close)
+                    Button("Close", systemImage: "xmark", action: close)
                 }
             }
         }
-        .presentationBackground(Theme.listBackground)
+        .presentationDetents([.large])
+        .presentationBackground(Theme.deepBackground)
+    }
+
+    private func row(_ user: PublicUser) -> some View {
+        Button {
+            open(user)
+        } label: {
+            HStack(spacing: 12) {
+                AvatarView(user: user, size: 40, showsStatus: true)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(user.name)
+                        .foregroundStyle(Theme.header)
+                        .lineLimit(1)
+
+                    if let customStatus = user.customStatus, !customStatus.isEmpty {
+                        Text(customStatus)
+                            .font(.caption)
+                            .foregroundStyle(Theme.muted)
+                            .lineLimit(1)
+                    }
+                }
+
+                Spacer(minLength: 0)
+            }
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .listRowBackground(Theme.listBackground)
     }
 
     private func open(_ user: PublicUser) {

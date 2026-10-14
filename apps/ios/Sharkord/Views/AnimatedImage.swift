@@ -14,8 +14,14 @@ struct AnimatedImage: View {
 
     @State private var image: UIImage?
 
+    // what is on screen: the loaded image, or one already decoded for this url, so a row that is
+    // drawn again keeps its size instead of starting empty and growing
+    private var shown: UIImage? {
+        image ?? url.flatMap { AnimatedImageLoader.shared.cached(for: $0, maxPixelSize: maxPointSize * 3) }
+    }
+
     private var aspectRatio: CGFloat? {
-        guard sizesToImage, let size = image?.size, size.height > 0 else {
+        guard sizesToImage, let size = shown?.size, size.height > 0 else {
             return nil
         }
 
@@ -23,7 +29,7 @@ struct AnimatedImage: View {
     }
 
     var body: some View {
-        AnimatedImageView(image: image, contentMode: contentMode)
+        AnimatedImageView(image: shown, contentMode: contentMode)
             .aspectRatio(aspectRatio, contentMode: .fit)
             .task(id: url) {
                 image = nil
@@ -66,14 +72,23 @@ private struct AnimatedImageView: UIViewRepresentable {
 actor AnimatedImageLoader {
     static let shared = AnimatedImageLoader()
 
-    private let cache = NSCache<NSString, UIImage>()
+    // nscache is safe from any thread, so a view can read it while it is drawn
+    nonisolated(unsafe) private let cache = NSCache<NSString, UIImage>()
 
     init() {
         cache.countLimit = 120
     }
 
+    private nonisolated static func key(_ url: URL, _ maxPixelSize: CGFloat) -> NSString {
+        "\(url.absoluteString)@\(Int(maxPixelSize))" as NSString
+    }
+
+    nonisolated func cached(for url: URL, maxPixelSize: CGFloat) -> UIImage? {
+        cache.object(forKey: Self.key(url, maxPixelSize))
+    }
+
     func image(for url: URL, maxPixelSize: CGFloat) async -> UIImage? {
-        let key = "\(url.absoluteString)@\(Int(maxPixelSize))" as NSString
+        let key = Self.key(url, maxPixelSize)
 
         if let cached = cache.object(forKey: key) {
             return cached

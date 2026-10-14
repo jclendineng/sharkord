@@ -1691,7 +1691,9 @@ final class SessionStore {
                     return DirectMessageConversation(
                         channelId: conversation.channelId,
                         userId: conversation.userId,
-                        lastMessageAt: message.createdAt
+                        lastMessageAt: message.createdAt,
+                        lastMessagePreview: HTMLText.plainText(from: message.content ?? ""),
+                        lastMessageUserId: message.userId
                     )
                 }
                 .sorted { $0.lastMessageAt > $1.lastMessageAt }

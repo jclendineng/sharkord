@@ -39,6 +39,10 @@ enum FileThumbnails {
     private static let maxSize = 10 * 1024 * 1024
     private static let cache = NSCache<NSString, UIImage>()
 
+    static func cached(for file: SharkordFile, from url: URL) -> UIImage? {
+        cache.object(forKey: file.cacheKey(at: url))
+    }
+
     static func thumbnail(for file: SharkordFile, from url: URL) async -> UIImage? {
         if let cached = cache.object(forKey: file.cacheKey(at: url)) {
             return cached

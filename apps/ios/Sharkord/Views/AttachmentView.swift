@@ -15,16 +15,9 @@ struct AttachmentView: View {
 
             if file.isImage {
                 Button(action: openViewer) {
-                    AsyncImage(url: url) { image in
-                        image
-                            .resizable()
-                            .scaledToFit()
-                    } placeholder: {
-                        Theme.listBackground
-                            .frame(width: 240, height: 160)
-                    }
-                    .frame(maxWidth: 300, maxHeight: 300, alignment: .leading)
-                    .clipShape(.rect(cornerRadius: 8))
+                    AttachmentImage(file: file, url: url)
+                        .frame(maxWidth: 300, maxHeight: 300, alignment: .leading)
+                        .clipShape(.rect(cornerRadius: 8))
                 }
                 .buttonStyle(.plain)
                 .fullScreenCover(isPresented: $isViewerPresented) {
@@ -47,6 +40,30 @@ struct AttachmentView: View {
     }
 }
 
+// a picture in a message, from memory when it has been shown before: a row drawn again then
+// has its size at once, where a fresh download first showed a placeholder of another size and
+// made the conversation jump
+private struct AttachmentImage: View {
+    let file: SharkordFile
+    let url: URL
+
+    @State private var image: UIImage?
+
+    var body: some View {
+        if let image = image ?? FileImageCache.cached(file, at: url) {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFit()
+        } else {
+            Theme.listBackground
+                .frame(width: 240, height: 160)
+                .task(id: file.id) {
+                    image = await FileImageCache.load(file, from: url)
+                }
+        }
+    }
+}
+
 // opens on the phone in quick look, not in a web page. a document small enough to fetch shows
 // its first page above the name, the way quick look draws it in files
 private struct FileCard: View {
@@ -60,7 +77,7 @@ private struct FileCard: View {
     var body: some View {
         OpenFileButton(file: file) { isLoading in
             VStack(alignment: .leading, spacing: 0) {
-                if let thumbnail {
+                if let thumbnail = thumbnail ?? FileThumbnails.cached(for: file, from: url) {
                     Image(uiImage: thumbnail)
                         .resizable()
                         .scaledToFit()
