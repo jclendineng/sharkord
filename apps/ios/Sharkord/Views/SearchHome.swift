@@ -157,9 +157,13 @@ struct SearchHome: View {
     let model: SearchHomeModel
     let onOpenChannel: (Int) -> Void
     let onOpenUser: (PublicUser) -> Void
+    // the channel screen shows its own set, without recent
+    var only: [SearchTab]?
+    // the channel screen's members tab starts with an invite row
+    var onInvite: (() -> Void)?
 
     private var tabs: [SearchTab] {
-        SearchTab.tabs(inChannel: model.scope != nil)
+        only ?? SearchTab.tabs(inChannel: model.scope != nil)
     }
 
     var body: some View {
@@ -170,7 +174,7 @@ struct SearchHome: View {
 
             TabView(selection: $model.tab) {
                 ForEach(tabs) { tab in
-                    SearchTabPage(model: model, tab: tab, onOpenChannel: onOpenChannel, onOpenUser: onOpenUser)
+                    SearchTabPage(model: model, tab: tab, onOpenChannel: onOpenChannel, onOpenUser: onOpenUser, onInvite: onInvite)
                         .tag(tab)
                 }
             }
@@ -245,6 +249,7 @@ private struct SearchTabPage: View {
     let tab: SearchTab
     let onOpenChannel: (Int) -> Void
     let onOpenUser: (PublicUser) -> Void
+    let onInvite: (() -> Void)?
 
     @Environment(SessionStore.self) private var session
 
@@ -269,7 +274,7 @@ private struct SearchTabPage: View {
         case .recent:
             RecentPage(model: model, onOpenChannel: onOpenChannel)
         case .members:
-            MembersPage(model: model, onOpenUser: onOpenUser)
+            MembersPage(model: model, onOpenUser: onOpenUser, onInvite: onInvite)
         case .channels:
             ChannelsPage(model: model, onOpenChannel: onOpenChannel)
         case .media:
@@ -479,6 +484,7 @@ private struct ChannelsPage: View {
 private struct MembersPage: View {
     let model: SearchHomeModel
     let onOpenUser: (PublicUser) -> Void
+    let onInvite: (() -> Void)?
 
     @Environment(SessionStore.self) private var session
 
@@ -498,6 +504,14 @@ private struct MembersPage: View {
     }
 
     var body: some View {
+        if let onInvite {
+            ActionGroup {
+                ActionRow(title: "Invite Members", systemImage: "person.badge.plus", action: onInvite)
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 8)
+        }
+
         if let members {
             let online = members.filter { $0.status != nil && $0.status != .offline }
             let offline = members.filter { $0.status == nil || $0.status == .offline }

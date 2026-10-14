@@ -94,7 +94,7 @@ struct ChannelActionsSheet: View {
     }
 }
 
-private struct ChannelNotificationsSheet: View {
+struct ChannelNotificationsSheet: View {
     let channel: Channel
 
     @Environment(SessionStore.self) private var session

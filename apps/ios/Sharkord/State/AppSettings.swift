@@ -28,6 +28,7 @@ final class AppSettings {
         static let outputVolume = "settings.outputVolume"
         static let streamQuality = "settings.streamQuality"
         static let shareAppAudio = "settings.shareAppAudio"
+        static let doubleTapReaction = "settings.doubleTapReaction"
     }
 
     private let defaults = UserDefaults.standard
@@ -63,13 +64,20 @@ final class AppSettings {
         didSet { defaults.set(shareAppAudio, forKey: Key.shareAppAudio) }
     }
 
+    // the shortcode a double tap on a message reacts with, picked from the message menu's
+    // edit link like discord's
+    var doubleTapReaction: String {
+        didSet { defaults.set(doubleTapReaction, forKey: Key.doubleTapReaction) }
+    }
+
     private init() {
         defaults.register(defaults: [
             Key.echoCancellation: true,
             Key.noiseSuppression: true,
             Key.autoGainControl: true,
             Key.speakerByDefault: true,
-            Key.outputVolume: 1.0
+            Key.outputVolume: 1.0,
+            Key.doubleTapReaction: "heart"
         ])
 
         echoCancellation = defaults.bool(forKey: Key.echoCancellation)
@@ -78,6 +86,7 @@ final class AppSettings {
         speakerByDefault = defaults.bool(forKey: Key.speakerByDefault)
         outputVolume = defaults.double(forKey: Key.outputVolume)
         shareAppAudio = defaults.bool(forKey: Key.shareAppAudio)
+        doubleTapReaction = defaults.string(forKey: Key.doubleTapReaction) ?? "heart"
         streamQuality = defaults.string(forKey: Key.streamQuality).flatMap(StreamQuality.init(rawValue:)) ?? .standard
     }
 }

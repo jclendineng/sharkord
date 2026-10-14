@@ -3,6 +3,9 @@ import SwiftUI
 struct EmojiPickerView: View {
     // custom emoji can be reactions, but the composer only inserts unicode characters
     let includesCustom: Bool
+    var title = "Emoji"
+    var subtitle: String?
+    var detents: Set<PresentationDetent> = [.medium, .large]
     let onPick: (String) -> Void
 
     @Environment(SessionStore.self) private var session
@@ -66,10 +69,25 @@ struct EmojiPickerView: View {
             }
             .background(Theme.chatBackground)
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Find the perfect emoji")
-            .navigationTitle("Emoji")
+            .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                if let subtitle {
+                    ToolbarItem(placement: .principal) {
+                        VStack(spacing: 1) {
+                            Text(title)
+                                .font(.headline)
+                                .foregroundStyle(Theme.header)
+
+                            Text(subtitle)
+                                .font(.caption)
+                                .foregroundStyle(Theme.muted)
+                        }
+                    }
+                }
+            }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents(detents)
         .presentationBackground(Theme.chatBackground)
     }
 

@@ -13,6 +13,11 @@ struct SearchRoute: Hashable {
     var channelId: Int?
 }
 
+// the channel's own screen, opened from its name: members, media, pins, links and files
+struct ChannelInfoRoute: Hashable {
+    let channelId: Int
+}
+
 extension View {
     func chatDestinations() -> some View {
         navigationDestination(for: ChatRoute.self) { route in
@@ -23,6 +28,9 @@ extension View {
         }
         .navigationDestination(for: SearchRoute.self) { route in
             SearchScreen(channelId: route.channelId)
+        }
+        .navigationDestination(for: ChannelInfoRoute.self) { route in
+            ChannelInfoScreen(channelId: route.channelId)
         }
     }
 }

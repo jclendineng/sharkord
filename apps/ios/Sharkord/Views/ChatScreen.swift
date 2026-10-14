@@ -50,8 +50,9 @@ struct ChatScreen: View {
                 ReadOnlyComposer()
             }
         }
-        // while the keyboard and the attachment panel trade places, see AttachPanelModel
-        .ignoresSafeArea(store.attachPanel.isHandingOff ? .keyboard : [], edges: .bottom)
+        // a panel in the keyboard's place never rides the keyboard: the two trade places, or the
+        // keyboard comes up over the panel for its search, see AttachPanelModel
+        .ignoresSafeArea(store.attachPanel.isHandingOff || store.attachPanel.isOpen ? .keyboard : [], edges: .bottom)
         .safeAreaInset(edge: .top, spacing: 0) {
             if session.showsReconnectingBanner {
                 ReconnectingBanner()
@@ -63,7 +64,14 @@ struct ChatScreen: View {
         .toolbarVisibility(.hidden, for: .tabBar)
         .toolbar {
             PlainToolbarItem(placement: .topBarLeading) {
-                ChatTitle(title: title, partner: partner, isDirectMessage: channel?.isDm == true)
+                if channel?.isDm == true {
+                    ChatTitle(title: title, partner: partner, isDirectMessage: true)
+                } else {
+                    NavigationLink(value: ChannelInfoRoute(channelId: channelId)) {
+                        ChatTitle(title: title, partner: partner, isDirectMessage: false)
+                    }
+                    .buttonStyle(.plain)
+                }
             }
 
             ToolbarItem(placement: .topBarTrailing) {
@@ -169,9 +177,11 @@ private struct ChatTitle: View {
                         .foregroundStyle(Theme.header)
                         .lineLimit(1)
 
-                    Image(systemName: "chevron.right")
-                        .font(.caption2.bold())
-                        .foregroundStyle(Theme.muted)
+                    if !isDirectMessage {
+                        Image(systemName: "chevron.right")
+                            .font(.caption2.bold())
+                            .foregroundStyle(Theme.muted)
+                    }
                 }
 
                 HStack(spacing: 4) {

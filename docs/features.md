@@ -91,6 +91,13 @@ downloaded once into the app's cache. A file of 10 MB or less shows its first pa
 above its name, drawn by Quick Look from that same cached copy. A pinned GIF shows the GIF in the
 pinned list, not its link.
 
+Tapping a channel's name at the top of the chat opens its screen, as in Discord: search,
+notification settings and, with Manage Channels, the channel's settings, then tabs for its
+members (with an invite row), media, pins, links and files. The emoji a double tap on a
+message reacts with is set from the Edit link in the message menu and kept on the phone.
+Searching for an emoji, GIF or sticker takes the panel to full height with the keyboard over
+its bottom, so the results scroll in between.
+
 Uploaded files are stored under their own name and served from `/public/<name>`. With
 **Signed File Links** off (the default) anyone who has or guesses that link can open the
 file without signing in. Turn it on in Server Settings, Storage, and every link carries a

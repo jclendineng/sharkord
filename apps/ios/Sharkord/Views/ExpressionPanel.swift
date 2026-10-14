@@ -40,6 +40,7 @@ struct ExpressionPanel: View {
         } bar: {
             EmptyView()
         }
+        .environment(model)
     }
 }
 
@@ -93,6 +94,10 @@ private struct SearchField: View {
     let prompt: String
     @Binding var text: String
 
+    @Environment(AttachPanelModel.self) private var panel
+
+    @FocusState private var isFocused: Bool
+
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
@@ -103,14 +108,25 @@ private struct SearchField: View {
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .submitLabel(.search)
+                .focused($isFocused)
         }
         .padding(.horizontal, 12)
         .frame(height: 40)
         .overlay {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(Theme.divider, lineWidth: 1)
+                .strokeBorder(isFocused ? Theme.blurple : Theme.divider, lineWidth: 1)
         }
         .padding(.horizontal, 10)
+        // like discord, searching takes the panel to full height with the keyboard over its
+        // bottom, so the results scroll in the room between the two
+        .onChange(of: isFocused) { _, focused in
+            if focused {
+                panel.beginSearch()
+            }
+        }
+        .onChange(of: panel.searchDismissals) {
+            isFocused = false
+        }
     }
 }
 

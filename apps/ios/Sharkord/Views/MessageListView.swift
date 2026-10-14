@@ -114,7 +114,7 @@ struct MessageListView<Header: View>: View {
 
         Task {
             do {
-                try await session.toggleReaction(messageId: message.id, emoji: MessageActionsSheet.quickReactions[0])
+                try await session.toggleReaction(messageId: message.id, emoji: AppSettings.shared.doubleTapReaction)
             } catch {
                 session.showError(error)
             }

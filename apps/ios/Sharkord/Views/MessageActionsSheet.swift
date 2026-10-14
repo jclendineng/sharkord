@@ -4,7 +4,7 @@ import UIKit
 // discord's long press sheet for a message: quick reactions, then what can be done with it.
 // your own messages can be edited and deleted, anyone else's mentioned or reported
 struct MessageActionsSheet: View {
-    // shortcodes, the first is what a double tap on a message adds
+    // shortcodes
     static let quickReactions = ["heart", "100", "+1", "joy", "fire"]
 
     let message: Message
@@ -19,6 +19,7 @@ struct MessageActionsSheet: View {
     @Environment(\.openURL) private var openURL
 
     @State private var isPickerPresented = false
+    @State private var isDoubleTapPickerPresented = false
     @State private var isForwardPresented = false
     @State private var isReportUnavailable = false
     // exactly as tall as every action, delete included, with nothing to scroll or drag to
@@ -71,7 +72,10 @@ struct MessageActionsSheet: View {
                     HStack(spacing: 4) {
                         Text("Double tap a message to")
 
-                        EmojiView(value: Self.quickReactions[0], size: 16)
+                        EmojiView(value: AppSettings.shared.doubleTapReaction, size: 16)
+
+                        Button("Edit", action: openDoubleTapPicker)
+                            .foregroundStyle(Theme.link)
                     }
                     .font(.subheadline)
                     .foregroundStyle(Theme.muted)
@@ -136,6 +140,16 @@ struct MessageActionsSheet: View {
         .sheet(isPresented: $isPickerPresented) {
             EmojiPickerView(includesCustom: true, onPick: react)
         }
+        .sheet(isPresented: $isDoubleTapPickerPresented) {
+            EmojiPickerView(
+                includesCustom: true,
+                title: "Edit default",
+                subtitle: "Choose double tap emoji",
+                // straight to full height, the whole list scrolls without a drag up first
+                detents: [.large],
+                onPick: setDoubleTapReaction
+            )
+        }
         .sheet(isPresented: $isForwardPresented, onDismiss: close) {
             ForwardSheet(message: message)
         }
@@ -148,6 +162,14 @@ struct MessageActionsSheet: View {
 
     private func openPicker() {
         isPickerPresented = true
+    }
+
+    private func openDoubleTapPicker() {
+        isDoubleTapPickerPresented = true
+    }
+
+    private func setDoubleTapReaction(_ emoji: String) {
+        AppSettings.shared.doubleTapReaction = emoji
     }
 
     private func react(_ emoji: String) {

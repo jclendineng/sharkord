@@ -584,6 +584,14 @@ final class AttachPanelModel {
     // the keyboard is translucent: as it slides over, the panel fades to the color the
     // keyboard always sits on, so nothing shows through and nothing changes when it goes
     private(set) var isCoveredByKeyboard = false
+    // a search field in the panel has the keyboard: the panel is at full height and the
+    // keyboard comes up over its bottom instead of pushing the composer and the panel up
+    private(set) var isSearching = false
+    // how much of the panel's bottom the keyboard covers while searching, so the content ends
+    // above it
+    private(set) var searchKeyboardInset: CGFloat = 0
+    // bumped to have the focused search field give up the keyboard
+    private(set) var searchDismissals = 0
 
     // all but a sliver of the conversation under the navigation bar, as discord leaves it
     var expandedHeight: CGFloat {
@@ -624,6 +632,7 @@ final class AttachPanelModel {
         dragOffset = 0
         returnsToKeyboard = false
         isCoveredByKeyboard = false
+        isSearching = false
         self.kind = kind
 
         withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
@@ -649,6 +658,7 @@ final class AttachPanelModel {
             returnsToKeyboard = true
             isHandingOff = true
             isCoveredByKeyboard = false
+            isSearching = false
             isOpen = true
         }
     }
@@ -673,6 +683,8 @@ final class AttachPanelModel {
             returnsToKeyboard = false
             isHandingOff = false
             isCoveredByKeyboard = false
+            isSearching = false
+            searchKeyboardInset = 0
         }
     }
 
@@ -702,11 +714,51 @@ final class AttachPanelModel {
             settledHeight = Self.restingHeight
             returnsToKeyboard = false
         }
+
+        endSearch()
+    }
+
+    func beginSearch() {
+        guard isOpen, !isSearching else {
+            return
+        }
+
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
+            isSearching = true
+            settledHeight = expandedHeight
+            dragOffset = 0
+            // the keyboard may already be on its way, its notification refines this
+            searchKeyboardInset = Self.restingHeight
+        }
+    }
+
+    // the keyboard is gone, the panel stays where it is
+    func endSearch() {
+        guard isSearching else {
+            return
+        }
+
+        isSearching = false
+        searchKeyboardInset = 0
+    }
+
+    // follows the keyboard in its own animation, so the content's bottom moves with its top
+    func keyboardWillChange(inset: CGFloat) {
+        guard isSearching else {
+            return
+        }
+
+        searchKeyboardInset = inset
     }
 
     func drag(_ translation: CGFloat) {
         guard isOpen else {
             return
+        }
+
+        // a drag on the panel puts the search keyboard away first, as discord does
+        if isSearching && searchKeyboardInset > 0 {
+            searchDismissals += 1
         }
 
         dragOffset = translation

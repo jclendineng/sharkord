@@ -203,7 +203,7 @@ extension ChannelType: Identifiable {
     var id: String { rawValue }
 }
 
-private struct ChannelEditor: View {
+struct ChannelEditor: View {
     // helpers/channels.ts
     private static let nameLimit = 27
     private static let topicLimit = 128

@@ -112,7 +112,10 @@ struct ComposerView: View {
             if store.attachPanel.isHandingOff && store.attachPanel.isOpen {
                 store.attachPanel.finishHandoffToPanel()
             }
+
+            store.attachPanel.endSearch()
         }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillChangeFrameNotification), perform: keyboardWillChange)
         // typing more than was there, not the field being cleared or a draft being loaded
         .onChange(of: text) { old, new in
             if new.count > old.count && store.editing == nil {
@@ -305,6 +308,26 @@ struct ComposerView: View {
     // a voice message is a file, so it needs uploads, and there is nothing to record over text
     private var canRecord: Bool {
         canUpload && !hasText && attachments.isEmpty && store.editing == nil
+    }
+
+    // while searching the panel's content ends at the keyboard's top, moving with it in the
+    // keyboard's own animation
+    private func keyboardWillChange(_ notification: Notification) {
+        guard
+            store.attachPanel.isSearching,
+            let info = notification.userInfo,
+            let frame = info[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
+            let window = UIApplication.shared.topViewController?.view.window
+        else {
+            return
+        }
+
+        let duration = info[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double ?? 0.25
+        let covered = max(0, window.bounds.height - frame.minY - window.safeAreaInsets.bottom)
+
+        withAnimation(.easeOut(duration: duration)) {
+            store.attachPanel.keyboardWillChange(inset: covered)
+        }
     }
 
     // the expression panel in the keyboard's place, or the keyboard back in the panel's

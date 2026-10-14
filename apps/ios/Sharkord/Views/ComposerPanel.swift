@@ -30,6 +30,7 @@ struct ComposerPanel<Content: View, Bar: View>: View {
     private var panel: some View {
         content
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(.bottom, model.searchKeyboardInset)
             // the content fades out under the grabber instead of meeting an edge
             .overlay(alignment: .top) {
                 grabber
