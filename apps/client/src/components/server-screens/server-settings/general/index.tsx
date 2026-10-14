@@ -21,6 +21,7 @@ type TServerGeneralValues = {
   enableSearch: boolean;
   showWelcomeDialog: boolean;
   pushShowMessageContent: boolean;
+  linkPreviewsPrivateNetwork: boolean;
   reportEmail: string;
   klipyApiKey: string;
   // undefined means untouched, null means remove
@@ -39,6 +40,7 @@ const INITIAL_VALUES: TServerGeneralValues = {
   enableSearch: true,
   showWelcomeDialog: true,
   pushShowMessageContent: true,
+  linkPreviewsPrivateNetwork: false,
   reportEmail: '',
   klipyApiKey: ''
 };
@@ -62,6 +64,7 @@ const General = memo(() => {
       enableSearch: values.enableSearch,
       showWelcomeDialog: values.showWelcomeDialog,
       pushShowMessageContent: values.pushShowMessageContent,
+      linkPreviewsPrivateNetwork: values.linkPreviewsPrivateNetwork,
       reportEmail: values.reportEmail.trim() || null,
       klipyApiKey: values.klipyApiKey.trim() || null
     });
@@ -94,6 +97,7 @@ const General = memo(() => {
       enableSearch: settings.enableSearch ?? true,
       showWelcomeDialog: settings.showWelcomeDialog ?? true,
       pushShowMessageContent: settings.pushShowMessageContent ?? true,
+      linkPreviewsPrivateNetwork: settings.linkPreviewsPrivateNetwork ?? false,
       reportEmail: settings.reportEmail ?? '',
       klipyApiKey: settings.klipyApiKey ?? ''
     });
@@ -133,6 +137,10 @@ const General = memo(() => {
   );
   const handlePushContentChange = useCallback(
     (checked: boolean) => onChange('pushShowMessageContent', checked),
+    [onChange]
+  );
+  const handlePrivatePreviewsChange = useCallback(
+    (checked: boolean) => onChange('linkPreviewsPrivateNetwork', checked),
     [onChange]
   );
 
@@ -261,6 +269,16 @@ const General = memo(() => {
         <Switch
           checked={values.pushShowMessageContent}
           onCheckedChange={handlePushContentChange}
+        />
+      </Group>
+
+      <Group
+        label={t('linkPreviewsPrivateNetworkLabel')}
+        description={t('linkPreviewsPrivateNetworkDesc')}
+      >
+        <Switch
+          checked={values.linkPreviewsPrivateNetwork}
+          onCheckedChange={handlePrivatePreviewsChange}
         />
       </Group>
     </SettingsSection>

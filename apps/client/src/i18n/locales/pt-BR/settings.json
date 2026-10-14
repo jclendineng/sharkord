@@ -151,6 +151,8 @@
   "showWelcomeDialogDesc": "Mostra um diálogo de configuração de perfil aos usuários na primeira vez que entrarem no servidor.",
   "pushShowMessageContentLabel": "Mostrar o texto nas notificações push",
   "pushShowMessageContentDesc": "As notificações push passam pelos servidores da Apple. Desative para mostrar apenas quem enviou a mensagem, nunca o conteúdo nem o canal.",
+  "linkPreviewsPrivateNetworkLabel": "Pré-visualizar links na rede do servidor",
+  "linkPreviewsPrivateNetworkDesc": "Permite que as pré-visualizações de links carreguem de endereços na própria rede do servidor, como outros apps de um servidor doméstico. Ative apenas se confiar em todos os membros, pois qualquer um poderia fazer o servidor carregar páginas que só ele alcança. Também definido como previewPrivateNetwork em [links] no config.ini.",
   "reportEmailLabel": "E-mail para denúncias",
   "reportEmailDesc": "Para onde as pessoas enviam denúncias sobre este servidor ou uma mensagem nele. Os apps abrem um e-mail para este endereço em Denunciar.",
   "reportEmailPlaceholder": "denuncias@exemplo.com",

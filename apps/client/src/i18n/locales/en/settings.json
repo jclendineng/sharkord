@@ -151,6 +151,8 @@
   "showWelcomeDialogDesc": "Show a profile setup dialog to users the first time they join the server.",
   "pushShowMessageContentLabel": "Show Message Text in Push Notifications",
   "pushShowMessageContentDesc": "Push notifications pass through Apple's servers. Turn this off to only say who sent a message, never what it says or which channel it is in.",
+  "linkPreviewsPrivateNetworkLabel": "Preview Links on the Server's Network",
+  "linkPreviewsPrivateNetworkDesc": "Let link previews load from addresses on the server's own network, like a home server's other apps. Only turn this on if you trust every member, since anyone could then make the server load pages only it can reach. Also set as previewPrivateNetwork under [links] in config.ini.",
   "reportEmailLabel": "Report Email",
   "reportEmailDesc": "Where people send reports about this server or a message on it. The apps open an email to this address from Report.",
   "reportEmailPlaceholder": "reports@example.com",

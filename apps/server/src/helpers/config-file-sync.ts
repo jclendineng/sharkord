@@ -15,6 +15,7 @@ type TMirroredValues = {
   allowNewUsers: boolean;
   signedUrls: boolean;
   klipyApiKey: string;
+  previewPrivateNetwork: boolean;
 };
 
 type TFileValues = Partial<TMirroredValues> & {
@@ -23,7 +24,12 @@ type TFileValues = Partial<TMirroredValues> & {
   forceSignedUrls?: boolean;
 };
 
-const MIRRORED_KEYS = ['allowNewUsers', 'signedUrls', 'klipyApiKey'] as const;
+const MIRRORED_KEYS = [
+  'allowNewUsers',
+  'signedUrls',
+  'klipyApiKey',
+  'previewPrivateNetwork'
+] as const;
 
 // what was last written to the file, so a value that differs from it is known to be an edit
 const LAST_SYNC_PATH = path.join(DATA_PATH, 'config-sync.json');
@@ -63,6 +69,7 @@ const readFileValues = async (): Promise<TFileValues> => {
   const registration = toSection(parsed.registration);
   const storage = toSection(parsed.storage);
   const gifs = toSection(parsed.gifs);
+  const links = toSection(parsed.links);
   const klipyApiKey = gifs.klipyApiKey;
 
   return {
@@ -70,6 +77,7 @@ const readFileValues = async (): Promise<TFileValues> => {
     signedUrls: toBoolean(storage.signedUrls),
     klipyApiKey:
       typeof klipyApiKey === 'string' ? klipyApiKey.trim() : undefined,
+    previewPrivateNetwork: toBoolean(links.previewPrivateNetwork),
     inviteOnly: toBoolean(registration.inviteOnly),
     forceSignedUrls: toBoolean(storage.forceSignedUrls)
   };
@@ -81,7 +89,8 @@ const readDatabaseValues = async (): Promise<TMirroredValues> => {
   return {
     allowNewUsers: settings.allowNewUsers,
     signedUrls: settings.storageSignedUrlsEnabled,
-    klipyApiKey: settings.klipyApiKey ?? ''
+    klipyApiKey: settings.klipyApiKey ?? '',
+    previewPrivateNetwork: settings.linkPreviewsPrivateNetwork
   };
 };
 
@@ -100,7 +109,8 @@ const applyToDatabase = async (changes: Partial<TMirroredValues>) => {
     klipyApiKey:
       changes.klipyApiKey === undefined
         ? undefined
-        : changes.klipyApiKey || null
+        : changes.klipyApiKey || null,
+    linkPreviewsPrivateNetwork: changes.previewPrivateNetwork
   });
 };
 
@@ -110,6 +120,7 @@ const writeFile = async (values: TMirroredValues) => {
   const registration = toSection(parsed.registration);
   const storage = toSection(parsed.storage);
   const gifs = toSection(parsed.gifs);
+  const links = toSection(parsed.links);
 
   delete registration.inviteOnly;
   delete storage.forceSignedUrls;
@@ -120,6 +131,10 @@ const writeFile = async (values: TMirroredValues) => {
   };
   parsed.storage = { ...storage, signedUrls: values.signedUrls };
   parsed.gifs = { ...gifs, klipyApiKey: values.klipyApiKey };
+  parsed.links = {
+    ...links,
+    previewPrivateNetwork: values.previewPrivateNetwork
+  };
 
   // recorded first, so the watcher sees the write as already in sync
   await fs.writeFile(LAST_SYNC_PATH, JSON.stringify(values));

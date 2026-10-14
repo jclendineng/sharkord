@@ -98,6 +98,13 @@ const settings = sqliteTable(
     })
       .notNull()
       .default(true),
+    // link previews may be fetched from addresses on the server's own network. off by default:
+    // any member could otherwise have the server load pages only it can reach
+    linkPreviewsPrivateNetwork: integer('link_previews_private_network', {
+      mode: 'boolean'
+    })
+      .notNull()
+      .default(false),
     storageSignedUrlsEnabled: integer('storage_signed_urls_enabled', {
       mode: 'boolean'
     }).notNull(),

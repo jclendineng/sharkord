@@ -1,0 +1,1 @@
+ALTER TABLE `settings` ADD `link_previews_private_network` integer DEFAULT false NOT NULL;

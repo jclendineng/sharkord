@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { eq } from 'drizzle-orm';
 import { tdb } from '../../../__tests__/setup';
-import { messages } from '../../../db/schema';
+import { messages, settings } from '../../../db/schema';
 import { processMessageMetadata } from '../get-message-metadata';
 import { createOpenGraphMetadata, getDirectMediaMetaFromUrl } from '../helpers';
 
@@ -62,6 +62,18 @@ describe('link preview ssrf guard', () => {
 
     expect(result).toBeUndefined();
     expect(await storedMetadata(messageId)).toBeNull();
+  });
+
+  test('should preview a private address once the admin allows the server network', async () => {
+    await tdb.update(settings).set({ linkPreviewsPrivateNetwork: true });
+
+    const content = 'look at http://10.0.0.1/photo.png';
+    const messageId = await insertMessage(content);
+
+    const result = await processMessageMetadata(content, messageId);
+
+    expect(result).toBeDefined();
+    expect(await storedMetadata(messageId)).not.toBeNull();
   });
 
   test('should still build metadata for a routable address', async () => {

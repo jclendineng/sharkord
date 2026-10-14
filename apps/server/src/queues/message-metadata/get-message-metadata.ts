@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import { getLinkPreview } from 'link-preview-js';
 import { isIP } from 'net';
 import { db } from '../../db';
+import { getSettings } from '../../db/queries/server';
 import { messages } from '../../db/schema';
 import { isPrivateIP } from '../../helpers/network';
 import {
@@ -29,6 +30,11 @@ const urlMetadataParser = async (
 
     if (!urls) return [];
 
+    // a server on a home network may preview its own links, when the admin allows it
+    const { linkPreviewsPrivateNetwork } = await getSettings();
+    const isBlockedAddress = (address: string) =>
+      !linkPreviewsPrivateNetwork && isPrivateIP(address);
+
     const promises = urls.map(async (url) => {
       if (metadataCache.has(url)) return metadataCache.get(url);
 
@@ -51,7 +57,7 @@ const urlMetadataParser = async (
       }
 
       // it's already an ip address, check if it's private
-      if (isIP(parsed.hostname) && isPrivateIP(parsed.hostname)) {
+      if (isIP(parsed.hostname) && isBlockedAddress(parsed.hostname)) {
         return;
       }
 
@@ -88,7 +94,7 @@ const urlMetadataParser = async (
                   }
 
                   for (const entry of addresses) {
-                    if (isPrivateIP(entry.address)) {
+                    if (isBlockedAddress(entry.address)) {
                       reject(new Error('Cannot resolve private IP addresses'));
                       return;
                     }

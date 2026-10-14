@@ -149,6 +149,8 @@
   "showWelcomeDialogDesc": "Mostra agli utenti una finestra di configurazione del profilo la prima volta che entrano nel server.",
   "pushShowMessageContentLabel": "Mostra il testo nelle notifiche push",
   "pushShowMessageContentDesc": "Le notifiche push passano dai server di Apple. Disattiva l'opzione per indicare solo chi ha inviato un messaggio, mai il contenuto o il canale.",
+  "linkPreviewsPrivateNetworkLabel": "Anteprime dei link sulla rete del server",
+  "linkPreviewsPrivateNetworkDesc": "Consente alle anteprime dei link di caricarsi da indirizzi sulla rete del server, come le altre app di un server domestico. Attivalo solo se ti fidi di tutti i membri, perché chiunque potrebbe far caricare al server pagine raggiungibili solo da lui. Si imposta anche come previewPrivateNetwork in [links] nel config.ini.",
   "reportEmailLabel": "Email per le segnalazioni",
   "reportEmailDesc": "Dove inviare le segnalazioni su questo server o su un messaggio. Le app aprono un'email a questo indirizzo da Segnala.",
   "reportEmailPlaceholder": "segnalazioni@esempio.it",

@@ -149,6 +149,8 @@
   "showWelcomeDialogDesc": "Zobrazit uživatelům dialog pro nastavení profilu při jejich prvním připojení k serveru.",
   "pushShowMessageContentLabel": "Zobrazovat text zprávy v push oznámeních",
   "pushShowMessageContentDesc": "Push oznámení procházejí servery Applu. Po vypnutí oznámení uvede jen, kdo zprávu poslal, nikdy její obsah ani kanál.",
+  "linkPreviewsPrivateNetworkLabel": "Náhledy odkazů v síti serveru",
+  "linkPreviewsPrivateNetworkDesc": "Povolí načítání náhledů odkazů z adres ve vlastní síti serveru, například z dalších aplikací domácího serveru. Zapněte jen tehdy, když důvěřujete všem členům, protože kdokoli by pak mohl server přimět načíst stránky dostupné jen jemu. Nastavuje se také jako previewPrivateNetwork v sekci [links] v config.ini.",
   "reportEmailLabel": "E-mail pro nahlášení",
   "reportEmailDesc": "Kam lidé posílají nahlášení tohoto serveru nebo zprávy na něm. Aplikace z Nahlásit otevřou e-mail na tuto adresu.",
   "reportEmailPlaceholder": "nahlaseni@priklad.cz",

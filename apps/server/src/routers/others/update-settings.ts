@@ -54,6 +54,7 @@ const zGeneralSettings = z.object({
   enableSearch: z.boolean().optional(),
   showWelcomeDialog: z.boolean().optional(),
   pushShowMessageContent: z.boolean().optional(),
+  linkPreviewsPrivateNetwork: z.boolean().optional(),
   // where people send reports about the server or a message on it, shown in the apps
   reportEmail: z
     .email('Enter a valid email address.')
@@ -66,7 +67,8 @@ const zGeneralSettings = z.object({
 const CONFIG_FILE_SETTING_KEYS = [
   'allowNewUsers',
   'storageSignedUrlsEnabled',
-  'klipyApiKey'
+  'klipyApiKey',
+  'linkPreviewsPrivateNetwork'
 ];
 
 const STORAGE_SETTING_KEYS = Object.keys(zStorageSettings.shape);

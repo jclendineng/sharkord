@@ -39,6 +39,7 @@ const resetToUnsynced = async () => {
   delete parsed.registration;
   delete parsed.storage;
   delete parsed.gifs;
+  delete parsed.links;
 
   await writeIni(parsed);
   await fs.rm(LAST_SYNC_PATH, { force: true });
@@ -66,6 +67,7 @@ describe('syncConfigFile', () => {
     expect(parsed.registration).toEqual({ allowNewUsers: true });
     expect(parsed.storage).toEqual({ signedUrls: false });
     expect(parsed.gifs).toEqual({ klipyApiKey: '' });
+    expect(parsed.links).toEqual({ previewPrivateNetwork: false });
   });
 
   test('should keep the rest of the file as it was', async () => {
@@ -87,16 +89,22 @@ describe('syncConfigFile', () => {
     parsed.registration = { allowNewUsers: false };
     parsed.storage = { signedUrls: true };
     parsed.gifs = { klipyApiKey: 'from-the-file' };
+    parsed.links = { previewPrivateNetwork: true };
     await writeIni(parsed);
 
     await syncConfigFile();
 
-    const { allowNewUsers, storageSignedUrlsEnabled, klipyApiKey } =
-      await getSettings();
+    const {
+      allowNewUsers,
+      storageSignedUrlsEnabled,
+      klipyApiKey,
+      linkPreviewsPrivateNetwork
+    } = await getSettings();
 
     expect(allowNewUsers).toBe(false);
     expect(storageSignedUrlsEnabled).toBe(true);
     expect(klipyApiKey).toBe('from-the-file');
+    expect(linkPreviewsPrivateNetwork).toBe(true);
   });
 
   test('should leave the settings alone when the file was not edited', async () => {
@@ -203,7 +211,8 @@ describe('others.updateSettings', () => {
     await caller.others.updateSettings({
       allowNewUsers: false,
       storageSignedUrlsEnabled: true,
-      klipyApiKey: 'typed-key'
+      klipyApiKey: 'typed-key',
+      linkPreviewsPrivateNetwork: true
     });
 
     const parsed = await readIni();
@@ -211,6 +220,7 @@ describe('others.updateSettings', () => {
     expect(parsed.registration).toEqual({ allowNewUsers: false });
     expect(parsed.storage).toEqual({ signedUrls: true });
     expect(parsed.gifs).toEqual({ klipyApiKey: 'typed-key' });
+    expect(parsed.links).toEqual({ previewPrivateNetwork: true });
   });
 
   test('should leave the file alone for other settings', async () => {
