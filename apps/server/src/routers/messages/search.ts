@@ -9,6 +9,7 @@ import {
   inArray,
   isNotNull,
   lt,
+  or,
   sql
 } from 'drizzle-orm';
 import { z } from 'zod';
@@ -144,17 +145,21 @@ const searchMessagesRoute = rateLimitedProcedure(protectedProcedure, {
           .from(messageFiles)
           .where(eq(messageFiles.messageId, messages.id))
       ),
-      image: exists(
-        db
-          .select({ id: messageFiles.messageId })
-          .from(messageFiles)
-          .innerJoin(files, eq(files.id, messageFiles.fileId))
-          .where(
-            and(
-              eq(messageFiles.messageId, messages.id),
-              sql`${files.mimeType} GLOB 'image/*'`
+      // an uploaded picture, or a gif or picture shown from a link, like one from the picker
+      image: or(
+        exists(
+          db
+            .select({ id: messageFiles.messageId })
+            .from(messageFiles)
+            .innerJoin(files, eq(files.id, messageFiles.fileId))
+            .where(
+              and(
+                eq(messageFiles.messageId, messages.id),
+                sql`${files.mimeType} GLOB 'image/*'`
+              )
             )
-          )
+        ),
+        sql`EXISTS (SELECT 1 FROM json_each(${messages.metadata}) WHERE json_extract(value, '$.kind') = 'media' AND json_extract(value, '$.mediaType') = 'image')`
       ),
       video: exists(
         db
@@ -168,7 +173,11 @@ const searchMessagesRoute = rateLimitedProcedure(protectedProcedure, {
             )
           )
       ),
-      link: sql`${messages.content} GLOB '*href="http*'`,
+      // a link in the html, or a bare domain the server found and fetched a preview for
+      link: or(
+        sql`${messages.content} GLOB '*href="http*'`,
+        sql`EXISTS (SELECT 1 FROM json_each(${messages.metadata}) WHERE json_extract(value, '$.kind') = 'open_graph')`
+      ),
       poll: exists(
         db
           .select({ id: polls.messageId })

@@ -2922,6 +2922,71 @@ describe('messages.search filters', () => {
     ]);
   });
 
+  test('should count a bare domain with a fetched preview as a link', async () => {
+    const { caller } = await initTest(1);
+
+    const [bareMessage] = await tdb
+      .insert(messages)
+      .values({
+        channelId: 1,
+        userId: 1,
+        content: '<p>chat.example.com</p>',
+        metadata: [
+          {
+            kind: 'open_graph',
+            url: 'http://chat.example.com',
+            title: 'Example chat',
+            mediaType: 'website'
+          }
+        ],
+        createdAt: Date.now()
+      })
+      .returning({ id: messages.id });
+
+    const links = await caller.messages.search({ has: 'link' });
+
+    expect(links.messages.map(({ id }) => id)).toContain(bareMessage!.id);
+  });
+
+  test('should count a gif shown from a link as an image', async () => {
+    const { caller } = await initTest(1);
+    const now = Date.now();
+    const url = 'https://static.klipy.com/ii/abc/n2ykiirg.gif';
+
+    const [gifMessage, pageMessage] = await tdb
+      .insert(messages)
+      .values([
+        {
+          channelId: 1,
+          userId: 1,
+          content: `<p><a href="${url}">${url}</a></p>`,
+          metadata: [{ kind: 'media', url, mediaType: 'image' }],
+          createdAt: now
+        },
+        {
+          channelId: 1,
+          userId: 1,
+          content: '<p><a href="https://example.com">site</a></p>',
+          metadata: [
+            {
+              kind: 'open_graph',
+              url: 'https://example.com',
+              title: 'site',
+              mediaType: 'website'
+            }
+          ],
+          createdAt: now + 1
+        }
+      ])
+      .returning({ id: messages.id });
+
+    const images = await caller.messages.search({ has: 'image' });
+    const ids = images.messages.map(({ id }) => id);
+
+    expect(ids).toContain(gifMessage!.id);
+    expect(ids).not.toContain(pageMessage!.id);
+  });
+
   test('should find polls, stickers and videos by what they have', async () => {
     const { caller } = await initTest(1);
     const now = Date.now();
