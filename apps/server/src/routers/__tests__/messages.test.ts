@@ -2989,6 +2989,41 @@ describe('messages.search filters', () => {
     expect(ids).not.toContain(pageMessage!.id);
   });
 
+  test('should search only direct messages when scoped to them', async () => {
+    const { caller } = await initTest(3);
+
+    // user 3 is in the seeded dm, channel 3, and can see channel 1
+    await caller.messages.send({
+      channelId: 3,
+      content: 'needle in a dm',
+      files: []
+    });
+    await caller.messages.send({
+      channelId: 1,
+      content: 'needle in a channel',
+      files: []
+    });
+
+    const everywhere = await caller.messages.search({ query: 'needle' });
+    const inDms = await caller.messages.search({
+      query: 'needle',
+      scope: 'directMessages'
+    });
+
+    expect(
+      everywhere.messages.map(({ channelId }) => channelId).sort()
+    ).toEqual([1, 3]);
+    expect(inDms.messages.map(({ channelId }) => channelId)).toEqual([3]);
+  });
+
+  test('should still refuse a search with nothing but a scope', async () => {
+    const { caller } = await initTest(1);
+
+    await expect(
+      caller.messages.search({ scope: 'directMessages' })
+    ).rejects.toThrow('Enter something to search for or pick a filter.');
+  });
+
   test('should find polls, stickers and videos by what they have', async () => {
     const { caller } = await initTest(1);
     const now = Date.now();

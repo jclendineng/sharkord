@@ -164,9 +164,16 @@ struct SearchFilters: Hashable {
     var on: Date?
     var before: Date?
     var after: Date?
+    // where it looks rather than a filter: the messages panel's search covers direct messages
+    // only, and that alone is not something to search for
+    var directMessagesOnly = false
 
     var isEmpty: Bool {
-        self == SearchFilters()
+        var unscoped = self
+
+        unscoped.directMessagesOnly = false
+
+        return unscoped == SearchFilters()
     }
 }
 
@@ -180,6 +187,7 @@ struct SearchInput: Encodable {
     let before: Int?
     let after: Int?
     let on: Int?
+    let scope: String?
 
     init(query: String?, filters: SearchFilters) {
         let calendar = Calendar.current
@@ -194,5 +202,6 @@ struct SearchInput: Encodable {
         before = filters.before.map { milliseconds(calendar.startOfDay(for: $0)) }
         after = filters.after.map { milliseconds(calendar.startOfDay(for: $0).addingTimeInterval(86_400)) - 1 }
         on = filters.on.map { milliseconds(calendar.startOfDay(for: $0)) }
+        scope = filters.directMessagesOnly ? "directMessages" : nil
     }
 }

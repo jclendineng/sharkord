@@ -144,6 +144,11 @@ and everyone on the server to ask) and a new message. A profile shows Add Friend
 Request, Pending or Friends beside its message button. The Messages list shows each
 conversation's last message, "You:" when it was yours.
 
+Search from the Messages panel covers your direct messages only ("Search in DMs"), as Discord's:
+`messages.search` takes `scope: 'directMessages'`, which narrows where it looks but is not a
+filter by itself. Its tabs are Recent, People (the people you have conversations with), Media,
+Pins (every conversation's pins), Links and Files, and a result opens at its message.
+
 Link previews are not fetched from private addresses, so no member can make the server load
 pages only it can reach. A server on a home network can allow it with **Preview Links on the
 Server's Network** in Server Settings, General, mirrored in config.ini as

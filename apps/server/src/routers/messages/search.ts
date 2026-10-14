@@ -89,10 +89,13 @@ const searchMessagesRoute = rateLimitedProcedure(protectedProcedure, {
         before: z.number().int().nonnegative().optional(),
         after: z.number().int().nonnegative().optional(),
         // the start of a day, the whole day from there is searched
-        on: z.number().int().nonnegative().optional()
+        on: z.number().int().nonnegative().optional(),
+        // where to look rather than what to look for: the app's search in direct messages
+        scope: z.enum(['directMessages']).optional()
       })
       .refine(
-        ({ query, ...filters }) =>
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        ({ query, scope, ...filters }) =>
           query !== undefined ||
           Object.values(filters).some((value) => value !== undefined),
         { message: 'Enter something to search for or pick a filter.' }
@@ -111,6 +114,7 @@ const searchMessagesRoute = rateLimitedProcedure(protectedProcedure, {
     // getChannelsForUser only returns the direct messages the caller takes part in, the
     // owner included, so their conversations are searched along with the channels
     const accessibleChannelIds = accessibleChannels
+      .filter((channel) => input.scope !== 'directMessages' || channel.isDm)
       .map((channel) => channel.id)
       .filter((id) => input.channelId === undefined || id === input.channelId);
 

@@ -18,6 +18,14 @@ enum SearchTab: String, Identifiable {
         rawValue.capitalized
     }
 
+    // a direct message search has people where the server's has members, as discord's
+    func title(inDirectMessages: Bool) -> String {
+        inDirectMessages && self == .members ? "People" : title
+    }
+
+    // the messages panel's search: your conversations, the people in them, and what was shared
+    static let directMessageTabs: [SearchTab] = [.recent, .members, .media, .pins, .links, .files]
+
     // pins belong to one channel, the channel list only makes sense for the whole server
     static func tabs(inChannel: Bool) -> [SearchTab] {
         if inChannel {
@@ -32,6 +40,8 @@ enum SearchTab: String, Identifiable {
 @Observable
 final class SearchHomeModel {
     let scope: Channel?
+    // every direct message rather than one channel or the server
+    let inDirectMessages: Bool
 
     var tab: SearchTab = .recent
     // nil until loaded
@@ -45,8 +55,9 @@ final class SearchHomeModel {
 
     private var loading: Set<SearchTab> = []
 
-    init(scope: Channel?) {
+    init(scope: Channel?, inDirectMessages: Bool = false) {
         self.scope = scope
+        self.inDirectMessages = inDirectMessages
     }
 
     func load(_ tab: SearchTab, session: SessionStore) async {
@@ -64,7 +75,7 @@ final class SearchHomeModel {
             switch tab {
             case .recent:
                 // only the "active" times hang on it, a server without the route still shows the rest
-                if scope == nil, activity == nil {
+                if scope == nil, !inDirectMessages, activity == nil {
                     activity = (try? await Self.fetchActivity(client)) ?? [:]
                 }
 
@@ -72,8 +83,10 @@ final class SearchHomeModel {
                     media = try await mediaItems(client)
                 }
             case .members:
-                // a direct message is the two people in it
-                if let scope, scope.isDm, memberIds == nil {
+                // the people you have conversations with
+                if scope == nil, inDirectMessages, memberIds == nil {
+                    memberIds = Set(session.directMessages.map(\.userId))
+                } else if let scope, scope.isDm, memberIds == nil {
                     let partnerId = session.directMessagePartner(for: scope.id)?.id
 
                     memberIds = Set([session.ownUserId, partnerId].compactMap { $0 })
@@ -93,6 +106,8 @@ final class SearchHomeModel {
             case .pins:
                 if let scope, pins == nil {
                     pins = try await client.query("messages.getPinned", input: ["channelId": scope.id])
+                } else if inDirectMessages, pins == nil {
+                    pins = try await directMessagePins(client, channelIds: session.directMessages.map(\.channelId))
                 }
             case .links:
                 if links == nil {
@@ -122,10 +137,24 @@ final class SearchHomeModel {
         )
     }
 
+    // every conversation's pins, newest first. there are as many as conversations, a few
+    private func directMessagePins(_ client: TRPCClient, channelIds: [Int]) async throws -> [Message] {
+        var pins: [Message] = []
+
+        for channelId in channelIds {
+            let channelPins: [Message] = try await client.query("messages.getPinned", input: ["channelId": channelId])
+
+            pins += channelPins
+        }
+
+        return pins.sorted { $0.createdAt > $1.createdAt }
+    }
+
     private func search(_ client: TRPCClient, has: SearchFilters.Has) async throws -> SearchResults {
         var filters = SearchFilters()
 
         filters.channel = scope
+        filters.directMessagesOnly = inDirectMessages
         filters.has = has
 
         return try await client.query("messages.search", input: SearchInput(query: nil, filters: filters))
@@ -156,14 +185,15 @@ final class SearchHomeCache {
     private var models: [Int: SearchHomeModel] = [:]
 
     @MainActor
-    func model(for scope: Channel?) -> SearchHomeModel {
-        let key = scope?.id ?? 0
+    func model(for scope: Channel?, directMessages: Bool = false) -> SearchHomeModel {
+        // the whole of the direct messages is its own landing page
+        let key = scope?.id ?? (directMessages ? -1 : 0)
 
         if let model = models[key] {
             return model
         }
 
-        let model = SearchHomeModel(scope: scope)
+        let model = SearchHomeModel(scope: scope, inDirectMessages: directMessages && scope == nil)
 
         models[key] = model
 
@@ -183,14 +213,18 @@ struct SearchHome: View {
     var onInvite: (() -> Void)?
 
     private var tabs: [SearchTab] {
-        only ?? SearchTab.tabs(inChannel: model.scope != nil)
+        if model.inDirectMessages {
+            return SearchTab.directMessageTabs
+        }
+
+        return only ?? SearchTab.tabs(inChannel: model.scope != nil)
     }
 
     var body: some View {
         @Bindable var model = model
 
         VStack(spacing: 0) {
-            SearchTabBar(tabs: tabs, selection: $model.tab)
+            SearchTabBar(tabs: tabs, inDirectMessages: model.inDirectMessages, selection: $model.tab)
 
             TabView(selection: $model.tab) {
                 ForEach(tabs) { tab in
@@ -205,6 +239,7 @@ struct SearchHome: View {
 
 private struct SearchTabBar: View {
     let tabs: [SearchTab]
+    let inDirectMessages: Bool
     @Binding var selection: SearchTab
 
     @Namespace private var underline
@@ -218,7 +253,7 @@ private struct SearchTabBar: View {
                             select(tab)
                         } label: {
                             VStack(spacing: 10) {
-                                Text(tab.title)
+                                Text(tab.title(inDirectMessages: inDirectMessages))
                                     .font(.system(size: 17, weight: .medium))
                                     .foregroundStyle(selection == tab ? Theme.blurple : Theme.muted)
 
@@ -416,7 +451,7 @@ private struct RecentPage: View {
 
     // the three server channels with the latest messages
     private var suggested: [(Channel, Date)] {
-        guard model.scope == nil, let activity = model.activity else {
+        guard model.scope == nil, !model.inDirectMessages, let activity = model.activity else {
             return []
         }
 

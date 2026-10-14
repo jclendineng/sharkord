@@ -7,6 +7,8 @@ struct SearchScreen: View {
 
     // the channel it was opened from, put in as an in: filter that can be removed
     var channelId: Int?
+    // opened from the messages panel, everything stays within direct messages
+    var directMessages = false
 
     @Environment(ServerListStore.self) private var servers
     @Environment(SessionStore.self) private var session
@@ -38,8 +40,11 @@ struct SearchScreen: View {
             return []
         }
 
+        let partners = Set(session.directMessages.map(\.userId))
+
         return session.members
             .filter { $0.id != session.ownUserId && $0.name.localizedCaseInsensitiveContains(trimmedQuery) }
+            .filter { !directMessages || partners.contains($0.id) }
             .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
             .prefix(8)
             .map { $0 }
@@ -52,7 +57,7 @@ struct SearchScreen: View {
         }
 
         guard let channel = filters.channel else {
-            return "Search in \(session.displayName)"
+            return directMessages ? "Search in DMs" : "Search in \(session.displayName)"
         }
 
         return "Search in \(FilterChips.place(channel, in: session))"
@@ -94,7 +99,7 @@ struct SearchScreen: View {
                     onPickHas: pick
                 )
             } else if isBrowsing {
-                SearchHome(model: homes.model(for: browsingScope), onOpenChannel: openChannel, onOpenMessage: openMessage, onOpenUser: openDirectMessage(with:))
+                SearchHome(model: homes.model(for: browsingScope, directMessages: directMessages), onOpenChannel: openChannel, onOpenMessage: openMessage, onOpenUser: openDirectMessage(with:))
             } else {
                 resultsList
             }
@@ -128,6 +133,7 @@ struct SearchScreen: View {
             }
 
             hasAppliedChannel = true
+            filters.directMessagesOnly = directMessages
 
             isFieldFocused = true
         }
@@ -194,7 +200,7 @@ struct SearchScreen: View {
             if let results, !results.messages.isEmpty {
                 Section("Messages") {
                     ForEach(results.messages) { message in
-                        MessageResultRow(message: message, onOpen: { openChannel(message.channelId) })
+                        MessageResultRow(message: message, onOpen: { openMessage(channelId: message.channelId, messageId: message.id) })
                     }
                 }
             }

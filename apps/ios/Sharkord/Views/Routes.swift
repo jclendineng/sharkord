@@ -11,6 +11,8 @@ struct ThreadRoute: Hashable {
 // from a channel the search starts in it, from the server it covers everything
 struct SearchRoute: Hashable {
     var channelId: Int?
+    // from the messages panel: only direct messages
+    var directMessages = false
 }
 
 // the channel's own screen, opened from its name: members, media, pins, links and files
@@ -27,7 +29,7 @@ extension View {
             ThreadScreen(parent: route.parent)
         }
         .navigationDestination(for: SearchRoute.self) { route in
-            SearchScreen(channelId: route.channelId)
+            SearchScreen(channelId: route.channelId, directMessages: route.directMessages)
         }
         .navigationDestination(for: ChannelInfoRoute.self) { route in
             ChannelInfoScreen(channelId: route.channelId)
