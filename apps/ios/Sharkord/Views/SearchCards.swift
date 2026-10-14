@@ -141,6 +141,113 @@ struct LinkCardTile: View {
     }
 }
 
+// a pinned message: its picture, gif, sticker or link preview, or its words when it has none,
+// jumping to it on a tap and unpinned from a long press
+struct PinCardTile: View {
+    let message: Message
+    let onOpen: () -> Void
+    let onUnpinned: () -> Void
+
+    @Environment(SessionStore.self) private var session
+
+    private var text: String {
+        HTMLText.plainText(from: message.content ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var channelName: String {
+        session.channel(message.channelId)?.name ?? ""
+    }
+
+    private var image: SharkordFile? {
+        message.files.first { $0.isImage }
+    }
+
+    var body: some View {
+        Button(action: onOpen) {
+            SearchCard(userId: message.userId, channelName: channelName) {
+                preview
+            } details: {
+                if !text.isEmpty && !message.isMediaLinkOnly {
+                    Text(text)
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.header)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                }
+
+                Text(MessageDate.timestamp(message.createdDate))
+                    .font(.caption)
+                    .foregroundStyle(Theme.muted)
+            }
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+            Button("Jump to Message", systemImage: "arrow.uturn.left.circle", action: onOpen)
+
+            if !text.isEmpty {
+                Button("Copy Text", systemImage: "doc.on.doc", action: copyText)
+            }
+
+            if session.can(.pinMessages) {
+                Button("Unpin Message", systemImage: "pin.slash", role: .destructive, action: unpin)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var preview: some View {
+        if let image, let address = session.address {
+            CachedFileImage(file: image, url: address.fileURL(image)) {
+                Theme.deepBackground
+            }
+        } else if let media = message.mediaImages.first {
+            AnimatedImage(url: URL(string: media.url), maxPointSize: 300)
+        } else if let sticker = message.sticker {
+            AnimatedImage(url: session.address?.fileURL(sticker.file), maxPointSize: 160, contentMode: .scaleAspectFit)
+                .padding(12)
+        } else if let linkImage = message.linkPreviews.first?.previewImageURL {
+            AsyncImage(url: linkImage) { phase in
+                if case .success(let image) = phase {
+                    image
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    Theme.deepBackground
+                }
+            }
+        } else {
+            // words only: the pin and the start of what was said, like a quote
+            VStack(alignment: .leading, spacing: 6) {
+                Image(systemName: "pin.fill")
+                    .foregroundStyle(Theme.muted)
+
+                Text(text.isEmpty ? "Attachment" : text)
+                    .font(.footnote)
+                    .foregroundStyle(Theme.text)
+                    .lineLimit(4)
+                    .multilineTextAlignment(.leading)
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        }
+    }
+
+    private func copyText() {
+        UIPasteboard.general.string = text
+    }
+
+    private func unpin() {
+        Task {
+            do {
+                try await session.perform("messages.togglePin", ["messageId": message.id])
+                onUnpinned()
+            } catch {
+                session.showError(error)
+            }
+        }
+    }
+}
+
 // a long press on a card, the way ios lifts it with its options under it. a tap still opens it
 private struct CardActions: View {
     let onJump: () -> Void

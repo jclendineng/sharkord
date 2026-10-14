@@ -104,6 +104,10 @@ final class SearchHomeModel {
         }
     }
 
+    func removePin(_ messageId: Int) {
+        pins?.removeAll { $0.id == messageId }
+    }
+
     private static func fetchActivity(_ client: TRPCClient) async throws -> [Int: Date] {
         let rows: [ChannelActivity] = try await client.query("channels.getActivity")
 
@@ -308,8 +312,14 @@ private struct SearchTabPage: View {
                 if pins.isEmpty {
                     EmptyTab(title: "No pinned messages", systemImage: "pin")
                 } else {
-                    ForEach(pins) { message in
-                        PinnedMessageRow(message: message, onOpen: { onOpenMessage(message.channelId, message.id) })
+                    SearchCardGrid {
+                        ForEach(pins) { message in
+                            PinCardTile(
+                                message: message,
+                                onOpen: { onOpenMessage(message.channelId, message.id) },
+                                onUnpinned: { model.removePin(message.id) }
+                            )
+                        }
                     }
                 }
             } else {
@@ -695,6 +705,8 @@ struct VideoThumbnail: View {
 struct PinnedMessageRow: View {
     let message: Message
     let onOpen: () -> Void
+    // the list it is in drops it once it is unpinned
+    var onUnpinned: (() -> Void)?
 
     @Environment(SessionStore.self) private var session
 
@@ -755,6 +767,33 @@ struct PinnedMessageRow: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
+        // a long press, as on the files and links cards, a tap still jumps to it
+        .contextMenu {
+            Button("Jump to Message", systemImage: "arrow.uturn.left.circle", action: onOpen)
+
+            if !text.isEmpty {
+                Button("Copy Text", systemImage: "doc.on.doc", action: copyText)
+            }
+
+            if session.can(.pinMessages) {
+                Button("Unpin Message", systemImage: "pin.slash", role: .destructive, action: unpin)
+            }
+        }
+    }
+
+    private func copyText() {
+        UIPasteboard.general.string = text
+    }
+
+    private func unpin() {
+        Task {
+            do {
+                try await session.perform("messages.togglePin", ["messageId": message.id])
+                onUnpinned?()
+            } catch {
+                session.showError(error)
+            }
+        }
     }
 }
 

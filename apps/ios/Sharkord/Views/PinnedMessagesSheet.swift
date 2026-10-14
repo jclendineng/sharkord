@@ -24,7 +24,11 @@ struct PinnedMessagesSheet: View {
                             .padding(.top, 60)
                         } else {
                             ForEach(pins) { message in
-                                PinnedMessageRow(message: message, onOpen: { jump(to: message) })
+                                PinnedMessageRow(
+                                    message: message,
+                                    onOpen: { jump(to: message) },
+                                    onUnpinned: { removePin(message.id) }
+                                )
                             }
                         }
                     } else if let errorMessage {
@@ -67,6 +71,10 @@ struct PinnedMessagesSheet: View {
 
     private func close() {
         dismiss()
+    }
+
+    private func removePin(_ messageId: Int) {
+        pins?.removeAll { $0.id == messageId }
     }
 
     // the chat is right under this sheet, it scrolls to the pin, loading around it if it is old
