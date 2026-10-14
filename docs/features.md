@@ -121,6 +121,13 @@ other than the servers you are signed in to asks first ("Leaving Sharkord"), wit
 the domain from then on. Long pressing a message puts the keyboard away and never also opens a
 link or file under the finger.
 
+A long press on a conversation in the app's Messages list opens Discord's menu: the person's
+profile, Close DM, pin it to the top, mark it read, mute it. Closing (`dms.close`) hides the
+conversation from your own list until a message newer than the close arrives or you open it
+again, the other person's list and the messages are untouched. Tapping a direct message's name
+opens the same screen as a channel's, with the person's avatar, their two members, and the
+conversation's media, pins, links and files.
+
 Link previews are not fetched from private addresses, so no member can make the server load
 pages only it can reach. A server on a home network can allow it with **Preview Links on the
 Server's Network** in Server Settings, General, mirrored in config.ini as

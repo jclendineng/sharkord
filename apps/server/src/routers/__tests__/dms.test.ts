@@ -259,3 +259,77 @@ describe('direct message privacy', () => {
     ).rejects.toThrow();
   });
 });
+
+describe('dms.close', () => {
+  test('should hide a closed conversation from the closer only', async () => {
+    const { caller: caller1 } = await initTest(1);
+    const { caller: caller2 } = await initTest(2);
+    const { channelId } = await caller1.dms.open({ userId: 2 });
+
+    await caller1.messages.send({ channelId, content: 'before', files: [] });
+    await caller1.dms.close({ channelId });
+
+    const closerList = await caller1.dms.get();
+    const otherList = await caller2.dms.get();
+
+    expect(closerList.some((dm) => dm.channelId === channelId)).toBe(false);
+    expect(otherList.some((dm) => dm.channelId === channelId)).toBe(true);
+  });
+
+  test('should bring a closed conversation back with a new message', async () => {
+    const { caller: caller1 } = await initTest(1);
+    const { caller: caller2 } = await initTest(2);
+    const { channelId } = await caller1.dms.open({ userId: 2 });
+
+    await caller1.dms.close({ channelId });
+    await Bun.sleep(5);
+    await caller2.messages.send({
+      channelId,
+      content: 'still there?',
+      files: []
+    });
+
+    const list = await caller1.dms.get();
+
+    expect(list.some((dm) => dm.channelId === channelId)).toBe(true);
+  });
+
+  test('should bring a closed conversation back when it is opened again', async () => {
+    const { caller } = await initTest(1);
+    const { channelId } = await caller.dms.open({ userId: 2 });
+
+    await caller.dms.close({ channelId });
+    await caller.dms.open({ userId: 2 });
+
+    const list = await caller.dms.get();
+
+    expect(list.some((dm) => dm.channelId === channelId)).toBe(true);
+  });
+
+  test('should refuse someone who is not in the conversation', async () => {
+    // seeded dm between users 3 and 4
+    const { caller } = await initTest(1);
+
+    await expect(caller.dms.close({ channelId: 3 })).rejects.toThrow(
+      'You are not a participant in this DM channel'
+    );
+  });
+
+  test('should refuse a channel that is not a direct message', async () => {
+    const { caller } = await initTest(1);
+
+    await expect(caller.dms.close({ channelId: 1 })).rejects.toThrow(
+      'Conversation not found'
+    );
+  });
+
+  test('should refuse when direct messages are disabled', async () => {
+    const { caller } = await initTest(3);
+
+    await tdb.update(settings).set({ directMessagesEnabled: false }).execute();
+
+    await expect(caller.dms.close({ channelId: 3 })).rejects.toThrow(
+      'Direct messages are disabled on this server'
+    );
+  });
+});

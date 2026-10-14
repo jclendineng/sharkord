@@ -2,7 +2,12 @@ import type { TDirectMessageConversation } from '@sharkord/shared';
 import { TRPCError } from '@trpc/server';
 import { and, eq, inArray, max, or } from 'drizzle-orm';
 import { db } from '..';
-import { channels, directMessages, messages } from '../schema';
+import {
+  channels,
+  directMessageClosures,
+  directMessages,
+  messages
+} from '../schema';
 import { getChannelsReadStatesForUser } from './channels';
 import { getSettings } from './server';
 
@@ -65,7 +70,7 @@ const getDirectMessageConversations = async (
 
   const channelIds = rows.map((row) => row.channelId);
 
-  const [lastMessageRows, unreadMapRaw] = await Promise.all([
+  const [lastMessageRows, unreadMapRaw, closures] = await Promise.all([
     db
       .select({
         channelId: messages.channelId,
@@ -74,8 +79,19 @@ const getDirectMessageConversations = async (
       .from(messages)
       .where(inArray(messages.channelId, channelIds))
       .groupBy(messages.channelId),
-    getChannelsReadStatesForUser(userId)
+    getChannelsReadStatesForUser(userId),
+    db
+      .select({
+        channelId: directMessageClosures.channelId,
+        closedAt: directMessageClosures.closedAt
+      })
+      .from(directMessageClosures)
+      .where(eq(directMessageClosures.userId, userId))
   ]);
+
+  const closedAtMap = new Map(
+    closures.map(({ channelId, closedAt }) => [channelId, closedAt])
+  );
 
   const lastMessageMap = new Map<number, number>();
 
@@ -83,18 +99,24 @@ const getDirectMessageConversations = async (
     lastMessageMap.set(row.channelId, row.lastMessageAt ?? 0);
   }
 
-  const conversations = rows.map((row) => {
-    const otherUserId =
-      row.userOneId === userId ? row.userTwoId : row.userOneId;
-    const lastMessageAt = lastMessageMap.get(row.channelId) ?? row.createdAt;
+  const conversations = rows
+    .map((row) => {
+      const otherUserId =
+        row.userOneId === userId ? row.userTwoId : row.userOneId;
+      const lastMessageAt = lastMessageMap.get(row.channelId) ?? row.createdAt;
 
-    return {
-      channelId: row.channelId,
-      userId: otherUserId,
-      unreadCount: unreadMapRaw[row.channelId] ?? 0,
-      lastMessageAt
-    };
-  });
+      return {
+        channelId: row.channelId,
+        userId: otherUserId,
+        unreadCount: unreadMapRaw[row.channelId] ?? 0,
+        lastMessageAt
+      };
+    })
+    // a closed conversation comes back with the first message after it was closed
+    .filter(
+      ({ channelId, lastMessageAt }) =>
+        lastMessageAt > (closedAtMap.get(channelId) ?? -1)
+    );
 
   conversations.sort((a, b) => b.lastMessageAt - a.lastMessageAt);
 

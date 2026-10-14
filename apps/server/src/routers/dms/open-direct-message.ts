@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { config } from '../../config';
 import { db } from '../../db';
+import { reopenDirectMessage } from '../../db/mutations/dms';
 import { publishChannelPermissions } from '../../db/publishers';
 import { getDirectMessageChannel, normalizePair } from '../../db/queries/dms';
 import { getSettings } from '../../db/queries/server';
@@ -54,6 +55,8 @@ const openDirectMessageRoute = rateLimitedProcedure(protectedProcedure, {
     const existing = await getDirectMessageChannel(userOneId, userTwoId);
 
     if (existing) {
+      await reopenDirectMessage(existing.channelId, ctx.userId);
+
       return { channelId: existing.channelId };
     }
 

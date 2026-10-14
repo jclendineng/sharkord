@@ -1,5 +1,6 @@
 import { ServerEvents } from '@sharkord/shared';
 import { protectedProcedure, t } from '../../utils/trpc';
+import { closeDirectMessageRoute } from './close-direct-message';
 import { getDirectMessagesRoute } from './get-direct-messages';
 import { openDirectMessageRoute } from './open-direct-message';
 
@@ -15,5 +16,6 @@ const onDmConversationOpenRoute = protectedProcedure.subscription(
 export const dmsRouter = t.router({
   get: getDirectMessagesRoute,
   open: openDirectMessageRoute,
+  close: closeDirectMessageRoute,
   onConversationOpen: onDmConversationOpenRoute
 });

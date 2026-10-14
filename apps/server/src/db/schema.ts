@@ -631,6 +631,25 @@ const directMessages = sqliteTable(
   ]
 );
 
+// a direct message one participant closed: hidden from their list until a message newer than
+// the close arrives or they open it again, as discord's close dm
+const directMessageClosures = sqliteTable(
+  'direct_message_closures',
+  {
+    channelId: integer('channel_id')
+      .notNull()
+      .references(() => channels.id, { onDelete: 'cascade' }),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    closedAt: integer('closed_at').notNull()
+  },
+  (t) => [
+    primaryKey({ columns: [t.channelId, t.userId] }),
+    index('direct_message_closures_user_idx').on(t.userId)
+  ]
+);
+
 const oidcTransactions = sqliteTable(
   'oidc_transactions',
   {
@@ -793,6 +812,7 @@ export {
   channelRolePermissions,
   channels,
   channelUserPermissions,
+  directMessageClosures,
   directMessages,
   emojis,
   files,
