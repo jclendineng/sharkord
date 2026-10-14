@@ -50,6 +50,7 @@ final class SessionStore {
     private(set) var pinnedChannelIds: [Int] = []
     private(set) var hidesMutedChannels = false
     private(set) var allowsDirectMessages = true
+    private(set) var friendLists = FriendLists()
     // what this account picked, which the member list cannot say for invisible
     private(set) var ownPresence = Presence.online
     private(set) var ownCustomStatus: String?
@@ -632,6 +633,7 @@ final class SessionStore {
         client = nil
         token = nil
         pushToken = nil
+        friendLists = FriendLists()
         hasRequestedPush = false
         requestedChannelId = nil
         voiceUsers = [:]
@@ -1005,6 +1007,41 @@ final class SessionStore {
         try await client.mutation("messages.toggleReaction", input: ReactionInput(messageId: messageId, emoji: emoji))
     }
 
+    // a server from before friends simply has none
+    func loadFriends() async {
+        guard let client, let lists: FriendLists = try? await client.query("friends.get") else {
+            return
+        }
+
+        friendLists = lists
+    }
+
+    func friendStatus(with userId: Int) -> FriendStatus {
+        if friendLists.friends.contains(userId) {
+            return .friends
+        }
+
+        if friendLists.incoming.contains(userId) {
+            return .incoming
+        }
+
+        if friendLists.outgoing.contains(userId) {
+            return .outgoing
+        }
+
+        return .none
+    }
+
+    // request, accept or remove, then the list as the server has it
+    func changeFriendship(_ action: String, with userId: Int) async {
+        do {
+            try await perform("friends.\(action)", ["userId": userId])
+            await loadFriends()
+        } catch {
+            showError(error)
+        }
+    }
+
     func loadDirectMessages() async {
         guard let client, settings?.directMessagesEnabled == true else {
             return
@@ -1170,6 +1207,7 @@ final class SessionStore {
 
         await refreshToken()
         await loadPersonalSettings()
+        await loadFriends()
 
         // anything that arrived while disconnected was missed by the subscriptions
         for store in Array(messageStores.values) + Array(threadStores.values) where store.hasLoaded {
@@ -1444,6 +1482,10 @@ final class SessionStore {
 
         client.subscribe("dms.onConversationOpen") { [weak self] (_: OpenedDirectMessage) in
             Task { await self?.loadDirectMessages() }
+        }
+
+        client.subscribe("friends.onUpdate") { [weak self] (_: FriendshipUpdate) in
+            Task { await self?.loadFriends() }
         }
 
         client.subscribe("users.onJoin") { [weak self] (user: PublicUser) in

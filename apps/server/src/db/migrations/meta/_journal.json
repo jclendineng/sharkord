@@ -351,6 +351,13 @@
       "when": 1791953304611,
       "tag": "0049_faithful_metal_master",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "6",
+      "when": 1791953959678,
+      "tag": "0050_ancient_morph",
+      "breakpoints": true
     }
   ]
 }

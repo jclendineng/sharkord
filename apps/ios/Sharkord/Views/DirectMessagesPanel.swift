@@ -6,12 +6,19 @@ struct DirectMessagesPanel: View {
     @Environment(SessionStore.self) private var session
 
     @State private var isNewMessagePresented = false
+    @State private var isAddFriendsPresented = false
 
     var body: some View {
         // a plain scroll of cards, as discord's, rather than a list, whose own touch handling held
         // a long press back
         ScrollView {
             LazyVStack(spacing: 8) {
+                actions
+
+                if !friends.isEmpty {
+                    FriendsRow(friends: friends, onOpen: openDirectMessage(with:))
+                }
+
                 ForEach(conversations) { conversation in
                     ConversationRow(
                         conversation: conversation,
@@ -39,16 +46,68 @@ struct DirectMessagesPanel: View {
         .safeAreaInset(edge: .top, spacing: 0) {
             PanelHeader(title: "Messages") {
                 Spacer()
-
-                Button("New Message", systemImage: "square.and.pencil", action: openNewMessage)
-                    .labelStyle(.iconOnly)
-                    .font(.title3)
-                    .foregroundStyle(Theme.text)
             }
             .background(Theme.panelBackground)
         }
         .sheet(isPresented: $isNewMessagePresented) {
             NewDirectMessageSheet(onOpened: onOpen)
+        }
+        .sheet(isPresented: $isAddFriendsPresented) {
+            AddFriendsSheet()
+        }
+    }
+
+    // discord's row under the title: search, add friends, a new message
+    private var actions: some View {
+        HStack(spacing: 8) {
+            NavigationLink(value: SearchRoute(channelId: nil)) {
+                Image(systemName: "magnifyingglass")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(Theme.text)
+                    .frame(width: 44, height: 44)
+                    .background(Theme.listBackground, in: .rect(cornerRadius: 12, style: .continuous))
+            }
+            .accessibilityLabel("Search")
+
+            Button(action: openAddFriends) {
+                Label("Add Friends", systemImage: "person.badge.plus")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(Theme.header)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .background(Theme.listBackground, in: .rect(cornerRadius: 12, style: .continuous))
+            }
+            .buttonStyle(.plain)
+
+            Button(action: openNewMessage) {
+                Image(systemName: "plus")
+                    .font(.body.weight(.bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 44, height: 44)
+                    .background(Theme.blurple, in: .rect(cornerRadius: 12, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("New Message")
+        }
+        .padding(.bottom, 4)
+    }
+
+    private var friends: [PublicUser] {
+        session.friendLists.friends
+            .compactMap { session.usersById[$0] }
+            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
+    private func openAddFriends() {
+        isAddFriendsPresented = true
+    }
+
+    private func openDirectMessage(with user: PublicUser) {
+        Task {
+            do {
+                onOpen(try await session.openDirectMessage(with: user.id))
+            } catch {
+                session.showError(error)
+            }
         }
     }
 
@@ -62,6 +121,36 @@ struct DirectMessagesPanel: View {
 
     private func openNewMessage() {
         isNewMessagePresented = true
+    }
+}
+
+// discord's friends along the top of the messages, each opening your conversation with them
+private struct FriendsRow: View {
+    let friends: [PublicUser]
+    let onOpen: (PublicUser) -> Void
+
+    var body: some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: 8) {
+                ForEach(friends) { friend in
+                    Button {
+                        onOpen(friend)
+                    } label: {
+                        AvatarView(user: friend, size: 52, showsStatus: true)
+                            .frame(width: 80, height: 80)
+                            .background(Theme.listBackground, in: .rect(cornerRadius: 18, style: .continuous))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                    .stroke(Theme.divider, lineWidth: 1)
+                            }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(friend.name)
+                }
+            }
+        }
+        .scrollIndicators(.hidden)
+        .padding(.bottom, 4)
     }
 }
 
@@ -137,7 +226,10 @@ private struct ConversationRow: View {
             return nil
         }
 
-        let author = conversation.lastMessageUserId.flatMap { session.usersById[$0]?.name }
+        // your own last message reads "You:", as in discord
+        let author = conversation.lastMessageUserId.flatMap { userId in
+            userId == session.ownUserId ? "You" : session.usersById[userId]?.name
+        }
         let body = text.isEmpty ? "Sent an attachment" : text
 
         return author.map { "\($0): \(body)" } ?? body

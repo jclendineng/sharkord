@@ -55,7 +55,9 @@ export enum ServerEvents {
   CATEGORY_UPDATE = 'categoryUpdate',
   CATEGORY_DELETE = 'categoryDelete',
 
-  DM_CONVERSATION_OPEN = 'dmConversationOpen'
+  DM_CONVERSATION_OPEN = 'dmConversationOpen',
+
+  FRIENDSHIP_UPDATE = 'friendshipUpdate'
 }
 
 export type TNewMessage = {

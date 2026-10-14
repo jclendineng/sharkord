@@ -137,6 +137,9 @@ type Events = {
   [ServerEvents.CATEGORY_DELETE]: number;
 
   [ServerEvents.DM_CONVERSATION_OPEN]: { channelId: number };
+
+  // the other person in a friendship that changed, both sides refetch their list
+  [ServerEvents.FRIENDSHIP_UPDATE]: { userId: number };
 };
 
 class PubSub {

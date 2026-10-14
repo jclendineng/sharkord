@@ -29,7 +29,7 @@ screen shares, sharing your own screen, profile editing, settings (account, devi
 video, notifications), the full server settings, polls, voice messages, and Discord's
 attachment and expression panels (emoji, GIFs, stickers), typing indicators, pinning messages
 and a channel's pinned list, a channel screen from its name (members, media, pins, links, files),
-search in the expression panel at full height, a double tap reaction you pick, profile banners, voice reactions, moving people between voice
+search in the expression panel at full height, a double tap reaction you pick, friends and friend requests, direct message menus (close, pin, mute for a while), profile banners, voice reactions, moving people between voice
 channels, a member's activity for moderators, and posting locked where a private channel does
 not allow it. Not in the app: plugin slash commands, actions and plugin panels, which are web
 only. See

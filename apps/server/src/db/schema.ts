@@ -631,6 +631,30 @@ const directMessages = sqliteTable(
   ]
 );
 
+// two people who are friends, or one asked and the other has not answered yet. the pair is
+// stored smaller id first so it exists once whoever asked
+const friendships = sqliteTable(
+  'friendships',
+  {
+    userOneId: integer('user_one_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    userTwoId: integer('user_two_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    requesterId: integer('requester_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    status: text('status', { enum: ['pending', 'accepted'] }).notNull(),
+    createdAt: integer('created_at').notNull(),
+    acceptedAt: integer('accepted_at')
+  },
+  (t) => [
+    primaryKey({ columns: [t.userOneId, t.userTwoId] }),
+    index('friendships_user_two_idx').on(t.userTwoId)
+  ]
+);
+
 // a direct message one participant closed: hidden from their list until a message newer than
 // the close arrives or they open it again, as discord's close dm
 const directMessageClosures = sqliteTable(
@@ -819,6 +843,7 @@ export {
   directMessages,
   emojis,
   files,
+  friendships,
   invites,
   logins,
   messageFiles,

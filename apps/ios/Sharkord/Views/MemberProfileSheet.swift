@@ -52,15 +52,19 @@ struct MemberProfileSheet: View {
                     }
 
                     if !isOwn {
-                        Button(action: message) {
-                            Label("Message", systemImage: "bubble.left.fill")
-                                .font(.body.weight(.semibold))
-                                .foregroundStyle(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
-                                .background(Theme.blurple, in: .rect(cornerRadius: 10))
+                        HStack(spacing: 10) {
+                            friendButton
+
+                            Button(action: message) {
+                                Image(systemName: "bubble.left.fill")
+                                    .font(.body.weight(.semibold))
+                                    .foregroundStyle(Theme.header)
+                                    .frame(width: 48, height: 46)
+                                    .background(Theme.listBackground, in: .rect(cornerRadius: 10))
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Message")
                         }
-                        .buttonStyle(.plain)
                     }
 
                     if let bio = user.bio, !bio.isEmpty {
@@ -84,6 +88,59 @@ struct MemberProfileSheet: View {
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
         .presentationBackground(Theme.deepBackground)
+    }
+
+    // discord's button for where you stand: add them, accept their request, a request waiting on
+    // them, or friends, each a tap from the next step
+    @ViewBuilder
+    private var friendButton: some View {
+        switch session.friendStatus(with: user.id) {
+        case .none:
+            wideButton("Add Friend", systemImage: "person.badge.plus", filled: true) {
+                change("request")
+            }
+        case .incoming:
+            wideButton("Accept Request", systemImage: "checkmark", filled: true) {
+                change("accept")
+            }
+        case .outgoing:
+            Menu {
+                Button("Cancel Request", systemImage: "xmark", role: .destructive) {
+                    change("remove")
+                }
+            } label: {
+                wideLabel("Pending", systemImage: "clock", filled: false)
+            }
+        case .friends:
+            Menu {
+                Button("Remove Friend", systemImage: "person.badge.minus", role: .destructive) {
+                    change("remove")
+                }
+            } label: {
+                wideLabel("Friends", systemImage: "person.fill.checkmark", filled: false)
+            }
+        }
+    }
+
+    private func wideButton(_ title: String, systemImage: String, filled: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            wideLabel(title, systemImage: systemImage, filled: filled)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func wideLabel(_ title: String, systemImage: String, filled: Bool) -> some View {
+        Label(title, systemImage: systemImage)
+            .font(.body.weight(.semibold))
+            .foregroundStyle(filled ? .white : Theme.header)
+            .frame(maxWidth: .infinity, minHeight: 46)
+            .background(filled ? Theme.blurple : Theme.listBackground, in: .rect(cornerRadius: 10))
+    }
+
+    private func change(_ action: String) {
+        Task {
+            await session.changeFriendship(action, with: user.id)
+        }
     }
 
     // the sheet goes first, then the direct message opens in its place: a navigation started

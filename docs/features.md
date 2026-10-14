@@ -134,6 +134,16 @@ Muting a conversation or a channel in the app asks how long, as Discord does: 15
 `getChannelSettings` treat the channel as back on its default. A muted conversation shows a
 crossed out bell in the Messages list.
 
+Friends, as in Discord: ask someone (`friends.request`), they accept (`friends.accept`) or
+ignore it, and `friends.remove` unfriends, cancels a request you sent or declines one you got.
+Asking someone who already asked you makes you friends straight away. `friends.get` lists your
+friends and the requests waiting on either side, and `friends.onUpdate` tells both people when
+anything between them changes. In the app, your friends sit in a row at the top of Messages,
+each opening your conversation with them, next to search, Add Friends (requests, sent ones,
+and everyone on the server to ask) and a new message. A profile shows Add Friend, Accept
+Request, Pending or Friends beside its message button. The Messages list shows each
+conversation's last message, "You:" when it was yours.
+
 Link previews are not fetched from private addresses, so no member can make the server load
 pages only it can reach. A server on a home network can allow it with **Preview Links on the
 Server's Network** in Server Settings, General, mirrored in config.ini as

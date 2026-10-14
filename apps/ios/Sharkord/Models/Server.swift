@@ -88,6 +88,27 @@ struct DirectMessageConversation: Decodable, Hashable, Identifiable {
     var id: Int { channelId }
 }
 
+// friends.get: user ids
+struct FriendLists: Decodable, Equatable {
+    var friends: [Int] = []
+    // asked by them, waiting on you
+    var incoming: [Int] = []
+    // asked by you, waiting on them
+    var outgoing: [Int] = []
+}
+
+struct FriendshipUpdate: Decodable {
+    let userId: Int
+}
+
+// where someone stands with you, for their profile's friend button
+enum FriendStatus {
+    case none
+    case friends
+    case incoming
+    case outgoing
+}
+
 struct OpenedDirectMessage: Decodable {
     let channelId: Int
 }

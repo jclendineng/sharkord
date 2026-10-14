@@ -4,6 +4,7 @@ import { channelsRouter } from './channels';
 import { dmsRouter } from './dms';
 import { emojisRouter } from './emojis';
 import { filesRouter } from './files';
+import { friendsRouter } from './friends';
 import { gifsRouter } from './gifs';
 import { invitesRouter } from './invites';
 import { messagesRouter } from './messages';
@@ -34,7 +35,8 @@ const appRouter = t.router({
   sessions: sessionsRouter,
   polls: pollsRouter,
   stickers: stickersRouter,
-  gifs: gifsRouter
+  gifs: gifsRouter,
+  friends: friendsRouter
 });
 
 type AppRouter = typeof appRouter;
