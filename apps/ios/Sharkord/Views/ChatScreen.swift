@@ -71,6 +71,7 @@ struct ChatScreen: View {
                         ChatTitle(title: title, partner: partner, isDirectMessage: false)
                     }
                     .buttonStyle(.plain)
+                    .simultaneousGesture(TapGesture().onEnded(dismissKeyboard))
                 }
             }
 
@@ -87,6 +88,7 @@ struct ChatScreen: View {
                     Image(systemName: "magnifyingglass")
                         .foregroundStyle(Theme.text)
                 }
+                .simultaneousGesture(TapGesture().onEnded(dismissKeyboard))
                 .accessibilityLabel("Search")
             }
         }
@@ -105,7 +107,14 @@ struct ChatScreen: View {
     }
 
     private func showPins() {
+        dismissKeyboard()
         isPinsPresented = true
+    }
+
+    // before another screen goes over the chat: swiftui gives a field its focus back when the
+    // chat shows again, so a keyboard still up on leaving would come back unasked
+    private func dismissKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 }
 
