@@ -86,9 +86,14 @@ struct MemberProfileSheet: View {
         .presentationBackground(Theme.deepBackground)
     }
 
-    // the sheet goes first, then the direct message opens in its place
+    // the sheet goes first, then the direct message opens in its place: a navigation started
+    // while the sheet is still closing is dropped
     private func message() {
         dismiss()
-        onMessage()
+
+        Task {
+            try? await Task.sleep(for: .milliseconds(350))
+            onMessage()
+        }
     }
 }

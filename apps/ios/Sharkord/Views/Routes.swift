@@ -40,9 +40,12 @@ private struct RequestedChannelOpener: ViewModifier {
     @Environment(SessionStore.self) private var session
     @Binding var path: NavigationPath
 
-    // the phase is part of it so a request made while connecting runs once channels arrive
+    // the phase is part of it so a request made while connecting runs once channels arrive, and
+    // whether the channel is known yet, so a direct message just opened is shown once it arrives
     private var requestKey: [AnyHashable] {
-        [ObjectIdentifier(session), session.requestedChannelId, session.phase]
+        let isKnown = session.requestedChannelId.map { session.channel($0) != nil } ?? false
+
+        return [ObjectIdentifier(session), session.requestedChannelId, session.phase, isKnown]
     }
 
     func body(content: Content) -> some View {
