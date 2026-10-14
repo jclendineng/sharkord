@@ -64,15 +64,11 @@ struct ChatScreen: View {
         .toolbarVisibility(.hidden, for: .tabBar)
         .toolbar {
             PlainToolbarItem(placement: .topBarLeading) {
-                if channel?.isDm == true {
-                    ChatTitle(title: title, partner: partner, isDirectMessage: true)
-                } else {
-                    NavigationLink(value: ChannelInfoRoute(channelId: channelId)) {
-                        ChatTitle(title: title, partner: partner, isDirectMessage: false)
-                    }
-                    .buttonStyle(.plain)
-                    .simultaneousGesture(TapGesture().onEnded(dismissKeyboard))
+                NavigationLink(value: ChannelInfoRoute(channelId: channelId)) {
+                    ChatTitle(title: title, partner: partner, isDirectMessage: channel?.isDm == true)
                 }
+                .buttonStyle(.plain)
+                .simultaneousGesture(TapGesture().onEnded(dismissKeyboard))
             }
 
             ToolbarItem(placement: .topBarTrailing) {
@@ -186,11 +182,9 @@ private struct ChatTitle: View {
                         .foregroundStyle(Theme.header)
                         .lineLimit(1)
 
-                    if !isDirectMessage {
-                        Image(systemName: "chevron.right")
-                            .font(.caption2.bold())
-                            .foregroundStyle(Theme.muted)
-                    }
+                    Image(systemName: "chevron.right")
+                        .font(.caption2.bold())
+                        .foregroundStyle(Theme.muted)
                 }
 
                 HStack(spacing: 4) {

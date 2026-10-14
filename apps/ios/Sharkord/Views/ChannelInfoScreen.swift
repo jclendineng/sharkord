@@ -33,7 +33,7 @@ struct ChannelInfoScreen: View {
                     onOpenMessage: openMessage,
                     onOpenUser: showProfile,
                     only: Self.tabs,
-                    onInvite: showInvite
+                    onInvite: inviteAction
                 )
             }
         }
@@ -53,7 +53,7 @@ struct ChannelInfoScreen: View {
                 Button("Notification Settings", systemImage: "bell.fill", action: showNotifications)
             }
 
-            if session.can(.manageChannels), let channel {
+            if session.can(.manageChannels), let channel, !channel.isDm {
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {
                         ChannelEditor(channel: channel)
@@ -78,23 +78,63 @@ struct ChannelInfoScreen: View {
         .onAppear(perform: makeModel)
     }
 
-    private func header(_ channel: Channel) -> some View {
-        HStack(spacing: 12) {
+    private var isDirectMessage: Bool {
+        channel?.isDm == true
+    }
+
+    // nobody is invited into a direct message
+    private var inviteAction: (() -> Void)? {
+        if isDirectMessage {
+            return nil
+        }
+
+        return showInvite
+    }
+
+    // the person a direct message is with, their avatar and name in place of the channel's
+    private var partner: PublicUser? {
+        session.directMessagePartner(for: channelId)
+    }
+
+    @ViewBuilder
+    private func icon(_ channel: Channel) -> some View {
+        if channel.isDm {
+            AvatarView(user: partner, size: 46, showsStatus: true)
+        } else {
             Image(systemName: "number")
                 .font(.title2.weight(.semibold))
                 .foregroundStyle(Theme.header)
                 .frame(width: 46, height: 46)
                 .background(Theme.listBackground, in: .rect(cornerRadius: 12))
+        }
+    }
+
+    private func subtitle(_ channel: Channel) -> String {
+        guard channel.isDm else {
+            return "Text Channel"
+        }
+
+        if let customStatus = partner?.customStatus, !customStatus.isEmpty {
+            return customStatus
+        }
+
+        return "Direct Message"
+    }
+
+    private func header(_ channel: Channel) -> some View {
+        HStack(spacing: 12) {
+            icon(channel)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(channel.name)
+                Text(channel.isDm ? partner?.name ?? "Direct Message" : channel.name)
                     .font(.title3.bold())
                     .foregroundStyle(Theme.header)
                     .lineLimit(1)
 
-                Text("Text Channel")
+                Text(subtitle(channel))
                     .font(.subheadline)
                     .foregroundStyle(Theme.muted)
+                    .lineLimit(1)
             }
         }
         .padding(.horizontal, 18)

@@ -72,7 +72,12 @@ final class SearchHomeModel {
                     media = try await mediaItems(client)
                 }
             case .members:
-                if let scope, memberIds == nil {
+                // a direct message is the two people in it
+                if let scope, scope.isDm, memberIds == nil {
+                    let partnerId = session.directMessagePartner(for: scope.id)?.id
+
+                    memberIds = Set([session.ownUserId, partnerId].compactMap { $0 })
+                } else if let scope, memberIds == nil {
                     let ids: [Int] = try await client.query("channels.getMembers", input: ["channelId": scope.id])
 
                     memberIds = Set(ids)
