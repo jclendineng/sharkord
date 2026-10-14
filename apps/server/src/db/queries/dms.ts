@@ -1,6 +1,9 @@
-import type { TDirectMessageConversation } from '@sharkord/shared';
+import {
+  getPlainTextFromHtml,
+  type TDirectMessageConversation
+} from '@sharkord/shared';
 import { TRPCError } from '@trpc/server';
-import { and, eq, inArray, max, or } from 'drizzle-orm';
+import { and, eq, inArray, max, or, sql } from 'drizzle-orm';
 import { db } from '..';
 import {
   channels,
@@ -51,6 +54,21 @@ const getDirectMessageChannelIdsForUser = async (
 };
 
 // returns all DM channels the user is a participant in along with metadata
+const PREVIEW_LENGTH = 120;
+
+// one line of plain text, short enough for a row
+const preview = (content: string | null | undefined): string | null => {
+  if (content === undefined) {
+    return null;
+  }
+
+  const text = getPlainTextFromHtml(content ?? '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return text.slice(0, PREVIEW_LENGTH);
+};
+
 const getDirectMessageConversations = async (
   userId: number
 ): Promise<TDirectMessageConversation[]> => {
@@ -70,24 +88,50 @@ const getDirectMessageConversations = async (
 
   const channelIds = rows.map((row) => row.channelId);
 
-  const [lastMessageRows, unreadMapRaw, closures] = await Promise.all([
-    db
-      .select({
-        channelId: messages.channelId,
-        lastMessageAt: max(messages.createdAt)
-      })
-      .from(messages)
-      .where(inArray(messages.channelId, channelIds))
-      .groupBy(messages.channelId),
-    getChannelsReadStatesForUser(userId),
-    db
-      .select({
-        channelId: directMessageClosures.channelId,
-        closedAt: directMessageClosures.closedAt
-      })
-      .from(directMessageClosures)
-      .where(eq(directMessageClosures.userId, userId))
-  ]);
+  const ids = sql.join(
+    channelIds.map((id) => sql`${id}`),
+    sql`, `
+  );
+
+  const [lastMessageRows, unreadMapRaw, closures, newestRows] =
+    await Promise.all([
+      db
+        .select({
+          channelId: messages.channelId,
+          lastMessageAt: max(messages.createdAt)
+        })
+        .from(messages)
+        .where(inArray(messages.channelId, channelIds))
+        .groupBy(messages.channelId),
+      getChannelsReadStatesForUser(userId),
+      db
+        .select({
+          channelId: directMessageClosures.channelId,
+          closedAt: directMessageClosures.closedAt
+        })
+        .from(directMessageClosures)
+        .where(eq(directMessageClosures.userId, userId)),
+      // the newest message of each conversation, for its preview in the list
+      db.all<{
+        channelId: number;
+        userId: number | null;
+        content: string | null;
+      }>(sql`
+      SELECT m.channel_id AS channelId, m.user_id AS userId, m.content AS content
+      FROM messages m
+      JOIN (
+        SELECT channel_id, MAX(created_at) AS newest
+        FROM messages
+        WHERE channel_id IN (${ids}) AND parent_message_id IS NULL
+        GROUP BY channel_id
+      ) latest ON latest.channel_id = m.channel_id AND latest.newest = m.created_at
+      WHERE m.parent_message_id IS NULL
+    `)
+    ]);
+
+  const newestByChannel = new Map(
+    newestRows.map((row) => [row.channelId, row])
+  );
 
   const closedAtMap = new Map(
     closures.map(({ channelId, closedAt }) => [channelId, closedAt])
@@ -109,7 +153,11 @@ const getDirectMessageConversations = async (
         channelId: row.channelId,
         userId: otherUserId,
         unreadCount: unreadMapRaw[row.channelId] ?? 0,
-        lastMessageAt
+        lastMessageAt,
+        lastMessagePreview: preview(
+          newestByChannel.get(row.channelId)?.content
+        ),
+        lastMessageUserId: newestByChannel.get(row.channelId)?.userId ?? null
       };
     })
     // a closed conversation comes back with the first message after it was closed

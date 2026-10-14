@@ -81,6 +81,9 @@ struct DirectMessageConversation: Decodable, Hashable, Identifiable {
     let channelId: Int
     let userId: Int
     let lastMessageAt: Int
+    // the newest message as plain text and who sent it, missing from an older server
+    var lastMessagePreview: String?
+    var lastMessageUserId: Int?
 
     var id: Int { channelId }
 }

@@ -180,3 +180,20 @@ struct HTMLTextTests {
         #expect(HTMLText.paragraphs(from: "<b> https://example.com") == "<p>&lt;b&gt; <a href=\"https://example.com\">https://example.com</a></p>")
     }
 }
+
+struct ShortAgeTests {
+    private let now = Date(timeIntervalSince1970: 1_000_000_000)
+
+    private func age(secondsAgo: Double) -> String {
+        ShortAge.text(since: Int((now.timeIntervalSince1970 - secondsAgo) * 1000), now: now)
+    }
+
+    @Test func showsDiscordsShortAges() {
+        #expect(age(secondsAgo: 20) == "now")
+        #expect(age(secondsAgo: 5 * 60) == "5m")
+        #expect(age(secondsAgo: 3 * 3600) == "3h")
+        #expect(age(secondsAgo: 15 * 86400) == "15d")
+        #expect(age(secondsAgo: 65 * 86400) == "2mo")
+        #expect(age(secondsAgo: 400 * 86400) == "1y")
+    }
+}

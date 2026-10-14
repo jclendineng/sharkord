@@ -175,6 +175,9 @@ private struct ChannelRow: View {
 
     @State private var isVoiceSheetPresented = false
     @State private var isActionsSheetPresented = false
+    // see ConversationRow, the mute lengths open once the menu has gone
+    @State private var wantsMute = false
+    @State private var isMutePresented = false
     @State private var isPressed = false
 
     let channel: Channel
@@ -211,8 +214,11 @@ private struct ChannelRow: View {
             .onLongPressGesture(minimumDuration: 0.35, perform: showActions, onPressingChanged: setPressed)
             .accessibilityAddTraits(.isButton)
             .accessibilityAction(named: "More Options", showActions)
-            .sheet(isPresented: $isActionsSheetPresented) {
-                ChannelActionsSheet(channel: channel)
+            .sheet(isPresented: $isActionsSheetPresented, onDismiss: showMuteIfWanted) {
+                ChannelActionsSheet(channel: channel, onMute: requestMute)
+            }
+            .sheet(isPresented: $isMutePresented) {
+                MuteDurationSheet(title: "Mute Channel", subtitle: "#\(channel.name)", channelId: channel.id)
             }
             .sheet(isPresented: $isVoiceSheetPresented) {
                 VoiceChannelSheet(channel: channel)
@@ -230,6 +236,18 @@ private struct ChannelRow: View {
 
     private func setPressed(_ pressed: Bool) {
         isPressed = pressed
+    }
+
+    private func requestMute() {
+        wantsMute = true
+        isActionsSheetPresented = false
+    }
+
+    private func showMuteIfWanted() {
+        if wantsMute {
+            wantsMute = false
+            isMutePresented = true
+        }
     }
 
     // like discord, a voice channel shows who is in it before anyone joins

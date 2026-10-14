@@ -218,6 +218,10 @@ export type TDirectMessageConversation = {
   userId: number;
   unreadCount: number;
   lastMessageAt: number;
+  // the newest message as plain text for the list, empty for one that is only attachments,
+  // null before anything was said
+  lastMessagePreview: string | null;
+  lastMessageUserId: number | null;
 };
 
 // createdAt alone is not unique, two messages sent in the same millisecond

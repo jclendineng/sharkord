@@ -60,6 +60,12 @@ describe('dms router', () => {
     expect(
       list2.some((dm) => dm.channelId === channelId && dm.userId === 1)
     ).toBe(true);
+
+    // the newest message, as plain text, and who sent it, for the row
+    const row = list2.find((dm) => dm.channelId === channelId);
+
+    expect(row!.lastMessagePreview).toBe('list dm');
+    expect(row!.lastMessageUserId).toBe(1);
   });
 
   test('should reject creating direct message with self', async () => {

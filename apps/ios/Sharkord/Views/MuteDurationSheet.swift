@@ -6,8 +6,6 @@ struct MuteDurationSheet: View {
     let title: String
     let subtitle: String
     let channelId: Int
-    // the sheet this opened from goes too, once a length is picked
-    let onMuted: () -> Void
 
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
@@ -56,7 +54,6 @@ struct MuteDurationSheet: View {
         }
 
         dismiss()
-        onMuted()
     }
 
     private func close() {

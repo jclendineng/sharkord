@@ -8,20 +8,22 @@ struct DirectMessagesPanel: View {
     @State private var isNewMessagePresented = false
 
     var body: some View {
-        List {
-            ForEach(conversations) { conversation in
-                ConversationRow(
-                    conversation: conversation,
-                    user: session.usersById[conversation.userId],
-                    unreadCount: session.unreadCounts[conversation.channelId, default: 0],
-                    onOpen: { onOpen(conversation.channelId) }
-                )
-                .listRowBackground(Theme.panelBackground)
-                .listRowSeparator(.hidden)
+        // a plain scroll of cards, as discord's, rather than a list, whose own touch handling held
+        // a long press back
+        ScrollView {
+            LazyVStack(spacing: 8) {
+                ForEach(conversations) { conversation in
+                    ConversationRow(
+                        conversation: conversation,
+                        user: session.usersById[conversation.userId],
+                        unreadCount: session.unreadCounts[conversation.channelId, default: 0],
+                        onOpen: { onOpen(conversation.channelId) }
+                    )
+                }
             }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
         }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
         .overlay {
             if session.directMessages.isEmpty {
                 ContentUnavailableView(
@@ -73,19 +75,38 @@ private struct ConversationRow: View {
 
     @State private var isPressed = false
     @State private var isActionsPresented = false
+    // mute was picked in the menu, its lengths open once the menu has gone: two sheets closing
+    // at once brought the menu back for a moment
+    @State private var wantsMute = false
+    @State private var isMutePresented = false
 
     var body: some View {
         // plain gestures, as the channel rows: a recognised long press cancels the tap, where a
         // link still fires when the finger lifts after one
+        // the card gives a little under the finger straight away, so the press feels fluid
         label
-            .contentShape(.rect)
-            .background(isPressed ? Theme.panelSelected : .clear, in: .rect(cornerRadius: 6))
+            .padding(12)
+            .background(isPressed ? Theme.panelSelected : Theme.listBackground, in: .rect(cornerRadius: 16, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(Theme.divider, lineWidth: 1)
+            }
+            .contentShape(.rect(cornerRadius: 16))
+            .scaleEffect(isPressed ? 0.97 : 1)
+            .animation(.snappy(duration: 0.2), value: isPressed)
             .onTapGesture(perform: onOpen)
-            .onLongPressGesture(minimumDuration: 0.35, perform: showActions, onPressingChanged: setPressed)
+            .onLongPressGesture(minimumDuration: 0.3, perform: showActions, onPressingChanged: setPressed)
             .accessibilityAddTraits(.isButton)
             .accessibilityAction(named: "More Options", showActions)
-            .sheet(isPresented: $isActionsPresented) {
-                DirectMessageActionsSheet(conversation: conversation, user: user)
+            .sheet(isPresented: $isActionsPresented, onDismiss: showMuteIfWanted) {
+                DirectMessageActionsSheet(conversation: conversation, user: user, onMute: requestMute)
+            }
+            .sheet(isPresented: $isMutePresented) {
+                MuteDurationSheet(
+                    title: "Mute this conversation",
+                    subtitle: "@\(user?.name ?? "Unknown")",
+                    channelId: conversation.channelId
+                )
             }
     }
 
@@ -93,27 +114,68 @@ private struct ConversationRow: View {
         isPressed = pressed
     }
 
+    private func requestMute() {
+        wantsMute = true
+        isActionsPresented = false
+    }
+
+    private func showMuteIfWanted() {
+        if wantsMute {
+            wantsMute = false
+            isMutePresented = true
+        }
+    }
+
     private func showActions() {
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         isActionsPresented = true
     }
 
+    // "Name: what they said", as discord's rows, or a word for a message that was only files
+    private var preview: String? {
+        guard let text = conversation.lastMessagePreview else {
+            return nil
+        }
+
+        let author = conversation.lastMessageUserId.flatMap { session.usersById[$0]?.name }
+        let body = text.isEmpty ? "Sent an attachment" : text
+
+        return author.map { "\($0): \(body)" } ?? body
+    }
+
     private var label: some View {
         HStack(spacing: 12) {
-            AvatarView(user: user, size: 44, showsStatus: true)
+            AvatarView(user: user, size: 48, showsStatus: true)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(user?.name ?? "Unknown")
-                    .font(.body.weight(unreadCount > 0 ? .bold : .semibold))
-                    .foregroundStyle(Theme.header)
+            VStack(alignment: .leading, spacing: 3) {
+                HStack {
+                    Text(user?.name ?? "Unknown")
+                        .font(.body.weight(unreadCount > 0 ? .bold : .semibold))
+                        .foregroundStyle(Theme.header)
+                        .lineLimit(1)
 
-                Text(MessageDate.timestamp(Date(timeIntervalSince1970: TimeInterval(conversation.lastMessageAt) / 1000)))
-                    .font(.caption)
-                    .foregroundStyle(Theme.muted)
+                    Spacer(minLength: 6)
+
+                    indicators
+
+                    Text(ShortAge.text(since: conversation.lastMessageAt))
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.muted)
+                }
+
+                if let preview {
+                    Text(preview)
+                        .font(.subheadline)
+                        .foregroundStyle(unreadCount > 0 ? Theme.header : Theme.text)
+                        .lineLimit(1)
+                }
             }
+        }
+    }
 
-            Spacer()
-
+    @ViewBuilder
+    private var indicators: some View {
+        HStack(spacing: 6) {
             if session.isMuted(conversation.channelId) {
                 Image(systemName: "bell.slash.fill")
                     .font(.caption)
@@ -135,7 +197,38 @@ private struct ConversationRow: View {
                     .background(Theme.red, in: .capsule)
             }
         }
-        .padding(.vertical, 4)
+    }
+}
+
+// discord's short age on a conversation: now, 5m, 3h, 15d, 2mo, 1y
+enum ShortAge {
+    static func text(since milliseconds: Int, now: Date = .now) -> String {
+        let seconds = max(0, now.timeIntervalSince1970 - Double(milliseconds) / 1000)
+        let minutes = Int(seconds / 60)
+        let hours = minutes / 60
+        let days = hours / 24
+
+        if minutes < 1 {
+            return "now"
+        }
+
+        if hours < 1 {
+            return "\(minutes)m"
+        }
+
+        if days < 1 {
+            return "\(hours)h"
+        }
+
+        if days < 30 {
+            return "\(days)d"
+        }
+
+        if days < 365 {
+            return "\(days / 30)mo"
+        }
+
+        return "\(days / 365)y"
     }
 }
 
@@ -144,13 +237,14 @@ private struct ConversationRow: View {
 private struct DirectMessageActionsSheet: View {
     let conversation: DirectMessageConversation
     let user: PublicUser?
+    // the row opens the mute lengths once this sheet has gone
+    let onMute: () -> Void
 
     @Environment(SessionStore.self) private var session
     @Environment(ServerListStore.self) private var servers
     @Environment(\.dismiss) private var dismiss
 
     @State private var isProfilePresented = false
-    @State private var isMutePresented = false
 
     private var channelId: Int {
         conversation.channelId
@@ -208,14 +302,7 @@ private struct DirectMessageActionsSheet: View {
                 MemberProfileSheet(user: user, onMessage: openConversation)
             }
         }
-        .sheet(isPresented: $isMutePresented) {
-            MuteDurationSheet(
-                title: "Mute this conversation",
-                subtitle: "@\(user?.name ?? "Unknown")",
-                channelId: channelId,
-                onMuted: dismissSheet
-            )
-        }
+
     }
 
     private func showProfile() {
@@ -256,7 +343,7 @@ private struct DirectMessageActionsSheet: View {
     // muting asks for how long first, unmuting goes straight back to the default
     private func toggleMuted() {
         guard isMuted else {
-            isMutePresented = true
+            onMute()
             return
         }
 
@@ -264,10 +351,6 @@ private struct DirectMessageActionsSheet: View {
             await session.setNotificationLevel(.mentions, for: channelId)
         }
 
-        dismiss()
-    }
-
-    private func dismissSheet() {
         dismiss()
     }
 }

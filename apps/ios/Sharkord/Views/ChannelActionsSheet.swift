@@ -3,13 +3,14 @@ import SwiftUI
 // discord's long press sheet for a channel
 struct ChannelActionsSheet: View {
     let channel: Channel
+    // the row opens the mute lengths once this sheet has gone
+    let onMute: () -> Void
 
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
 
     @State private var isInvitePresented = false
     @State private var isNotificationsPresented = false
-    @State private var isMutePresented = false
 
     private var isMuted: Bool {
         session.isMuted(channel.id)
@@ -60,14 +61,7 @@ struct ChannelActionsSheet: View {
         .sheet(isPresented: $isNotificationsPresented) {
             ChannelNotificationsSheet(channel: channel)
         }
-        .sheet(isPresented: $isMutePresented) {
-            MuteDurationSheet(
-                title: "Mute Channel",
-                subtitle: "#\(channel.name)",
-                channelId: channel.id,
-                onMuted: close
-            )
-        }
+
     }
 
     private func showInvite() {
@@ -90,7 +84,7 @@ struct ChannelActionsSheet: View {
     // muting asks for how long first, unmuting goes straight back to the default
     private func toggleMuted() {
         guard isMuted else {
-            isMutePresented = true
+            onMute()
             return
         }
 
@@ -98,10 +92,6 @@ struct ChannelActionsSheet: View {
             await session.setNotificationLevel(.mentions, for: channel.id)
         }
 
-        dismiss()
-    }
-
-    private func close() {
         dismiss()
     }
 
