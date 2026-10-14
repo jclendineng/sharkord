@@ -810,34 +810,6 @@ private struct LinksPage: View {
     }
 }
 
-// a card's own options, over its corner so the card itself still opens what it shows
-struct RowMenu: View {
-    let onJump: () -> Void
-    let link: URL?
-
-    var body: some View {
-        Menu {
-            Button("Jump to Message", systemImage: "arrow.uturn.left.circle", action: onJump)
-
-            if let link {
-                Button("Copy Link", systemImage: "doc.on.doc") {
-                    UIPasteboard.general.url = link
-                }
-            }
-        } label: {
-            // over a card's picture, so it keeps its own dark circle
-            Image(systemName: "ellipsis")
-                .font(.subheadline.weight(.bold))
-                .foregroundStyle(.white)
-                .frame(width: 32, height: 32)
-                .background(.black.opacity(0.45), in: .circle)
-                .frame(width: 44, height: 44)
-                .contentShape(.rect)
-        }
-        .padding(4)
-    }
-}
-
 private struct EmptyTab: View {
     let title: String
     let systemImage: String

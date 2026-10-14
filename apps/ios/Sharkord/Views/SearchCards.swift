@@ -45,8 +45,8 @@ struct FileCardTile: View {
                     .foregroundStyle(Theme.text)
             }
         }
-        .overlay(alignment: .topTrailing) {
-            RowMenu(onJump: onJump, link: nil)
+        .contextMenu {
+            CardActions(onJump: onJump, link: nil)
         }
         .task(id: file.id) {
             await loadThumbnail()
@@ -125,8 +125,8 @@ struct LinkCardTile: View {
             }
         }
         .buttonStyle(.plain)
-        .overlay(alignment: .topTrailing) {
-            RowMenu(onJump: onJump, link: url)
+        .contextMenu {
+            CardActions(onJump: onJump, link: url)
         }
     }
 
@@ -138,6 +138,22 @@ struct LinkCardTile: View {
 
     private func open() {
         openURL(url)
+    }
+}
+
+// a long press on a card, the way ios lifts it with its options under it. a tap still opens it
+private struct CardActions: View {
+    let onJump: () -> Void
+    let link: URL?
+
+    var body: some View {
+        Button("Jump to Message", systemImage: "arrow.uturn.left.circle", action: onJump)
+
+        if let link {
+            Button("Copy Link", systemImage: "doc.on.doc") {
+                UIPasteboard.general.url = link
+            }
+        }
     }
 }
 
