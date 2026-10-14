@@ -91,8 +91,11 @@ struct MessageListView<Header: View>: View {
     }
 
     // discord's double tap, the first quick reaction
+    // a tap on the conversation puts away whatever is in the keyboard's place, the keyboard
+    // too, as discord does, so there is a way out even when there is nothing to scroll
     private func closeAttachPanel() {
         store.attachPanel.close()
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 
     private var attachPanelDrag: some Gesture {

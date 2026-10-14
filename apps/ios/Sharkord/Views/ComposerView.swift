@@ -97,6 +97,9 @@ struct ComposerView: View {
         .onChange(of: photoSelection) { _, items in
             importPhotos(items)
         }
+        // leaving for another screen, the channel's own among them, drops the field's focus, or
+        // swiftui gives it back on the way back and the keyboard comes up unasked
+        .onDisappear(perform: unfocusField)
         // a tap on the field while the panel is up hands over to the keyboard
         .onChange(of: isFieldFocused) { _, isFocused in
             if isFocused && store.attachPanel.isOpen && !store.attachPanel.isHandingOff {
@@ -343,6 +346,10 @@ struct ComposerView: View {
         } else {
             store.attachPanel.open(.expressions)
         }
+    }
+
+    private func unfocusField() {
+        isFieldFocused = false
     }
 
     private func deleteBackward() {
