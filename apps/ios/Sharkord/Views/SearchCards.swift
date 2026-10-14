@@ -62,9 +62,12 @@ struct FileCardTile: View {
         } else if let address = session.address, file.file.isVideo {
             VideoThumbnail(url: address.fileURL(file.file))
         } else if let thumbnail {
+            // the whole page, a document cropped to its corner is mostly empty margin
             Image(uiImage: thumbnail)
                 .resizable()
-                .scaledToFill()
+                .scaledToFit()
+                .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
+                .padding(12)
         } else {
             Image(systemName: file.file.symbol)
                 .font(.system(size: 36))
