@@ -5,6 +5,7 @@ struct AttachmentView: View {
     let file: SharkordFile
 
     @Environment(SessionStore.self) private var session
+    @Environment(\.isShowingMessageActions) private var isShowingMessageActions
 
     @State private var isViewerPresented = false
 
@@ -38,50 +39,73 @@ struct AttachmentView: View {
     }
 
     private func openViewer() {
+        guard !isShowingMessageActions else {
+            return
+        }
+
         isViewerPresented = true
     }
 }
 
-// opens on the phone in quick look, not in a web page
+// opens on the phone in quick look, not in a web page. a document small enough to fetch shows
+// its first page above the name, the way quick look draws it in files
 private struct FileCard: View {
     let file: SharkordFile
     let url: URL
 
+    @Environment(SessionStore.self) private var session
+
+    @State private var thumbnail: UIImage?
+
     var body: some View {
         OpenFileButton(file: file) { isLoading in
-            HStack(spacing: 10) {
-                Image(systemName: file.symbol)
-                    .font(.title)
-                    .foregroundStyle(Theme.blurple)
-                    .frame(width: 32)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(file.originalName)
-                        .foregroundStyle(Theme.link)
-                        .lineLimit(1)
-
-                    Text(file.size.formatted(.byteCount(style: .file)))
-                        .font(.caption)
-                        .foregroundStyle(Theme.muted)
+            VStack(alignment: .leading, spacing: 0) {
+                if let thumbnail {
+                    Image(uiImage: thumbnail)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxWidth: .infinity, maxHeight: 200)
+                        .background(Theme.deepBackground)
                 }
 
-                Spacer(minLength: 0)
+                HStack(spacing: 10) {
+                    Image(systemName: file.symbol)
+                        .font(.title)
+                        .foregroundStyle(Theme.blurple)
+                        .frame(width: 32)
 
-                if isLoading {
-                    ProgressView()
-                } else {
-                    Image(systemName: "chevron.right")
-                        .foregroundStyle(Theme.muted)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(file.originalName)
+                            .foregroundStyle(Theme.link)
+                            .lineLimit(1)
+
+                        Text(file.size.formatted(.byteCount(style: .file)))
+                            .font(.caption)
+                            .foregroundStyle(Theme.muted)
+                    }
+
+                    Spacer(minLength: 0)
+
+                    if isLoading {
+                        ProgressView()
+                    } else {
+                        Image(systemName: "chevron.right")
+                            .foregroundStyle(Theme.muted)
+                    }
                 }
+                .padding(12)
             }
-            .padding(12)
             .frame(maxWidth: 320)
-            .background(Theme.listBackground, in: .rect(cornerRadius: 8))
+            .background(Theme.listBackground)
+            .clipShape(.rect(cornerRadius: 8))
             .overlay {
                 RoundedRectangle(cornerRadius: 8)
                     .stroke(Theme.deepBackground)
             }
             .contentShape(.rect)
+        }
+        .task(id: file.id) {
+            thumbnail = await FileThumbnails.thumbnail(for: file, from: url)
         }
     }
 }

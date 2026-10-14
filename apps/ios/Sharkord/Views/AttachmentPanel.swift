@@ -623,6 +623,7 @@ final class AttachPanelModel {
         settledHeight = Self.restingHeight
         dragOffset = 0
         returnsToKeyboard = false
+        isCoveredByKeyboard = false
         self.kind = kind
 
         withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
@@ -647,6 +648,7 @@ final class AttachPanelModel {
             dragOffset = 0
             returnsToKeyboard = true
             isHandingOff = true
+            isCoveredByKeyboard = false
             isOpen = true
         }
     }

@@ -675,12 +675,24 @@ struct PinnedMessageRow: View {
                     }
                     .lineLimit(1)
 
-                    if !text.isEmpty {
+                    if !text.isEmpty && !message.isMediaLinkOnly {
                         Text(text)
                             .font(.subheadline)
                             .foregroundStyle(Theme.text)
                             .lineLimit(4)
                             .multilineTextAlignment(.leading)
+                    }
+
+                    if let sticker = message.sticker {
+                        AnimatedImage(url: session.address?.fileURL(sticker.file), maxPointSize: 120, contentMode: .scaleAspectFit)
+                            .frame(width: 120, height: 120)
+                            .accessibilityLabel(sticker.name)
+                    }
+
+                    ForEach(message.mediaImages, id: \.url) { media in
+                        AnimatedImage(url: URL(string: media.url), maxPointSize: 240, contentMode: .scaleAspectFit, sizesToImage: true)
+                            .frame(maxWidth: 220, maxHeight: 240, alignment: .leading)
+                            .clipShape(.rect(cornerRadius: 8))
                     }
 
                     if !message.files.isEmpty {

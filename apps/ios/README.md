@@ -24,7 +24,7 @@ Done: several servers at once (Discord style server rail, one socket per server)
 including direct messages, invite links, an inbox with mentions and unreads, sign in, OIDC
 sign in, server password, channel list with unread counts, message history with pagination,
 sending, live new/edited/deleted messages, auto reconnect, DMs, threads, reactions with emoji
-picker, uploads, rich message rendering, push notifications, voice with webcams and watching
+picker, uploads, files opened in Quick Look with a preview of their first page, rich message rendering, push notifications, voice with webcams and watching
 screen shares, sharing your own screen, profile editing, settings (account, devices, voice and
 video, notifications), the full server settings, polls, voice messages, and Discord's
 attachment and expression panels (emoji, GIFs, stickers), typing indicators, pinning messages

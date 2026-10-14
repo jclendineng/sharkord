@@ -1,4 +1,5 @@
 import QuickLook
+import QuickLookThumbnailing
 import SwiftUI
 
 // files open on the phone in quick look rather than in safari: pdfs, office and iwork documents,
@@ -31,12 +32,53 @@ enum FileDownloads {
     }
 }
 
+// the first page of a document, drawn by quick look from the copy FileDownloads keeps, so opening
+// it afterwards is instant. only files small enough that fetching one just to draw it is cheap
+enum FileThumbnails {
+    private static let maxSize = 10 * 1024 * 1024
+    private static let cache = NSCache<NSNumber, UIImage>()
+
+    static func thumbnail(for file: SharkordFile, from url: URL) async -> UIImage? {
+        if let cached = cache.object(forKey: NSNumber(value: file.id)) {
+            return cached
+        }
+
+        guard file.size <= maxSize, let local = try? await FileDownloads.localURL(for: file, from: url) else {
+            return nil
+        }
+
+        let request = QLThumbnailGenerator.Request(
+            fileAt: local,
+            size: CGSize(width: 320, height: 200),
+            scale: UITraitCollection.current.displayScale,
+            representationTypes: .thumbnail
+        )
+
+        // a kind quick look cannot draw, like an archive, has no thumbnail and keeps its icon
+        guard let representation = try? await QLThumbnailGenerator.shared.generateBestRepresentation(for: request) else {
+            return nil
+        }
+
+        let image = representation.uiImage
+
+        cache.setObject(image, forKey: NSNumber(value: file.id))
+
+        return image
+    }
+}
+
+extension EnvironmentValues {
+    // the message menu is up, see MessageListView
+    @Entry var isShowingMessageActions = false
+}
+
 // a button that downloads the file and shows it in quick look, its label told whether it is loading
 struct OpenFileButton<Label: View>: View {
     let file: SharkordFile
     @ViewBuilder let label: (_ isLoading: Bool) -> Label
 
     @Environment(SessionStore.self) private var session
+    @Environment(\.isShowingMessageActions) private var isShowingMessageActions
 
     @State private var previewURL: URL?
     @State private var isLoading = false
@@ -64,7 +106,7 @@ struct OpenFileButton<Label: View>: View {
     }
 
     private func open() {
-        guard let address = session.address else {
+        guard !isShowingMessageActions, let address = session.address else {
             return
         }
 

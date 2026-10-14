@@ -56,6 +56,9 @@ struct MessageListView<Header: View>: View {
                 loadingOverlay
             }
         }
+        // a long press opens the menu with the finger still down, and lifting it would otherwise
+        // also count as a tap on the file or image under it
+        .environment(\.isShowingMessageActions, actionsMessage != nil)
         .sheet(item: $actionsMessage) { message in
             MessageActionsSheet(
                 message: message,

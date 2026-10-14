@@ -134,6 +134,25 @@ struct MessageMetadata: Codable, Hashable {
     }
 }
 
+extension Message {
+    // gifs and images the server found at links in the message
+    var mediaImages: [MessageMetadata] {
+        (metadata ?? []).filter(\.isImage)
+    }
+
+    // a message that is just the link to the gif it shows, like one from the picker: the gif
+    // says it all, the link above it would only repeat it
+    var isMediaLinkOnly: Bool {
+        let images = mediaImages
+
+        guard images.count == 1, let content else {
+            return false
+        }
+
+        return HTMLText.plainText(from: content).trimmingCharacters(in: .whitespacesAndNewlines) == images[0].url
+    }
+}
+
 // gifs.trending and gifs.search
 struct Gif: Decodable, Hashable, Identifiable {
     let id: String

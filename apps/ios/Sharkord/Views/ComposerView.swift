@@ -151,6 +151,20 @@ struct ComposerView: View {
         store.attachPanel.isOpen && store.attachPanel.kind == .expressions
     }
 
+    // the buttons turn back the moment the keyboard starts sliding up over the panel, not once
+    // the handoff has finished and the panel has actually closed under it
+    private var isPanelShown: Bool {
+        store.attachPanel.isOpen && !store.attachPanel.isCoveredByKeyboard
+    }
+
+    private var showsCloseAttachments: Bool {
+        isPanelShown && store.attachPanel.kind == .attachments
+    }
+
+    private var showsKeyboardButton: Bool {
+        isPanelShown && store.attachPanel.kind == .expressions
+    }
+
     @ViewBuilder
     private var openPanel: some View {
         switch store.attachPanel.kind {
@@ -236,13 +250,13 @@ struct ComposerView: View {
                 Button(action: toggleAttachPanel) {
                     Image(systemName: "plus")
                         .font(.body.weight(.semibold))
-                        .rotationEffect(.degrees(areAttachmentsOpen ? 45 : 0))
+                        .rotationEffect(.degrees(showsCloseAttachments ? 45 : 0))
                         .foregroundStyle(Theme.text)
                         .frame(width: 38, height: 38)
                         .background(Theme.inputBackground, in: .circle)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(areAttachmentsOpen ? "Close Attachments" : "Attach")
+                .accessibilityLabel(showsCloseAttachments ? "Close Attachments" : "Attach")
             }
 
             HStack(alignment: .bottom, spacing: 10) {
@@ -254,8 +268,8 @@ struct ComposerView: View {
 
                 // discord's emoji button turns into a keyboard one while the panel is up
                 Button(
-                    areExpressionsOpen ? "Keyboard" : "Emoji",
-                    systemImage: areExpressionsOpen ? "keyboard" : "face.smiling.inverse",
+                    showsKeyboardButton ? "Keyboard" : "Emoji",
+                    systemImage: showsKeyboardButton ? "keyboard" : "face.smiling.inverse",
                     action: toggleExpressions
                 )
                     .labelStyle(.iconOnly)

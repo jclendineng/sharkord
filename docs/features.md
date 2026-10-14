@@ -87,7 +87,9 @@ channel), plus `messages.search` and `messages.getPinned`.
 
 A file attached to a message opens on the phone in Quick Look, not in a web page: PDFs,
 Office and iWork documents, text, video and audio, with Quick Look's share and save. It is
-downloaded once into the app's cache.
+downloaded once into the app's cache. A file of 10 MB or less shows its first page as a preview
+above its name, drawn by Quick Look from that same cached copy. A pinned GIF shows the GIF in the
+pinned list, not its link.
 
 Uploaded files are stored under their own name and served from `/public/<name>`. With
 **Signed File Links** off (the default) anyone who has or guesses that link can open the
