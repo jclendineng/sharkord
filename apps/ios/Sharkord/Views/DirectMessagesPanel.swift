@@ -114,6 +114,12 @@ private struct ConversationRow: View {
 
             Spacer()
 
+            if session.isMuted(conversation.channelId) {
+                Image(systemName: "bell.slash.fill")
+                    .font(.caption)
+                    .foregroundStyle(Theme.muted)
+            }
+
             if session.isPinned(conversation.channelId) {
                 Image(systemName: "pin.fill")
                     .font(.caption)
@@ -144,6 +150,7 @@ private struct DirectMessageActionsSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var isProfilePresented = false
+    @State private var isMutePresented = false
 
     private var channelId: Int {
         conversation.channelId
@@ -201,6 +208,14 @@ private struct DirectMessageActionsSheet: View {
                 MemberProfileSheet(user: user, onMessage: openConversation)
             }
         }
+        .sheet(isPresented: $isMutePresented) {
+            MuteDurationSheet(
+                title: "Mute this conversation",
+                subtitle: "@\(user?.name ?? "Unknown")",
+                channelId: channelId,
+                onMuted: dismissSheet
+            )
+        }
     }
 
     private func showProfile() {
@@ -238,14 +253,21 @@ private struct DirectMessageActionsSheet: View {
         dismiss()
     }
 
-    // muting is the "nothing" notification level, unmuting goes back to the default
+    // muting asks for how long first, unmuting goes straight back to the default
     private func toggleMuted() {
-        let level: ChannelNotificationLevel = isMuted ? .mentions : .none
-
-        Task {
-            await session.setNotificationLevel(level, for: channelId)
+        guard isMuted else {
+            isMutePresented = true
+            return
         }
 
+        Task {
+            await session.setNotificationLevel(.mentions, for: channelId)
+        }
+
+        dismiss()
+    }
+
+    private func dismissSheet() {
         dismiss()
     }
 }

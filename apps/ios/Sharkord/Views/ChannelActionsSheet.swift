@@ -9,6 +9,7 @@ struct ChannelActionsSheet: View {
 
     @State private var isInvitePresented = false
     @State private var isNotificationsPresented = false
+    @State private var isMutePresented = false
 
     private var isMuted: Bool {
         session.isMuted(channel.id)
@@ -59,6 +60,14 @@ struct ChannelActionsSheet: View {
         .sheet(isPresented: $isNotificationsPresented) {
             ChannelNotificationsSheet(channel: channel)
         }
+        .sheet(isPresented: $isMutePresented) {
+            MuteDurationSheet(
+                title: "Mute Channel",
+                subtitle: "#\(channel.name)",
+                channelId: channel.id,
+                onMuted: close
+            )
+        }
     }
 
     private func showInvite() {
@@ -78,14 +87,21 @@ struct ChannelActionsSheet: View {
         dismiss()
     }
 
-    // muting is the "nothing" notification level, unmuting goes back to the default
+    // muting asks for how long first, unmuting goes straight back to the default
     private func toggleMuted() {
-        let level: ChannelNotificationLevel = isMuted ? .mentions : .none
-
-        Task {
-            await session.setNotificationLevel(level, for: channel.id)
+        guard isMuted else {
+            isMutePresented = true
+            return
         }
 
+        Task {
+            await session.setNotificationLevel(.mentions, for: channel.id)
+        }
+
+        dismiss()
+    }
+
+    private func close() {
         dismiss()
     }
 

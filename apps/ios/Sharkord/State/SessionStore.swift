@@ -45,6 +45,8 @@ final class SessionStore {
     // highlighted in the channel list and opened when the server is picked in the rail
     private(set) var lastChannelId: Int?
     private(set) var notificationLevels: [Int: ChannelNotificationLevel] = [:]
+    // when a mute for a while ends, by channel, in milliseconds
+    private(set) var mutedUntil: [Int: Int] = [:]
     private(set) var pinnedChannelIds: [Int] = []
     private(set) var hidesMutedChannels = false
     private(set) var allowsDirectMessages = true
@@ -241,7 +243,12 @@ final class SessionStore {
     }
 
     func notificationLevel(for channelId: Int) -> ChannelNotificationLevel {
-        notificationLevels[channelId] ?? .mentions
+        // a mute that has run out is the default again
+        if let end = mutedUntil[channelId], Double(end) / 1000 <= Date().timeIntervalSince1970 {
+            return .mentions
+        }
+
+        return notificationLevels[channelId] ?? .mentions
     }
 
     func isMuted(_ channelId: Int) -> Bool {
@@ -275,7 +282,7 @@ final class SessionStore {
         CredentialStore.setHidesMutedChannels(hides, for: address)
     }
 
-    func setNotificationLevel(_ level: ChannelNotificationLevel, for channelId: Int) async {
+    func setNotificationLevel(_ level: ChannelNotificationLevel, for channelId: Int, muteForMinutes: Int? = nil) async {
         guard let client else {
             return
         }
@@ -283,18 +290,34 @@ final class SessionStore {
         struct LevelInput: Encodable {
             let channelId: Int
             let level: ChannelNotificationLevel
+            let muteForMinutes: Int?
         }
 
         let previous = notificationLevels[channelId]
+        let previousEnd = mutedUntil[channelId]
 
         notificationLevels[channelId] = level == .mentions ? nil : level
+        mutedUntil[channelId] = muteForMinutes.map { Int((Date().timeIntervalSince1970 + Double($0) * 60) * 1000) }
 
         do {
-            try await client.mutation("notifications.setChannelSetting", input: LevelInput(channelId: channelId, level: level))
+            try await client.mutation(
+                "notifications.setChannelSetting",
+                input: LevelInput(channelId: channelId, level: level, muteForMinutes: muteForMinutes)
+            )
         } catch {
             notificationLevels[channelId] = previous
+            mutedUntil[channelId] = previousEnd
             showError(error)
         }
+    }
+
+    // muted, and until when if it is for a while
+    func muteEnd(for channelId: Int) -> Date? {
+        guard isMuted(channelId), let end = mutedUntil[channelId] else {
+            return nil
+        }
+
+        return Date(timeIntervalSince1970: Double(end) / 1000)
     }
 
     func setAllowsDirectMessages(_ allows: Bool) async {
@@ -320,6 +343,9 @@ final class SessionStore {
 
         if let settings: [ChannelNotificationSetting] = try? await client.query("notifications.getChannelSettings") {
             notificationLevels = Dictionary(uniqueKeysWithValues: settings.map { ($0.channelId, $0.level) })
+            mutedUntil = Dictionary(uniqueKeysWithValues: settings.compactMap { setting in
+                setting.mutedUntil.map { (setting.channelId, $0) }
+            })
         }
 
         if let privacy: PrivacySettings = try? await client.query("users.getPrivacy") {
