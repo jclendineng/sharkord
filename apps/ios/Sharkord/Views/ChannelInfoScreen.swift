@@ -30,6 +30,7 @@ struct ChannelInfoScreen: View {
                 SearchHome(
                     model: model,
                     onOpenChannel: openChannel,
+                    onOpenMessage: openMessage,
                     onOpenUser: showProfile,
                     only: Self.tabs,
                     onInvite: showInvite
@@ -119,6 +120,16 @@ struct ChannelInfoScreen: View {
             dismiss()
         } else {
             servers.open(channelId: id, in: session)
+        }
+    }
+
+    // in this channel the chat this screen was opened from takes it, when it shows again
+    private func openMessage(channelId id: Int, messageId: Int) {
+        if id == channelId {
+            session.messages(for: id).pendingJumpMessageId = messageId
+            dismiss()
+        } else {
+            servers.open(channelId: id, messageId: messageId, in: session)
         }
     }
 

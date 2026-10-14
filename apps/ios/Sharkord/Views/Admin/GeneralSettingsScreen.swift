@@ -156,6 +156,19 @@ struct GeneralSettingsScreen: View {
                 }
             }
 
+            if let previewsPrivate = settings.wrappedValue.linkPreviewsPrivateNetwork {
+                Section {
+                    Toggle("Preview Links on the Server's Network", isOn: Binding(
+                        get: { previewsPrivate },
+                        set: { settings.wrappedValue.linkPreviewsPrivateNetwork = $0 }
+                    ))
+                } header: {
+                    Text("Link Previews")
+                } footer: {
+                    Text("Lets previews load from addresses on the server's own network, like a home server's other apps. Only with members you trust, anyone could make the server load pages only it can reach. Also previewPrivateNetwork under [links] in config.ini.")
+                }
+            }
+
             if let errorMessage {
                 Section {
                     Text(errorMessage)
@@ -212,6 +225,7 @@ struct GeneralSettingsScreen: View {
             let showWelcomeDialog: Bool
             let webRtcSimulcastEnabled: Bool
             let pushShowMessageContent: Bool?
+            let linkPreviewsPrivateNetwork: Bool?
             let reportEmail: String?
             let klipyApiKey: String?
 
@@ -230,6 +244,7 @@ struct GeneralSettingsScreen: View {
                 try container.encode(showWelcomeDialog, forKey: .showWelcomeDialog)
                 try container.encode(webRtcSimulcastEnabled, forKey: .webRtcSimulcastEnabled)
                 try container.encodeIfPresent(pushShowMessageContent, forKey: .pushShowMessageContent)
+                try container.encodeIfPresent(linkPreviewsPrivateNetwork, forKey: .linkPreviewsPrivateNetwork)
                 // null clears it, an older server drops the key it doesn't know
                 try container.encode(reportEmail, forKey: .reportEmail)
                 try container.encode(klipyApiKey, forKey: .klipyApiKey)
@@ -238,7 +253,7 @@ struct GeneralSettingsScreen: View {
             private enum CodingKeys: String, CodingKey {
                 case name, description, password, onlyAskForPasswordOnFirstJoin, allowNewUsers
                 case directMessagesEnabled, enablePlugins, enableSearch, showWelcomeDialog, webRtcSimulcastEnabled
-                case pushShowMessageContent, reportEmail, klipyApiKey
+                case pushShowMessageContent, linkPreviewsPrivateNetwork, reportEmail, klipyApiKey
             }
         }
 
@@ -254,6 +269,7 @@ struct GeneralSettingsScreen: View {
             showWelcomeDialog: settings.showWelcomeDialog,
             webRtcSimulcastEnabled: settings.webRtcSimulcastEnabled,
             pushShowMessageContent: settings.pushShowMessageContent,
+            linkPreviewsPrivateNetwork: settings.linkPreviewsPrivateNetwork,
             reportEmail: trimmedOrNil(settings.reportEmail),
             klipyApiKey: trimmedOrNil(settings.klipyApiKey)
         )

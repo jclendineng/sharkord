@@ -134,7 +134,7 @@ final class SearchHomeModel {
             (message.metadata ?? [])
                 .filter(\.isImage)
                 .compactMap { media in
-                    URL(string: media.url).map { MediaItem.link(url: $0, messageId: message.id, createdAt: message.createdAt) }
+                    URL(string: media.url).map { MediaItem.link(url: $0, messageId: message.id, channelId: message.channelId, createdAt: message.createdAt) }
                 }
         }
 
@@ -165,6 +165,8 @@ final class SearchHomeCache {
 struct SearchHome: View {
     let model: SearchHomeModel
     let onOpenChannel: (Int) -> Void
+    // a channel opened at one of its messages
+    let onOpenMessage: (_ channelId: Int, _ messageId: Int) -> Void
     let onOpenUser: (PublicUser) -> Void
     // the channel screen shows its own set, without recent
     var only: [SearchTab]?
@@ -183,7 +185,7 @@ struct SearchHome: View {
 
             TabView(selection: $model.tab) {
                 ForEach(tabs) { tab in
-                    SearchTabPage(model: model, tab: tab, onOpenChannel: onOpenChannel, onOpenUser: onOpenUser, onInvite: onInvite)
+                    SearchTabPage(model: model, tab: tab, onOpenChannel: onOpenChannel, onOpenMessage: onOpenMessage, onOpenUser: onOpenUser, onInvite: onInvite)
                         .tag(tab)
                 }
             }
@@ -257,6 +259,7 @@ private struct SearchTabPage: View {
     let model: SearchHomeModel
     let tab: SearchTab
     let onOpenChannel: (Int) -> Void
+    let onOpenMessage: (_ channelId: Int, _ messageId: Int) -> Void
     let onOpenUser: (PublicUser) -> Void
     let onInvite: (() -> Void)?
 
@@ -277,11 +280,15 @@ private struct SearchTabPage: View {
         }
     }
 
+    private func jump(to item: MediaItem) {
+        onOpenMessage(item.channelId, item.messageId)
+    }
+
     @ViewBuilder
     private var content: some View {
         switch tab {
         case .recent:
-            RecentPage(model: model, onOpenChannel: onOpenChannel)
+            RecentPage(model: model, onOpenChannel: onOpenChannel, onJump: jump)
         case .members:
             MembersPage(model: model, onOpenUser: onOpenUser, onInvite: onInvite)
         case .channels:
@@ -291,7 +298,7 @@ private struct SearchTabPage: View {
                 if media.isEmpty {
                     EmptyTab(title: "No media yet", systemImage: "photo.on.rectangle")
                 } else {
-                    MediaGrid(items: media)
+                    MediaGrid(items: media, onJump: jump)
                 }
             } else {
                 LoadingTab(errorMessage: model.errorMessage)
@@ -302,7 +309,7 @@ private struct SearchTabPage: View {
                     EmptyTab(title: "No pinned messages", systemImage: "pin")
                 } else {
                     ForEach(pins) { message in
-                        PinnedMessageRow(message: message, onOpen: { onOpenChannel(message.channelId) })
+                        PinnedMessageRow(message: message, onOpen: { onOpenMessage(message.channelId, message.id) })
                     }
                 }
             } else {
@@ -310,7 +317,7 @@ private struct SearchTabPage: View {
             }
         case .links:
             if let links = model.links {
-                LinksPage(messages: links, onOpenChannel: onOpenChannel)
+                LinksPage(messages: links, onOpenMessage: onOpenMessage)
             } else {
                 LoadingTab(errorMessage: model.errorMessage)
             }
@@ -320,7 +327,7 @@ private struct SearchTabPage: View {
                     EmptyTab(title: "No files yet", systemImage: "doc")
                 } else {
                     ForEach(files) { file in
-                        FileRow(file: file)
+                        FileRow(file: file, onJump: { onOpenMessage(file.channelId, file.messageId) })
                     }
                 }
             } else {
@@ -386,6 +393,7 @@ private struct SectionTitle: View {
 private struct RecentPage: View {
     let model: SearchHomeModel
     let onOpenChannel: (Int) -> Void
+    let onJump: (MediaItem) -> Void
 
     @Environment(SessionStore.self) private var session
 
@@ -417,7 +425,7 @@ private struct RecentPage: View {
             if !media.isEmpty {
                 SectionTitle(title: "Photos & Media", actionTitle: "View all", action: showMedia)
 
-                MediaGrid(items: Array(media.prefix(6)))
+                MediaGrid(items: media, limit: 6, onJump: onJump)
             } else if suggested.isEmpty {
                 EmptyTab(title: "Nothing here yet", systemImage: "magnifyingglass")
             }
@@ -581,88 +589,70 @@ private struct MemberRow: View {
     }
 }
 
-// three across, each opening in quick look
+// three across, each opening the media viewer over all of them
 private struct MediaGrid: View {
     let items: [MediaItem]
+    // how many of them show, the recent page shows a few
+    var limit: Int?
+    let onJump: (MediaItem) -> Void
+
+    @State private var viewing: MediaItem?
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 3)
 
+    private var shown: [MediaItem] {
+        limit.map { Array(items.prefix($0)) } ?? items
+    }
+
     var body: some View {
         LazyVGrid(columns: columns, spacing: 4) {
-            ForEach(items) { item in
-                switch item {
-                case .file(let file):
-                    MediaTile(file: file.file)
-                case .link(let url, _, _):
-                    LinkMediaTile(url: url)
+            ForEach(shown) { item in
+                Button {
+                    open(item)
+                } label: {
+                    MediaTile(item: item)
                 }
+                .buttonStyle(.plain)
             }
         }
         .padding(.horizontal, 14)
+        .fullScreenCover(item: $viewing) { item in
+            MediaViewer(items: items, startingAt: item, onJump: onJump)
+        }
+    }
+
+    private func open(_ item: MediaItem) {
+        viewing = item
     }
 }
 
 private struct MediaTile: View {
-    let file: SharkordFile
+    let item: MediaItem
 
     @Environment(SessionStore.self) private var session
 
     var body: some View {
-        OpenFileButton(file: file) { isLoading in
-            Color.clear
-                .aspectRatio(1, contentMode: .fit)
-                .overlay {
+        Color.clear
+            .aspectRatio(1, contentMode: .fit)
+            .overlay {
+                switch item {
+                case .file(let file):
                     if let address = session.address {
-                        if file.isVideo {
-                            VideoThumbnail(url: address.fileURL(file))
+                        if file.file.isVideo {
+                            VideoThumbnail(url: address.fileURL(file.file))
                         } else {
-                            AsyncImage(url: address.fileURL(file)) { image in
-                                image
-                                    .resizable()
-                                    .scaledToFill()
-                            } placeholder: {
+                            CachedFileImage(file: file.file, url: address.fileURL(file.file)) {
                                 Theme.listBackground
                             }
                         }
                     }
-                }
-                .overlay {
-                    if isLoading {
-                        ProgressView()
-                            .tint(.white)
-                    }
-                }
-                .clipShape(.rect(cornerRadius: 6))
-                .contentShape(.rect)
-        }
-    }
-}
-
-// a gif or picture from a link, opening full screen like a picture in a message
-private struct LinkMediaTile: View {
-    let url: URL
-
-    @State private var isViewerPresented = false
-
-    var body: some View {
-        Button(action: openViewer) {
-            Color.clear
-                .aspectRatio(1, contentMode: .fit)
-                .overlay {
+                case .link(let url, _, _, _):
                     AnimatedImage(url: url, maxPointSize: 160)
                 }
-                .background(Theme.listBackground)
-                .clipShape(.rect(cornerRadius: 6))
-                .contentShape(.rect)
-        }
-        .buttonStyle(.plain)
-        .fullScreenCover(isPresented: $isViewerPresented) {
-            ImageViewer(url: url)
-        }
-    }
-
-    private func openViewer() {
-        isViewerPresented = true
+            }
+            .background(Theme.listBackground)
+            .clipShape(.rect(cornerRadius: 6))
+            .contentShape(.rect)
     }
 }
 
@@ -768,7 +758,7 @@ struct PinnedMessageRow: View {
 
 private struct LinksPage: View {
     let messages: [SearchMessage]
-    let onOpenChannel: (Int) -> Void
+    let onOpenMessage: (_ channelId: Int, _ messageId: Int) -> Void
 
     private struct Entry: Identifiable {
         let message: SearchMessage
@@ -804,7 +794,7 @@ private struct LinksPage: View {
             EmptyTab(title: "No links yet", systemImage: "link")
         } else {
             ForEach(entries) { entry in
-                LinkRow(url: entry.url, preview: entry.preview)
+                LinkRow(url: entry.url, preview: entry.preview, onJump: { onOpenMessage(entry.message.channelId, entry.message.id) })
             }
         }
     }
@@ -813,6 +803,7 @@ private struct LinksPage: View {
 private struct LinkRow: View {
     let url: URL
     let preview: MessageMetadata?
+    let onJump: () -> Void
 
     @Environment(\.openURL) private var openURL
 
@@ -836,19 +827,22 @@ private struct LinkRow: View {
                         .lineLimit(1)
                 }
 
-                Spacer(minLength: 0)
+                Spacer(minLength: 44)
             }
             .padding(.horizontal, 18)
             .padding(.vertical, 8)
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
+        .overlay(alignment: .trailing) {
+            RowMenu(onJump: onJump, link: url)
+        }
     }
 
     // the page's picture once the server has fetched its preview
     @ViewBuilder
     private var thumbnail: some View {
-        if let image = preview?.images?.first.flatMap(URL.init(string:)) {
+        if let image = preview?.previewImageURL {
             AsyncImage(url: image) { image in
                 image
                     .resizable()
@@ -870,6 +864,7 @@ private struct LinkRow: View {
 
 private struct FileRow: View {
     let file: SearchFile
+    let onJump: () -> Void
 
     @Environment(SessionStore.self) private var session
 
@@ -900,10 +895,16 @@ private struct FileRow: View {
                 if isLoading {
                     ProgressView()
                 }
+
+                Color.clear
+                    .frame(width: 30)
             }
             .padding(.horizontal, 18)
             .padding(.vertical, 8)
             .contentShape(.rect)
+        }
+        .overlay(alignment: .trailing) {
+            RowMenu(onJump: onJump, link: nil)
         }
         .task(id: file.id) {
             if let address = session.address {
@@ -924,6 +925,31 @@ private struct FileRow: View {
                 .font(.system(size: 22))
                 .foregroundStyle(Theme.blurple)
         }
+    }
+}
+
+// a row's own options, over its trailing edge so the row itself still opens what it shows
+private struct RowMenu: View {
+    let onJump: () -> Void
+    let link: URL?
+
+    var body: some View {
+        Menu {
+            Button("Jump to Message", systemImage: "arrow.uturn.left.circle", action: onJump)
+
+            if let link {
+                Button("Copy Link", systemImage: "doc.on.doc") {
+                    UIPasteboard.general.url = link
+                }
+            }
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(Theme.muted)
+                .frame(width: 44, height: 44)
+                .contentShape(.rect)
+        }
+        .padding(.trailing, 8)
     }
 }
 

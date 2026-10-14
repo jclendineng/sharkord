@@ -124,7 +124,12 @@ final class ServerListStore {
     }
 
     // a tapped notification or an entry in the unreads inbox
-    func open(channelId: Int, in session: SessionStore) {
+    // with a message, the chat opens at it rather than at the newest
+    func open(channelId: Int, messageId: Int? = nil, in session: SessionStore) {
+        if let messageId {
+            session.messages(for: channelId).pendingJumpMessageId = messageId
+        }
+
         select(session)
         isShowingDirectMessages = session.channel(channelId)?.isDm == true
         session.requestedChannelId = channelId

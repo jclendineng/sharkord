@@ -48,13 +48,13 @@ struct SearchMessage: Decodable, Identifiable {
 // a picture in the media grid: an uploaded file, or a gif or picture shown from a link
 enum MediaItem: Identifiable {
     case file(SearchFile)
-    case link(url: URL, messageId: Int, createdAt: Int)
+    case link(url: URL, messageId: Int, channelId: Int, createdAt: Int)
 
     var id: String {
         switch self {
         case .file(let file):
             return file.id
-        case .link(let url, let messageId, _):
+        case .link(let url, let messageId, _, _):
             return "\(messageId)-\(url.absoluteString)"
         }
     }
@@ -63,9 +63,35 @@ enum MediaItem: Identifiable {
         switch self {
         case .file(let file):
             return file.messageCreatedAt ?? 0
-        case .link(_, _, let createdAt):
+        case .link(_, _, _, let createdAt):
             return createdAt
         }
+    }
+
+    var messageId: Int {
+        switch self {
+        case .file(let file):
+            return file.messageId
+        case .link(_, let messageId, _, _):
+            return messageId
+        }
+    }
+
+    var channelId: Int {
+        switch self {
+        case .file(let file):
+            return file.channelId
+        case .link(_, _, let channelId, _):
+            return channelId
+        }
+    }
+
+    var isVideo: Bool {
+        if case .file(let file) = self {
+            return file.file.isVideo
+        }
+
+        return false
     }
 }
 

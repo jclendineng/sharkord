@@ -51,6 +51,8 @@ struct MessagesCursor: Codable, Hashable {
 struct MessagesPage: Decodable {
     let messages: [Message]
     let nextCursor: MessagesCursor?
+    // a window around a message that stops short of the newest one
+    var hasNewer: Bool?
 }
 
 struct MessageDeletedEvent: Decodable {
@@ -134,6 +136,14 @@ struct MessageMetadata: Codable, Hashable {
 
     var isImage: Bool {
         kind == "media" && mediaType == "image"
+    }
+
+    // the page's first picture ios can draw. a page without a preview image of its own hands
+    // over every image on it, often an svg logo first
+    var previewImageURL: URL? {
+        (images ?? [])
+            .compactMap(URL.init(string:))
+            .first { !["svg", "svgz"].contains($0.pathExtension.lowercased()) }
     }
 
     // a page's preview with something to show, a title or a picture

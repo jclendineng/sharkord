@@ -12,7 +12,7 @@ struct LinkPreviewCard: View {
     }
 
     private var imageURL: URL? {
-        preview.images?.first.flatMap(URL.init(string:))
+        preview.previewImageURL
     }
 
     private var source: String {
@@ -27,16 +27,23 @@ struct LinkPreviewCard: View {
         Button(action: open) {
             VStack(alignment: .leading, spacing: 0) {
                 if let imageURL {
-                    AsyncImage(url: imageURL) { image in
-                        image
-                            .resizable()
-                            .scaledToFill()
-                    } placeholder: {
-                        Theme.deepBackground
+                    // a picture that will not load takes no room, rather than a dark block
+                    AsyncImage(url: imageURL) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .scaledToFill()
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 160)
+                                .clipped()
+                        case .failure:
+                            EmptyView()
+                        default:
+                            Theme.deepBackground
+                                .frame(height: 160)
+                        }
                     }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 160)
-                    .clipped()
                 }
 
                 VStack(alignment: .leading, spacing: 3) {

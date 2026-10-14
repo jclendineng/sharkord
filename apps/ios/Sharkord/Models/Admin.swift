@@ -67,6 +67,7 @@ struct AdminServerSettings: Codable {
     var webRtcSimulcastEnabled: Bool
     // missing on a server from before the setting existed
     var pushShowMessageContent: Bool?
+    var linkPreviewsPrivateNetwork: Bool?
     var reportEmail: String?
     var klipyApiKey: String?
 }

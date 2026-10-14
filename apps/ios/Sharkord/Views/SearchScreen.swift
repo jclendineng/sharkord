@@ -94,7 +94,7 @@ struct SearchScreen: View {
                     onPickHas: pick
                 )
             } else if isBrowsing {
-                SearchHome(model: homes.model(for: browsingScope), onOpenChannel: openChannel, onOpenUser: openDirectMessage(with:))
+                SearchHome(model: homes.model(for: browsingScope), onOpenChannel: openChannel, onOpenMessage: openMessage, onOpenUser: openDirectMessage(with:))
             } else {
                 resultsList
             }
@@ -341,6 +341,10 @@ struct SearchScreen: View {
 
     private func openChannel(_ channelId: Int) {
         servers.open(channelId: channelId, in: session)
+    }
+
+    private func openMessage(channelId: Int, messageId: Int) {
+        servers.open(channelId: channelId, messageId: messageId, in: session)
     }
 
     private func openDirectMessage(with user: PublicUser) {

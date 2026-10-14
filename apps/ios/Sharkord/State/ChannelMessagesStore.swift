@@ -15,6 +15,13 @@ final class ChannelMessagesStore {
     // oldest first, the way the list renders them
     private(set) var messages: [Message] = []
     private(set) var hasOlder = false
+    // showing a window around an older message, not the present: live messages wait until the
+    // list goes back to the newest page
+    private(set) var hasNewer = false
+    // the message a jump landed on, which the list scrolls to and lights up
+    var focusedMessageId: Int?
+    // a jump asked for from another screen, made when the chat next appears
+    var pendingJumpMessageId: Int?
     private(set) var hasLoaded = false
     private(set) var isLoading = false
     var errorMessage: String?
@@ -49,6 +56,7 @@ final class ChannelMessagesStore {
     private struct ChannelPageInput: Encodable {
         let channelId: Int
         let cursor: MessagesCursor?
+        var targetMessageId: Int?
     }
 
     private struct ThreadPageInput: Encodable {
@@ -66,6 +74,13 @@ final class ChannelMessagesStore {
     }
 
     func loadIfNeeded() async {
+        if let messageId = pendingJumpMessageId {
+            pendingJumpMessageId = nil
+            await jump(to: messageId)
+
+            return
+        }
+
         guard !hasLoaded else {
             return
         }
@@ -81,7 +96,30 @@ final class ChannelMessagesStore {
         messages = Self.sorted(page.messages)
         nextCursor = page.nextCursor
         hasOlder = page.nextCursor != nil
+        hasNewer = false
         hasLoaded = true
+    }
+
+    // the window around a message, from media, files, pins or links. one already in the list
+    // is only scrolled to
+    func jump(to messageId: Int) async {
+        guard case .channel = scope else {
+            return
+        }
+
+        if !messages.contains(where: { $0.id == messageId }) {
+            guard let page = await fetchPage(cursor: nil, targetMessageId: messageId) else {
+                return
+            }
+
+            messages = Self.sorted(page.messages)
+            nextCursor = page.nextCursor
+            hasOlder = page.nextCursor != nil
+            hasNewer = page.hasNewer ?? false
+            hasLoaded = true
+        }
+
+        focusedMessageId = messageId
     }
 
     func loadOlder() async {
@@ -224,7 +262,7 @@ final class ChannelMessagesStore {
     }
 
     func insert(_ message: Message) {
-        guard hasLoaded, belongs(message), !messages.contains(where: { $0.id == message.id }) else {
+        guard hasLoaded, !hasNewer, belongs(message), !messages.contains(where: { $0.id == message.id }) else {
             return
         }
 
@@ -251,7 +289,7 @@ final class ChannelMessagesStore {
         messages.removeAll { $0.id == messageId }
     }
 
-    private func fetchPage(cursor: MessagesCursor?) async -> MessagesPage? {
+    private func fetchPage(cursor: MessagesCursor?, targetMessageId: Int? = nil) async -> MessagesPage? {
         guard let client = session.client, !isLoading else {
             return nil
         }
@@ -266,7 +304,7 @@ final class ChannelMessagesStore {
             case .channel:
                 page = try await client.query(
                     "messages.get",
-                    input: ChannelPageInput(channelId: channelId, cursor: cursor)
+                    input: ChannelPageInput(channelId: channelId, cursor: cursor, targetMessageId: targetMessageId)
                 )
             case .thread(let parentMessageId):
                 page = try await client.query(

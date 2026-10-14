@@ -24,7 +24,7 @@ struct PinnedMessagesSheet: View {
                             .padding(.top, 60)
                         } else {
                             ForEach(pins) { message in
-                                PinnedMessageRow(message: message, onOpen: close)
+                                PinnedMessageRow(message: message, onOpen: { jump(to: message) })
                             }
                         }
                     } else if let errorMessage {
@@ -67,5 +67,16 @@ struct PinnedMessagesSheet: View {
 
     private func close() {
         dismiss()
+    }
+
+    // the chat is right under this sheet, it scrolls to the pin, loading around it if it is old
+    private func jump(to message: Message) {
+        let store = session.messages(for: channelId)
+
+        dismiss()
+
+        Task {
+            await store.jump(to: message.id)
+        }
     }
 }

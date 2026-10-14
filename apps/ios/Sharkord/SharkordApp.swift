@@ -9,6 +9,7 @@ struct SharkordApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
+                .guardsLeavingLinks(servers: servers)
                 .environment(servers)
                 .task {
                     KeyboardMetrics.start()

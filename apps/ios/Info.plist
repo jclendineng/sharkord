@@ -19,6 +19,8 @@
 	<string>Sharkord connects to servers on your local network.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Sharkord uses the microphone so you can talk in voice channels.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Sharkord saves pictures you choose to save into your photo library.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Sharkord shows your recent photos and videos so you can attach them to a message.</string>
 	<key>PHPhotoLibraryPreventAutomaticLimitedAccessAlert</key>
