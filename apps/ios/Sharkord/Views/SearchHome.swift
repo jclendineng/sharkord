@@ -608,6 +608,9 @@ private struct MediaGrid: View {
     var limit: Int?
     let onJump: (MediaItem) -> Void
 
+    @Environment(SessionStore.self) private var session
+    @Environment(\.openURL) private var openURL
+
     @State private var viewing: MediaItem?
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 3)
@@ -625,6 +628,10 @@ private struct MediaGrid: View {
                     MediaTile(item: item)
                 }
                 .buttonStyle(.plain)
+                // the viewer's menu, without opening it first
+                .contextMenu {
+                    actions(for: item)
+                }
             }
         }
         .padding(.horizontal, 14)
@@ -635,6 +642,48 @@ private struct MediaGrid: View {
 
     private func open(_ item: MediaItem) {
         viewing = item
+    }
+
+    @ViewBuilder
+    private func actions(for item: MediaItem) -> some View {
+        if let url = url(for: item) {
+            if !item.isVideo {
+                Button("Save", systemImage: "square.and.arrow.down") {
+                    save(from: url)
+                }
+            }
+
+            ShareLink(item: url) {
+                Label("Share", systemImage: "square.and.arrow.up")
+            }
+
+            Button("Open in Browser", systemImage: "arrow.up.forward.square") {
+                openURL(url)
+            }
+        }
+
+        Button("Jump to Message", systemImage: "arrow.uturn.left.circle") {
+            onJump(item)
+        }
+    }
+
+    private func url(for item: MediaItem) -> URL? {
+        switch item {
+        case .file(let file):
+            return session.address?.fileURL(file.file)
+        case .link(let url, _, _, _):
+            return url
+        }
+    }
+
+    private func save(from url: URL) {
+        Task {
+            if await PhotoSaver.save(from: url) {
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+            } else {
+                session.showError(AuthAPI.RequestError(message: "This picture could not be saved to Photos."))
+            }
+        }
     }
 }
 

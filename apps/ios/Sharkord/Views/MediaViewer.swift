@@ -119,30 +119,13 @@ struct MediaViewer: View {
         onJump(current)
     }
 
-    // into the photo library, asking only for the right to add
     private func save() {
         guard let current, let url = url(for: current) else {
             return
         }
 
         Task {
-            guard
-                await PHPhotoLibrary.requestAuthorization(for: .addOnly) == .authorized,
-                let (data, _) = try? await URLSession.shared.data(from: url)
-            else {
-                show("Couldn't save")
-                return
-            }
-
-            do {
-                try await PHPhotoLibrary.shared().performChanges {
-                    PHAssetCreationRequest.forAsset().addResource(with: .photo, data: data, options: nil)
-                }
-
-                show("Saved to Photos")
-            } catch {
-                show("Couldn't save")
-            }
+            show(await PhotoSaver.save(from: url) ? "Saved to Photos" : "Couldn't save")
         }
     }
 
@@ -152,6 +135,29 @@ struct MediaViewer: View {
         Task {
             try? await Task.sleep(for: .seconds(1.5))
             savedMessage = nil
+        }
+    }
+}
+
+// a picture from the server or a link into the photo library, asking only for the right to add.
+// the media viewer's menu and a long press in the media grid both save through it
+enum PhotoSaver {
+    static func save(from url: URL) async -> Bool {
+        guard
+            await PHPhotoLibrary.requestAuthorization(for: .addOnly) == .authorized,
+            let (data, _) = try? await URLSession.shared.data(from: url)
+        else {
+            return false
+        }
+
+        do {
+            try await PHPhotoLibrary.shared().performChanges {
+                PHAssetCreationRequest.forAsset().addResource(with: .photo, data: data, options: nil)
+            }
+
+            return true
+        } catch {
+            return false
         }
     }
 }
