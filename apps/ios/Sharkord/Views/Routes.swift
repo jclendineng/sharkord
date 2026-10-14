@@ -48,19 +48,25 @@ private struct RequestedChannelOpener: ViewModifier {
         return [ObjectIdentifier(session), session.requestedChannelId, session.phase, isKnown]
     }
 
+    // on a change rather than as a task: the home screen's tasks are cancelled while a chat or
+    // the channel screen is pushed over it, which left a request made from there unanswered
     func body(content: Content) -> some View {
-        content.task(id: requestKey) {
-            guard
-                let channelId = session.requestedChannelId,
-                let channel = session.channel(channelId)
-            else {
-                return
-            }
+        content
+            .onAppear(perform: openRequestedChannel)
+            .onChange(of: requestKey, openRequestedChannel)
+    }
 
-            servers.isShowingDirectMessages = channel.isDm
-            path = NavigationPath([ChatRoute(channelId: channelId)])
-            session.requestedChannelId = nil
+    private func openRequestedChannel() {
+        guard
+            let channelId = session.requestedChannelId,
+            let channel = session.channel(channelId)
+        else {
+            return
         }
+
+        servers.isShowingDirectMessages = channel.isDm
+        path = NavigationPath([ChatRoute(channelId: channelId)])
+        session.requestedChannelId = nil
     }
 }
 
