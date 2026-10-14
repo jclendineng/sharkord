@@ -10,4 +10,19 @@ const assertChannelAccess = async (
   await ctx.needsChannelPermission(channelId, ChannelPermission.VIEW_CHANNEL);
 };
 
-export { assertChannelAccess };
+// the same check for code that filters rather than rejects, such as a list of files where only
+// the ones the caller can see are answered
+const canAccessChannel = async (
+  ctx: Context,
+  channelId: number
+): Promise<boolean> => {
+  try {
+    await assertChannelAccess(ctx, channelId);
+
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+export { assertChannelAccess, canAccessChannel };

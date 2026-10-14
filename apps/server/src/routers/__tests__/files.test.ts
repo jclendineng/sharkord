@@ -2,7 +2,10 @@ import type { TTempFile } from '@sharkord/shared';
 import { beforeEach, describe, expect, test } from 'bun:test';
 import fs from 'fs/promises';
 import { initTest, login, uploadFile } from '../../__tests__/helpers';
+import { tdb } from '../../__tests__/setup';
+import { settings } from '../../db/schema';
 import { fileManager } from '../../helpers/file-manager';
+import { verifyFileToken } from '../../helpers/files-crypto';
 
 describe('files router', () => {
   let tempFile: TTempFile;
@@ -131,5 +134,115 @@ describe('files router', () => {
     );
 
     expect(await fs.exists(tempFile.path)).toBe(true);
+  });
+});
+
+describe('files.sign', () => {
+  // user 1 posts a file in a channel, its id is what gets signed
+  const postFile = async (channelId: number) => {
+    const { caller, mockedToken } = await initTest(1);
+    const response = await uploadFile(
+      new File(['signed'], 'signed.txt', { type: 'text/plain' }),
+      mockedToken
+    );
+    const tempFile = (await response.json()) as TTempFile;
+
+    const messageId = await caller.messages.send({
+      channelId,
+      content: '',
+      files: [tempFile.id]
+    });
+
+    const message = await caller.messages.getOne({ messageId });
+
+    return message.files[0]!.id;
+  };
+
+  const enableSignedUrls = async () => {
+    await tdb.update(settings).set({
+      storageSignedUrlsEnabled: true,
+      storageSignedUrlsTtlSeconds: 600
+    });
+  };
+
+  test('should sign a file in a channel the caller can see with a working token', async () => {
+    await enableSignedUrls();
+
+    const fileId = await postFile(1);
+    const { caller } = await initTest(2);
+    const before = Date.now();
+
+    const signed = await caller.files.sign({ fileIds: [fileId] });
+
+    expect(signed).toHaveLength(1);
+    expect(signed[0]!.fileId).toBe(fileId);
+    expect(signed[0]!.expiresAt).toBeGreaterThanOrEqual(before + 600_000);
+    expect(
+      verifyFileToken(fileId, signed[0]!.accessToken, signed[0]!.expiresAt)
+    ).toBe(true);
+  });
+
+  test('should leave out a file in a channel the caller cannot see', async () => {
+    await enableSignedUrls();
+
+    // user 2 is denied viewing channel 5
+    const hiddenFileId = await postFile(5);
+    const visibleFileId = await postFile(1);
+    const { caller } = await initTest(2);
+
+    const signed = await caller.files.sign({
+      fileIds: [hiddenFileId, visibleFileId]
+    });
+
+    expect(signed.map(({ fileId }) => fileId)).toEqual([visibleFileId]);
+  });
+
+  test('should leave out ids that do not exist', async () => {
+    await enableSignedUrls();
+
+    const { caller } = await initTest(1);
+
+    expect(await caller.files.sign({ fileIds: [999_999] })).toEqual([]);
+  });
+
+  test('should sign a sticker for anyone signed in', async () => {
+    await enableSignedUrls();
+
+    const { caller, mockedToken } = await initTest(1);
+    const response = await uploadFile(
+      new File(['sticker'], 'wave.png', { type: 'image/png' }),
+      mockedToken
+    );
+    const upload = (await response.json()) as TTempFile;
+    const stickerId = await caller.stickers.add({
+      fileId: upload.id,
+      name: 'wave',
+      description: 'says hi'
+    });
+    const stickers = await caller.stickers.getAll();
+    const sticker = stickers.find(({ id }) => id === stickerId)!;
+
+    const { caller: lowCaller } = await initTest(2);
+    const signed = await lowCaller.files.sign({ fileIds: [sticker.file.id] });
+
+    expect(signed.map(({ fileId }) => fileId)).toEqual([sticker.file.id]);
+  });
+
+  test('should return nothing while signed links are off', async () => {
+    const fileId = await postFile(1);
+    const { caller } = await initTest(1);
+
+    expect(await caller.files.sign({ fileIds: [fileId] })).toEqual([]);
+  });
+
+  test('should reject an empty list and more than 200 ids', async () => {
+    const { caller } = await initTest(1);
+
+    await expect(caller.files.sign({ fileIds: [] })).rejects.toThrow();
+    await expect(
+      caller.files.sign({
+        fileIds: Array.from({ length: 201 }, (_, index) => index + 1)
+      })
+    ).rejects.toThrow();
   });
 });

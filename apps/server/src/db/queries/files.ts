@@ -206,9 +206,58 @@ const isFileOrphaned = async (fileId: number): Promise<boolean> => {
   return isOrphaned;
 };
 
+type TFileReferences = {
+  // shown to everyone signed in: avatars, banners, emoji, stickers and the server logo
+  everyoneFileIds: number[];
+  // attached to, or reacted with on, a message in that channel
+  channelFiles: { fileId: number; channelId: number }[];
+};
+
+// where each file is shown, which is who may see it. an id that is in neither list belongs to
+// nothing anyone can see
+const getFileReferences = async (
+  fileIds: number[]
+): Promise<TFileReferences> => {
+  const ids = sql.join(
+    fileIds.map((id) => sql`${id}`),
+    sql`, `
+  );
+
+  const [everyoneRows, channelFiles] = await Promise.all([
+    db.all<{ id: number }>(sql`
+      SELECT f.id
+      FROM files f
+      WHERE f.id IN (${ids})
+      AND (
+        EXISTS (SELECT 1 FROM users u WHERE u.avatar_id = f.id OR u.banner_id = f.id)
+        OR EXISTS (SELECT 1 FROM emojis e WHERE e.file_id = f.id)
+        OR EXISTS (SELECT 1 FROM stickers st WHERE st.file_id = f.id)
+        OR EXISTS (SELECT 1 FROM settings s WHERE s.logo_id = f.id)
+      )
+    `),
+    db.all<{ fileId: number; channelId: number }>(sql`
+      SELECT mf.file_id AS fileId, m.channel_id AS channelId
+      FROM message_files mf
+      JOIN messages m ON m.id = mf.message_id
+      WHERE mf.file_id IN (${ids})
+      UNION
+      SELECT mr.file_id AS fileId, m.channel_id AS channelId
+      FROM message_reactions mr
+      JOIN messages m ON m.id = mr.message_id
+      WHERE mr.file_id IN (${ids})
+    `)
+  ]);
+
+  return {
+    everyoneFileIds: everyoneRows.map(({ id }) => id),
+    channelFiles
+  };
+};
+
 export {
   getExceedingOldFiles,
   getFileNameById,
+  getFileReferences,
   getFilesByMessageId,
   getFilesByUserId,
   getOrphanedFileIds,
