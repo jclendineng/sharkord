@@ -128,9 +128,17 @@ struct MessageMetadata: Codable, Hashable {
     let url: String
     let mediaType: String?
     let title: String?
+    let siteName: String?
+    let description: String?
+    let images: [String]?
 
     var isImage: Bool {
         kind == "media" && mediaType == "image"
+    }
+
+    // a page's preview with something to show, a title or a picture
+    var isLinkPreview: Bool {
+        kind == "open_graph" && (title?.isEmpty == false || images?.isEmpty == false)
     }
 }
 
@@ -138,6 +146,10 @@ extension Message {
     // gifs and images the server found at links in the message
     var mediaImages: [MessageMetadata] {
         (metadata ?? []).filter(\.isImage)
+    }
+
+    var linkPreviews: [MessageMetadata] {
+        (metadata ?? []).filter(\.isLinkPreview)
     }
 
     // a message that is just the link to the gif it shows, like one from the picker: the gif

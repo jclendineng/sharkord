@@ -60,6 +60,10 @@ struct MessageRow: View {
                         .clipShape(.rect(cornerRadius: 8))
                 }
 
+                ForEach(message.linkPreviews, id: \.url) { preview in
+                    LinkPreviewCard(preview: preview)
+                }
+
                 if message.editedAt != nil {
                     Text("(edited)")
                         .font(.caption2)

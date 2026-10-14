@@ -173,7 +173,7 @@ struct ProfileScreen: View {
     }
 }
 
-private struct ProfileBanner: View {
+struct ProfileBanner: View {
     let user: PublicUser?
 
     @Environment(SessionStore.self) private var session
@@ -213,7 +213,7 @@ struct ProfileCard<Content: View>: View {
 }
 
 // the flair beside a name, a role in its own color
-private struct RoleChip: View {
+struct RoleChip: View {
     let role: Role
 
     var body: some View {

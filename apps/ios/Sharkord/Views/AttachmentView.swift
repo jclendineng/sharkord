@@ -110,7 +110,7 @@ private struct FileCard: View {
     }
 }
 
-private struct ImageViewer: View {
+struct ImageViewer: View {
     let url: URL
 
     @Environment(\.dismiss) private var dismiss

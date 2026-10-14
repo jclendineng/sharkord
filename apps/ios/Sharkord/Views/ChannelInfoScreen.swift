@@ -12,6 +12,7 @@ struct ChannelInfoScreen: View {
     @State private var model: SearchHomeModel?
     @State private var isInvitePresented = false
     @State private var isNotificationsPresented = false
+    @State private var profileUser: PublicUser?
 
     private static let tabs: [SearchTab] = [.members, .media, .pins, .links, .files]
 
@@ -29,7 +30,7 @@ struct ChannelInfoScreen: View {
                 SearchHome(
                     model: model,
                     onOpenChannel: openChannel,
-                    onOpenUser: openDirectMessage(with:),
+                    onOpenUser: showProfile,
                     only: Self.tabs,
                     onInvite: showInvite
                 )
@@ -69,6 +70,9 @@ struct ChannelInfoScreen: View {
             if let channel {
                 ChannelNotificationsSheet(channel: channel)
             }
+        }
+        .sheet(item: $profileUser) { user in
+            MemberProfileSheet(user: user, onMessage: { openDirectMessage(with: user) })
         }
         .onAppear(perform: makeModel)
     }
@@ -132,6 +136,10 @@ struct ChannelInfoScreen: View {
                 session.showError(error)
             }
         }
+    }
+
+    private func showProfile(_ user: PublicUser) {
+        profileUser = user
     }
 
     private func showInvite() {

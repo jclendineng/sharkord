@@ -98,6 +98,15 @@ message reacts with is set from the Edit link in the message menu and kept on th
 Searching for an emoji, GIF or sticker takes the panel to full height with the keyboard over
 its bottom, so the results scroll in between.
 
+A link in a message shows a preview card with the page's picture, title and site, like
+iMessage, from the preview the server fetched. A bare domain such as `example.com` counts as a
+link and gets `https://`, both when the app sends it and when the server looks for links to
+preview. The Links tab and `has:link` search include messages whose only link is a bare
+domain, and the Media tab and `has:image` include GIFs and pictures shown from links. Pinned
+messages show their attachments, and tapping a member in a channel's Members tab opens their
+profile with a Message button. Avatars are kept in memory by file id, so they no longer blank
+out while a screen is rebuilt.
+
 Uploaded files are stored under their own name and served from `/public/<name>`. With
 **Signed File Links** off (the default) anyone who has or guesses that link can open the
 file without signing in. Turn it on in Server Settings, Storage, and every link carries a

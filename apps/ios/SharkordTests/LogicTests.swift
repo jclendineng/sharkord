@@ -48,7 +48,7 @@ struct SearchTests {
     private func message(content: String?) -> SearchMessage {
         SearchMessage(
             id: 1, channelId: 1, userId: 1, createdAt: 0, channelName: "general", channelIsDm: false,
-            plainContent: "", content: content
+            plainContent: "", content: content, metadata: nil
         )
     }
 
@@ -166,5 +166,17 @@ struct HTMLTextTests {
 
     @Test func entitiesAreDecoded() {
         #expect(HTMLText.plainText(from: "<p>a &amp; b &lt;c&gt;</p>") == "a & b <c>")
+    }
+
+    @Test func bareDomainsBecomeHttpsLinks() {
+        #expect(HTMLText.paragraphs(from: "see chat.example.com") == "<p>see <a href=\"https://chat.example.com\">chat.example.com</a></p>")
+    }
+
+    @Test func writtenSchemesAreKept() {
+        #expect(HTMLText.paragraphs(from: "http://old.example.com") == "<p><a href=\"http://old.example.com\">http://old.example.com</a></p>")
+    }
+
+    @Test func textAroundLinksIsEscaped() {
+        #expect(HTMLText.paragraphs(from: "<b> https://example.com") == "<p>&lt;b&gt; <a href=\"https://example.com\">https://example.com</a></p>")
     }
 }

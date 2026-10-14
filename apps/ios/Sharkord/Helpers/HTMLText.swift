@@ -30,8 +30,38 @@ enum HTMLText {
         text
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .components(separatedBy: .newlines)
-            .map { "<p>\(escape($0))</p>" }
+            .map { "<p>\(linked($0))</p>" }
             .joined()
+    }
+
+    private static let linkDetector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
+
+    // web links typed in a message become links, a bare domain included, as the web client's
+    // editor does it, so they show as links and the server's link search finds them
+    private static func linked(_ line: String) -> String {
+        guard let linkDetector else {
+            return escape(line)
+        }
+
+        let text = line as NSString
+        var html = ""
+        var position = 0
+
+        for match in linkDetector.matches(in: line, range: NSRange(location: 0, length: text.length)) {
+            guard let url = match.url, url.scheme == "http" || url.scheme == "https" else {
+                continue
+            }
+
+            let written = text.substring(with: match.range)
+            // the detector gives a bare domain http, nearly every site is https now
+            let href = written.lowercased().hasPrefix("http") ? url.absoluteString : "https://\(written)"
+
+            html += escape(text.substring(with: NSRange(location: position, length: match.range.location - position)))
+            html += "<a href=\"\(escape(href))\">\(escape(written))</a>"
+            position = match.range.location + match.range.length
+        }
+
+        return html + escape(text.substring(from: position))
     }
 
     private static func escape(_ text: String) -> String {

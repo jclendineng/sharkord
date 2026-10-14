@@ -17,6 +17,8 @@ struct SearchMessage: Decodable, Identifiable {
     let plainContent: String
     // the html, which still holds the links plainContent drops
     let content: String?
+    // what the server found at its links, a gif from the picker among them
+    let metadata: [MessageMetadata]?
 
     // every web link in it, in order and each once
     var links: [URL] {
@@ -40,6 +42,30 @@ struct SearchMessage: Decodable, Identifiable {
 
     var createdDate: Date {
         Date(timeIntervalSince1970: TimeInterval(createdAt) / 1000)
+    }
+}
+
+// a picture in the media grid: an uploaded file, or a gif or picture shown from a link
+enum MediaItem: Identifiable {
+    case file(SearchFile)
+    case link(url: URL, messageId: Int, createdAt: Int)
+
+    var id: String {
+        switch self {
+        case .file(let file):
+            return file.id
+        case .link(let url, let messageId, _):
+            return "\(messageId)-\(url.absoluteString)"
+        }
+    }
+
+    var createdAt: Int {
+        switch self {
+        case .file(let file):
+            return file.messageCreatedAt ?? 0
+        case .link(_, _, let createdAt):
+            return createdAt
+        }
     }
 }
 

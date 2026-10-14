@@ -27,9 +27,7 @@ struct AvatarView: View {
     @ViewBuilder
     private var image: some View {
         if let avatar = user?.avatar, let address = session.address {
-            AsyncImage(url: address.fileURL(avatar)) { image in
-                image.resizable().scaledToFill()
-            } placeholder: {
+            CachedFileImage(file: avatar, url: address.fileURL(avatar)) {
                 placeholder
             }
         } else {

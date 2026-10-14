@@ -35,7 +35,7 @@ final class SearchHomeModel {
 
     var tab: SearchTab = .recent
     // nil until loaded
-    private(set) var media: [SearchFile]?
+    private(set) var media: [MediaItem]?
     private(set) var files: [SearchFile]?
     private(set) var links: [SearchMessage]?
     private(set) var pins: [Message]?
@@ -69,7 +69,7 @@ final class SearchHomeModel {
                 }
 
                 if media == nil {
-                    media = try await mediaFiles(client)
+                    media = try await mediaItems(client)
                 }
             case .members:
                 if let scope, memberIds == nil {
@@ -83,7 +83,7 @@ final class SearchHomeModel {
                 }
             case .media:
                 if media == nil {
-                    media = try await mediaFiles(client)
+                    media = try await mediaItems(client)
                 }
             case .pins:
                 if let scope, pins == nil {
@@ -123,13 +123,22 @@ final class SearchHomeModel {
     }
 
     // pictures and videos together, newest first
-    private func mediaFiles(_ client: TRPCClient) async throws -> [SearchFile] {
+    // pictures, videos and the gifs shown from links, newest first
+    private func mediaItems(_ client: TRPCClient) async throws -> [MediaItem] {
         async let images = search(client, has: .image)
         async let videos = search(client, has: .video)
 
-        let found = try await images.files + videos.files
+        let (imageResults, videoResults) = try await (images, videos)
+        let files = (imageResults.files + videoResults.files).map(MediaItem.file)
+        let links = imageResults.messages.flatMap { message in
+            (message.metadata ?? [])
+                .filter(\.isImage)
+                .compactMap { media in
+                    URL(string: media.url).map { MediaItem.link(url: $0, messageId: message.id, createdAt: message.createdAt) }
+                }
+        }
 
-        return found.sorted { ($0.messageCreatedAt ?? 0) > ($1.messageCreatedAt ?? 0) }
+        return (files + links).sorted { $0.createdAt > $1.createdAt }
     }
 }
 
@@ -282,7 +291,7 @@ private struct SearchTabPage: View {
                 if media.isEmpty {
                     EmptyTab(title: "No media yet", systemImage: "photo.on.rectangle")
                 } else {
-                    MediaGrid(files: media)
+                    MediaGrid(items: media)
                 }
             } else {
                 LoadingTab(errorMessage: model.errorMessage)
@@ -408,7 +417,7 @@ private struct RecentPage: View {
             if !media.isEmpty {
                 SectionTitle(title: "Photos & Media", actionTitle: "View all", action: showMedia)
 
-                MediaGrid(files: Array(media.prefix(6)))
+                MediaGrid(items: Array(media.prefix(6)))
             } else if suggested.isEmpty {
                 EmptyTab(title: "Nothing here yet", systemImage: "magnifyingglass")
             }
@@ -574,14 +583,19 @@ private struct MemberRow: View {
 
 // three across, each opening in quick look
 private struct MediaGrid: View {
-    let files: [SearchFile]
+    let items: [MediaItem]
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 3)
 
     var body: some View {
         LazyVGrid(columns: columns, spacing: 4) {
-            ForEach(files) { file in
-                MediaTile(file: file.file)
+            ForEach(items) { item in
+                switch item {
+                case .file(let file):
+                    MediaTile(file: file.file)
+                case .link(let url, _, _):
+                    LinkMediaTile(url: url)
+                }
             }
         }
         .padding(.horizontal, 14)
@@ -621,6 +635,34 @@ private struct MediaTile: View {
                 .clipShape(.rect(cornerRadius: 6))
                 .contentShape(.rect)
         }
+    }
+}
+
+// a gif or picture from a link, opening full screen like a picture in a message
+private struct LinkMediaTile: View {
+    let url: URL
+
+    @State private var isViewerPresented = false
+
+    var body: some View {
+        Button(action: openViewer) {
+            Color.clear
+                .aspectRatio(1, contentMode: .fit)
+                .overlay {
+                    AnimatedImage(url: url, maxPointSize: 160)
+                }
+                .background(Theme.listBackground)
+                .clipShape(.rect(cornerRadius: 6))
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .fullScreenCover(isPresented: $isViewerPresented) {
+            ImageViewer(url: url)
+        }
+    }
+
+    private func openViewer() {
+        isViewerPresented = true
     }
 }
 
@@ -709,10 +751,8 @@ struct PinnedMessageRow: View {
                             .clipShape(.rect(cornerRadius: 8))
                     }
 
-                    if !message.files.isEmpty {
-                        Label("\(message.files.count) attachment\(message.files.count == 1 ? "" : "s")", systemImage: "paperclip")
-                            .font(.caption)
-                            .foregroundStyle(Theme.muted)
+                    ForEach(message.files) { file in
+                        AttachmentView(file: file)
                     }
                 }
 
@@ -733,13 +773,27 @@ private struct LinksPage: View {
     private struct Entry: Identifiable {
         let message: SearchMessage
         let url: URL
+        let preview: MessageMetadata?
 
         var id: String { "\(message.id)-\(url.absoluteString)" }
     }
 
+    // the message's links, and a bare domain the server only found and previewed
     private var entries: [Entry] {
         messages.flatMap { message in
-            message.links.map { Entry(message: message, url: $0) }
+            let previews = (message.metadata ?? []).filter { $0.kind == "open_graph" }
+            var urls = message.links
+            let linked = Set(urls.map(\.absoluteString))
+
+            for preview in previews where !linked.contains(preview.url) {
+                if let url = URL(string: preview.url) {
+                    urls.append(url)
+                }
+            }
+
+            return urls.map { url in
+                Entry(message: message, url: url, preview: previews.first { $0.url == url.absoluteString })
+            }
         }
     }
 
@@ -750,7 +804,7 @@ private struct LinksPage: View {
             EmptyTab(title: "No links yet", systemImage: "link")
         } else {
             ForEach(entries) { entry in
-                LinkRow(url: entry.url, channelName: entry.message.channelName)
+                LinkRow(url: entry.url, preview: entry.preview)
             }
         }
     }
@@ -758,21 +812,20 @@ private struct LinksPage: View {
 
 private struct LinkRow: View {
     let url: URL
-    let channelName: String
+    let preview: MessageMetadata?
 
     @Environment(\.openURL) private var openURL
 
     var body: some View {
         Button(action: open) {
             HStack(spacing: 14) {
-                Image(systemName: "link")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(Theme.muted)
+                thumbnail
                     .frame(width: 48, height: 48)
-                    .background(Theme.listBackground, in: .rect(cornerRadius: 10))
+                    .background(Theme.listBackground)
+                    .clipShape(.rect(cornerRadius: 10))
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(url.host() ?? url.absoluteString)
+                    Text(preview?.title ?? url.host() ?? url.absoluteString)
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(Theme.header)
                         .lineLimit(1)
@@ -790,6 +843,24 @@ private struct LinkRow: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
+    }
+
+    // the page's picture once the server has fetched its preview
+    @ViewBuilder
+    private var thumbnail: some View {
+        if let image = preview?.images?.first.flatMap(URL.init(string:)) {
+            AsyncImage(url: image) { image in
+                image
+                    .resizable()
+                    .scaledToFill()
+            } placeholder: {
+                Color.clear
+            }
+        } else {
+            Image(systemName: "link")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(Theme.muted)
+        }
     }
 
     private func open() {
