@@ -114,7 +114,8 @@ const getRecipientDevices = async (
     db
       .select({
         userId: channelNotificationSettings.userId,
-        level: channelNotificationSettings.level
+        level: channelNotificationSettings.level,
+        mutedUntil: channelNotificationSettings.mutedUntil
       })
       .from(channelNotificationSettings)
       .where(
@@ -126,8 +127,13 @@ const getRecipientDevices = async (
       .all()
   ]);
 
+  const now = Date.now();
+
+  // a mute that has run out is the default again
   const levelByUser = new Map(
-    settingRows.map(({ userId, level }) => [userId, level])
+    settingRows
+      .filter(({ mutedUntil }) => mutedUntil === null || mutedUntil > now)
+      .map(({ userId, level }) => [userId, level])
   );
 
   const roleIdsByUser = new Map<number, number[]>();

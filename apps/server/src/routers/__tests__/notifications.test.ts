@@ -4,7 +4,11 @@ import { initTest } from '../../__tests__/helpers';
 import { tdb } from '../../__tests__/setup';
 import { config } from '../../config';
 import { getSettings } from '../../db/queries/server';
-import { pushDevices, users } from '../../db/schema';
+import {
+  channelNotificationSettings,
+  pushDevices,
+  users
+} from '../../db/schema';
 import { drainPushNotificationsQueue } from '../../queues/push-notifications';
 import * as apns from '../../utils/apns';
 
@@ -404,7 +408,7 @@ describe('channel notification settings', () => {
     });
 
     expect(await caller.notifications.getChannelSettings()).toEqual([
-      { channelId: 1, level: 'all' }
+      { channelId: 1, level: 'all', mutedUntil: null }
     ]);
 
     await caller.notifications.setChannelSetting({
@@ -413,7 +417,7 @@ describe('channel notification settings', () => {
     });
 
     expect(await caller.notifications.getChannelSettings()).toEqual([
-      { channelId: 1, level: 'none' }
+      { channelId: 1, level: 'none', mutedUntil: null }
     ]);
 
     await caller.notifications.setChannelSetting({
@@ -434,6 +438,72 @@ describe('channel notification settings', () => {
     });
 
     expect(await member.notifications.getChannelSettings()).toEqual([]);
+  });
+
+  test('should keep a mute for a while and drop it once it runs out', async () => {
+    const { caller } = await initTest(2);
+    const before = Date.now();
+
+    await caller.notifications.setChannelSetting({
+      channelId: 1,
+      level: 'none',
+      muteForMinutes: 60
+    });
+
+    const [setting] = await caller.notifications.getChannelSettings();
+
+    expect(setting!.level).toBe('none');
+    expect(setting!.mutedUntil).toBeGreaterThanOrEqual(before + 60 * 60 * 1000);
+
+    // an hour later
+    await tdb
+      .update(channelNotificationSettings)
+      .set({ mutedUntil: Date.now() - 1000 })
+      .where(eq(channelNotificationSettings.userId, 2));
+
+    expect(await caller.notifications.getChannelSettings()).toEqual([]);
+  });
+
+  test('should refuse a length for anything but a mute', async () => {
+    const { caller } = await initTest(2);
+
+    await expect(
+      caller.notifications.setChannelSetting({
+        channelId: 1,
+        level: 'all',
+        muteForMinutes: 15
+      })
+    ).rejects.toThrow('Only a mute can last for a while.');
+  });
+
+  test('should silence a direct message while muted for a while, and push once it runs out', async () => {
+    await registerDevices(3, 4);
+
+    const { caller: sender } = await initTest(3);
+    const { caller: muter } = await initTest(4);
+
+    await muter.notifications.setChannelSetting({
+      channelId: 3,
+      level: 'none',
+      muteForMinutes: 15
+    });
+
+    const spy = spyOnApns();
+
+    await sender.messages.send({ channelId: 3, content: 'quiet', files: [] });
+    await drainPushNotificationsQueue();
+
+    expect(notifiedTokens(spy)).toEqual([]);
+
+    await tdb
+      .update(channelNotificationSettings)
+      .set({ mutedUntil: Date.now() - 1000 })
+      .where(eq(channelNotificationSettings.userId, 4));
+
+    await sender.messages.send({ channelId: 3, content: 'loud', files: [] });
+    await drainPushNotificationsQueue();
+
+    expect(notifiedTokens(spy)).toEqual([deviceToken(4)]);
   });
 
   test('should refuse a channel the caller cannot see', async () => {

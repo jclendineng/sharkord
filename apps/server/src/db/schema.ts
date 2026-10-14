@@ -711,6 +711,9 @@ const channelNotificationSettings = sqliteTable(
       .notNull()
       .references(() => channels.id, { onDelete: 'cascade' }),
     level: text('level', { enum: ['all', 'mentions', 'none'] }).notNull(),
+    // a mute for a while, as discord's "for 1 hour": past it the channel is back to the default.
+    // null mutes until it is turned back on
+    mutedUntil: integer('muted_until'),
     updatedAt: integer('updated_at').notNull()
   },
   (t) => [

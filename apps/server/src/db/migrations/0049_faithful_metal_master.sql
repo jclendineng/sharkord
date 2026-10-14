@@ -1,0 +1,1 @@
+ALTER TABLE `channel_notification_settings` ADD `muted_until` integer;

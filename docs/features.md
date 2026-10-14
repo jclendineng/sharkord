@@ -128,6 +128,12 @@ again, the other person's list and the messages are untouched. Tapping a direct 
 opens the same screen as a channel's, with the person's avatar, their two members, and the
 conversation's media, pins, links and files.
 
+Muting a conversation or a channel in the app asks how long, as Discord does: 15 minutes, 1, 3,
+8 or 24 hours, or until it is turned back on. `notifications.setChannelSetting` takes
+`muteForMinutes` with the `none` level and stores when the mute ends; past that, push and
+`getChannelSettings` treat the channel as back on its default. A muted conversation shows a
+crossed out bell in the Messages list.
+
 Link previews are not fetched from private addresses, so no member can make the server load
 pages only it can reach. A server on a home network can allow it with **Preview Links on the
 Server's Network** in Server Settings, General, mirrored in config.ini as
