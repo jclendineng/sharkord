@@ -27,8 +27,10 @@ struct MediaViewer: View {
     }
 
     var body: some View {
-        ZStack {
-            Color.black.ignoresSafeArea()
+        // stacked, not layered: pages running under the bar let their scroll view take the first
+        // tap meant for the close button
+        VStack(spacing: 0) {
+            topBar
 
             TabView(selection: $selection) {
                 ForEach(items) { item in
@@ -37,14 +39,10 @@ struct MediaViewer: View {
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
-            .ignoresSafeArea()
-        }
-        .safeAreaInset(edge: .top, spacing: 0) {
-            topBar
-        }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
+
             ThumbnailStrip(items: items, selection: $selection, url: url(for:))
         }
+        .background(Color.black.ignoresSafeArea())
         .overlay {
             if let savedMessage {
                 Text(savedMessage)

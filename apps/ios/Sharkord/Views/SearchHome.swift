@@ -612,6 +612,8 @@ private struct MediaGrid: View {
     @Environment(\.openURL) private var openURL
 
     @State private var viewing: MediaItem?
+    // the viewer grows out of the tile and shrinks back into it, as in photos
+    @Namespace private var zoom
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 3)
 
@@ -626,6 +628,7 @@ private struct MediaGrid: View {
                     open(item)
                 } label: {
                     MediaTile(item: item)
+                        .matchedTransitionSource(id: item.id, in: zoom)
                 }
                 .buttonStyle(.plain)
                 // the viewer's menu, without opening it first
@@ -637,6 +640,7 @@ private struct MediaGrid: View {
         .padding(.horizontal, 14)
         .fullScreenCover(item: $viewing) { item in
             MediaViewer(items: items, startingAt: item, onJump: onJump)
+                .navigationTransition(.zoom(sourceID: item.id, in: zoom))
         }
     }
 
