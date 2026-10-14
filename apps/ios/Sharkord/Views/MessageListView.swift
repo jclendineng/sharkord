@@ -5,6 +5,8 @@ struct MessageListView<Header: View>: View {
     @ViewBuilder let header: Header
 
     @Environment(SessionStore.self) private var session
+    // the root's, which asks before leaving the app, see LinkGuard
+    @Environment(\.openURL) private var openURL
 
     @State private var actionsMessage: Message?
     @State private var deletingMessage: Message?
@@ -57,7 +59,7 @@ struct MessageListView<Header: View>: View {
                         message: message,
                         showsHeader: showsHeader(at: index),
                         showsThreadLink: store.scope == .channel,
-                        onLongPress: { actionsMessage = message },
+                        onLongPress: { showActions(for: message) },
                         onDoubleTap: { react(to: message) }
                     )
                     .background(Theme.blurple.opacity(highlightedMessageId == message.id ? 0.18 : 0))
@@ -81,6 +83,8 @@ struct MessageListView<Header: View>: View {
         // a long press opens the menu with the finger still down, and lifting it would otherwise
         // also count as a tap on the file or image under it
         .environment(\.isShowingMessageActions, actionsMessage != nil)
+        // the same for a link in the message, which opens on the finger lifting
+        .environment(\.openURL, OpenURLAction(handler: openUnlessShowingActions))
         .sheet(item: $actionsMessage) { message in
             MessageActionsSheet(
                 message: message,
@@ -115,6 +119,23 @@ struct MessageListView<Header: View>: View {
     // discord's double tap, the first quick reaction
     // a tap on the conversation puts away whatever is in the keyboard's place, the keyboard
     // too, as discord does, so there is a way out even when there is nothing to scroll
+    // the keyboard goes first and stays down, as in discord: left up, the menu knocks it down
+    // and its closing brings it back, the conversation jumping both times
+    private func showActions(for message: Message) {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        actionsMessage = message
+    }
+
+    private func openUnlessShowingActions(_ url: URL) -> OpenURLAction.Result {
+        guard actionsMessage == nil else {
+            return .discarded
+        }
+
+        openURL(url)
+
+        return .handled
+    }
+
     // after the window has been laid out, then the highlight fades
     private func scrollToFocused(_ proxy: ScrollViewProxy) async {
         guard let messageId = store.focusedMessageId else {

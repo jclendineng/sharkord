@@ -107,6 +107,21 @@ messages show their attachments, and tapping a member in a channel's Members tab
 profile with a Message button. Avatars are kept in memory by file id, so they no longer blank
 out while a screen is rebuilt.
 
+Media in a channel's tabs opens a full screen viewer, as in Discord: swipe between pictures and
+videos, a strip of the channel's media along the bottom, and a menu to save to Photos, share,
+open in the browser or jump to the message. Files, links and pins jump to their message too:
+the chat loads the messages around it (`messages.get` with `targetMessageId`), scrolls to it
+and lights it up, with a Jump to Present bar while it shows older messages. A link to anywhere
+other than the servers you are signed in to asks first ("Leaving Sharkord"), with a box to trust
+the domain from then on. Long pressing a message puts the keyboard away and never also opens a
+link or file under the finger.
+
+Link previews are not fetched from private addresses, so no member can make the server load
+pages only it can reach. A server on a home network can allow it with **Preview Links on the
+Server's Network** in Server Settings, General, mirrored in config.ini as
+`previewPrivateNetwork` under `[links]`. A preview is fetched when a message is sent, so turning
+it on does not add previews to older messages.
+
 Uploaded files are stored under their own name and served from `/public/<name>`. With
 **Signed File Links** off (the default) anyone who has or guesses that link can open the
 file without signing in. Turn it on in Server Settings, Storage, and every link carries a
