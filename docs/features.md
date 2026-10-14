@@ -107,6 +107,11 @@ messages show their attachments, and tapping a member in a channel's Members tab
 profile with a Message button. Avatars are kept in memory by file id, so they no longer blank
 out while a screen is rebuilt.
 
+A channel's Files and Links tabs are grids of cards, as in Discord: a preview (the picture, a
+video's first frame, a document's first page, or a page's preview picture), the name or title,
+the size or site, who posted it and the channel. Files lists every file, pictures and videos
+included, and `messages.search` returns who posted each file it finds.
+
 Media in a channel's tabs opens a full screen viewer, as in Discord: swipe between pictures and
 videos, a strip of the channel's media along the bottom, and a menu to save to Photos, share,
 open in the browser or jump to the message. Files, links and pins jump to their message too:

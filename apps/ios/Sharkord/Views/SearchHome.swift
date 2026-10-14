@@ -95,8 +95,8 @@ final class SearchHomeModel {
                 }
             case .files:
                 if files == nil {
-                    // pictures and videos have their own tab
-                    files = try await search(client, has: .file).files.filter { !$0.file.isImage && !$0.file.isVideo }
+                    // every file, pictures and videos too, as discord's files tab lists them
+                    files = try await search(client, has: .file).files
                 }
             }
         } catch {
@@ -326,8 +326,10 @@ private struct SearchTabPage: View {
                 if files.isEmpty {
                     EmptyTab(title: "No files yet", systemImage: "doc")
                 } else {
-                    ForEach(files) { file in
-                        FileRow(file: file, onJump: { onOpenMessage(file.channelId, file.messageId) })
+                    SearchCardGrid {
+                        ForEach(files) { file in
+                            FileCardTile(file: file, onJump: { onOpenMessage(file.channelId, file.messageId) })
+                        }
                     }
                 }
             } else {
@@ -657,7 +659,7 @@ private struct MediaTile: View {
 }
 
 // a still from the start of a video, with a play mark over it
-private struct VideoThumbnail: View {
+struct VideoThumbnail: View {
     let url: URL
 
     @State private var image: UIImage?
@@ -793,143 +795,23 @@ private struct LinksPage: View {
         if entries.isEmpty {
             EmptyTab(title: "No links yet", systemImage: "link")
         } else {
-            ForEach(entries) { entry in
-                LinkRow(url: entry.url, preview: entry.preview, onJump: { onOpenMessage(entry.message.channelId, entry.message.id) })
+            SearchCardGrid {
+                ForEach(entries) { entry in
+                    LinkCardTile(
+                        url: entry.url,
+                        preview: entry.preview,
+                        userId: entry.message.userId,
+                        channelName: entry.message.channelName,
+                        onJump: { onOpenMessage(entry.message.channelId, entry.message.id) }
+                    )
+                }
             }
         }
     }
 }
 
-private struct LinkRow: View {
-    let url: URL
-    let preview: MessageMetadata?
-    let onJump: () -> Void
-
-    @Environment(\.openURL) private var openURL
-
-    var body: some View {
-        Button(action: open) {
-            HStack(spacing: 14) {
-                thumbnail
-                    .frame(width: 48, height: 48)
-                    .background(Theme.listBackground)
-                    .clipShape(.rect(cornerRadius: 10))
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(preview?.title ?? url.host() ?? url.absoluteString)
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(Theme.header)
-                        .lineLimit(1)
-
-                    Text(url.absoluteString)
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.link)
-                        .lineLimit(1)
-                }
-
-                Spacer(minLength: 44)
-            }
-            .padding(.horizontal, 18)
-            .padding(.vertical, 8)
-            .contentShape(.rect)
-        }
-        .buttonStyle(.plain)
-        .overlay(alignment: .trailing) {
-            RowMenu(onJump: onJump, link: url)
-        }
-    }
-
-    // the page's picture once the server has fetched its preview
-    @ViewBuilder
-    private var thumbnail: some View {
-        if let image = preview?.previewImageURL {
-            AsyncImage(url: image) { image in
-                image
-                    .resizable()
-                    .scaledToFill()
-            } placeholder: {
-                Color.clear
-            }
-        } else {
-            Image(systemName: "link")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(Theme.muted)
-        }
-    }
-
-    private func open() {
-        openURL(url)
-    }
-}
-
-private struct FileRow: View {
-    let file: SearchFile
-    let onJump: () -> Void
-
-    @Environment(SessionStore.self) private var session
-
-    @State private var thumbnail: UIImage?
-
-    var body: some View {
-        OpenFileButton(file: file.file) { isLoading in
-            HStack(spacing: 14) {
-                icon
-                    .frame(width: 48, height: 48)
-                    .background(Theme.listBackground)
-                    .clipShape(.rect(cornerRadius: 10))
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(file.file.originalName)
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(Theme.header)
-                        .lineLimit(1)
-
-                    Text("\(file.file.size.formatted(.byteCount(style: .file))) · #\(file.channelName)")
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.muted)
-                        .lineLimit(1)
-                }
-
-                Spacer(minLength: 0)
-
-                if isLoading {
-                    ProgressView()
-                }
-
-                Color.clear
-                    .frame(width: 30)
-            }
-            .padding(.horizontal, 18)
-            .padding(.vertical, 8)
-            .contentShape(.rect)
-        }
-        .overlay(alignment: .trailing) {
-            RowMenu(onJump: onJump, link: nil)
-        }
-        .task(id: file.id) {
-            if let address = session.address {
-                thumbnail = await FileThumbnails.thumbnail(for: file.file, from: address.fileURL(file.file))
-            }
-        }
-    }
-
-    // the first page, as in the chat, once quick look has drawn it
-    @ViewBuilder
-    private var icon: some View {
-        if let thumbnail {
-            Image(uiImage: thumbnail)
-                .resizable()
-                .scaledToFill()
-        } else {
-            Image(systemName: file.file.symbol)
-                .font(.system(size: 22))
-                .foregroundStyle(Theme.blurple)
-        }
-    }
-}
-
-// a row's own options, over its trailing edge so the row itself still opens what it shows
-private struct RowMenu: View {
+// a card's own options, over its corner so the card itself still opens what it shows
+struct RowMenu: View {
     let onJump: () -> Void
     let link: URL?
 
@@ -943,13 +825,16 @@ private struct RowMenu: View {
                 }
             }
         } label: {
+            // over a card's picture, so it keeps its own dark circle
             Image(systemName: "ellipsis")
-                .font(.body.weight(.semibold))
-                .foregroundStyle(Theme.muted)
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(.white)
+                .frame(width: 32, height: 32)
+                .background(.black.opacity(0.45), in: .circle)
                 .frame(width: 44, height: 44)
                 .contentShape(.rect)
         }
-        .padding(.trailing, 8)
+        .padding(4)
     }
 }
 

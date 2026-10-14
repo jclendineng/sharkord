@@ -2920,6 +2920,8 @@ describe('messages.search filters', () => {
     expect(images.files.map(({ file }) => file.originalName)).toEqual([
       'picture.png'
     ]);
+    // who posted it, for the files tab's cards
+    expect(images.files.map(({ userId }) => userId)).toEqual([1]);
   });
 
   test('should count a bare domain with a fetched preview as a link', async () => {

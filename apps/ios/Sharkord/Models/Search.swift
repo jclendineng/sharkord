@@ -99,6 +99,8 @@ struct SearchFile: Decodable, Identifiable {
     let file: SharkordFile
     let messageId: Int
     let channelId: Int
+    // who posted it, missing from an older server
+    let userId: Int?
     let channelName: String
     let messageCreatedAt: Int?
 
