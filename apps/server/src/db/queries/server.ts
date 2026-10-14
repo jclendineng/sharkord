@@ -2,7 +2,6 @@ import type { TJoinedSettings, TPublicServerSettings } from '@sharkord/shared';
 import { eq } from 'drizzle-orm';
 import { db } from '..';
 import { config } from '../../config';
-import { resolveKlipyApiKey } from '../../utils/klipy';
 import { files, settings } from '../schema';
 
 // since this is static, we can keep it in memory to avoid querying the DB every time
@@ -55,7 +54,7 @@ const getPublicSettings: () => Promise<TPublicServerSettings> = async () => {
     enableSearch: settings.enableSearch,
     showWelcomeDialog: settings.showWelcomeDialog,
     storageSignedUrlsEnabled: settings.storageSignedUrlsEnabled,
-    gifsEnabled: !!resolveKlipyApiKey(settings.klipyApiKey)
+    gifsEnabled: !!settings.klipyApiKey
   };
 
   return publicSettings;

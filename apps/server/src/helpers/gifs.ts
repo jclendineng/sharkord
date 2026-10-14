@@ -1,7 +1,7 @@
 import { sha256, type TGifCategory, type TGifPage } from '@sharkord/shared';
 import { getSettings } from '../db/queries/server';
 import { invariant } from '../utils/invariant';
-import { fetchKlipyGifs, resolveKlipyApiKey } from '../utils/klipy';
+import { fetchKlipyGifs } from '../utils/klipy';
 
 const PAGE_SIZE = 24;
 
@@ -29,15 +29,14 @@ let cachedCategories:
   | undefined;
 
 const getKlipyKey = async () => {
-  const settings = await getSettings();
-  const apiKey = resolveKlipyApiKey(settings.klipyApiKey);
+  const { klipyApiKey, serverId } = await getSettings();
 
-  invariant(apiKey, {
+  invariant(klipyApiKey, {
     code: 'PRECONDITION_FAILED',
     message: "GIFs aren't set up on this server."
   });
 
-  return { apiKey, serverId: settings.serverId };
+  return { apiKey: klipyApiKey, serverId };
 };
 
 // stable per member and per server, so klipy can tell people apart without knowing who

@@ -92,7 +92,8 @@ downloaded once into the app's cache.
 Uploaded files are stored under their own name and served from `/public/<name>`. With
 **Signed File Links** off (the default) anyone who has or guesses that link can open the
 file without signing in. Turn it on in Server Settings, Storage, and every link carries a
-token that expires, or lock it on in config.ini (see Forced signed file links).
+token that expires. It is also `signedUrls` under `[storage]` in config.ini (see Settings in
+config.ini).
 
 ## Voice messages
 
@@ -126,17 +127,9 @@ Routes `stickers.add`, `stickers.update`, `stickers.delete`, `stickers.getAll` a
 
 The GIFs tab of the expression picker searches [Klipy](https://klipy.com), the provider
 Discord uses. To turn it on, get a free API key at
-[klipy.com/developers](https://klipy.com/developers) and either paste it into Server
-Settings, Overview, Klipy API Key, or put it in `config.ini`:
-
-```ini
-[gifs]
-klipyApiKey=your-key
-```
-
-or set `SHARKORD_KLIPY_API_KEY`. The `[gifs]` section is added to `config.ini` on the first
-start of a server that has it. A key saved in the settings screen wins over the one in the
-file.
+[klipy.com/developers](https://klipy.com/developers) and paste it into Server Settings,
+Overview, Klipy API Key, or into `klipyApiKey` under `[gifs]` in `config.ini` (see Settings
+in config.ini).
 
 Searches go through the server, so the key never reaches members and stays out of the
 activity log. Klipy sees one hashed id per member and server, not who anyone is. A GIF is
@@ -152,24 +145,6 @@ Server Settings, Overview, Report Email. The apps' Report action on a server or 
 opens an email to this address, with the server, channel and message filled in. It is
 published in `/info` so a report can be sent without an account. Setting `reportEmail`.
 
-## Invite only
-
-`config.ini` can lock sign ups to invites, whatever the Allow New Users switch in the
-settings screen says:
-
-```ini
-[registration]
-inviteOnly=true
-```
-
-or `SHARKORD_INVITE_ONLY=true`. A new account then needs an invite made by someone with
-Manage Invites (the owner, and any role given it), single sign on cannot create accounts,
-and `/info` tells the apps registration is closed. Existing members log in as before. On
-startup the stored Allow New Users switch is turned off to match, and turning it on is
-refused while config.ini holds the lock, so the settings screens always show what the
-server does. Code
-`apps/server/src/helpers/registration.ts`.
-
 ## Web features in the app
 
 The app also has what the web client does with routes that predate this fork: typing
@@ -181,20 +156,35 @@ channel (`voice.moveUser`), a member's logins, files and messages for moderators
 permissions (`channels.onPermissionsUpdate`), which lock the message box where a private
 channel does not allow posting. Plugin commands, actions and panels stay web only.
 
-## Forced signed file links
+## Settings in config.ini
 
-Uploaded files are served from `/public/<name>`. With Signed File Links off, anyone with or
-guessing a link can open the file. `config.ini` can hold them on:
+Three settings live both in the settings screens and in `config.ini`, and either side changes
+the other:
 
 ```ini
+[registration]
+allowNewUsers=false
+
 [storage]
-forceSignedUrls=true
+signedUrls=true
+
+[gifs]
+klipyApiKey=your-key
 ```
 
-or `SHARKORD_FORCE_SIGNED_URLS=true`. On startup the stored switch is turned on to match,
-turning it off is refused while the lock holds, and the settings screens show it locked on.
-Every file link then carries a token that expires, apart from the server logo, which shows
-before anyone signs in. Code `apps/server/src/helpers/signed-urls.ts`.
+Saving the settings screens writes these into the file. Editing the file is picked up at
+startup and also while the server runs, without a restart: the change is applied to the
+database and pushed to everyone connected, so the screens show it straight away.
+
+`allowNewUsers=false` makes the server invite only: a new account needs an invite from someone
+with Manage Invites, single sign on cannot create accounts, and the apps say registration is
+closed. `signedUrls=true` makes every file link carry a token that expires, apart from the
+server logo, which shows before anyone signs in.
+
+What was last written is recorded in `config-sync.json` next to `config.ini`, so a value that
+differs from it is known to be an edit. The `inviteOnly` and `forceSignedUrls` keys from an
+earlier version of this fork are carried over once and then replaced. Code
+`apps/server/src/helpers/config-file-sync.ts`.
 
 ## Server settings in the app
 

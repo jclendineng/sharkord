@@ -106,20 +106,8 @@ struct GeneralSettingsScreen: View {
                 Text("Access")
             }
 
-            Section {
-                if settings.wrappedValue.inviteOnly == true {
-                    Toggle("Allow New Users to Register", isOn: .constant(false))
-                        .disabled(true)
-                } else {
-                    Toggle("Allow New Users to Register", isOn: settings.allowNewUsers)
-                }
-            } footer: {
-                if settings.wrappedValue.inviteOnly == true {
-                    Text("Locked off by inviteOnly in config.ini. Only people you invite can join.")
-                }
-            }
-
             Section("Features") {
+                Toggle("Allow New Users to Register", isOn: settings.allowNewUsers)
                 Toggle("Direct Messages", isOn: settings.directMessagesEnabled)
                 Toggle("Search", isOn: settings.enableSearch)
                 Toggle("Plugins", isOn: settings.enablePlugins)

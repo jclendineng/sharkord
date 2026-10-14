@@ -7,10 +7,10 @@ import {
   StorageOverflowAction
 } from '@sharkord/shared';
 import { z } from 'zod';
-import { config } from '../../config';
 import { updateSettings } from '../../db/mutations/server';
 import { publishSettings } from '../../db/publishers';
 import { getSettings } from '../../db/queries/server';
+import { writeSettingsToConfigFile } from '../../helpers/config-file-sync';
 import { pluginManager } from '../../plugins';
 import { enqueueActivityLog } from '../../queues/activity-log';
 import { invariant } from '../../utils/invariant';
@@ -63,6 +63,12 @@ const zGeneralSettings = z.object({
   klipyApiKey: z.string().trim().min(1).max(200).nullable().optional()
 });
 
+const CONFIG_FILE_SETTING_KEYS = [
+  'allowNewUsers',
+  'storageSignedUrlsEnabled',
+  'klipyApiKey'
+];
+
 const STORAGE_SETTING_KEYS = Object.keys(zStorageSettings.shape);
 const GENERAL_SETTING_KEYS = Object.keys(zGeneralSettings.shape);
 
@@ -90,24 +96,6 @@ const updateSettingsRoute = protectedProcedure
       await ctx.needsPermission(Permission.MANAGE_SETTINGS);
     }
 
-    invariant(!(input.allowNewUsers && config.registration.inviteOnly), {
-      code: 'BAD_REQUEST',
-      message:
-        'Sign ups are locked to invites by config.ini. Turn off inviteOnly there first.'
-    });
-
-    invariant(
-      !(
-        input.storageSignedUrlsEnabled === false &&
-        config.storage.forceSignedUrls
-      ),
-      {
-        code: 'BAD_REQUEST',
-        message:
-          'Signed file links are locked on by config.ini. Turn off forceSignedUrls there first.'
-      }
-    );
-
     const { enablePlugins: oldEnablePlugins } = await getSettings();
 
     await updateSettings(input);
@@ -128,6 +116,11 @@ const updateSettingsRoute = protectedProcedure
     }
 
     publishSettings();
+
+    // the ones config.ini also holds are written back to it, so the file shows the change
+    if (CONFIG_FILE_SETTING_KEYS.some((key) => key in input)) {
+      await writeSettingsToConfigFile();
+    }
 
     // secrets stay out of the log
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

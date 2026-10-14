@@ -81,16 +81,8 @@ const toSizeLabel = (value: unknown) =>
 
 const Storage = memo(() => {
   const { t } = useTranslation('settings');
-  const {
-    storageSettings,
-    diskMetrics,
-    pluginStorage,
-    signedUrlsLocked,
-    loading
-  } = useAdminStorage();
-  const signedUrlsDesc = signedUrlsLocked
-    ? t('signedUrlsLockedDesc')
-    : t('signedUrlsDesc');
+  const { storageSettings, diskMetrics, pluginStorage, loading } =
+    useAdminStorage();
 
   const onSave = useCallback(async (values: TStorageSettings) => {
     const trpc = getTRPCClient();
@@ -419,10 +411,9 @@ const Storage = memo(() => {
 
       <Separator />
 
-      <Group label={t('signedUrlsLabel')} description={signedUrlsDesc}>
+      <Group label={t('signedUrlsLabel')} description={t('signedUrlsDesc')}>
         <Switch
-          checked={!!values.storageSignedUrlsEnabled || signedUrlsLocked}
-          disabled={signedUrlsLocked}
+          checked={!!values.storageSignedUrlsEnabled}
           onCheckedChange={(checked) =>
             onChange('storageSignedUrlsEnabled', checked)
           }

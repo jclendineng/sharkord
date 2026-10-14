@@ -19,7 +19,6 @@ import { getUserByIdentity } from '../db/queries/users';
 import { users } from '../db/schema';
 import { getWsInfo } from '../helpers/get-ws-info';
 import { isLocalLoginDisabled } from '../helpers/oidc/settings';
-import { isRegistrationOpen } from '../helpers/registration';
 import { safeCompare } from '../helpers/safe-compare';
 import { createSessionToken } from '../helpers/sessions';
 import { logger } from '../logger';
@@ -113,7 +112,7 @@ const loginRouteHandler = async (
 
     const result = await isInviteValid(data.invite);
 
-    if (!isRegistrationOpen(settings.allowNewUsers) && result.error) {
+    if (!settings.allowNewUsers && result.error) {
       await Bun.password.verify('dummy', await getDummyArgon2Hash());
 
       logger.info(

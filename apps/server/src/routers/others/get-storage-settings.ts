@@ -1,5 +1,4 @@
 import { Permission, type TStorageSettings } from '@sharkord/shared';
-import { config } from '../../config';
 import { getStorageUsageByPlugin } from '../../db/queries/files';
 import { getSettings } from '../../db/queries/server';
 import { getDiskMetrics } from '../../utils/metrics';
@@ -31,13 +30,7 @@ const getStorageSettingsRoute = protectedProcedure.query(async ({ ctx }) => {
     storageImageOptimizationQuality: settings.storageImageOptimizationQuality
   };
 
-  // forceSignedUrls comes from config.ini, the form shows the switch locked on while it holds
-  return {
-    storageSettings,
-    diskMetrics,
-    pluginStorage,
-    signedUrlsLocked: config.storage.forceSignedUrls
-  };
+  return { storageSettings, diskMetrics, pluginStorage };
 });
 
 export { getStorageSettingsRoute };

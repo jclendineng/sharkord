@@ -60,9 +60,6 @@ struct AdminServerSettings: Codable {
     var password: String?
     var onlyAskForPasswordOnFirstJoin: Bool
     var allowNewUsers: Bool
-    // registration.inviteOnly in config.ini, which keeps sign ups to invites whatever
-    // allowNewUsers says. missing on a server from before it existed
-    var inviteOnly: Bool?
     var directMessagesEnabled: Bool
     var enablePlugins: Bool
     var enableSearch: Bool
@@ -153,10 +150,6 @@ struct AdminStorage: Decodable {
     }
 
     let storageSettings: Settings
-
-    // forceSignedUrls in config.ini, missing on a server from before it existed
-
-    let signedUrlsLocked: Bool?
     let diskMetrics: Disk
     let pluginStorage: [PluginUsage]
 }

@@ -69,19 +69,11 @@ const zConfig = z.object({
     apnsKeyPath: z.string(),
     apnsBundleId: z.string()
   }),
-  // invite only locks sign ups to invites from people with manage invites, whatever the
-  // allow new users switch in the settings screen says
-  registration: z.object({
-    inviteOnly: z.coerce.boolean()
-  }),
-  // forceSignedUrls keeps every file link signed and expiring, whatever the settings screen says
-  storage: z.object({
-    forceSignedUrls: z.coerce.boolean()
-  }),
-  // a klipy key set here turns gifs on without the settings screen, one saved there wins
-  gifs: z.object({
-    klipyApiKey: z.string().trim()
-  }),
+  // mirrored with the settings screens by helpers/config-file-sync, which owns these keys, so
+  // they are kept as they are here rather than given defaults
+  registration: z.record(z.string(), z.unknown()).default({}),
+  storage: z.record(z.string(), z.unknown()).default({}),
+  gifs: z.record(z.string(), z.unknown()).default({}),
   webRtc: z.object({
     port: z.coerce.number().int().positive(),
     announcedAddress: z.string(),
@@ -151,15 +143,9 @@ const defaultConfig: TConfig = {
     apnsKeyPath: '',
     apnsBundleId: 'com.sharkord.ios'
   },
-  registration: {
-    inviteOnly: false
-  },
-  storage: {
-    forceSignedUrls: false
-  },
-  gifs: {
-    klipyApiKey: ''
-  },
+  registration: {},
+  storage: {},
+  gifs: {},
   webRtc: {
     port: 40000,
     announcedAddress: '',
@@ -323,9 +309,6 @@ const envOverridesMap: Record<string, string> = {
   'push.apnsTeamId': 'SHARKORD_PUSH_APNS_TEAM_ID',
   'push.apnsKeyPath': 'SHARKORD_PUSH_APNS_KEY_PATH',
   'push.apnsBundleId': 'SHARKORD_PUSH_APNS_BUNDLE_ID',
-  'registration.inviteOnly': 'SHARKORD_INVITE_ONLY',
-  'storage.forceSignedUrls': 'SHARKORD_FORCE_SIGNED_URLS',
-  'gifs.klipyApiKey': 'SHARKORD_KLIPY_API_KEY',
   'webRtc.port': 'SHARKORD_WEBRTC_PORT',
   'webRtc.announcedAddress': 'SHARKORD_WEBRTC_ANNOUNCED_ADDRESS',
   'webRtc.maxBitrate': 'SHARKORD_WEBRTC_MAX_BITRATE'
