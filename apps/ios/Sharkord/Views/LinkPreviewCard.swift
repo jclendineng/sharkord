@@ -115,8 +115,7 @@ struct LinkPreviewCard: View {
     }
 }
 
-// a site's icon in a 64 point tile. a big one fills it, a tiny favicon sits in the middle at half
-// the size with its pixels kept sharp, where stretching it to the whole tile would only blur it
+// a site's icon filling a 64 point tile, a tiny favicon scaled up with its pixels kept sharp
 struct SiteIcon<Fallback: View>: View {
     let url: URL
     let fallback: Fallback
@@ -129,21 +128,13 @@ struct SiteIcon<Fallback: View>: View {
     var body: some View {
         Group {
             if let image {
-                if image.size.width * image.scale < Self.tileSize * 1.5 {
-                    Image(uiImage: image)
-                        .resizable()
-                        .interpolation(.none)
-                        .scaledToFit()
-                        .frame(width: Self.tileSize / 2, height: Self.tileSize / 2)
-                        .frame(width: Self.tileSize, height: Self.tileSize)
-                        .background(Theme.deepBackground, in: .rect(cornerRadius: 14, style: .continuous))
-                } else {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: Self.tileSize, height: Self.tileSize)
-                        .clipShape(.rect(cornerRadius: 14, style: .continuous))
-                }
+                Image(uiImage: image)
+                    .resizable()
+                    // a tiny favicon grown to the tile keeps hard pixel edges rather than a smear
+                    .interpolation(isTiny(image) ? .none : .high)
+                    .scaledToFit()
+                    .frame(width: Self.tileSize, height: Self.tileSize)
+                    .clipShape(.rect(cornerRadius: 14, style: .continuous))
             } else if hasFailed {
                 fallback
             } else {
@@ -154,6 +145,10 @@ struct SiteIcon<Fallback: View>: View {
         .task(id: url) {
             await load()
         }
+    }
+
+    private func isTiny(_ image: UIImage) -> Bool {
+        image.size.width * image.scale < Self.tileSize
     }
 
     private func load() async {
