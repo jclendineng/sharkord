@@ -7,7 +7,6 @@ import { getWsInfo } from '../helpers/get-ws-info';
 import { logger } from '../logger';
 import { pluginManager } from '../plugins';
 import { SERVER_VERSION } from '../utils/env';
-import { appleAppSiteAssociationRouteHandler } from './apple-app-site-association';
 import { HttpValidationError, PayloadTooLargeError } from './errors';
 import { healthRouteHandler } from './healthz';
 import {
@@ -80,8 +79,6 @@ const routeHandlers: Partial<
   GET: {
     exact: {
       '/healthz': healthRouteHandler,
-      '/.well-known/apple-app-site-association':
-        appleAppSiteAssociationRouteHandler,
       '/info': infoRouteHandler,
       '/manifest.json': manifestRouteHandler,
       '/oidc/login': oidcLoginRouteHandler,
