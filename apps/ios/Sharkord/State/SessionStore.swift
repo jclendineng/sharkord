@@ -46,6 +46,8 @@ final class SessionStore {
     }
     // highlighted in the channel list and opened when the server is picked in the rail
     private(set) var lastChannelId: Int?
+    // the chat last put on screen, a direct message too, so a rotation keeps it open
+    var shownChannelId: Int?
     private(set) var notificationLevels: [Int: ChannelNotificationLevel] = [:]
     // when a mute for a while ends, by channel, in milliseconds
     private(set) var mutedUntil: [Int: Int] = [:]

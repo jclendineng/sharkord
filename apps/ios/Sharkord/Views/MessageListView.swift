@@ -15,8 +15,9 @@ struct MessageListView<Header: View>: View {
     // consecutive messages from the same author inside this window share one header
     private static var groupingWindow: Int { 7 * 60 * 1000 }
 
-    // the message a jump landed on, lit up for a moment like discord's
+    // the message a jump landed on, ringed by a soft glow that pulses twice and fades
     @State private var highlightedMessageId: Int?
+    @State private var highlightStrength = 0.0
     // far enough up the conversation for discord's round button back down
     @State private var isAwayFromBottom = false
 
@@ -87,14 +88,24 @@ struct MessageListView<Header: View>: View {
                         NewMessagesDivider()
                     }
 
+                    let showsHeader = showsHeader(at: index) || message.id == firstUnreadId
+
                     MessageRow(
                         message: message,
-                        showsHeader: showsHeader(at: index) || message.id == firstUnreadId,
+                        showsHeader: showsHeader,
                         showsThreadLink: store.scope == .channel,
                         onLongPress: { showActions(for: message) },
                         onDoubleTap: { react(to: message) }
                     )
-                    .background(Theme.blurple.opacity(highlightedMessageId == message.id ? 0.18 : 0))
+                    .background {
+                        if highlightedMessageId == message.id {
+                            JumpHighlight(
+                                strength: highlightStrength,
+                                hasHeader: showsHeader,
+                                isFollowedClosely: isFollowedClosely(at: index)
+                            )
+                        }
+                    }
                 }
             }
             .padding(.bottom, 12)
@@ -181,20 +192,42 @@ struct MessageListView<Header: View>: View {
             return
         }
 
+        // a quarter of the way down rather than centred: a tall message (a preview, an image)
+        // stays whole on screen, and anything still loading grows down into view. the second
+        // pass catches what finished laying out after the first and is a no op otherwise
+        let anchor = UnitPoint(x: 0.5, y: 0.25)
+
         try? await Task.sleep(for: .milliseconds(120))
 
         withAnimation(.smooth(duration: 0.3)) {
-            proxy.scrollTo(messageId, anchor: .center)
+            proxy.scrollTo(messageId, anchor: anchor)
         }
 
         highlightedMessageId = messageId
 
-        try? await Task.sleep(for: .seconds(1.6))
+        try? await Task.sleep(for: .milliseconds(350))
 
-        withAnimation(.easeOut(duration: 0.6)) {
-            highlightedMessageId = nil
+        withAnimation(.smooth(duration: 0.3)) {
+            proxy.scrollTo(messageId, anchor: anchor)
         }
 
+        for strength in [1, 0.45, 1] {
+            withAnimation(.easeInOut(duration: 0.3)) {
+                highlightStrength = strength
+            }
+
+            try? await Task.sleep(for: .milliseconds(320))
+        }
+
+        try? await Task.sleep(for: .seconds(0.9))
+
+        withAnimation(.easeOut(duration: 0.6)) {
+            highlightStrength = 0
+        }
+
+        try? await Task.sleep(for: .milliseconds(600))
+
+        highlightedMessageId = nil
         store.focusedMessageId = nil
     }
 
@@ -289,6 +322,17 @@ struct MessageListView<Header: View>: View {
         return !calendar.isDate(store.messages[index].createdDate, inSameDayAs: store.messages[index - 1].createdDate)
     }
 
+    // the next message continues this block, its first line only 2pt below this one's last
+    private func isFollowedClosely(at index: Int) -> Bool {
+        let next = index + 1
+
+        guard next < store.messages.count else {
+            return false
+        }
+
+        return !showsHeader(at: next) && store.messages[next].id != firstUnreadId
+    }
+
     private func showsHeader(at index: Int) -> Bool {
         guard index > 0, !startsNewDay(at: index) else {
             return true
@@ -306,6 +350,29 @@ struct MessageListView<Header: View>: View {
 }
 
 // discord's bar over the bottom of an older stretch of the conversation
+// a rounded, inset glow rather than a hard edged band across the whole row
+private struct JumpHighlight: View {
+    let strength: Double
+    let hasHeader: Bool
+    let isFollowedClosely: Bool
+
+    // a row carries its gap above it and none below, so the glow trims the top and reaches
+    // past the bottom, but only into free space, never over the next message's first line
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
+
+        shape
+            .fill(Theme.blurple.opacity(0.16 * strength))
+            .overlay {
+                shape.stroke(Theme.blurple.opacity(0.55 * strength), lineWidth: 1.5)
+            }
+            .shadow(color: Theme.blurple.opacity(0.4 * strength), radius: 12)
+            .padding(.horizontal, 6)
+            .padding(.top, hasHeader ? 10 : -2)
+            .padding(.bottom, isFollowedClosely ? -2 : -6)
+    }
+}
+
 private struct JumpToPresentBar: View {
     let action: () -> Void
 

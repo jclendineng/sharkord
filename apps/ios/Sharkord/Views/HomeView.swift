@@ -15,9 +15,13 @@ struct HomeView: View {
     // window, it is the phone's, the chat pushed over the list
     @State private var isSplit = false
     @State private var detailChannelId: Int?
+    // the conversation beside the list when messages were last picked in the rail
+    @State private var lastDirectMessageId: Int?
     @State private var searchRoute: SearchRoute?
 
     private static let panelWidth: CGFloat = 320
+    private static let cardRadius: CGFloat = 22
+    private static let cardGap: CGFloat = 8
 
     private static func isSplit(_ size: CGSize) -> Bool {
         #if DEBUG
@@ -122,24 +126,29 @@ struct HomeView: View {
                 styledPanel
                     .frame(width: Self.panelWidth)
                     .frame(maxHeight: .infinity)
+                    .padding(.top, Self.cardGap)
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 bottomBars
             }
             .background(Theme.railBackground.ignoresSafeArea())
 
+            // a card of its own beside the list's, rounded all round with the rail showing
+            // between them, rather than a hard line down the screen
             NavigationStack(path: $path) {
                 detail
                     .chatDestinations()
             }
-            .frame(maxWidth: .infinity)
-            .overlay(alignment: .leading) {
-                Theme.panelEdge
-                    .frame(width: 1)
-                    .ignoresSafeArea()
+            .clipShape(.rect(cornerRadius: Self.cardRadius, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: Self.cardRadius, style: .continuous)
+                    .stroke(Theme.panelEdge, lineWidth: 1)
             }
+            .padding(Self.cardGap)
+            .ignoresSafeArea(.container, edges: .bottom)
+            .frame(maxWidth: .infinity)
         }
-        .background(Theme.chatBackground.ignoresSafeArea())
+        .background(Theme.railBackground.ignoresSafeArea())
         .opensRequestedChannel($path, detailChannelId: $detailChannelId)
         .environment(\.presentSearch, showSearch)
         .fullScreenCover(item: $searchRoute) { route in
@@ -165,6 +174,14 @@ struct HomeView: View {
         .onChange(of: session.defaultChannelId) {
             showDefaultChannel()
         }
+        .onChange(of: servers.isShowingDirectMessages) {
+            matchDetailToPanel()
+        }
+        .onChange(of: detailChannelId) { _, channelId in
+            if let channelId, session.channel(channelId)?.isDm == true {
+                lastDirectMessageId = channelId
+            }
+        }
     }
 
     @ViewBuilder
@@ -184,15 +201,28 @@ struct HomeView: View {
         }
     }
 
+    // the phone's panel runs off the right and bottom edges. beside the ipad's chat it is a
+    // card, rounded all round and stopping short of the bottom like the chat's
     private var styledPanel: some View {
-        panel
-            .clipShape(UnevenRoundedRectangle(topLeadingRadius: 20, style: .continuous))
+        let radius: CGFloat = isSplit ? Self.cardRadius : 20
+        let trailingRadius: CGFloat = isSplit ? radius : 0
+        let bottomGap: CGFloat = isSplit ? Self.cardGap : 0
+
+        return panel
+            .clipShape(UnevenRoundedRectangle(topLeadingRadius: radius, topTrailingRadius: trailingRadius, style: .continuous))
             .background {
                 // runs on under the user bar, so the bottom has no strip of the rail's color
-                UnevenRoundedRectangle(topLeadingRadius: 20, style: .continuous)
-                    .fill(Theme.panelBackground)
-                    .stroke(Theme.panelEdge, lineWidth: 1)
-                    .ignoresSafeArea(edges: .bottom)
+                UnevenRoundedRectangle(
+                    topLeadingRadius: radius,
+                    bottomLeadingRadius: trailingRadius,
+                    bottomTrailingRadius: trailingRadius,
+                    topTrailingRadius: trailingRadius,
+                    style: .continuous
+                )
+                .fill(Theme.panelBackground)
+                .stroke(Theme.panelEdge, lineWidth: 1)
+                .padding(.bottom, bottomGap)
+                .ignoresSafeArea(edges: .bottom)
             }
             .id(ObjectIdentifier(session))
     }
@@ -223,17 +253,55 @@ struct HomeView: View {
             return
         }
 
-        isSplit = split
-        path = NavigationPath()
-
+        // the chat open before the rotation stays open after it, beside the list or pushed
+        // over it. with nothing pushed the phone layout was showing only the list
         if split {
-            showDefaultChannel()
+            if !path.isEmpty, let shownChannelId = session.shownChannelId {
+                detailChannelId = shownChannelId
+            }
+
+            path = NavigationPath()
+            isSplit = true
+            matchDetailToPanel()
+        } else {
+            path = NavigationPath()
+
+            if let detailChannelId, session.channel(detailChannelId) != nil {
+                path.append(ChatRoute(channelId: detailChannelId))
+            }
+
+            isSplit = false
         }
     }
 
     // the chat beside the list starts on the channel last open, as discord's does
     private func showDefaultChannel() {
+        guard !servers.isShowingDirectMessages else {
+            return
+        }
+
         if detailChannelId == nil || session.channel(detailChannelId ?? -1) == nil {
+            detailChannelId = session.defaultChannelId
+        }
+    }
+
+    // the chat beside the list belongs to what the list shows: a conversation beside the
+    // direct messages, a channel beside a server's channels
+    private func matchDetailToPanel() {
+        guard isSplit else {
+            return
+        }
+
+        let isShowingDirectMessages = servers.isShowingDirectMessages
+        let detailIsDirectMessage = detailChannelId.flatMap { session.channel($0) }?.isDm
+
+        if detailIsDirectMessage == isShowingDirectMessages {
+            return
+        }
+
+        if isShowingDirectMessages {
+            detailChannelId = lastDirectMessageId.flatMap { session.channel($0) }?.id
+        } else {
             detailChannelId = session.defaultChannelId
         }
     }

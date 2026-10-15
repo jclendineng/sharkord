@@ -99,6 +99,7 @@ struct ChatScreen: View {
         }
         .task {
             session.rememberChannel(channelId)
+            session.shownChannelId = channelId
             store.isVisible = true
 
             let unreadCount = session.unreadCounts[channelId, default: 0]
