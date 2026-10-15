@@ -62,12 +62,14 @@ struct FileCardTile: View {
         } else if let address = session.address, file.file.isVideo {
             VideoThumbnail(url: address.fileURL(file.file))
         } else if let thumbnail {
-            // the whole page, a document cropped to its corner is mostly empty margin
-            Image(uiImage: thumbnail)
-                .resizable()
-                .scaledToFit()
-                .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
-                .padding(12)
+            // the page fills the card from its top, as discord shows one
+            Color.clear
+                .overlay(alignment: .top) {
+                    Image(uiImage: thumbnail)
+                        .resizable()
+                        .scaledToFill()
+                }
+                .clipped()
         } else {
             Image(systemName: file.file.symbol)
                 .font(.system(size: 36))
@@ -284,8 +286,9 @@ private struct SearchCard<Preview: View, Details: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
+            // discord's: the picture takes the card's width, a little shorter than it is wide
             Color.clear
-                .frame(height: 130)
+                .aspectRatio(4.0 / 3.0, contentMode: .fit)
                 .overlay {
                     preview
                 }

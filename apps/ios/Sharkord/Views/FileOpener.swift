@@ -54,7 +54,8 @@ enum FileThumbnails {
 
         let request = QLThumbnailGenerator.Request(
             fileAt: local,
-            size: CGSize(width: 320, height: 200),
+            // wide enough to fill a card across, tall enough for a portrait page
+            size: CGSize(width: 400, height: 520),
             scale: UITraitCollection.current.displayScale,
             representationTypes: .thumbnail
         )
