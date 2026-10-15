@@ -183,9 +183,7 @@ struct ProfileBanner: View {
             .frame(height: 130)
             .overlay {
                 if let banner = user?.banner, let address = session.address {
-                    AsyncImage(url: address.fileURL(banner)) { image in
-                        image.resizable().scaledToFill()
-                    } placeholder: {
+                    CachedFileImage(file: banner, url: address.fileURL(banner)) {
                         Color.clear
                     }
                 }

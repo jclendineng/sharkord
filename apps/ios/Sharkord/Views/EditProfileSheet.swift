@@ -169,11 +169,7 @@ struct EditProfileSheet: View {
     @ViewBuilder
     private var banner: some View {
         if let file = session.ownUser?.banner, let address = session.address {
-            AsyncImage(url: address.fileURL(file)) { image in
-                image
-                    .resizable()
-                    .scaledToFill()
-            } placeholder: {
+            CachedFileImage(file: file, url: address.fileURL(file)) {
                 color
             }
         } else {

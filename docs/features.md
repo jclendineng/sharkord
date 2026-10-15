@@ -168,7 +168,12 @@ Link previews are not fetched from private addresses, so no member can make the 
 pages only it can reach. A server on a home network can allow it with **Preview Links on the
 Server's Network** in Server Settings, General, mirrored in config.ini as
 `previewPrivateNetwork` under `[links]`. A preview is fetched when a message is sent, so turning
-it on does not add previews to older messages.
+it on does not add previews to older messages. When it is on, devices on that network may use
+self signed certificates and hosts without a domain (`http://nas:8080`). Every redirect is checked
+again, so a public page cannot send the server inward.
+
+The app's invite sheet sets how long a link lasts (1 hour, 1 day, 7 days or never) and how many
+times it can be used, replacing the link it showed before.
 
 Uploaded files are stored under their own name and served from `/public/<name>`. With
 **Signed File Links** off (the default) anyone who has or guesses that link can open the

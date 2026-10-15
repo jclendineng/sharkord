@@ -242,9 +242,7 @@ private struct EmojiRow: View {
     var body: some View {
         HStack(spacing: 12) {
             if let address = session.address {
-                AsyncImage(url: address.fileURL(emoji.file)) { image in
-                    image.resizable().scaledToFit()
-                } placeholder: {
+                CachedFileImage(file: emoji.file, url: address.fileURL(emoji.file), contentMode: .fit) {
                     Color.clear
                 }
                 .frame(width: 32, height: 32)

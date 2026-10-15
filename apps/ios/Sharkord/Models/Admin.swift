@@ -54,7 +54,7 @@ struct AdminRole: Codable, Identifiable, Hashable {
 }
 
 // others.getSettings, the general part of it
-struct AdminServerSettings: Codable {
+struct AdminServerSettings: Codable, Equatable {
     var name: String
     var description: String?
     var password: String?

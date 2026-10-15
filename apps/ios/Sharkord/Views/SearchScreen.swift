@@ -40,7 +40,7 @@ struct SearchScreen: View {
             return []
         }
 
-        let partners = Set(session.directMessages.map(\.userId))
+        let partners = Set(session.directMessages.flatMap { [$0.userId] + ($0.group?.memberIds ?? []) })
 
         return session.members
             .filter { $0.id != session.ownUserId && $0.name.localizedCaseInsensitiveContains(trimmedQuery) }

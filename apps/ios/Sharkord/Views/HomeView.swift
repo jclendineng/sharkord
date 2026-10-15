@@ -130,6 +130,18 @@ private struct SignedOutPanel: View {
             Button("Log In", action: signIn)
                 .buttonStyle(.borderedProminent)
         }
+        // a revoked or expired sign in goes straight back to the login screen. cancelling it
+        // leaves this panel, with the button to try again
+        .onAppear(perform: promptOnce)
+    }
+
+    private func promptOnce() {
+        guard session.wantsSignInPrompt else {
+            return
+        }
+
+        session.wantsSignInPrompt = false
+        signIn()
     }
 
     private func signIn() {

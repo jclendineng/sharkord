@@ -520,9 +520,7 @@ private struct ServerBadge: View {
             HStack(spacing: 10) {
                 Group {
                     if let address, let logo = info.logo {
-                        AsyncImage(url: address.fileURL(logo)) { image in
-                            image.resizable().scaledToFill()
-                        } placeholder: {
+                        CachedFileImage(file: logo, url: address.fileURL(logo)) {
                             Theme.inputBackground
                         }
                     } else {

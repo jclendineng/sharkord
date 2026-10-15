@@ -92,7 +92,12 @@ struct EmojiView: View {
     @Environment(SessionStore.self) private var session
 
     var body: some View {
-        if let url = imageURL {
+        if let customFile, let address = session.address {
+            CachedFileImage(file: customFile, url: address.fileURL(customFile), contentMode: .fit) {
+                Color.clear
+            }
+            .frame(width: size, height: size)
+        } else if let url = imageURL {
             AsyncImage(url: url) { image in
                 image.resizable().scaledToFit()
             } placeholder: {
@@ -105,13 +110,12 @@ struct EmojiView: View {
         }
     }
 
+    private var customFile: SharkordFile? {
+        file ?? session.customEmoji(named: value)?.file
+    }
+
+    // a built in emoji drawn from github's picture of it
     private var imageURL: URL? {
-        let customFile = file ?? session.customEmoji(named: value)?.file
-
-        if let customFile, let address = session.address {
-            return address.fileURL(customFile)
-        }
-
         if let entry = EmojiCatalog.find(value), entry.emoji == nil {
             return entry.image.flatMap(URL.init(string:))
         }

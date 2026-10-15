@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
 import { eq } from 'drizzle-orm';
 import { tdb } from '../../../__tests__/setup';
 import { messages, settings } from '../../../db/schema';
@@ -84,6 +84,73 @@ describe('link preview ssrf guard', () => {
 
     expect(result).toBeDefined();
     expect(await storedMetadata(messageId)).not.toBeNull();
+  });
+});
+
+// a page served on the loopback address stands in for a device on the server's own network
+describe('link previews of the server network', () => {
+  let server: ReturnType<typeof Bun.serve>;
+  let origin: string;
+
+  beforeAll(() => {
+    server = Bun.serve({
+      hostname: '127.0.0.1',
+      port: 0,
+      fetch: (request) => {
+        const { pathname } = new URL(request.url);
+
+        if (pathname.startsWith('/moved')) {
+          return Response.redirect(`${origin}/page${pathname}`, 302);
+        }
+
+        return new Response(
+          '<html><head><title>Router</title><meta property="og:title" content="Home Router" /><meta property="og:description" content="Admin page" /></head></html>',
+          { headers: { 'content-type': 'text/html' } }
+        );
+      }
+    });
+
+    origin = `http://127.0.0.1:${server.port}`;
+  });
+
+  afterAll(() => {
+    server.stop(true);
+  });
+
+  test('should not preview a page on the server network by default', async () => {
+    const content = `see ${origin}/page/off`;
+    const messageId = await insertMessage(content);
+
+    const result = await processMessageMetadata(content, messageId);
+
+    expect(result).toBeUndefined();
+    expect(await storedMetadata(messageId)).toBeNull();
+  });
+
+  test('should preview a page on the server network once allowed', async () => {
+    await tdb.update(settings).set({ linkPreviewsPrivateNetwork: true });
+
+    const content = `see ${origin}/page/on`;
+    const messageId = await insertMessage(content);
+
+    await processMessageMetadata(content, messageId);
+
+    const metadata = await storedMetadata(messageId);
+
+    expect(metadata?.[0]?.title).toBe('Home Router');
+  });
+
+  test('should follow a redirect within the server network once allowed', async () => {
+    await tdb.update(settings).set({ linkPreviewsPrivateNetwork: true });
+
+    const content = `see ${origin}/moved`;
+    const messageId = await insertMessage(content);
+
+    await processMessageMetadata(content, messageId);
+
+    const metadata = await storedMetadata(messageId);
+
+    expect(metadata?.[0]?.title).toBe('Home Router');
   });
 });
 

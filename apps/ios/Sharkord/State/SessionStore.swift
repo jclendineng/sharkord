@@ -25,6 +25,8 @@ final class SessionStore {
     // a reconnect usually finishes before anyone notices, the banner waits a moment first
     private(set) var showsReconnectingBanner = false
     var errorMessage: String?
+    // set when the server refused the sign in rather than you logging out, so the login screen opens once
+    var wantsSignInPrompt = false
     private(set) var toastMessage: String?
 
     @ObservationIgnored private var toastTask: Task<Void, Never>?
@@ -650,6 +652,7 @@ final class SessionStore {
         stickers = []
         settings = nil
         errorMessage = message
+        wantsSignInPrompt = message != nil
         hideReconnectingBanner()
         phase = .signedOut
     }

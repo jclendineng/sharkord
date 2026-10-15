@@ -3016,6 +3016,57 @@ describe('messages.search filters', () => {
     expect(inDms.messages.map(({ channelId }) => channelId)).toEqual([3]);
   });
 
+  test('should keep files to the scope, all direct messages or one channel', async () => {
+    const { caller } = await initTest(3);
+    const now = Date.now();
+
+    // the same file name posted in the seeded dm, channel 3, and in channel 1
+    const [inDm] = await tdb
+      .insert(messages)
+      .values({ channelId: 3, userId: 3, content: 'dm', createdAt: now })
+      .returning({ id: messages.id });
+    const [inChannel] = await tdb
+      .insert(messages)
+      .values({ channelId: 1, userId: 3, content: 'channel', createdAt: now })
+      .returning({ id: messages.id });
+    const [dmFile, channelFile] = await tdb
+      .insert(files)
+      .values(
+        [inDm, inChannel].map((_, index) => ({
+          name: `scoped-${now}-${index}.txt`,
+          originalName: 'version.txt',
+          md5: `md5-scoped-${now}-${index}`,
+          userId: 3,
+          size: 6,
+          mimeType: 'text/plain',
+          extension: 'txt',
+          createdAt: now
+        }))
+      )
+      .returning({ id: files.id });
+
+    await tdb.insert(messageFiles).values([
+      { messageId: inDm!.id, fileId: dmFile!.id, createdAt: now },
+      { messageId: inChannel!.id, fileId: channelFile!.id, createdAt: now }
+    ]);
+
+    const everywhere = await caller.messages.search({ has: 'file' });
+    const inDms = await caller.messages.search({
+      has: 'file',
+      scope: 'directMessages'
+    });
+    const inOneChannel = await caller.messages.search({
+      has: 'file',
+      channelId: 1
+    });
+
+    expect(everywhere.files.map(({ channelId }) => channelId).sort()).toEqual([
+      1, 3
+    ]);
+    expect(inDms.files.map(({ channelId }) => channelId)).toEqual([3]);
+    expect(inOneChannel.files.map(({ channelId }) => channelId)).toEqual([1]);
+  });
+
   test('should still refuse a search with nothing but a scope', async () => {
     const { caller } = await initTest(1);
 

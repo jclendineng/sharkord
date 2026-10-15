@@ -115,6 +115,7 @@ struct ChannelActivity: Decodable {
 }
 
 struct Invite: Decodable {
+    let id: Int
     let code: String
 }
 

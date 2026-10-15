@@ -284,9 +284,7 @@ private struct ServerEmojiGrid: View {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 8), spacing: 8) {
                 ForEach(session.customEmojis.prefix(Self.shown)) { emoji in
                     if let address = session.address {
-                        AsyncImage(url: address.fileURL(emoji.file)) { image in
-                            image.resizable().scaledToFit()
-                        } placeholder: {
+                        CachedFileImage(file: emoji.file, url: address.fileURL(emoji.file), contentMode: .fit) {
                             Color.clear
                         }
                         .frame(width: 28, height: 28)

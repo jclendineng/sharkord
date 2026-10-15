@@ -5,8 +5,8 @@ import { invariant } from '../../utils/invariant';
 import { protectedProcedure, rateLimitedProcedure } from '../../utils/trpc';
 
 const revokeSessionRoute = rateLimitedProcedure(protectedProcedure, {
-  maxRequests: config.rateLimiters.updatePassword.maxRequests,
-  windowMs: config.rateLimiters.updatePassword.windowMs,
+  maxRequests: config.rateLimiters.revokeSession.maxRequests,
+  windowMs: config.rateLimiters.revokeSession.windowMs,
   logLabel: 'revokeSession'
 })
   .input(

@@ -112,9 +112,7 @@ struct ServerIcon: View {
 
     var body: some View {
         if let logo = server.serverInfo?.logo, let address = server.address {
-            AsyncImage(url: address.fileURL(logo)) { image in
-                image.resizable().scaledToFill()
-            } placeholder: {
+            CachedFileImage(file: logo, url: address.fileURL(logo)) {
                 placeholder
             }
         } else {

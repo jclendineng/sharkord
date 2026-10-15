@@ -9,6 +9,7 @@ struct GeneralSettingsScreen: View {
     private static let passwordLimit = 32
 
     @Environment(SessionStore.self) private var session
+    @Environment(\.dismiss) private var dismiss
 
     @State private var settings: AdminServerSettings?
     @State private var saved: AdminServerSettings?
@@ -23,7 +24,12 @@ struct GeneralSettingsScreen: View {
             return false
         }
 
+        // the icon saves the moment it is picked, so only the fields below count as changes
+        let hadPassword = !(saved?.password ?? "").isEmpty
+        let hasChanges = settings != saved || hasPassword != hadPassword
+
         return !isSaving
+            && hasChanges
             && Self.nameRange.contains(settings.name.trimmingCharacters(in: .whitespaces).count)
             && (settings.description ?? "").count <= Self.descriptionLimit
             && (settings.password ?? "").count <= Self.passwordLimit
@@ -73,6 +79,8 @@ struct GeneralSettingsScreen: View {
                     }
                     .buttonStyle(.borderless)
                 }
+            } footer: {
+                Text("The icon changes as soon as you pick it.")
             }
 
             Section("Server Name") {
@@ -282,6 +290,10 @@ struct GeneralSettingsScreen: View {
                 try await session.perform("others.updateSettings", input)
                 await session.refreshServerInfo()
                 self.saved = settings
+                isSaving = false
+                // like discord, a save closes the screen, which is how you know it went through
+                dismiss()
+                return
             } catch {
                 errorMessage = error.localizedDescription
             }

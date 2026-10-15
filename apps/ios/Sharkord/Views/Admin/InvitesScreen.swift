@@ -148,32 +148,12 @@ private struct InviteRow: View {
 }
 
 private struct CreateInviteSheet: View {
-    enum Expiry: String, CaseIterable {
-        case hour = "1 hour"
-        case day = "1 day"
-        case week = "7 days"
-        case never = "Never"
-
-        var interval: TimeInterval? {
-            switch self {
-            case .hour:
-                3600
-            case .day:
-                86_400
-            case .week:
-                604_800
-            case .never:
-                nil
-            }
-        }
-    }
-
     let onCreated: () -> Void
 
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
 
-    @State private var expiry = Expiry.week
+    @State private var expiry = InviteExpiry.week
     @State private var maxUses = 0
     @State private var roleId: Int?
     @State private var roles: [AdminRole] = []
@@ -185,7 +165,7 @@ private struct CreateInviteSheet: View {
             List {
                 Section("Expires After") {
                     Picker("Expires After", selection: $expiry) {
-                        ForEach(Expiry.allCases, id: \.self) { option in
+                        ForEach(InviteExpiry.allCases, id: \.self) { option in
                             Text(option.rawValue).tag(option)
                         }
                     }
@@ -272,5 +252,26 @@ private struct CreateInviteSheet: View {
 
     private func close() {
         dismiss()
+    }
+}
+
+// how long an invite lasts, for the admin list and the invite sheet alike
+enum InviteExpiry: String, CaseIterable {
+    case hour = "1 hour"
+    case day = "1 day"
+    case week = "7 days"
+    case never = "Never"
+
+    var interval: TimeInterval? {
+        switch self {
+        case .hour:
+            3600
+        case .day:
+            86_400
+        case .week:
+            604_800
+        case .never:
+            nil
+        }
     }
 }

@@ -85,7 +85,7 @@ final class SearchHomeModel {
             case .members:
                 // the people you have conversations with
                 if scope == nil, inDirectMessages, memberIds == nil {
-                    memberIds = Set(session.directMessages.map(\.userId))
+                    memberIds = Set(session.directMessages.flatMap { [$0.userId] + ($0.group?.memberIds ?? []) })
                 } else if let scope, scope.isDm, memberIds == nil {
                     // the two people, or everyone in a group
                     let others = session.group(for: scope.id)?.memberIds

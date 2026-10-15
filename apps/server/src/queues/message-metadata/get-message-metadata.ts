@@ -1,12 +1,12 @@
 import { extractUrls, type TMessageMetadata } from '@sharkord/shared';
-import dns from 'dns';
 import { eq } from 'drizzle-orm';
-import { getLinkPreview } from 'link-preview-js';
+import { getPreviewFromContent } from 'link-preview-js';
 import { isIP } from 'net';
 import { db } from '../../db';
 import { getSettings } from '../../db/queries/server';
 import { messages } from '../../db/schema';
 import { isPrivateIP } from '../../helpers/network';
+import { fetchPage } from './fetch-page';
 import {
   createDirectMediaMetadata,
   createOpenGraphMetadata,
@@ -80,43 +80,13 @@ const urlMetadataParser = async (
       let metadata;
 
       try {
-        metadata = await getLinkPreview(url, {
-          followRedirects: 'follow',
-          resolveDNSHost: async (url: string) => {
-            return new Promise((resolve, reject) => {
-              try {
-                const hostname = new URL(url).hostname;
+        const page = await fetchPage(url, isBlockedAddress);
 
-                dns.lookup(hostname, { all: true }, (err, addresses) => {
-                  if (err) {
-                    reject(err);
-                    return;
-                  }
-
-                  for (const entry of addresses) {
-                    if (isBlockedAddress(entry.address)) {
-                      reject(new Error('Cannot resolve private IP addresses'));
-                      return;
-                    }
-                  }
-
-                  const firstAddress = addresses[0]?.address;
-
-                  if (!firstAddress) {
-                    reject(new Error('No addresses found'));
-                    return;
-                  }
-
-                  resolve(firstAddress);
-                });
-              } catch (error) {
-                reject(error);
-              }
-            });
-          }
-        });
+        if (page) {
+          metadata = await getPreviewFromContent(page);
+        }
       } catch {
-        // getLinkPreview failed (blocked, timeout, etc.)
+        // unreachable, refused, timed out or not a page
       }
 
       if (!metadata) return;
