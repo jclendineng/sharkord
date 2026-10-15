@@ -102,12 +102,7 @@ struct LinkPreviewCard: View {
             }
             .padding(14)
             .frame(maxWidth: 440, alignment: .leading)
-            .background(Theme.listBackground)
-            .overlay(alignment: .leading) {
-                Theme.divider
-                    .frame(width: 4)
-            }
-            .clipShape(.rect(cornerRadius: 10, style: .continuous))
+            .background(Theme.listBackground, in: .rect(cornerRadius: 14, style: .continuous))
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
