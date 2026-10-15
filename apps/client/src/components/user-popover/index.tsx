@@ -45,6 +45,7 @@ import { Protect } from '../protect';
 import { RoleBadge } from '../role-badge';
 import { UserAvatar } from '../user-avatar';
 import { UserStatusBadge } from '../user-status';
+import { UserNote } from './user-note';
 
 type TUserPopoverProps = {
   userId: number;
@@ -185,6 +186,7 @@ const UserPopover = memo(({ userId, children }: TUserPopoverProps) => {
               </p>
             </div>
           )}
+          {!isOwnUser && !isDeleted && <UserNote userId={user.id} />}
           <div className="flex justify-between items-center mt-4 pt-3 border-t border-border">
             <p className="text-xs text-muted-foreground">
               {t('memberSince', {

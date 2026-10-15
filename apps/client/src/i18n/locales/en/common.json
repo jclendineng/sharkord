@@ -163,5 +163,8 @@
   "stopUsingAsRules": "Stop Using as Rules",
   "stopUsingAsRulesMsg": "Members will no longer get a role by reacting to this message.",
   "rulesNote": "React to this message to accept the rules and see the rest of the server.",
-  "failedSetRules": "Could not update the rules message"
+  "failedSetRules": "Could not update the rules message",
+  "noteLabel": "Note (only visible to you)",
+  "notePlaceholder": "Click to add a note",
+  "failedSaveNote": "Could not save the note"
 }

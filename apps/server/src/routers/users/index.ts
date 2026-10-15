@@ -11,6 +11,7 @@ import {
   onUserLeaveRoute,
   onUserUpdateRoute
 } from './events';
+import { getNoteRoute } from './get-note';
 import { getUserInfoRoute } from './get-user-info';
 import { getUsersRoute } from './get-users';
 import { kickRoute } from './kick';
@@ -21,6 +22,7 @@ import { updateUserRoute } from './update-user';
 
 import { getPresenceRoute } from './get-presence';
 import { getPrivacyRoute } from './get-privacy';
+import { setNoteRoute } from './set-note';
 import { setPresenceRoute } from './set-presence';
 import { updatePrivacyRoute } from './update-privacy';
 
@@ -36,6 +38,8 @@ export const usersRouter = t.router({
   setPresence: setPresenceRoute,
   updatePrivacy: updatePrivacyRoute,
   getInfo: getUserInfoRoute,
+  getNote: getNoteRoute,
+  setNote: setNoteRoute,
   getAll: getUsersRoute,
   kick: kickRoute,
   ban: banRoute,

@@ -302,3 +302,13 @@ hide them from everyone else in each channel's permissions: a new member then la
 channel, the only one they see, and the rest appears as soon as they react. Taking the reaction
 back keeps the role. The rules message says what reacting does, the owner's role and the default
 role cannot be the one given, and deleting the message turns the lounge off.
+
+Notes, as Discord's: on someone else's profile, **Note (only visible to you)** keeps whatever you
+want to remember about them (`users.setNote`, up to 256 characters, empty clears it), read back
+with `users.getNote`. Only its author ever sees a note, and it goes when either person does.
+
+Joining with an invite in the app: the server address field takes an invite link
+(`https://chat.example.com/?invite=CODE`) and goes straight to making an account with it, and a
+server closed to new members asks for the link when making one. The code is sent with the sign
+up, as the web client's invite links do.
+

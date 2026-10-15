@@ -161,5 +161,8 @@
   "stopUsingAsRules": "Dejar de usar como reglas",
   "stopUsingAsRulesMsg": "Los miembros ya no obtendrán un rol al reaccionar a este mensaje.",
   "rulesNote": "Reacciona a este mensaje para aceptar las reglas y ver el resto del servidor.",
-  "failedSetRules": "No se pudo actualizar el mensaje de reglas"
+  "failedSetRules": "No se pudo actualizar el mensaje de reglas",
+  "noteLabel": "Nota (solo visible para ti)",
+  "notePlaceholder": "Haz clic para añadir una nota",
+  "failedSaveNote": "No se pudo guardar la nota"
 }

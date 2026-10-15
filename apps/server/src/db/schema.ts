@@ -692,6 +692,23 @@ const groupDmMembers = sqliteTable(
   ]
 );
 
+// what someone wrote about another member for themselves, as discord's note on a profile: only
+// its author ever reads it
+const userNotes = sqliteTable(
+  'user_notes',
+  {
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    targetUserId: integer('target_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    note: text('note').notNull(),
+    updatedAt: integer('updated_at').notNull()
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.targetUserId] })]
+);
+
 // a direct message one participant closed: hidden from their list until a message newer than
 // the close arrives or they open it again, as discord's close dm
 const directMessageClosures = sqliteTable(
@@ -903,6 +920,7 @@ export {
   sessions,
   settings,
   stickers,
+  userNotes,
   userRoles,
   users
 };

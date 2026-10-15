@@ -80,6 +80,10 @@ struct MemberProfileSheet: View {
                                 .foregroundStyle(Theme.text)
                         }
                     }
+
+                    if !isOwn {
+                        NoteCard(userId: user.id)
+                    }
                 }
                 .padding(16)
             }
@@ -151,6 +155,73 @@ struct MemberProfileSheet: View {
         Task {
             try? await Task.sleep(for: .milliseconds(350))
             onMessage()
+        }
+    }
+}
+
+// discord's note on a profile, only ever seen by whoever wrote it. saved when the field is left
+// or the sheet goes away, and missing on a server from before notes
+private struct NoteCard: View {
+    let userId: Int
+
+    @Environment(SessionStore.self) private var session
+
+    @State private var note = ""
+    @State private var saved: String?
+    @FocusState private var isFocused: Bool
+
+    var body: some View {
+        if saved != nil {
+            ProfileCard(title: "Note (only visible to you)") {
+                TextField("Tap to add a note", text: $note, axis: .vertical)
+                    .foregroundStyle(Theme.text)
+                    .lineLimit(1...6)
+                    .focused($isFocused)
+                    .onChange(of: isFocused) { _, focused in
+                        if !focused {
+                            save()
+                        }
+                    }
+                    .onDisappear(perform: save)
+            }
+        } else {
+            Color.clear
+                .frame(height: 0)
+                .task {
+                    await load()
+                }
+        }
+    }
+
+    private func load() async {
+        guard let loaded: String = try? await session.request("users.getNote", ["userId": userId]) else {
+            return
+        }
+
+        note = loaded
+        saved = loaded
+    }
+
+    private func save() {
+        struct NoteInput: Encodable {
+            let userId: Int
+            let note: String
+        }
+
+        let text = String(note.trimmingCharacters(in: .whitespacesAndNewlines).prefix(256))
+
+        guard text != saved else {
+            return
+        }
+
+        saved = text
+
+        Task {
+            do {
+                try await session.perform("users.setNote", NoteInput(userId: userId, note: text))
+            } catch {
+                session.showError(error)
+            }
         }
     }
 }

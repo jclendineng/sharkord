@@ -161,5 +161,8 @@
   "stopUsingAsRules": "Přestat používat jako pravidla",
   "stopUsingAsRulesMsg": "Členové už nebudou reakcí na tuto zprávu získávat roli.",
   "rulesNote": "Reagujte na tuto zprávu, přijměte pravidla a uvidíte zbytek serveru.",
-  "failedSetRules": "Zprávu s pravidly se nepodařilo upravit"
+  "failedSetRules": "Zprávu s pravidly se nepodařilo upravit",
+  "noteLabel": "Poznámka (vidíte ji jen vy)",
+  "notePlaceholder": "Klikněte a přidejte poznámku",
+  "failedSaveNote": "Poznámku se nepodařilo uložit"
 }
