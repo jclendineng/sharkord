@@ -24,6 +24,7 @@ struct ComposerView: View {
     @State private var recorder = VoiceMessageRecorder()
 
     @Environment(ServerListStore.self) private var servers
+    @Environment(\.expandChat) private var expandChat
 
     private var uploadedFiles: [TemporaryFile] {
         attachments.compactMap(\.uploaded)
@@ -102,6 +103,11 @@ struct ComposerView: View {
         .onDisappear(perform: unfocusField)
         // a tap on the field while the panel is up hands over to the keyboard
         .onChange(of: isFieldFocused) { _, isFocused in
+            // on an ipad the keyboard wants the whole width, the list beside the chat gives way
+            if isFocused, let expandChat {
+                expandChat()
+            }
+
             if isFocused && store.attachPanel.isOpen && !store.attachPanel.isHandingOff {
                 store.attachPanel.beginHandoffToKeyboard()
             }

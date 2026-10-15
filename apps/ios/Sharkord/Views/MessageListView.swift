@@ -20,6 +20,9 @@ struct MessageListView<Header: View>: View {
     @State private var highlightStrength = 0.0
     // far enough up the conversation for discord's round button back down
     @State private var isAwayFromBottom = false
+    // a tap's putting the keyboard away, held back long enough to see whether it is the first
+    // half of a double tap
+    @State private var keyboardDismissal: Task<Void, Never>?
 
     private var firstUnreadId: Int? {
         store.firstUnreadMessage?.id
@@ -258,9 +261,21 @@ struct MessageListView<Header: View>: View {
         }
     }
 
+    // the keyboard going at once moves the messages, and the second tap of a double tap then
+    // lands on whatever slid under the finger, a link it opens. so it waits out a double tap
     private func closeAttachPanel() {
         store.attachPanel.close()
-        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+
+        keyboardDismissal?.cancel()
+        keyboardDismissal = Task {
+            try? await Task.sleep(for: .milliseconds(320))
+
+            guard !Task.isCancelled else {
+                return
+            }
+
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        }
     }
 
     private var attachPanelDrag: some Gesture {
@@ -278,6 +293,8 @@ struct MessageListView<Header: View>: View {
     }
 
     private func react(to message: Message) {
+        keyboardDismissal?.cancel()
+
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
 
         Task {

@@ -21,6 +21,10 @@ extension EnvironmentValues {
     // set on the ipad's side by side layout, where search covers the whole screen as discord's
     // does rather than opening in the chat's column
     @Entry var presentSearch: (@MainActor (SearchRoute) -> Void)?
+    // the ipad's, sliding a chat that covers the list back beside it
+    @Entry var showChannelList: (@MainActor () -> Void)?
+    // the ipad's, sliding a chat beside the list over it to the full width for typing in
+    @Entry var expandChat: (@MainActor () -> Void)?
 }
 
 // a way into search: pushed on a phone, the whole screen on an ipad in landscape

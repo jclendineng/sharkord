@@ -1,6 +1,9 @@
 import SwiftUI
 
 struct UserBar: View {
+    // the ipad's, sized to sit under the channel list like discord's rather than fill a phone
+    var isCompact = false
+
     @Environment(ServerListStore.self) private var servers
     @Environment(SessionStore.self) private var session
 
@@ -20,16 +23,20 @@ struct UserBar: View {
         servers.sessions.contains { !$0.unreadChannels.isEmpty }
     }
 
+    private var cornerRadius: CGFloat {
+        isCompact ? 22 : 28
+    }
+
     var body: some View {
         HStack(spacing: 12) {
             Button(action: showProfile) {
-                HStack(spacing: 12) {
-                    AvatarView(user: session.ownUser, size: 44, showsStatus: true)
+                HStack(spacing: isCompact ? 10 : 12) {
+                    AvatarView(user: session.ownUser, size: isCompact ? 36 : 44, showsStatus: true)
 
                     VStack(alignment: .leading, spacing: 1) {
                         HStack(spacing: 4) {
                             Text(session.ownUser?.name ?? session.displayName)
-                                .font(.headline)
+                                .font(isCompact ? .subheadline.weight(.semibold) : .headline)
                                 .foregroundStyle(Theme.header)
                                 .lineLimit(1)
 
@@ -39,8 +46,9 @@ struct UserBar: View {
                         }
 
                         Text(statusText)
-                            .font(.subheadline)
+                            .font(isCompact ? .caption : .subheadline)
                             .foregroundStyle(Theme.muted)
+                            .lineLimit(1)
                     }
 
                     Spacer(minLength: 0)
@@ -51,9 +59,9 @@ struct UserBar: View {
 
             Button("Unreads", systemImage: "bell.fill", action: showUnreads)
                 .labelStyle(.iconOnly)
-                .font(.title3)
+                .font(isCompact ? .body : .title3)
                 .foregroundStyle(Theme.muted)
-                .frame(width: 44, height: 44)
+                .frame(width: isCompact ? 36 : 44, height: isCompact ? 36 : 44)
                 .overlay(alignment: .topTrailing) {
                     if hasUnread {
                         Circle()
@@ -63,11 +71,11 @@ struct UserBar: View {
                     }
                 }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .background(Color(hex: "#202125"), in: .rect(cornerRadius: 28, style: .continuous))
+        .padding(.horizontal, isCompact ? 10 : 12)
+        .padding(.vertical, isCompact ? 7 : 10)
+        .background(Color(hex: "#202125"), in: .rect(cornerRadius: cornerRadius, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .strokeBorder(.white.opacity(0.06), lineWidth: 1)
         }
         .shadow(color: .black.opacity(0.4), radius: 20, y: 8)

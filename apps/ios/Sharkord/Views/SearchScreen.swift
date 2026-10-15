@@ -134,8 +134,13 @@ struct SearchScreen: View {
 
             hasAppliedChannel = true
             filters.directMessagesOnly = directMessages
-
+        }
+        // the field sits in the navigation bar, where focus state alone does not bring up the
+        // keyboard, so once the screen has slid in the field is made first responder directly
+        .task {
+            try? await Task.sleep(for: .milliseconds(450))
             isFieldFocused = true
+            focusNavigationBarField()
         }
     }
 
@@ -242,6 +247,31 @@ struct SearchScreen: View {
         token = picker
         query = ""
         isFieldFocused = true
+    }
+
+    private func focusNavigationBarField() {
+        let windows = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows)
+
+        guard let window = windows.first(where: \.isKeyWindow) else {
+            return
+        }
+
+        // the topmost one, a full screen cover's bar over the screen it covers
+        let field = navigationBarFields(in: window).last
+
+        field?.becomeFirstResponder()
+    }
+
+    private func navigationBarFields(in view: UIView, isInBar: Bool = false) -> [UITextField] {
+        let isBar = isInBar || view is UINavigationBar
+
+        if isBar, let field = view as? UITextField {
+            return [field]
+        }
+
+        return view.subviews.flatMap { navigationBarFields(in: $0, isInBar: isBar) }
     }
 
     private func clearToken() {

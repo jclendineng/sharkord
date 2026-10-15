@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct ServerRail: View {
+    static let width: CGFloat = 72
+
     let onSelectServer: (SessionStore) -> Void
     let onSelectDirectMessages: () -> Void
 
@@ -46,7 +48,7 @@ struct ServerRail: View {
             .padding(.vertical, 8)
         }
         .scrollIndicators(.hidden)
-        .frame(width: 72)
+        .frame(width: Self.width)
     }
 
     private func addServer() {

@@ -11,9 +11,18 @@ struct HomeView: View {
 
     @State private var path = NavigationPath()
 
-    // discord's ipad in landscape: the list and the chat side by side. in portrait, or a narrow
-    // window, it is the phone's, the chat pushed over the list
+    // the ipad's: the list and the chat side by side as two cards, in either orientation. a
+    // phone, or a narrow ipad window, pushes the chat over the list
     @State private var isSplit = false
+    // the chat opens beside the list, and its handle slides it over the list to the full width
+    // and back
+    @State private var isPortrait = false
+    @State private var isChatExpanded = false
+    // the handle's drag in progress, the card following the finger until it is let go
+    @State private var chatSlide = ChatSlide()
+    // laid out at the full width while it moves, so the messages wrap once rather than on
+    // every frame, and narrowed only once it has come to rest beside the list
+    @State private var isChatCardWide = false
     @State private var detailChannelId: Int?
     // the conversation beside the list when messages were last picked in the rail
     @State private var lastDirectMessageId: Int?
@@ -22,7 +31,15 @@ struct HomeView: View {
     @State private var placeholderChannelId: Int?
     @State private var searchRoute: SearchRoute?
 
-    private static let panelWidth: CGFloat = 320
+    // narrower in portrait, where the chat beside it has less room to read in
+    private var panelWidth: CGFloat {
+        isPortrait ? 280 : 320
+    }
+
+    // the rail's and the panel's, which the user bar under them would otherwise widen
+    private var listWidth: CGFloat {
+        ServerRail.width + panelWidth
+    }
     private static let cardRadius: CGFloat = 22
     private static let cardGap: CGFloat = 8
 
@@ -33,7 +50,8 @@ struct HomeView: View {
         }
         #endif
 
-        return size.width >= 1000 && size.width > size.height
+        // an ipad mini in portrait leaves the chat about a phone's width beside the list
+        return size.width >= 600
     }
 
     var body: some View {
@@ -45,6 +63,9 @@ struct HomeView: View {
             }
         }
         .onGeometryChange(for: Bool.self, of: { Self.isSplit($0.size) }, action: setSplit)
+        .onGeometryChange(for: Bool.self, of: { $0.size.height > $0.size.width }) { portrait in
+            isPortrait = portrait
+        }
         .environment(session)
         .coordinateSpace(.named(Self.coordinateSpace))
         .overlay {
@@ -112,9 +133,6 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .background(Theme.railBackground.ignoresSafeArea())
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                bottomBars
-            }
             .toolbarVisibility(.hidden, for: .navigationBar)
             .chatDestinations()
             .opensRequestedChannel($path)
@@ -122,34 +140,52 @@ struct HomeView: View {
     }
 
     private var splitLayout: some View {
-        HStack(spacing: 0) {
-            HStack(spacing: 0) {
-                ServerRail(onSelectServer: selectServer, onSelectDirectMessages: showDirectMessages)
+        // sized from the space offered rather than from what it holds: measured on the stack
+        // itself, a card a little too wide widened the stack, which widened the card, until it
+        // ran off the screen and stayed there
+        GeometryReader { proxy in
+            ZStack(alignment: .leading) {
+                HStack(spacing: 0) {
+                    ServerRail(onSelectServer: selectServer, onSelectDirectMessages: showDirectMessages)
 
-                styledPanel
-                    .frame(width: Self.panelWidth)
-                    .frame(maxHeight: .infinity)
-                    .padding(.top, Self.cardGap)
-            }
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                bottomBars
-            }
-            .background(Theme.railBackground.ignoresSafeArea())
+                    styledPanel
+                        .frame(width: panelWidth)
+                        .frame(maxHeight: .infinity)
+                        .padding(.top, Self.cardGap)
+                }
+                .frame(width: listWidth)
+                .background(Theme.railBackground.ignoresSafeArea())
 
-            // a card of its own beside the list's, rounded all round with the rail showing
-            // between them, rather than a hard line down the screen
-            NavigationStack(path: $path) {
-                detail
-                    .chatDestinations()
+                // a card of its own beside the list's, rounded all round with the rail showing
+                // between them, rather than a hard line down the screen. slid over the list it
+                // keeps its rounding and its gap from the screen's edges
+                SlidingCard(slide: chatSlide, resting: isChatExpanded ? 0 : listWidth, farthest: listWidth) {
+                    NavigationStack(path: $path) {
+                        detail
+                            .chatDestinations()
+                    }
+                    // the message bar clear of the card's rounded bottom, as discord's sits
+                    .padding(.bottom, 8)
+                    .background(Theme.chatBackground)
+                    .environment(\.showChannelList, isChatExpanded ? collapseChat : nil)
+                    .environment(\.expandChat, isChatExpanded ? nil : expandForTyping)
+                    .clipShape(.rect(cornerRadius: Self.cardRadius, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: Self.cardRadius, style: .continuous)
+                            .stroke(Theme.panelEdge, lineWidth: 1)
+                    }
+                    .padding(Self.cardGap)
+                    .ignoresSafeArea(.container, edges: .bottom)
+                    .overlay(alignment: .leading) {
+                        if detailChannelId != nil {
+                            ChatHandle(onDrag: dragChat, onRelease: releaseChat, onTap: toggleChat)
+                                .offset(x: Self.cardGap - ChatHandle.width / 2)
+                        }
+                    }
+                    .frame(width: chatCardWidth(in: proxy.size.width))
+                }
             }
-            .clipShape(.rect(cornerRadius: Self.cardRadius, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: Self.cardRadius, style: .continuous)
-                    .stroke(Theme.panelEdge, lineWidth: 1)
-            }
-            .padding(Self.cardGap)
-            .ignoresSafeArea(.container, edges: .bottom)
-            .frame(maxWidth: .infinity)
+            .frame(width: proxy.size.width, height: proxy.size.height, alignment: .leading)
         }
         .background(Theme.railBackground.ignoresSafeArea())
         .opensRequestedChannel($path, detailChannelId: $detailChannelId)
@@ -193,6 +229,78 @@ struct HomeView: View {
         }
     }
 
+    private func chatCardWidth(in splitWidth: CGFloat) -> CGFloat {
+        let width = isChatCardWide ? splitWidth : splitWidth - listWidth
+
+        return max(width, 0)
+    }
+
+    // only the slide changes as the finger moves, so only the card is redrawn, not the list
+    private func dragChat(_ translation: CGFloat) {
+        // a pull the way the card cannot go, right while it is beside the list or left while
+        // it covers it, leaves it be rather than widening it for nothing
+        let isTowardList = isChatExpanded ? translation > 0 : translation < 0
+
+        guard isTowardList else {
+            chatSlide.drag = 0
+            return
+        }
+
+        if !isChatCardWide {
+            isChatCardWide = true
+        }
+
+        chatSlide.drag = translation
+    }
+
+    // settles on the side it was let go nearer, a flick counting for where it was headed
+    private func releaseChat(_ translation: CGFloat, velocity: CGFloat) {
+        let resting: CGFloat = isChatExpanded ? 0 : listWidth
+        let landing = resting + translation + velocity * 0.2
+
+        settleChat(expanded: landing < listWidth / 2)
+    }
+
+    private func expandForTyping() {
+        settleChat(expanded: true)
+    }
+
+    private func toggleChat() {
+        settleChat(expanded: !isChatExpanded)
+    }
+
+    private func settleChat(expanded: Bool) {
+        // put back beside the list the chat is no longer being typed in
+        if !expanded {
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        }
+
+        // let go where it started beside the list, there is nothing to animate
+        if !expanded && !isChatExpanded && chatSlide.drag == 0 {
+            isChatCardWide = false
+            return
+        }
+
+        isChatCardWide = true
+
+        withAnimation(.interactiveSpring(response: 0.35, dampingFraction: 0.86)) {
+            isChatExpanded = expanded
+            chatSlide.drag = 0
+        } completion: {
+            if !isChatExpanded && chatSlide.drag == 0 {
+                isChatCardWide = false
+            }
+        }
+    }
+
+    private func collapseChat() {
+        guard isChatExpanded else {
+            return
+        }
+
+        settleChat(expanded: false)
+    }
+
     @ViewBuilder
     private var detail: some View {
         if let detailChannelId, session.channel(detailChannelId) != nil {
@@ -219,6 +327,10 @@ struct HomeView: View {
 
         return panel
             .clipShape(UnevenRoundedRectangle(topLeadingRadius: radius, topTrailingRadius: trailingRadius, style: .continuous))
+            // under the panel alone, centred in its lighter grey rather than across the rail
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                bottomBars
+            }
             .background {
                 // runs on under the user bar, so the bottom has no strip of the rail's color
                 UnevenRoundedRectangle(
@@ -243,7 +355,7 @@ struct HomeView: View {
                     .environment(voiceSession)
             }
 
-            UserBar()
+            UserBar(isCompact: isSplit)
         }
         .padding(.horizontal, 8)
         .padding(.top, 6)
@@ -421,5 +533,67 @@ struct PanelHeader<Trailing: View>: View {
         .padding(.horizontal, 16)
         .padding(.top, 16)
         .padding(.bottom, 10)
+    }
+}
+
+// the handle's drag, held apart from the home screen's state so a moving finger redraws the
+// sliding card alone
+@Observable
+private final class ChatSlide {
+    var drag: CGFloat = 0
+}
+
+// the chat card moved by the drag in progress, between beside the list and over it
+private struct SlidingCard<Content: View>: View {
+    let slide: ChatSlide
+    let resting: CGFloat
+    let farthest: CGFloat
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        content
+            .offset(x: min(max(resting + slide.drag, 0), farthest))
+    }
+}
+
+// a grip on the chat card's left edge, dragged to slide the card over the list and back or
+// tapped to do it in one go. the drag lives on the grip alone, so it never competes with the
+// messages' scrolling or a tap on a picture or a link
+private struct ChatHandle: View {
+    static let width: CGFloat = 28
+
+    let onDrag: (CGFloat) -> Void
+    let onRelease: (CGFloat, CGFloat) -> Void
+    let onTap: () -> Void
+
+    var body: some View {
+        Capsule()
+            .fill(Theme.muted)
+            .frame(width: 4, height: 34)
+            .frame(width: 22, height: 70)
+            .background(Color(hex: "#3D3F46"), in: .capsule)
+            .shadow(color: .black.opacity(0.45), radius: 8)
+            .frame(width: Self.width, height: 96)
+            .contentShape(.rect)
+            .gesture(drag)
+            .accessibilityElement()
+            .accessibilityLabel("Resize chat")
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction { onTap() }
+    }
+
+    // measured on the screen, the grip moving under the finger along with the card
+    private var drag: some Gesture {
+        DragGesture(minimumDistance: 0, coordinateSpace: .global)
+            .onChanged { value in
+                onDrag(value.translation.width)
+            }
+            .onEnded { value in
+                if abs(value.translation.width) < 4 && abs(value.translation.height) < 4 {
+                    onTap()
+                } else {
+                    onRelease(value.translation.width, value.velocity.width)
+                }
+            }
     }
 }

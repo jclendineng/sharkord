@@ -5,6 +5,7 @@ struct ChatScreen: View {
 
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.showChannelList) private var showChannelList
 
     @State private var isPinsPresented = false
 
@@ -64,6 +65,13 @@ struct ChatScreen: View {
         .toolbarBackgroundVisibility(.visible, for: .navigationBar)
         .toolbarVisibility(.hidden, for: .tabBar)
         .toolbar {
+            if let showChannelList {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Channels", systemImage: "chevron.left", action: showChannelList)
+                        .tint(Theme.header)
+                }
+            }
+
             PlainToolbarItem(placement: .topBarLeading) {
                 NavigationLink(value: ChannelInfoRoute(channelId: channelId)) {
                     ChatTitle(
