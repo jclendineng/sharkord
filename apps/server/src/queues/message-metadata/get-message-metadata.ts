@@ -6,6 +6,7 @@ import { db } from '../../db';
 import { getSettings } from '../../db/queries/server';
 import { messages } from '../../db/schema';
 import { isPrivateIP } from '../../helpers/network';
+import { logger } from '../../logger';
 import { fetchPage } from './fetch-page';
 import {
   createDirectMediaMetadata,
@@ -84,9 +85,17 @@ const urlMetadataParser = async (
 
         if (page) {
           metadata = await getPreviewFromContent(page);
+        } else {
+          // a private address with the server network setting off, or too many redirects
+          logger.info('Link preview skipped for %s: address not allowed', url);
         }
-      } catch {
-        // unreachable, refused, timed out or not a page
+      } catch (error) {
+        // unreachable, refused, timed out or not a page, said in the log so an admin can tell
+        logger.info(
+          'Link preview failed for %s: %s',
+          url,
+          error instanceof Error ? error.message : String(error)
+        );
       }
 
       if (!metadata) return;
