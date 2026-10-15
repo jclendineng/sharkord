@@ -79,8 +79,8 @@ struct DirectMessagesPanel: View {
             .buttonStyle(.plain)
 
             Button(action: openNewMessage) {
-                Image(systemName: "plus")
-                    .font(.body.weight(.bold))
+                Image(systemName: "square.and.pencil")
+                    .font(.body.weight(.semibold))
                     .foregroundStyle(.white)
                     .frame(width: 44, height: 44)
                     .background(Theme.blurple, in: .rect(cornerRadius: 12, style: .continuous))
