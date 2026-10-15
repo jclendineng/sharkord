@@ -173,10 +173,43 @@ const declaresPreviewImage = (html: string) =>
     html
   );
 
+// a page's icons, the sharpest first: the home screen icon made for phones, then the largest of
+// its declared sizes, then whatever else it had. a 16 pixel favicon stretched over a card is a blur
+const rankFavicons = (html: string, pageUrl: string, found: string[]) => {
+  const ranked: { href: string; score: number }[] = [];
+
+  for (const [tag] of html.matchAll(/<link\b[^>]*>/gi)) {
+    const rel =
+      /\brel\s*=\s*["']([^"']+)["']/i.exec(tag)?.[1]?.toLowerCase() ?? '';
+    const href = /\bhref\s*=\s*["']([^"']+)["']/i.exec(tag)?.[1];
+
+    if (!href || !rel.includes('icon')) {
+      continue;
+    }
+
+    const sizes = /\bsizes\s*=\s*["'](\d+)x\d+["']/i.exec(tag)?.[1];
+    const size = sizes ? Number(sizes) : 0;
+    const isTouchIcon = rel.includes('apple-touch-icon');
+
+    ranked.push({
+      href,
+      score: (isTouchIcon ? 1000 : 0) + Math.max(size, isTouchIcon ? 180 : 0)
+    });
+  }
+
+  const best = ranked
+    .sort((a, b) => b.score - a.score)
+    .map(({ href }) => normalizeAbsoluteUrl(pageUrl, href))
+    .filter((href): href is string => !!href);
+
+  return Array.from(new Set([...best, ...found]));
+};
+
 export {
   createDirectMediaMetadata,
   createOpenGraphMetadata,
   declaresPreviewImage,
   getDirectMediaMetaFromUrl,
+  rankFavicons,
   sanitizeContent
 };

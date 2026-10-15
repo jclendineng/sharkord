@@ -370,23 +370,3 @@ private struct SearchCard<Preview: View, Details: View>: View {
     }
 }
 
-// a page without a picture of its own shows its icon in the card's picture, the way a site's
-// icon stands in for it on a home screen
-private struct SiteIcon<Fallback: View>: View {
-    let url: URL
-    let fallback: Fallback
-
-    var body: some View {
-        AsyncImage(url: url) { phase in
-            if case .success(let image) = phase {
-                image
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 64, height: 64)
-                    .clipShape(.rect(cornerRadius: 14, style: .continuous))
-            } else {
-                fallback
-            }
-        }
-    }
-}

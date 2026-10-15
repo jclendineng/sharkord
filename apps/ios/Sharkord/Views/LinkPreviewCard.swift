@@ -69,7 +69,7 @@ struct LinkPreviewCard: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                     if imageURL == nil, let faviconURL = preview.faviconURL {
-                        FaviconImage(url: faviconURL)
+                        SiteIcon(url: faviconURL)
                     }
                 }
 
@@ -115,19 +115,63 @@ struct LinkPreviewCard: View {
     }
 }
 
-// a page's icon, which takes no room when it will not load
-private struct FaviconImage: View {
+// a site's icon in a 64 point tile. a big one fills it, a tiny favicon sits in the middle at half
+// the size with its pixels kept sharp, where stretching it to the whole tile would only blur it
+struct SiteIcon<Fallback: View>: View {
     let url: URL
+    let fallback: Fallback
+
+    @State private var image: UIImage?
+    @State private var hasFailed = false
+
+    private static var tileSize: CGFloat { 64 }
 
     var body: some View {
-        AsyncImage(url: url) { phase in
-            if case .success(let image) = phase {
-                image
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 64, height: 64)
-                    .clipShape(.rect(cornerRadius: 10, style: .continuous))
+        Group {
+            if let image {
+                if image.size.width * image.scale < Self.tileSize * 1.5 {
+                    Image(uiImage: image)
+                        .resizable()
+                        .interpolation(.none)
+                        .scaledToFit()
+                        .frame(width: Self.tileSize / 2, height: Self.tileSize / 2)
+                        .frame(width: Self.tileSize, height: Self.tileSize)
+                        .background(Theme.deepBackground, in: .rect(cornerRadius: 14, style: .continuous))
+                } else {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: Self.tileSize, height: Self.tileSize)
+                        .clipShape(.rect(cornerRadius: 14, style: .continuous))
+                }
+            } else if hasFailed {
+                fallback
+            } else {
+                Color.clear
+                    .frame(width: Self.tileSize, height: Self.tileSize)
             }
         }
+        .task(id: url) {
+            await load()
+        }
+    }
+
+    private func load() async {
+        guard
+            let (data, response) = try? await URLSession.shared.data(from: url),
+            (response as? HTTPURLResponse)?.statusCode == 200,
+            let loaded = UIImage(data: data)
+        else {
+            hasFailed = true
+            return
+        }
+
+        image = loaded
+    }
+}
+
+extension SiteIcon where Fallback == EmptyView {
+    init(url: URL) {
+        self.init(url: url, fallback: EmptyView())
     }
 }

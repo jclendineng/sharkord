@@ -3,7 +3,11 @@ import { eq } from 'drizzle-orm';
 import { tdb } from '../../../__tests__/setup';
 import { messages, settings } from '../../../db/schema';
 import { processMessageMetadata } from '../get-message-metadata';
-import { createOpenGraphMetadata, getDirectMediaMetaFromUrl } from '../helpers';
+import {
+  createOpenGraphMetadata,
+  getDirectMediaMetaFromUrl,
+  rankFavicons
+} from '../helpers';
 
 const insertMessage = async (content: string) => {
   const [row] = await tdb
@@ -216,6 +220,34 @@ describe('link previews of the server network', () => {
 });
 
 describe('message metadata normalization', () => {
+  test("puts a page's sharpest icon first", () => {
+    const html = `<head>
+      <link rel="icon" href="/favicon.ico" />
+      <link rel="icon" sizes="32x32" href="/icon-32.png" />
+      <link rel="apple-touch-icon" href="/touch.png" />
+      <link rel="icon" sizes="192x192" href="/icon-192.png" />
+    </head>`;
+
+    expect(
+      rankFavicons(html, 'https://example.com/page', [
+        'https://example.com/favicon.ico'
+      ])
+    ).toEqual([
+      'https://example.com/touch.png',
+      'https://example.com/icon-192.png',
+      'https://example.com/icon-32.png',
+      'https://example.com/favicon.ico'
+    ]);
+  });
+
+  test('keeps the icons it was given when a page declares none', () => {
+    expect(
+      rankFavicons('<head></head>', 'https://example.com/', [
+        'https://example.com/favicon.ico'
+      ])
+    ).toEqual(['https://example.com/favicon.ico']);
+  });
+
   test('normalizes link-preview-js style previews into open graph metadata', () => {
     const metadata = createOpenGraphMetadata(
       {

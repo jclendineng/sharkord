@@ -12,6 +12,7 @@ import {
   createOpenGraphMetadata,
   declaresPreviewImage,
   getDirectMediaMetaFromUrl,
+  rankFavicons,
   sanitizeContent
 } from './helpers';
 
@@ -92,6 +93,17 @@ const urlMetadataParser = async (
             'images' in metadata
           ) {
             metadata = { ...metadata, images: [] };
+          }
+
+          if (page.data && 'favicons' in metadata) {
+            metadata = {
+              ...metadata,
+              favicons: rankFavicons(
+                page.data,
+                page.url,
+                metadata.favicons ?? []
+              )
+            };
           }
         }
       } catch {
