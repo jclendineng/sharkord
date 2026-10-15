@@ -88,7 +88,7 @@ final class ApproveDeviceUITests: XCTestCase {
         field.typeText(server)
         app.buttons["Next"].tap()
 
-        let another = app.buttons["Sign In With Another Device"]
+        let another = app.buttons["Log In With a QR Code"]
 
         XCTAssertTrue(another.waitForExistence(timeout: 10))
         another.tap()

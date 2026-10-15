@@ -1,8 +1,10 @@
 # Changelog
 
 Notable changes to this fork of [Sharkord](https://github.com/Sharkord/sharkord). The format
-follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Server and web client
-versions follow upstream's numbering; the iOS app has its own (currently 0.1.0).
+follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+
+The iOS app has its own version numbers, starting at 0.1.0. The server and the web client keep
+upstream's numbering, so a server release names the upstream version it is built on.
 
 Everything here works with any server it is pointed at. Nothing is tied to one domain.
 
@@ -35,8 +37,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   members.
 - Sign in without typing a password by QR code, both ways:
   - A signed in device shows a code, and the new device scans it.
-  - A device with no camera, such as a Mac mini, shows a code, and a signed in phone scans
-    and approves it.
+  - A device with no camera, such as a Mac mini, shows a code from **Log In With a QR Code**
+    on the welcome screen, and a signed in phone scans and approves it.
 - Alerts on your other devices when a new device signs in, opening the Devices screen.
 - Invite links open the app on any server, through `sharkord://`.
 - Message actions and composer like Discord's: reply, edit, react, forward, pin, mark unread

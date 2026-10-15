@@ -20,6 +20,8 @@ struct ConnectView: View {
     private enum Intent: Equatable {
         case login
         case register
+        // past the server, straight to a qr code for a signed in phone to scan
+        case code
     }
 
     // false for the very first server, there is nothing to go back to
@@ -142,10 +144,18 @@ struct ConnectView: View {
                 }
 
                 // a device already signed in shows a code in settings, no server or password to
-                // type. left out where there is no camera to scan it with, a mac mini or studio
+                // type. where there is no camera to scan it with, a mac mini or a studio, this
+                // device shows a code for a signed in phone to scan instead
                 if hasCamera {
                     Button(action: showScanner) {
                         Label("Scan a QR Code", systemImage: "qrcode.viewfinder")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity, minHeight: 40)
+                    }
+                } else {
+                    Button(action: startCodeLogin) {
+                        Label("Log In With a QR Code", systemImage: "qrcode")
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity, minHeight: 40)
@@ -277,7 +287,7 @@ struct ConnectView: View {
         // for a device with no camera to scan a code with, a mac mini or a studio: it shows one
         // instead, for a phone already signed in to scan and approve
         Button(action: showRequestCode) {
-            Label("Sign In With Another Device", systemImage: "qrcode")
+            Label("Log In With a QR Code", systemImage: "qrcode")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Theme.link)
                 .frame(maxWidth: .infinity, minHeight: 40)
@@ -436,6 +446,11 @@ struct ConnectView: View {
         step = .server(.login)
     }
 
+    private func startCodeLogin() {
+        session.errorMessage = nil
+        step = .server(.code)
+    }
+
     private func switchToRegister() {
         session.errorMessage = nil
         step = .register
@@ -559,7 +574,12 @@ struct ConnectView: View {
         Task {
             do {
                 serverInfo = try await AuthAPI.fetchInfo(address)
-                step = intent == .register || inviteCode != nil ? .register : .login
+
+                if intent == .code {
+                    showRequestCode()
+                } else {
+                    step = intent == .register || inviteCode != nil ? .register : .login
+                }
             } catch {
                 serverError = "Couldn't reach a Sharkord server there. Check the address and try again."
             }
