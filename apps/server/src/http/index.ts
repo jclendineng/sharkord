@@ -23,6 +23,7 @@ import { infoRouteHandler } from './info';
 import { interfaceRouteHandler } from './interface';
 import { loginRouteHandler } from './login';
 import { loginLinkRouteHandler } from './login-link';
+import { loginRequestRouteHandler } from './login-request';
 import { manifestRouteHandler } from './manifest';
 import { oidcBackchannelLogoutRouteHandler } from './oidc/backchannel-logout';
 import { oidcCallbackRouteHandler } from './oidc/callback';
@@ -95,6 +96,7 @@ const routeHandlers: Partial<
       '/upload': uploadFileRouteHandler,
       '/login': loginRouteHandler,
       '/login/link': loginLinkRouteHandler,
+      '/login/request': loginRequestRouteHandler,
       '/oidc/exchange': oidcExchangeRouteHandler,
       '/oidc/backchannel-logout': oidcBackchannelLogoutRouteHandler
     },

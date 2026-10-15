@@ -715,6 +715,30 @@ const loginLinks = sqliteTable(
   (t) => [index('login_links_user_idx').on(t.userId)]
 );
 
+// the other way round, for a device without a camera: it asks to be signed in and shows a qr
+// code, and a device already signed in scans that and approves it for its own account. only the
+// asking device holds the poll key that collects the session
+const loginRequests = sqliteTable(
+  'login_requests',
+  {
+    id: text('id').primaryKey(),
+    secretHash: text('secret_hash').notNull(),
+    pollKeyHash: text('poll_key_hash').notNull(),
+    // set by whoever approves it
+    userId: integer('user_id').references(() => users.id, {
+      onDelete: 'cascade'
+    }),
+    // waiting, approved or denied
+    status: text('status').notNull(),
+    requestOs: text('request_os'),
+    requestDevice: text('request_device'),
+    requestIp: text('request_ip'),
+    createdAt: integer('created_at').notNull(),
+    expiresAt: integer('expires_at').notNull()
+  },
+  (t) => [index('login_requests_expires_idx').on(t.expiresAt)]
+);
+
 // what someone wrote about another member for themselves, as discord's note on a profile: only
 // its author ever reads it
 const userNotes = sqliteTable(
@@ -925,6 +949,7 @@ export {
   groupDms,
   invites,
   loginLinks,
+  loginRequests,
   logins,
   messageFiles,
   messageReactions,

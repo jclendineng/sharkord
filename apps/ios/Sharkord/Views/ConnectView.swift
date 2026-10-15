@@ -13,6 +13,8 @@ struct ConnectView: View {
         case register
         // waiting for the device showing the qr code to approve
         case link(ServerListStore.LinkLogin)
+        // showing a qr code for a device already signed in to scan and approve
+        case requestCode
     }
 
     private enum Intent: Equatable {
@@ -38,6 +40,9 @@ struct ConnectView: View {
     @State private var isScannerPresented = false
     private let hasCamera = AVCaptureDevice.default(for: .video) != nil
     @State private var isCheckingServer = false
+    @State private var loginRequest: AuthAPI.LoginRequest?
+    // a new code asked for after the last one ran out or was declined
+    @State private var requestAttempt = 0
 
     var body: some View {
         ZStack {
@@ -65,6 +70,11 @@ struct ConnectView: View {
             case .link(let login):
                 AuthCard(onBack: back) {
                     linkCard(login)
+                }
+                .transition(.move(edge: .trailing).combined(with: .opacity))
+            case .requestCode:
+                AuthCard(onBack: back) {
+                    requestCodeCard
                 }
                 .transition(.move(edge: .trailing).combined(with: .opacity))
             }
@@ -177,6 +187,50 @@ struct ConnectView: View {
     }
 
     @ViewBuilder
+    private var requestCodeCard: some View {
+        AuthTitle(title: "Scan with your phone", subtitle: "On a phone signed in to this server, open Sharkord, go to Settings, Sign In Another Device and tap Scan a Code. Its camera app works too.")
+
+        Group {
+            if let loginRequest, let url = approvalURL(for: loginRequest), let image = QRCode.image(url) {
+                Image(uiImage: image)
+                    .interpolation(.none)
+                    .resizable()
+                    .scaledToFit()
+                    .padding(14)
+                    .background(.white, in: .rect(cornerRadius: 16))
+            } else if session.errorMessage == nil {
+                ProgressView()
+                    .tint(.white)
+            }
+        }
+        .frame(width: 220, height: 220)
+        .frame(maxWidth: .infinity)
+
+        if let loginRequest, session.errorMessage == nil {
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                let remaining = max(0, Int(Double(loginRequest.expiresAt) / 1000 - context.date.timeIntervalSince1970))
+
+                Text("Waiting for approval, \(remaining / 60):\(String(format: "%02d", remaining % 60)) left")
+                    .font(.footnote.monospacedDigit())
+                    .foregroundStyle(Theme.muted)
+                    .frame(maxWidth: .infinity)
+            }
+        }
+
+        errorText
+
+        if session.errorMessage != nil {
+            AuthButton(title: "Show a New Code", isEnabled: true, isWorking: false, action: retryRequestCode)
+        }
+
+        Color.clear
+            .frame(height: 0)
+            .task(id: requestAttempt) {
+                await runLoginRequest()
+            }
+    }
+
+    @ViewBuilder
     private func serverCard(intent: Intent) -> some View {
         AuthTitle(title: "Enter your server", subtitle: "The address you use to reach it, like chat.example.com, or the invite link you were sent.")
 
@@ -219,6 +273,16 @@ struct ConnectView: View {
         }
 
         ssoOption(title: "Log in with SSO")
+
+        // for a device with no camera to scan a code with, a mac mini or a studio: it shows one
+        // instead, for a phone already signed in to scan and approve
+        Button(action: showRequestCode) {
+            Label("Sign In With Another Device", systemImage: "qrcode")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Theme.link)
+                .frame(maxWidth: .infinity, minHeight: 40)
+        }
+        .buttonStyle(.plain)
 
         if serverInfo?.allowNewUsers == true {
             HStack(spacing: 4) {
@@ -395,6 +459,57 @@ struct ConnectView: View {
             step = .server(step == .register ? .register : .login)
         case .link:
             step = .welcome
+        case .requestCode:
+            loginRequest = nil
+            step = .login
+        }
+    }
+
+    private func showRequestCode() {
+        session.errorMessage = nil
+        loginRequest = nil
+        step = .requestCode
+    }
+
+    private func retryRequestCode() {
+        session.errorMessage = nil
+        loginRequest = nil
+        requestAttempt += 1
+    }
+
+    // sharkord://approve?server=…&request=…, which a signed in phone opens to approve this device
+    private func approvalURL(for request: AuthAPI.LoginRequest) -> String? {
+        guard let address = ServerAddress(userInput: serverURL) else {
+            return nil
+        }
+
+        var components = URLComponents()
+        components.scheme = "sharkord"
+        components.host = "approve"
+        components.queryItems = [
+            URLQueryItem(name: "server", value: address.baseURL.absoluteString),
+            URLQueryItem(name: "request", value: request.token)
+        ]
+
+        return components.url?.absoluteString
+    }
+
+    // a code to show, then waiting on it until a phone approves it, it is declined or runs out
+    private func runLoginRequest() async {
+        guard let address = ServerAddress(userInput: serverURL) else {
+            session.errorMessage = "That doesn't look like a server address."
+            return
+        }
+
+        do {
+            let request = try await AuthAPI.startLoginRequest(address)
+
+            loginRequest = request
+            await session.signIn(address: address, loginRequest: request)
+        } catch is CancellationError {
+            return
+        } catch {
+            session.errorMessage = error.localizedDescription
         }
     }
 

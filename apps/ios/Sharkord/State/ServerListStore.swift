@@ -106,6 +106,45 @@ final class ServerListStore {
     var pendingInviteLink: String?
     // a sign in qr code scanned with the camera app, the same
     var pendingLinkLogin: LinkLogin?
+    // another device's code asking to be signed in, scanned here, waiting to be approved
+    var pendingApproval: LoginApproval?
+
+    struct LoginApproval: Identifiable, Equatable {
+        let server: String
+        let token: String
+
+        var id: String {
+            token
+        }
+
+        // sharkord://approve?server=…&request=…, what a device without a camera shows
+        init?(url: URL) {
+            guard url.scheme == "sharkord", url.host() == "approve" else {
+                return nil
+            }
+
+            let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+
+            guard
+                let server = items.first(where: { $0.name == "server" })?.value,
+                let token = items.first(where: { $0.name == "request" })?.value,
+                !server.isEmpty, !token.isEmpty
+            else {
+                return nil
+            }
+
+            self.server = server
+            self.token = token
+        }
+    }
+
+    // the server here that a request comes from, the only one that can approve it. still
+    // reconnecting counts: a code scanned with the camera app opens the app before it has
+    func session(approving approval: LoginApproval) -> SessionStore? {
+        let address = ServerAddress(userInput: approval.server)
+
+        return sessions.first { $0.address == address }
+    }
 
     struct LinkLogin: Equatable {
         let server: String
@@ -135,6 +174,17 @@ final class ServerListStore {
     // an invite link tapped anywhere: a server already signed in to just opens, as discord does
     // for a server you are in, and any other starts adding it with the invite filled in
     func open(inviteURL url: URL) {
+        if let approval = LoginApproval(url: url) {
+            guard let session = session(approving: approval) else {
+                selectedSession?.showError(AuthAPI.RequestError(message: "Sign in to that server on this device first, then scan the code again."))
+                return
+            }
+
+            select(session)
+            pendingApproval = approval
+            return
+        }
+
         if let login = LinkLogin(url: url) {
             pendingLinkLogin = login
             signingInSession = makeSession(nil)

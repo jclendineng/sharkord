@@ -105,6 +105,58 @@ enum AuthAPI {
         }
     }
 
+    // a sign in this device asks for, when it has no camera to scan another's code with: it
+    // shows the token as a qr code and keeps the poll key to itself
+    struct LoginRequest: Decodable, Equatable {
+        let id: String
+        let token: String
+        let pollKey: String
+        let expiresAt: Int
+    }
+
+    private struct LoginRequestPoll: Encodable {
+        let id: String
+        let pollKey: String
+    }
+
+    private struct EmptyBody: Encodable {}
+
+    static func startLoginRequest(_ address: ServerAddress) async throws -> LoginRequest {
+        let (data, response) = try await postLoginRequest(address, body: EmptyBody())
+
+        try check(data, response)
+
+        return try JSONDecoder().decode(LoginRequest.self, from: data)
+    }
+
+    // every couple of seconds until a signed in device approves it, declines it or it runs out
+    static func waitForLoginRequestApproval(_ address: ServerAddress, request: LoginRequest) async throws -> String {
+        while true {
+            let poll = LoginRequestPoll(id: request.id, pollKey: request.pollKey)
+            let (data, response) = try await postLoginRequest(address, body: poll)
+
+            try check(data, response)
+
+            let body = try JSONDecoder().decode(LinkResponse.self, from: data)
+
+            if let sessionToken = body.token {
+                return sessionToken
+            }
+
+            try await Task.sleep(for: .seconds(2))
+        }
+    }
+
+    private static func postLoginRequest(_ address: ServerAddress, body: some Encodable) async throws -> (Data, URLResponse) {
+        var request = URLRequest(url: address.url(path: "login/request"))
+        request.httpMethod = "POST"
+        request.setValue(AppInfo.userAgent, forHTTPHeaderField: "User-Agent")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONEncoder().encode(body)
+
+        return try await URLSession.shared.data(for: request)
+    }
+
     private static func check(_ data: Data, _ response: URLResponse) throws {
         guard let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) else {
             return

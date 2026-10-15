@@ -333,3 +333,15 @@ shows which device it is (`sessions.getLoginLink`) and approves or declines it
 last two minutes, only their hashes are stored, a new code replaces the old one, and nothing is
 typed on the new device. Code `apps/server/src/helpers/login-links.ts`.
 
+The other way round, for a device without a camera such as a Mac mini: after its server address,
+**Sign In With Another Device** on the login card asks the server for a request
+(`POST /login/request`), which returns a token for a QR code, `sharkord://approve?server=…&request=…`,
+and a poll key the device keeps to itself. A phone already signed in to that server scans it with
+**Settings, Sign In Another Device, Scan a Code Instead**, or the Camera app, sees which device
+is asking (`sessions.getLoginRequest`) and approves or declines it for its own account
+(`sessions.approveLoginRequest`). The asking device polls the same route with its key and gets
+its session once approved. The key never goes in the QR code, so whoever scans it can approve
+it but never collect it. Requests last two minutes, only hashes are stored, and expired ones are
+swept away with each new one. The server address is still typed on the new device, since without
+it there is nothing to ask. Code `apps/server/src/helpers/login-requests.ts`.
+

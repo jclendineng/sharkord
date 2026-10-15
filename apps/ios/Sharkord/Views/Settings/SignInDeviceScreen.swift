@@ -1,4 +1,4 @@
-import CoreImage.CIFilterBuiltins
+import AVFoundation
 import SwiftUI
 
 // signing another device in without typing anything: this one shows a qr code holding the
@@ -22,6 +22,10 @@ struct SignInDeviceScreen: View {
     @State private var state: LoginLinkState?
     @State private var errorMessage: String?
     @State private var isAnswering = false
+    // the other way round: a device with no camera shows the code, this one scans it
+    @State private var isScannerPresented = false
+    @State private var scannedApproval: ServerListStore.LoginApproval?
+    private let hasCamera = AVCaptureDevice.default(for: .video) != nil
 
     private var claimedDevice: String {
         let parts = [state?.os, state?.device].compactMap { $0 }.filter { !$0.isEmpty }
@@ -76,6 +80,35 @@ struct SignInDeviceScreen: View {
         .task {
             await run()
         }
+        .sheet(isPresented: $isScannerPresented) {
+            QRScannerSheet(onScan: scanned)
+        }
+        .sheet(item: $scannedApproval) { approval in
+            ApproveDeviceSheet(token: approval.token)
+                .environment(session)
+        }
+    }
+
+    private func showScanner() {
+        isScannerPresented = true
+    }
+
+    // only a code from this server, the one this device can approve for
+    private func scanned(_ code: String) {
+        isScannerPresented = false
+
+        guard let url = URL(string: code), let approval = ServerListStore.LoginApproval(url: url) else {
+            errorMessage = "That isn't a Sharkord sign in code."
+            return
+        }
+
+        guard ServerAddress(userInput: approval.server) == session.address else {
+            errorMessage = "That code is for another server. Scan it from that server's settings."
+            return
+        }
+
+        errorMessage = nil
+        scannedApproval = approval
     }
 
     private var code: some View {
@@ -86,7 +119,7 @@ struct SignInDeviceScreen: View {
                 .multilineTextAlignment(.center)
 
             Group {
-                if let qrURL, let image = Self.qrImage(qrURL) {
+                if let qrURL, let image = QRCode.image(qrURL) {
                     Image(uiImage: image)
                         .interpolation(.none)
                         .resizable()
@@ -98,6 +131,21 @@ struct SignInDeviceScreen: View {
                 }
             }
             .frame(width: 260, height: 260)
+
+            if hasCamera {
+                Button(action: showScanner) {
+                    Label("Scan a Code Instead", systemImage: "qrcode.viewfinder")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.link)
+                        .frame(maxWidth: .infinity, minHeight: 40)
+                }
+                .buttonStyle(.plain)
+
+                Text("For a device without a camera, like a Mac mini: it shows a code under Sign In With Another Device, and you scan it here.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.muted)
+                    .multilineTextAlignment(.center)
+            }
 
             if let link {
                 TimelineView(.periodic(from: .now, by: 1)) { context in
@@ -208,19 +256,4 @@ struct SignInDeviceScreen: View {
     }
 
     private struct EmptyInput: Encodable {}
-
-    private static func qrImage(_ text: String) -> UIImage? {
-        let filter = CIFilter.qrCodeGenerator()
-        filter.message = Data(text.utf8)
-        filter.correctionLevel = "M"
-
-        guard
-            let output = filter.outputImage,
-            let cgImage = CIContext().createCGImage(output, from: output.extent)
-        else {
-            return nil
-        }
-
-        return UIImage(cgImage: cgImage)
-    }
 }

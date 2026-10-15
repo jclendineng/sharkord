@@ -1,7 +1,9 @@
 import { t } from '../../utils/trpc';
 import { approveLoginLinkRoute } from './approve-login-link';
+import { approveLoginRequestRoute } from './approve-login-request';
 import { createLoginLinkRoute } from './create-login-link';
 import { getLoginLinkRoute } from './get-login-link';
+import { getLoginRequestRoute } from './get-login-request';
 import { getSessionsRoute } from './get-sessions';
 import { refreshTokenRoute } from './refresh-token';
 import { revokeOtherSessionsRoute } from './revoke-other-sessions';
@@ -14,5 +16,7 @@ export const sessionsRouter = t.router({
   refreshToken: refreshTokenRoute,
   createLoginLink: createLoginLinkRoute,
   getLoginLink: getLoginLinkRoute,
-  approveLoginLink: approveLoginLinkRoute
+  approveLoginLink: approveLoginLinkRoute,
+  getLoginRequest: getLoginRequestRoute,
+  approveLoginRequest: approveLoginRequestRoute
 });

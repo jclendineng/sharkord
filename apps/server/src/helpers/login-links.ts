@@ -101,6 +101,7 @@ export {
   createLoginLink,
   deleteLoginLink,
   getLoginLinkByToken,
+  hash as hashLoginSecret,
   matches as matchesLoginLinkSecret,
   setLoginLinkStatus
 };
