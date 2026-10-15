@@ -850,6 +850,10 @@ struct PinnedMessageRow: View {
                             .clipShape(.rect(cornerRadius: 8))
                     }
 
+                    ForEach(message.linkPreviews, id: \.url) { preview in
+                        LinkPreviewCard(preview: preview)
+                    }
+
                     ForEach(message.files) { file in
                         AttachmentView(file: file)
                     }

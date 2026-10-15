@@ -108,17 +108,20 @@ struct LinkCardTile: View {
                             linkIcon
                         }
                     }
+                } else if let favicon = preview?.faviconURL {
+                    SiteIcon(url: favicon, fallback: linkIcon)
                 } else {
                     linkIcon
                 }
             } details: {
-                Text(preview?.title ?? url.host() ?? url.absoluteString)
+                // discord's: the page's name, or the link itself when it has none, then the link
+                Text(preview?.title ?? url.absoluteString)
                     .font(.headline)
                     .foregroundStyle(Theme.header)
-                    .lineLimit(2)
+                    .lineLimit(1)
                     .multilineTextAlignment(.leading)
 
-                Text(url.host() ?? url.absoluteString)
+                Text(url.absoluteString)
                     .font(.subheadline)
                     .foregroundStyle(Theme.link)
                     .lineLimit(1)
@@ -205,6 +208,8 @@ struct PinCardTile: View {
         } else if let sticker = message.sticker {
             AnimatedImage(url: session.address?.fileURL(sticker.file), maxPointSize: 160, contentMode: .scaleAspectFit)
                 .padding(12)
+        } else if let favicon = message.linkPreviews.first.flatMap({ $0.previewImageURL == nil ? $0.faviconURL : nil }) {
+            SiteIcon(url: favicon, fallback: Theme.deepBackground)
         } else if let linkImage = message.linkPreviews.first?.previewImageURL {
             AsyncImage(url: linkImage) { phase in
                 if case .success(let image) = phase {
@@ -321,5 +326,26 @@ private struct SearchCard<Preview: View, Details: View>: View {
                 .stroke(Theme.divider, lineWidth: 1)
         }
         .contentShape(.rect)
+    }
+}
+
+// a page without a picture of its own shows its icon in the card's picture, the way a site's
+// icon stands in for it on a home screen
+private struct SiteIcon<Fallback: View>: View {
+    let url: URL
+    let fallback: Fallback
+
+    var body: some View {
+        AsyncImage(url: url) { phase in
+            if case .success(let image) = phase {
+                image
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 64, height: 64)
+                    .clipShape(.rect(cornerRadius: 14, style: .continuous))
+            } else {
+                fallback
+            }
+        }
     }
 }
