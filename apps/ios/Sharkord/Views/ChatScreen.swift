@@ -184,6 +184,16 @@ private struct ChatTitle: View {
         isDirectMessage ? partner?.status == .online : session.onlineCount > 0
     }
 
+    // discord's: the person's own status line under their name, their presence already sits on
+    // the avatar beside it
+    private var customStatus: String? {
+        guard isDirectMessage, group == nil, let text = partner?.customStatus, !text.isEmpty else {
+            return nil
+        }
+
+        return text
+    }
+
     var body: some View {
         HStack(spacing: 8) {
             if group != nil {
@@ -211,13 +221,24 @@ private struct ChatTitle: View {
                 }
 
                 HStack(spacing: 4) {
-                    Circle()
-                        .fill(isOnline ? Theme.green : Theme.muted)
-                        .frame(width: 7, height: 7)
+                    if let customStatus {
+                        Image(systemName: "bubble.left.fill")
+                            .font(.caption2)
+                            .foregroundStyle(Theme.muted)
 
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(Theme.muted)
+                        Text(customStatus)
+                            .font(.caption)
+                            .foregroundStyle(Theme.muted)
+                            .lineLimit(1)
+                    } else {
+                        Circle()
+                            .fill(isOnline ? Theme.green : Theme.muted)
+                            .frame(width: 7, height: 7)
+
+                        Text(subtitle)
+                            .font(.caption)
+                            .foregroundStyle(Theme.muted)
+                    }
                 }
             }
         }
