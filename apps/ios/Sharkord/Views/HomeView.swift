@@ -15,6 +15,7 @@ struct HomeView: View {
     // window, it is the phone's, the chat pushed over the list
     @State private var isSplit = false
     @State private var detailChannelId: Int?
+    @State private var searchRoute: SearchRoute?
 
     private static let panelWidth: CGFloat = 320
 
@@ -140,6 +141,25 @@ struct HomeView: View {
         }
         .background(Theme.chatBackground.ignoresSafeArea())
         .opensRequestedChannel($path, detailChannelId: $detailChannelId)
+        .environment(\.presentSearch, showSearch)
+        .fullScreenCover(item: $searchRoute) { route in
+            NavigationStack {
+                SearchScreen(channelId: route.channelId, directMessages: route.directMessages)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button("Close", systemImage: "chevron.left", action: closeSearch)
+                        }
+                    }
+                    .chatDestinations()
+            }
+            .environment(session)
+        }
+        // a result opened from search shows in the chat beside the list, search steps aside
+        .onChange(of: session.requestedChannelId) { _, requested in
+            if requested != nil {
+                searchRoute = nil
+            }
+        }
         .onAppear(perform: showDefaultChannel)
         // the channels arrive after the screen does, the first of them is opened then
         .onChange(of: session.defaultChannelId) {
@@ -188,6 +208,14 @@ struct HomeView: View {
         }
         .padding(.horizontal, 8)
         .padding(.top, 6)
+    }
+
+    private func showSearch(_ route: SearchRoute) {
+        searchRoute = route
+    }
+
+    private func closeSearch() {
+        searchRoute = nil
     }
 
     private func setSplit(_ split: Bool) {

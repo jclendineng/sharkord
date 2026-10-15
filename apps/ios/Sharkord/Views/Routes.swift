@@ -9,10 +9,40 @@ struct ThreadRoute: Hashable {
 }
 
 // from a channel the search starts in it, from the server it covers everything
-struct SearchRoute: Hashable {
+struct SearchRoute: Hashable, Identifiable {
     var channelId: Int?
     // from the messages panel: only direct messages
     var directMessages = false
+
+    var id: Self { self }
+}
+
+extension EnvironmentValues {
+    // set on the ipad's side by side layout, where search covers the whole screen as discord's
+    // does rather than opening in the chat's column
+    @Entry var presentSearch: (@MainActor (SearchRoute) -> Void)?
+}
+
+// a way into search: pushed on a phone, the whole screen on an ipad in landscape
+struct SearchLink<Label: View>: View {
+    let route: SearchRoute
+    @ViewBuilder let label: Label
+
+    @Environment(\.presentSearch) private var presentSearch
+
+    var body: some View {
+        if let presentSearch {
+            Button {
+                presentSearch(route)
+            } label: {
+                label
+            }
+        } else {
+            NavigationLink(value: route) {
+                label
+            }
+        }
+    }
 }
 
 // the channel's own screen, opened from its name: members, media, pins, links and files
@@ -73,6 +103,16 @@ private struct RequestedChannelOpener: ViewModifier {
         if let detailChannelId {
             detailChannelId.wrappedValue = channelId
             path = NavigationPath()
+
+            // the same channel already beside the list is not opened again, so a jump to one
+            // of its messages has to be asked for here
+            let store = session.messages(for: channelId)
+
+            if store.pendingJumpMessageId != nil {
+                Task {
+                    await store.loadIfNeeded()
+                }
+            }
         } else {
             path = NavigationPath([ChatRoute(channelId: channelId)])
         }

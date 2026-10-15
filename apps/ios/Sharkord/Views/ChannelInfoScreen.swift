@@ -47,7 +47,7 @@ struct ChannelInfoScreen: View {
         .toolbarBackgroundVisibility(.visible, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink(value: SearchRoute(channelId: channelId)) {
+                SearchLink(route: SearchRoute(channelId: channelId)) {
                     Image(systemName: "magnifyingglass")
                 }
                 .accessibilityLabel("Search")

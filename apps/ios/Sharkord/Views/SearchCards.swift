@@ -5,13 +5,18 @@ import SwiftUI
 struct SearchCardGrid<Content: View>: View {
     @ViewBuilder let content: Content
 
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 2)
+    // an ipad's cards stay two across as discord's do, just bigger, with more room around them
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    private var spacing: CGFloat {
+        sizeClass == .regular ? 18 : 12
+    }
 
     var body: some View {
-        LazyVGrid(columns: columns, spacing: 12) {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: spacing), count: 2), spacing: spacing) {
             content
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, sizeClass == .regular ? 28 : 14)
     }
 }
 

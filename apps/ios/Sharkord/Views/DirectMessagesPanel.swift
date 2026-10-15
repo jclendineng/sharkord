@@ -60,7 +60,7 @@ struct DirectMessagesPanel: View {
     // discord's row under the title: search, add friends, a new message
     private var actions: some View {
         HStack(spacing: 8) {
-            NavigationLink(value: SearchRoute(channelId: nil, directMessages: true)) {
+            SearchLink(route: SearchRoute(channelId: nil, directMessages: true)) {
                 Image(systemName: "magnifyingglass")
                     .font(.body.weight(.semibold))
                     .foregroundStyle(Theme.text)

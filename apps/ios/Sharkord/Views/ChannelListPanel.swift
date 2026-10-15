@@ -77,7 +77,7 @@ struct ChannelListPanel: View {
             .buttonStyle(.plain)
 
             HStack(spacing: 8) {
-                NavigationLink(value: SearchRoute()) {
+                SearchLink(route: SearchRoute()) {
                     Label("Search", systemImage: "magnifyingglass")
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(Theme.text)

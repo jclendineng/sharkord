@@ -657,14 +657,22 @@ private struct MediaGrid: View {
     // the viewer grows out of the tile and shrinks back into it, as in photos
     @Namespace private var zoom
 
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 3)
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    private var spacing: CGFloat {
+        sizeClass == .regular ? 8 : 4
+    }
+
+    private var columns: [GridItem] {
+        Array(repeating: GridItem(.flexible(), spacing: spacing), count: 3)
+    }
 
     private var shown: [MediaItem] {
         limit.map { Array(items.prefix($0)) } ?? items
     }
 
     var body: some View {
-        LazyVGrid(columns: columns, spacing: 4) {
+        LazyVGrid(columns: columns, spacing: spacing) {
             ForEach(shown) { item in
                 Button {
                     open(item)
