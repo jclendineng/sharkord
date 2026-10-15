@@ -550,6 +550,18 @@ final class SessionStore {
         }
     }
 
+    // a qr code from a device already signed in, approved there rather than typed in here
+    func signIn(serverURL: String, linkToken: String) async {
+        guard let address = ServerAddress(userInput: serverURL) else {
+            errorMessage = "That code doesn't hold a server address."
+            return
+        }
+
+        await signIn(address) {
+            try await AuthAPI.waitForLinkApproval(address, token: linkToken)
+        }
+    }
+
     // authenticate shows the provider in a browser sheet and returns the url it redirected
     // back to, it lives in the view since that is where SwiftUI hands out the session
     func signInWithOIDC(serverURL: String, authenticate: (URL) async throws -> URL) async {

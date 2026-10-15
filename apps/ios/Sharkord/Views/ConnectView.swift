@@ -10,6 +10,8 @@ struct ConnectView: View {
         case server(Intent)
         case login
         case register
+        // waiting for the device showing the qr code to approve
+        case link(ServerListStore.LinkLogin)
     }
 
     private enum Intent: Equatable {
@@ -32,6 +34,7 @@ struct ConnectView: View {
     // an invite link or its code, from the address field or typed in on a closed server
     @State private var invite = ""
     @State private var serverError: String?
+    @State private var isScannerPresented = false
     @State private var isCheckingServer = false
 
     var body: some View {
@@ -57,10 +60,18 @@ struct ConnectView: View {
                     registerCard
                 }
                 .transition(.move(edge: .trailing).combined(with: .opacity))
+            case .link(let login):
+                AuthCard(onBack: back) {
+                    linkCard(login)
+                }
+                .transition(.move(edge: .trailing).combined(with: .opacity))
             }
         }
         .animation(.snappy(duration: 0.3), value: step)
         .onAppear(perform: resumeSignIn)
+        .sheet(isPresented: $isScannerPresented) {
+            QRScannerSheet(onScan: scanned)
+        }
     }
 
 
@@ -117,6 +128,14 @@ struct ConnectView: View {
                         .frame(maxWidth: .infinity, minHeight: 50)
                         .background(Color(hex: "#090B33"), in: .rect(cornerRadius: 12))
                 }
+
+                // a device already signed in shows a code in settings, no server or password to type
+                Button(action: showScanner) {
+                    Label("Scan a QR Code", systemImage: "qrcode.viewfinder")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity, minHeight: 40)
+                }
             }
             .buttonStyle(.plain)
             .frame(maxWidth: 420)
@@ -128,6 +147,29 @@ struct ConnectView: View {
         }
     }
 
+
+    @ViewBuilder
+    private func linkCard(_ login: ServerListStore.LinkLogin) -> some View {
+        AuthTitle(title: "Check your other device", subtitle: "Approve signing in on the device showing the code. It's waiting under Settings, Sign In Another Device.")
+
+        HStack(spacing: 10) {
+            if session.errorMessage == nil {
+                ProgressView()
+                    .tint(.white)
+            }
+
+            Text(ServerAddress(userInput: login.server)?.baseURL.host() ?? login.server)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Theme.text)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+        .task(id: login) {
+            await session.signIn(serverURL: login.server, linkToken: login.token)
+        }
+
+        errorText
+    }
 
     @ViewBuilder
     private func serverCard(intent: Intent) -> some View {
@@ -288,6 +330,13 @@ struct ConnectView: View {
 
     // signing in again to a server whose session ended skips straight to its login card
     private func resumeSignIn() {
+        // a sign in code scanned with the camera app goes straight to waiting for approval
+        if let login = servers.pendingLinkLogin {
+            servers.pendingLinkLogin = nil
+            step = .link(login)
+            return
+        }
+
         // an invite link that opened the app goes straight to making an account with it
         if let link = servers.pendingInviteLink {
             servers.pendingInviteLink = nil
@@ -339,7 +388,25 @@ struct ConnectView: View {
             step = .welcome
         case .login, .register:
             step = .server(step == .register ? .register : .login)
+        case .link:
+            step = .welcome
         }
+    }
+
+    private func showScanner() {
+        isScannerPresented = true
+    }
+
+    private func scanned(_ code: String) {
+        isScannerPresented = false
+
+        guard let url = URL(string: code), let login = ServerListStore.LinkLogin(url: url) else {
+            session.errorMessage = "That isn't a Sharkord sign in code."
+            return
+        }
+
+        session.errorMessage = nil
+        step = .link(login)
     }
 
     private func cancel() {

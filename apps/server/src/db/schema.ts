@@ -692,6 +692,29 @@ const groupDmMembers = sqliteTable(
   ]
 );
 
+// signing a new device in from one already signed in, by a qr code it shows: the new device
+// scans it and claims it, then the signed in one approves it. only hashes of the two secrets are
+// kept, the code in the qr code and the key the claiming device proves itself with
+const loginLinks = sqliteTable(
+  'login_links',
+  {
+    id: text('id').primaryKey(),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    secretHash: text('secret_hash').notNull(),
+    claimKeyHash: text('claim_key_hash'),
+    // waiting, claimed, approved or denied
+    status: text('status').notNull(),
+    claimedOs: text('claimed_os'),
+    claimedDevice: text('claimed_device'),
+    claimedIp: text('claimed_ip'),
+    createdAt: integer('created_at').notNull(),
+    expiresAt: integer('expires_at').notNull()
+  },
+  (t) => [index('login_links_user_idx').on(t.userId)]
+);
+
 // what someone wrote about another member for themselves, as discord's note on a profile: only
 // its author ever reads it
 const userNotes = sqliteTable(
@@ -901,6 +924,7 @@ export {
   groupDmMembers,
   groupDms,
   invites,
+  loginLinks,
   logins,
   messageFiles,
   messageReactions,

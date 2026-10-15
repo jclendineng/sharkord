@@ -66,6 +66,45 @@ enum AuthAPI {
         return try JSONDecoder().decode(LoginResponse.self, from: data).token
     }
 
+    private struct LinkBody: Encodable {
+        let token: String
+        let claimKey: String?
+    }
+
+    private struct LinkResponse: Decodable {
+        let status: String?
+        let claimKey: String?
+        let token: String?
+    }
+
+    // signing in from a qr code another device shows: the first ask claims it, then the device
+    // waits for that one to approve, every couple of seconds until it does or the code runs out
+    static func waitForLinkApproval(_ address: ServerAddress, token: String) async throws -> String {
+        var claimKey: String?
+
+        while true {
+            var request = URLRequest(url: address.url(path: "login/link"))
+            request.httpMethod = "POST"
+            request.setValue(AppInfo.userAgent, forHTTPHeaderField: "User-Agent")
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = try JSONEncoder().encode(LinkBody(token: token, claimKey: claimKey))
+
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            try check(data, response)
+
+            let body = try JSONDecoder().decode(LinkResponse.self, from: data)
+
+            if let sessionToken = body.token {
+                return sessionToken
+            }
+
+            claimKey = body.claimKey ?? claimKey
+
+            try await Task.sleep(for: .seconds(2))
+        }
+    }
+
     private static func check(_ data: Data, _ response: URLResponse) throws {
         guard let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) else {
             return

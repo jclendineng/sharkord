@@ -326,3 +326,13 @@ the new device. The device that signed in is left out, and do not disturb does n
 Tapping it opens that server's Devices, to sign the new one out if it was not you. Code
 `apps/server/src/queues/push-notifications/login.ts`.
 
+Signing in another device with a QR code, for any server: on a device already signed in,
+**Settings, Sign In Another Device** shows a QR code (`sessions.createLoginLink`) holding the
+server's address and a one time code, `sharkord://login?server=…&token=…`. On the new device,
+**Scan a QR Code** on the welcome screen, or the Camera app, reads it. The first device to present
+the code (`POST /login/link`) claims it and is given a key only it holds, the signed in device
+shows which device it is (`sessions.getLoginLink`) and approves or declines it
+(`sessions.approveLoginLink`), and only then does the claiming device get its own session. Codes
+last two minutes, only their hashes are stored, a new code replaces the old one, and nothing is
+typed on the new device. Code `apps/server/src/helpers/login-links.ts`.
+

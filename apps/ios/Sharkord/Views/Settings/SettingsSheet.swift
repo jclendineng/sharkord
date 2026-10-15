@@ -21,6 +21,12 @@ struct SettingsSheet: View {
                     } label: {
                         SettingsRow(title: "Devices", systemImage: "laptopcomputer.and.iphone")
                     }
+
+                    NavigationLink {
+                        SignInDeviceScreen()
+                    } label: {
+                        SettingsRow(title: "Sign In Another Device", systemImage: "qrcode")
+                    }
                 }
 
                 Section("App Settings") {

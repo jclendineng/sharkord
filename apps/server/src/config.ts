@@ -96,6 +96,7 @@ const zConfig = z.object({
     handshake: zRateLimiter,
     updatePassword: zRateLimiter,
     revokeSession: zRateLimiter,
+    loginLink: zRateLimiter,
     adminCreate: zRateLimiter,
     voiceTransport: zRateLimiter,
     voiceStream: zRateLimiter,
@@ -216,6 +217,11 @@ const defaultConfig: TConfig = {
     // signing your own old devices out one by one, nothing to guess at
     revokeSession: {
       maxRequests: 30,
+      windowMs: 60_000
+    },
+    // a new device asks every couple of seconds whether it was approved yet
+    loginLink: {
+      maxRequests: 60,
       windowMs: 60_000
     },
     adminCreate: {

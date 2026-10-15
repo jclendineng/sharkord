@@ -104,10 +104,43 @@ final class ServerListStore {
 
     // an invite link opened from outside the app, waiting for the sign in screen to take it up
     var pendingInviteLink: String?
+    // a sign in qr code scanned with the camera app, the same
+    var pendingLinkLogin: LinkLogin?
+
+    struct LinkLogin: Equatable {
+        let server: String
+        let token: String
+
+        // sharkord://login?server=…&token=…, what a signed in device shows as a qr code
+        init?(url: URL) {
+            guard url.scheme == "sharkord", url.host() == "login" else {
+                return nil
+            }
+
+            let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+
+            guard
+                let server = items.first(where: { $0.name == "server" })?.value,
+                let token = items.first(where: { $0.name == "token" })?.value,
+                !server.isEmpty, !token.isEmpty
+            else {
+                return nil
+            }
+
+            self.server = server
+            self.token = token
+        }
+    }
 
     // an invite link tapped anywhere: a server already signed in to just opens, as discord does
     // for a server you are in, and any other starts adding it with the invite filled in
     func open(inviteURL url: URL) {
+        if let login = LinkLogin(url: url) {
+            pendingLinkLogin = login
+            signingInSession = makeSession(nil)
+            return
+        }
+
         guard let link = Self.inviteLink(from: url), let address = ServerAddress(userInput: link) else {
             return
         }

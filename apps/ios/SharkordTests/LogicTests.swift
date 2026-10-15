@@ -25,6 +25,16 @@ struct ServerAddressTests {
         #expect(ServerAddress.inviteCode(in: "") == nil)
     }
 
+    @Test func aSignInCodeGivesTheServerAndTheToken() throws {
+        let url = try #require(URL(string: "sharkord://login?server=https%3A%2F%2Fchat.example.com&token=abc.def"))
+        let login = try #require(ServerListStore.LinkLogin(url: url))
+
+        #expect(login.server == "https://chat.example.com")
+        #expect(login.token == "abc.def")
+        #expect(ServerListStore.LinkLogin(url: try #require(URL(string: "sharkord://join?server=x&invite=y"))) == nil)
+        #expect(ServerListStore.LinkLogin(url: try #require(URL(string: "https://chat.example.com/?token=abc"))) == nil)
+    }
+
     @Test(arguments: ["ftp://chat.example.com", "https://", ""])
     func nonsenseIsRefused(_ typed: String) {
         #expect(ServerAddress(userInput: typed) == nil)
