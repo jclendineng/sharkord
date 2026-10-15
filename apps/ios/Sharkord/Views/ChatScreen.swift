@@ -231,9 +231,12 @@ private struct ChatTitle: View {
                             .foregroundStyle(Theme.muted)
                             .lineLimit(1)
                     } else {
-                        Circle()
-                            .fill(isOnline ? Theme.green : Theme.muted)
-                            .frame(width: 7, height: 7)
+                        // a direct message's presence is already on the avatar beside it
+                        if !isDirectMessage || group != nil {
+                            Circle()
+                                .fill(isOnline ? Theme.green : Theme.muted)
+                                .frame(width: 7, height: 7)
+                        }
 
                         Text(subtitle)
                             .font(.caption)
