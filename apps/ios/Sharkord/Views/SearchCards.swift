@@ -31,7 +31,7 @@ struct FileCardTile: View {
 
     var body: some View {
         OpenFileButton(file: file.file) { isLoading in
-            SearchCard(userId: file.userId, channelId: file.channelId, channelName: file.channelName) {
+            SearchCard(userId: file.userId, channelId: file.channelId, channelName: file.channelName, onJump: onJump) {
                 preview
                     .overlay {
                         if isLoading {
@@ -105,7 +105,7 @@ struct LinkCardTile: View {
 
     var body: some View {
         Button(action: open) {
-            SearchCard(userId: userId, channelId: channelId, channelName: channelName) {
+            SearchCard(userId: userId, channelId: channelId, channelName: channelName, onJump: onJump) {
                 if let image = preview?.previewImageURL {
                     AsyncImage(url: image) { phase in
                         if case .success(let image) = phase {
@@ -282,6 +282,8 @@ private struct SearchCard<Preview: View, Details: View>: View {
     let userId: Int?
     let channelId: Int
     let channelName: String
+    // the poster and the channel go to the message, the rest of the card opens what it shows
+    var onJump: (() -> Void)?
     @ViewBuilder let preview: Preview
     @ViewBuilder let details: Details
 
@@ -317,6 +319,33 @@ private struct SearchCard<Preview: View, Details: View>: View {
             VStack(alignment: .leading, spacing: 4) {
                 details
 
+                if let onJump {
+                    Button(action: onJump) {
+                        source
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Jump to Message")
+                } else {
+                    source
+                }
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .background(Theme.listBackground)
+        .clipShape(.rect(cornerRadius: 16, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Theme.divider, lineWidth: 1)
+        }
+        .contentShape(.rect)
+    }
+
+    // who posted it and where
+    private var source: some View {
+        VStack(alignment: .leading, spacing: 4) {
                 if let author {
                     HStack(spacing: 6) {
                         AvatarView(user: author, size: 18)
@@ -337,17 +366,7 @@ private struct SearchCard<Preview: View, Details: View>: View {
                 }
                 .font(.subheadline)
                 .foregroundStyle(Theme.muted)
-            }
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .background(Theme.listBackground)
-        .clipShape(.rect(cornerRadius: 16, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Theme.divider, lineWidth: 1)
-        }
-        .contentShape(.rect)
     }
 }
 
