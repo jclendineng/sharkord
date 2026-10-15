@@ -175,10 +175,12 @@ again, so a public page cannot send the server inward.
 The app's invite sheet sets how long a link lasts (1 hour, 1 day, 7 days or never) and how many
 times it can be used, replacing the link it showed before.
 
-Uploaded files are stored under their own name and served from `/public/<name>`. With
-**Signed File Links** off (the default) anyone who has or guesses that link can open the
-file without signing in. Turn it on in Server Settings, Storage, and every link carries a
-token that expires. It is also `signedUrls` under `[storage]` in config.ini (see Settings in
+Uploaded files are stored under a random name (a uuid and the file's extension), never the
+name they were uploaded with, which is kept for display and downloads, and served from
+`/public/<name>`. Files uploaded before this kept their names. With **Signed File Links** on,
+the default for a new server, every link carries a token that expires and is only handed to
+someone who can see the channel. With it off, anyone who has a file's link can open it without
+signing in. It is in Server Settings, Storage. It is also `signedUrls` under `[storage]` in config.ini (see Settings in
 config.ini).
 
 A signed link only works for its lifetime, but no one has to reload for that. Every time the

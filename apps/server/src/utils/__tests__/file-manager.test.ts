@@ -8,7 +8,11 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { eq } from 'drizzle-orm';
 import fs from 'fs/promises';
 import path from 'path';
-import { getMockedToken, uploadFile } from '../../__tests__/helpers';
+import {
+  getMockedToken,
+  storedNamePattern,
+  uploadFile
+} from '../../__tests__/helpers';
 import { tdb } from '../../__tests__/setup';
 import {
   files,
@@ -212,7 +216,9 @@ describe('file manager', () => {
 
     expect(savedFile).toBeDefined();
     expect(savedFile.id).toBeGreaterThan(0);
-    expect(savedFile.name).toBe(testFileName);
+    expect(savedFile.name).toMatch(
+      storedNamePattern(path.extname(testFileName))
+    );
     expect(savedFile.originalName).toBe(testFileName);
     expect(savedFile.extension).toBe('.txt');
     expect(savedFile.size).toBe(stats.size);
@@ -266,7 +272,7 @@ describe('file manager', () => {
 
     tempFilesToCleanup.push(path.join(PUBLIC_PATH, savedFile.name));
 
-    expect(savedFile.name).toBe('disabled.png');
+    expect(savedFile.name).toMatch(storedNamePattern('.png'));
     expect(savedFile.originalName).toBe('disabled.png');
     expect(savedFile.extension).toBe('.png');
     expect(savedFile.size).toBe(stats.size);
@@ -297,7 +303,7 @@ describe('file manager', () => {
 
     tempFilesToCleanup.push(path.join(PUBLIC_PATH, savedFile.name));
 
-    expect(savedFile.name).toBe('optimized.webp');
+    expect(savedFile.name).toMatch(storedNamePattern('.webp'));
     expect(savedFile.originalName).toBe('optimized.webp');
     expect(savedFile.extension).toBe('.webp');
     expect(savedFile.mimeType).toBe('image/webp');
@@ -327,7 +333,7 @@ describe('file manager', () => {
 
     tempFilesToCleanup.push(path.join(PUBLIC_PATH, savedFile.name));
 
-    expect(savedFile.name).toBe('not-image.txt');
+    expect(savedFile.name).toMatch(storedNamePattern('.txt'));
     expect(savedFile.extension).toBe('.txt');
     expect(savedFile.size).toBe(stats.size);
   });
@@ -808,7 +814,7 @@ describe('file manager', () => {
     expect(path1).not.toBe(path3);
   });
 
-  test('should append counter when same original name already exists', async () => {
+  test('should store two files of the same name under names of their own', async () => {
     const fileAPath = path.join(UPLOADS_PATH, `dup-${Date.now()}.txt`);
 
     await fs.writeFile(fileAPath, 'first');
@@ -843,8 +849,11 @@ describe('file manager', () => {
 
     tempFilesToCleanup.push(path.join(PUBLIC_PATH, savedB.name));
 
-    expect(savedA.name).toBe('my-file.txt');
-    expect(savedB.name).toBe('my-file-2.txt');
+    expect(savedA.name).toMatch(storedNamePattern('.txt'));
+    expect(savedB.name).toMatch(storedNamePattern('.txt'));
+    expect(savedA.name).not.toBe(savedB.name);
+    expect(savedA.originalName).toBe('my-file.txt');
+    expect(savedB.originalName).toBe('my-file.txt');
 
     const dbA = await tdb
       .select()
@@ -859,9 +868,9 @@ describe('file manager', () => {
       .get();
 
     expect(dbA).toBeDefined();
-    expect(dbA?.name).toBe('my-file.txt');
+    expect(dbA?.name).toBe(savedA.name);
     expect(dbB).toBeDefined();
-    expect(dbB?.name).toBe('my-file-2.txt');
+    expect(dbB?.name).toBe(savedB.name);
   });
 
   test('temporaryFileExists returns correct boolean', async () => {
@@ -1007,8 +1016,9 @@ describe('file manager', () => {
 
     tempFilesToCleanup.push(path.join(PUBLIC_PATH, saved2.name));
 
-    expect(saved1.name).toBe('report.txt');
-    expect(saved2.name).toBe('report-2.txt');
+    expect(saved1.name).toMatch(storedNamePattern('.txt'));
+    expect(saved2.name).toMatch(storedNamePattern('.txt'));
+    expect(saved1.name).not.toBe(saved2.name);
   });
 
   test('should give concurrent saves of the same name their own file', async () => {
@@ -1048,7 +1058,7 @@ describe('file manager', () => {
 
       tempFilesToCleanup.push(path.join(PUBLIC_PATH, saved.name));
 
-      expect(saved.name).toBe('file');
+      expect(saved.name).toMatch(storedNamePattern(''));
       expect(
         await fs.readFile(path.join(PUBLIC_PATH, saved.name), 'utf-8')
       ).toBe('fallback');

@@ -3,7 +3,12 @@ import { beforeEach, describe, expect, test } from 'bun:test';
 import { eq } from 'drizzle-orm';
 import fs from 'fs/promises';
 import path from 'path';
-import { initTest, login, uploadFile } from '../../__tests__/helpers';
+import {
+  initTest,
+  login,
+  storedNamePattern,
+  uploadFile
+} from '../../__tests__/helpers';
 import { tdb, testsBaseUrl } from '../../__tests__/setup';
 import { loadCrons } from '../../crons';
 import { cleanupFiles } from '../../crons/cleanup-files';
@@ -553,7 +558,7 @@ describe('/public', () => {
 
     const dbFile = await uploadToMessage('disk-only.txt', 'new', token);
 
-    expect(dbFile.name).toBe('disk-only-2.txt');
+    expect(dbFile.name).toMatch(storedNamePattern('.txt'));
     expect(
       await fs.readFile(path.join(PUBLIC_PATH, 'disk-only.txt'), 'utf-8')
     ).toBe('existing');
@@ -574,7 +579,7 @@ describe('/public', () => {
     async (name, diskName) => {
       const dbFile = await uploadToMessage(name, 'reserved chars', token);
 
-      expect(dbFile.name).toBe(diskName);
+      expect(dbFile.name).toMatch(storedNamePattern(path.extname(diskName)));
       expect(dbFile.originalName).toBe(name);
 
       const response = await fetch(
@@ -589,15 +594,15 @@ describe('/public', () => {
     }
   );
 
-  test('should truncate names longer than 255 utf-8 bytes on disk', async () => {
+  test('should store a name longer than 255 utf-8 bytes under a short one', async () => {
     const name = `${'Д'.repeat(200)}.txt`;
 
     const first = await uploadToMessage(name, 'long name', token);
     const second = await uploadToMessage(name, 'long name', token);
 
-    // two bytes per letter: 125 letters plus '.txt' is 254 bytes, 124 plus '-2.txt' is 254
-    expect(first.name).toBe(`${'Д'.repeat(125)}.txt`);
-    expect(second.name).toBe(`${'Д'.repeat(124)}-2.txt`);
+    expect(first.name).toMatch(storedNamePattern('.txt'));
+    expect(second.name).toMatch(storedNamePattern('.txt'));
+    expect(first.name).not.toBe(second.name);
     expect(first.originalName).toBe(name);
 
     const response = await fetch(
@@ -615,7 +620,7 @@ describe('/public', () => {
 
     const dbFile = await uploadToMessage(name, 'long extension', token);
 
-    expect(dbFile.name).toBe(`notes.${'я'.repeat(15)}`);
+    expect(dbFile.name).toMatch(storedNamePattern(`.${'я'.repeat(15)}`));
     expect(dbFile.extension).toBe(`.${'я'.repeat(15)}`);
     expect(dbFile.originalName).toBe(name);
 
@@ -637,10 +642,10 @@ describe('/public', () => {
     async (name, storedName) => {
       const dbFile = await uploadToMessage(name, 'bom', token);
 
-      expect(dbFile.name).toBe(storedName);
+      expect(dbFile.name).toMatch(storedNamePattern('.txt'));
       expect(dbFile.originalName).toBe(storedName);
 
-      const response = await fetch(`${testsBaseUrl}/public/${storedName}`);
+      const response = await fetch(`${testsBaseUrl}/public/${dbFile.name}`);
 
       expect(response.status).toBe(200);
       expect(await response.text()).toBe('bom');
@@ -660,7 +665,7 @@ describe('/public', () => {
       createdAt: Date.now()
     });
 
-    expect(pluginFile.name).toBe('trail_');
+    expect(pluginFile.name).toMatch(storedNamePattern(''));
 
     const response = await fetch(
       `${testsBaseUrl}/public/${encodeURIComponent(pluginFile.name)}`

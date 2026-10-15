@@ -11,8 +11,7 @@ import {
   type TTempFile
 } from '@sharkord/shared';
 import { randomUUIDv7 } from 'bun';
-import { createHash } from 'crypto';
-import { eq } from 'drizzle-orm';
+import { createHash, randomUUID } from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
 import { db } from '../db';
@@ -38,7 +37,6 @@ import { runHook } from '../plugins/run-hook';
 
 const TEMP_FILE_TTL = 1000 * 60 * 1; // 1 minute
 
-const MAX_FILE_NAME_BYTES = 255;
 const MAX_EXTENSION_BYTES = 32;
 
 // eslint-disable-next-line no-control-regex
@@ -356,48 +354,28 @@ class FileManager {
     }
   };
 
+  // stored under a random name, never the one it was uploaded with: a name anyone could guess
+  // is a link anyone could open on a server without signed links. the original name stays in
+  // the database, for display and the download's file name
   private claimUniqueName = async (originalName: string): Promise<string> => {
-    const safeName = getSafeFileName(originalName);
-    const baseName = path.basename(safeName, path.extname(safeName));
-    const extension = getNormalizedExtension(safeName);
-
-    const buildName = (suffix: string) => {
-      const maxBaseBytes =
-        MAX_FILE_NAME_BYTES - Buffer.byteLength(`${suffix}${extension}`);
-
-      return `${truncateToBytes(baseName, maxBaseBytes)}${suffix}${extension}`;
-    };
-
-    let fileName = buildName('');
-    let counter = 2;
+    const extension = getNormalizedExtension(getSafeFileName(originalName));
 
     // eslint-disable-next-line no-constant-condition
     while (true) {
-      const existingFile = await db
-        .select({ id: files.id })
-        .from(files)
-        .where(eq(files.name, fileName))
-        .get();
+      const fileName = `${randomUUID()}${extension}`;
 
-      if (!existingFile) {
-        try {
-          const handle = await fs.open(path.join(PUBLIC_PATH, fileName), 'wx');
+      try {
+        const handle = await fs.open(path.join(PUBLIC_PATH, fileName), 'wx');
 
-          await handle.close();
+        await handle.close();
 
-          break;
-        } catch (error) {
-          if ((error as NodeJS.ErrnoException).code !== 'EEXIST') {
-            throw error;
-          }
+        return fileName;
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'EEXIST') {
+          throw error;
         }
       }
-
-      fileName = buildName(`-${counter}`);
-      counter++;
     }
-
-    return fileName;
   };
 
   private runBeforeFileSaveHooks = async (

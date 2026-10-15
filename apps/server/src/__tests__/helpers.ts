@@ -116,6 +116,12 @@ const uploadFile = async (file: File, token: string) =>
     body: file
   });
 
+// uploads are stored under a random uuid, never their own name, with the extension kept
+const storedNamePattern = (extension: string) =>
+  new RegExp(
+    `^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}${extension.replace(/\./g, '\\.')}$`
+  );
+
 export {
   createFakeSocket,
   getCaller,
@@ -123,6 +129,7 @@ export {
   getSessionCaller,
   initTest,
   login,
+  storedNamePattern,
   uploadFile,
   type TFakeSocket
 };
