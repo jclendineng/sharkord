@@ -103,6 +103,27 @@ describe('link previews of the server network', () => {
           return Response.redirect(`${origin}/page${pathname}`, 302);
         }
 
+        if (pathname.startsWith('/denied')) {
+          return new Response(
+            '<html><head><title>Access to this page has been denied</title></head></html>',
+            { status: 403, headers: { 'content-type': 'text/html' } }
+          );
+        }
+
+        if (pathname.startsWith('/banner')) {
+          return new Response(
+            '<html><head><title>Search</title><meta name="description" content="A search engine" /></head><body><img src="/banner.png" /></body></html>',
+            { headers: { 'content-type': 'text/html' } }
+          );
+        }
+
+        if (pathname.startsWith('/cover')) {
+          return new Response(
+            '<html><head><title>Story</title><meta property="og:image" content="/cover.png" /></head><body><img src="/other.png" /></body></html>',
+            { headers: { 'content-type': 'text/html' } }
+          );
+        }
+
         return new Response(
           '<html><head><title>Router</title><meta property="og:title" content="Home Router" /><meta property="og:description" content="Admin page" /></head></html>',
           { headers: { 'content-type': 'text/html' } }
@@ -138,6 +159,46 @@ describe('link previews of the server network', () => {
     const metadata = await storedMetadata(messageId);
 
     expect(metadata?.[0]?.title).toBe('Home Router');
+  });
+
+  test('should not preview a page that refused the server', async () => {
+    await tdb.update(settings).set({ linkPreviewsPrivateNetwork: true });
+
+    const content = `see ${origin}/denied`;
+    const messageId = await insertMessage(content);
+
+    await processMessageMetadata(content, messageId);
+
+    expect(await storedMetadata(messageId)).toBeNull();
+  });
+
+  test('should leave out pictures a page does not name as its preview', async () => {
+    await tdb.update(settings).set({ linkPreviewsPrivateNetwork: true });
+
+    const content = `see ${origin}/banner`;
+    const messageId = await insertMessage(content);
+
+    await processMessageMetadata(content, messageId);
+
+    const metadata = await storedMetadata(messageId);
+    const [preview] = metadata as { title?: string; images?: string[] }[];
+
+    expect(preview?.title).toBe('Search');
+    expect(preview?.images ?? []).toEqual([]);
+  });
+
+  test('should keep the picture a page names as its preview', async () => {
+    await tdb.update(settings).set({ linkPreviewsPrivateNetwork: true });
+
+    const content = `see ${origin}/cover`;
+    const messageId = await insertMessage(content);
+
+    await processMessageMetadata(content, messageId);
+
+    const metadata = await storedMetadata(messageId);
+    const [preview] = metadata as { images?: string[] }[];
+
+    expect(preview?.images).toEqual([`${origin}/cover.png`]);
   });
 
   test('should follow a redirect within the server network once allowed', async () => {

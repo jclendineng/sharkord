@@ -10,6 +10,7 @@ import { fetchPage } from './fetch-page';
 import {
   createDirectMediaMetadata,
   createOpenGraphMetadata,
+  declaresPreviewImage,
   getDirectMediaMetaFromUrl,
   sanitizeContent
 } from './helpers';
@@ -84,6 +85,14 @@ const urlMetadataParser = async (
 
         if (page) {
           metadata = await getPreviewFromContent(page);
+
+          if (
+            page.data &&
+            !declaresPreviewImage(page.data) &&
+            'images' in metadata
+          ) {
+            metadata = { ...metadata, images: [] };
+          }
         }
       } catch {
         // unreachable, refused, timed out or not a page

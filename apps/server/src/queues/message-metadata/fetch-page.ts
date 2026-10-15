@@ -77,6 +77,13 @@ const fetchPage = async (
       continue;
     }
 
+    // a refusal or an error page, such as a bot check's "access denied", is not the page
+    if (!response.ok) {
+      await response.body?.cancel();
+
+      return undefined;
+    }
+
     const headers: Record<string, string> = {};
 
     response.headers.forEach((value, key) => {

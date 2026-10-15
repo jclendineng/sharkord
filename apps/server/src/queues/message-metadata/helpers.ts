@@ -165,9 +165,18 @@ const createOpenGraphMetadata = (
   };
 };
 
+// whether a page names its own preview picture. without one link-preview-js offers every image
+// on the page instead, which is mostly logos and banners cut from the middle, so discord shows
+// none and neither do we
+const declaresPreviewImage = (html: string) =>
+  /<meta[^>]+(?:property|name)\s*=\s*["'](?:og:image|og:image:url|og:image:secure_url|twitter:image|twitter:image:src)["']/i.test(
+    html
+  );
+
 export {
   createDirectMediaMetadata,
   createOpenGraphMetadata,
+  declaresPreviewImage,
   getDirectMediaMetaFromUrl,
   sanitizeContent
 };
