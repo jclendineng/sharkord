@@ -105,9 +105,6 @@ const settings = sqliteTable(
     })
       .notNull()
       .default(false),
-    storageSignedUrlsEnabled: integer('storage_signed_urls_enabled', {
-      mode: 'boolean'
-    }).notNull(),
     storageSignedUrlsTtlSeconds: integer(
       'storage_signed_urls_ttl_seconds'
     ).notNull(),

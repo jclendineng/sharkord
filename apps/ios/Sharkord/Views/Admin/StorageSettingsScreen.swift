@@ -153,19 +153,15 @@ struct StorageSettingsScreen: View {
             }
 
             Section {
-                Toggle("Signed File Links", isOn: settings.storageSignedUrlsEnabled)
-
-                if settings.wrappedValue.storageSignedUrlsEnabled {
-                    Picker("Links Expire After", selection: settings.storageSignedUrlsTtlSeconds) {
-                        ForEach(ttlChoices(including: settings.wrappedValue.storageSignedUrlsTtlSeconds), id: \.self) { seconds in
-                            Text(Self.duration(seconds)).tag(seconds)
-                        }
+                Picker("Links Expire After", selection: settings.storageSignedUrlsTtlSeconds) {
+                    ForEach(ttlChoices(including: settings.wrappedValue.storageSignedUrlsTtlSeconds), id: \.self) { seconds in
+                        Text(Self.duration(seconds)).tag(seconds)
                     }
                 }
             } header: {
                 Text("Security")
             } footer: {
-                Text("Every file link carries a token that expires, so nobody can guess their way to a file. Off, files in public channels open for anyone with the link.")
+                Text("Every file link carries a token that expires, handed only to people who can see the file, so nobody can guess their way to one. The apps fetch fresh links on their own.")
             }
 
             if let errorMessage {

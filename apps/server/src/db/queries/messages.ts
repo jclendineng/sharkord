@@ -131,8 +131,7 @@ const joinMessagesWithRelations = async (
 
   const messageIds = rows.map((m) => m.id);
 
-  const { storageSignedUrlsEnabled, storageSignedUrlsTtlSeconds } =
-    await getSettings();
+  const { storageSignedUrlsTtlSeconds } = await getSettings();
 
   const stickerIds = Array.from(
     new Set(rows.flatMap((m) => (m.stickerId ? [m.stickerId] : [])))
@@ -172,11 +171,7 @@ const joinMessagesWithRelations = async (
         acc[row.messageId] = [];
       }
 
-      const rowCopy = attachFileToken(
-        row.file,
-        storageSignedUrlsEnabled,
-        storageSignedUrlsTtlSeconds
-      );
+      const rowCopy = attachFileToken(row.file, storageSignedUrlsTtlSeconds);
 
       acc[row.messageId]!.push(rowCopy);
 
@@ -195,11 +190,7 @@ const joinMessagesWithRelations = async (
       emoji: r.emoji,
       createdAt: r.createdAt,
       fileId: r.fileId,
-      file: signFile(
-        r.file,
-        storageSignedUrlsEnabled,
-        storageSignedUrlsTtlSeconds
-      )
+      file: signFile(r.file, storageSignedUrlsTtlSeconds)
     };
 
     if (!acc[r.messageId]) {

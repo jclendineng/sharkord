@@ -59,8 +59,8 @@ const publicRouteHandler = async (
     return;
   }
 
-  const { storageSignedUrlsEnabled, logoId } = await getSettings();
-  const isSignedUrlProtected = storageSignedUrlsEnabled && dbFile.id !== logoId;
+  const { logoId } = await getSettings();
+  const isSignedUrlProtected = dbFile.id !== logoId;
   let tokenExpiresAt: number | null = null;
 
   // server logo is the only exception to signed URLs

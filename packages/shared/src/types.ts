@@ -68,7 +68,6 @@ export type TPublicServerSettings = Pick<
   | 'webRtcSimulcastEnabled'
   | 'enableSearch'
   | 'showWelcomeDialog'
-  | 'storageSignedUrlsEnabled'
   | 'onboardingMessageId'
 > & {
   webRtcMaxBitrate: number;

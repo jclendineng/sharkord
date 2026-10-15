@@ -1,0 +1,1 @@
+ALTER TABLE `settings` DROP COLUMN `storage_signed_urls_enabled`;

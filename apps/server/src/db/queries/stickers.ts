@@ -15,23 +15,19 @@ type TStickerRow = Awaited<ReturnType<typeof getStickerRows>>[number];
 
 const parseSticker = (
   row: TStickerRow,
-  signedUrlsEnabled: boolean,
   signedUrlsTtlSeconds: number
 ): TJoinedSticker => ({
   ...row.sticker,
-  file: attachFileToken(row.file, signedUrlsEnabled, signedUrlsTtlSeconds)
+  file: attachFileToken(row.file, signedUrlsTtlSeconds)
 });
 
 const getStickers = async (): Promise<TJoinedSticker[]> => {
-  const [rows, { storageSignedUrlsEnabled, storageSignedUrlsTtlSeconds }] =
-    await Promise.all([
-      getStickerRows().orderBy(stickers.createdAt),
-      getSettings()
-    ]);
+  const [rows, { storageSignedUrlsTtlSeconds }] = await Promise.all([
+    getStickerRows().orderBy(stickers.createdAt),
+    getSettings()
+  ]);
 
-  return rows.map((row) =>
-    parseSticker(row, storageSignedUrlsEnabled, storageSignedUrlsTtlSeconds)
-  );
+  return rows.map((row) => parseSticker(row, storageSignedUrlsTtlSeconds));
 };
 
 const getStickerById = async (
@@ -41,14 +37,9 @@ const getStickerById = async (
 
   if (!row) return undefined;
 
-  const { storageSignedUrlsEnabled, storageSignedUrlsTtlSeconds } =
-    await getSettings();
+  const { storageSignedUrlsTtlSeconds } = await getSettings();
 
-  return parseSticker(
-    row,
-    storageSignedUrlsEnabled,
-    storageSignedUrlsTtlSeconds
-  );
+  return parseSticker(row, storageSignedUrlsTtlSeconds);
 };
 
 // the stickers a page of messages shows, one query whatever its size
@@ -59,17 +50,13 @@ const getStickersByIds = async (
 
   if (ids.length === 0) return result;
 
-  const [rows, { storageSignedUrlsEnabled, storageSignedUrlsTtlSeconds }] =
-    await Promise.all([
-      getStickerRows().where(inArray(stickers.id, ids)),
-      getSettings()
-    ]);
+  const [rows, { storageSignedUrlsTtlSeconds }] = await Promise.all([
+    getStickerRows().where(inArray(stickers.id, ids)),
+    getSettings()
+  ]);
 
   for (const row of rows) {
-    result.set(
-      row.sticker.id,
-      parseSticker(row, storageSignedUrlsEnabled, storageSignedUrlsTtlSeconds)
-    );
+    result.set(row.sticker.id, parseSticker(row, storageSignedUrlsTtlSeconds));
   }
 
   return result;

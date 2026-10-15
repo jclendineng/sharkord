@@ -20,13 +20,7 @@ const signFilesRoute = rateLimitedProcedure(protectedProcedure, {
     })
   )
   .query(async ({ ctx, input }) => {
-    const { storageSignedUrlsEnabled, storageSignedUrlsTtlSeconds } =
-      await getSettings();
-
-    // unsigned links never expire, there is nothing to refresh
-    if (!storageSignedUrlsEnabled) {
-      return [];
-    }
+    const { storageSignedUrlsTtlSeconds } = await getSettings();
 
     const fileIds = [...new Set(input.fileIds)];
     const { everyoneFileIds, channelFiles } = await getFileReferences(fileIds);

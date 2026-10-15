@@ -65,10 +65,7 @@ const getInvites = async (): Promise<TJoinedInvite[]> => {
     .leftJoin(bannerFiles, eq(users.bannerId, bannerFiles.id))
     .leftJoin(roles, eq(invites.roleId, roles.id));
 
-  const [
-    rolesByUser,
-    { storageSignedUrlsEnabled, storageSignedUrlsTtlSeconds }
-  ] = await Promise.all([
+  const [rolesByUser, { storageSignedUrlsTtlSeconds }] = await Promise.all([
     db
       .select({
         userId: userRoles.userId,
@@ -92,16 +89,8 @@ const getInvites = async (): Promise<TJoinedInvite[]> => {
     ...row.invite,
     creator: {
       ...row.creator,
-      avatar: signFile(
-        row.avatar,
-        storageSignedUrlsEnabled,
-        storageSignedUrlsTtlSeconds
-      ),
-      banner: signFile(
-        row.banner,
-        storageSignedUrlsEnabled,
-        storageSignedUrlsTtlSeconds
-      ),
+      avatar: signFile(row.avatar, storageSignedUrlsTtlSeconds),
+      banner: signFile(row.banner, storageSignedUrlsTtlSeconds),
       roleIds: rolesMap[row.creator.id] || []
     },
     role: row.role?.id ? row.role : null

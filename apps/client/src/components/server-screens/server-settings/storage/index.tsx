@@ -70,7 +70,6 @@ const INITIAL_VALUES: TStorageSettings = {
   storageMaxBannerSize: STORAGE_DEFAULT_MAX_BANNER_SIZE,
   storageMaxFilesPerMessage: STORAGE_DEFAULT_MAX_FILES_PER_MESSAGE,
   storageQuota: STORAGE_QUOTA,
-  storageSignedUrlsEnabled: false,
   storageSignedUrlsTtlSeconds: STORAGE_DEFAULT_SIGNED_URLS_TTL_SECONDS,
   storageImageOptimizationEnabled: false,
   storageImageOptimizationQuality: STORAGE_DEFAULT_IMAGE_OPTIMIZATION_QUALITY
@@ -99,7 +98,6 @@ const Storage = memo(() => {
       storageSpaceQuotaByUser: values.storageSpaceQuotaByUser,
       storageOverflowAction:
         values.storageOverflowAction as StorageOverflowAction,
-      storageSignedUrlsEnabled: values.storageSignedUrlsEnabled,
       storageSignedUrlsTtlSeconds: values.storageSignedUrlsTtlSeconds,
       storageImageOptimizationEnabled: values.storageImageOptimizationEnabled,
       storageImageOptimizationQuality: values.storageImageOptimizationQuality
@@ -411,15 +409,6 @@ const Storage = memo(() => {
 
       <Separator />
 
-      <Group label={t('signedUrlsLabel')} description={t('signedUrlsDesc')}>
-        <Switch
-          checked={!!values.storageSignedUrlsEnabled}
-          onCheckedChange={(checked) =>
-            onChange('storageSignedUrlsEnabled', checked)
-          }
-        />
-      </Group>
-
       <Group
         label={t('signedUrlsTtlLabel')}
         description={t('signedUrlsTtlDesc')}
@@ -434,7 +423,6 @@ const Storage = memo(() => {
               value={Math.round(
                 Number(values.storageSignedUrlsTtlSeconds) / 60
               )}
-              disabled={!values.storageSignedUrlsEnabled}
               onChange={onSignedUrlsTtlChange}
             />
             <span className="text-xs text-muted-foreground">
@@ -448,7 +436,6 @@ const Storage = memo(() => {
                 key={preset.value}
                 size="sm"
                 variant="outline"
-                disabled={!values.storageSignedUrlsEnabled}
                 onClick={() =>
                   onChange('storageSignedUrlsTtlSeconds', preset.value)
                 }

@@ -53,7 +53,6 @@ const getPublicSettings: () => Promise<TPublicServerSettings> = async () => {
     webRtcMaxBitrate: config.webRtc.maxBitrate,
     enableSearch: settings.enableSearch,
     showWelcomeDialog: settings.showWelcomeDialog,
-    storageSignedUrlsEnabled: settings.storageSignedUrlsEnabled,
     // the rules message, which members react to for access, so apps can say so on it
     onboardingMessageId: settings.onboardingMessageId,
     gifsEnabled: !!settings.klipyApiKey

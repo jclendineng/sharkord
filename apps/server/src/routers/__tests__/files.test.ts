@@ -2,8 +2,6 @@ import type { TTempFile } from '@sharkord/shared';
 import { beforeEach, describe, expect, test } from 'bun:test';
 import fs from 'fs/promises';
 import { initTest, login, uploadFile } from '../../__tests__/helpers';
-import { tdb } from '../../__tests__/setup';
-import { settings } from '../../db/schema';
 import { fileManager } from '../../helpers/file-manager';
 import { verifyFileToken } from '../../helpers/files-crypto';
 
@@ -158,16 +156,7 @@ describe('files.sign', () => {
     return message.files[0]!.id;
   };
 
-  const enableSignedUrls = async () => {
-    await tdb.update(settings).set({
-      storageSignedUrlsEnabled: true,
-      storageSignedUrlsTtlSeconds: 600
-    });
-  };
-
   test('should sign a file in a channel the caller can see with a working token', async () => {
-    await enableSignedUrls();
-
     const fileId = await postFile(1);
     const { caller } = await initTest(2);
     const before = Date.now();
@@ -183,8 +172,6 @@ describe('files.sign', () => {
   });
 
   test('should leave out a file in a channel the caller cannot see', async () => {
-    await enableSignedUrls();
-
     // user 2 is denied viewing channel 5
     const hiddenFileId = await postFile(5);
     const visibleFileId = await postFile(1);
@@ -198,16 +185,12 @@ describe('files.sign', () => {
   });
 
   test('should leave out ids that do not exist', async () => {
-    await enableSignedUrls();
-
     const { caller } = await initTest(1);
 
     expect(await caller.files.sign({ fileIds: [999_999] })).toEqual([]);
   });
 
   test('should sign a sticker for anyone signed in', async () => {
-    await enableSignedUrls();
-
     const { caller, mockedToken } = await initTest(1);
     const response = await uploadFile(
       new File(['sticker'], 'wave.png', { type: 'image/png' }),
@@ -226,13 +209,6 @@ describe('files.sign', () => {
     const signed = await lowCaller.files.sign({ fileIds: [sticker.file.id] });
 
     expect(signed.map(({ fileId }) => fileId)).toEqual([sticker.file.id]);
-  });
-
-  test('should return nothing while signed links are off', async () => {
-    const fileId = await postFile(1);
-    const { caller } = await initTest(1);
-
-    expect(await caller.files.sign({ fileIds: [fileId] })).toEqual([]);
   });
 
   test('should reject an empty list and more than 200 ids', async () => {

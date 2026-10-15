@@ -323,11 +323,7 @@ const searchMessagesRoute = rateLimitedProcedure(protectedProcedure, {
       const attachedFiles = filesByMessageId.get(row.message.id) ?? [];
 
       const preparedFiles = attachedFiles.map((file) =>
-        attachFileToken(
-          file,
-          settings.storageSignedUrlsEnabled,
-          settings.storageSignedUrlsTtlSeconds
-        )
+        attachFileToken(file, settings.storageSignedUrlsTtlSeconds)
       );
 
       return {
@@ -345,7 +341,6 @@ const searchMessagesRoute = rateLimitedProcedure(protectedProcedure, {
     const matchedFiles = fileRows.map((row) => {
       const file = attachFileToken(
         row.file,
-        settings.storageSignedUrlsEnabled,
         settings.storageSignedUrlsTtlSeconds
       );
 

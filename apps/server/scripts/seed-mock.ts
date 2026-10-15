@@ -260,7 +260,6 @@ const seedSettings = async (db: BunSQLiteDatabase) => {
     webRtcSimulcastEnabled: false,
     // a dev server that asks you to set up a profile on every wipe gets old fast
     showWelcomeDialog: false,
-    storageSignedUrlsEnabled: false,
     storageSignedUrlsTtlSeconds: STORAGE_DEFAULT_SIGNED_URLS_TTL_SECONDS,
     storageImageOptimizationEnabled: false,
     storageImageOptimizationQuality: STORAGE_DEFAULT_IMAGE_OPTIMIZATION_QUALITY

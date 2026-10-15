@@ -15,6 +15,7 @@ import { loadCrons } from './crons';
 import { loadDb } from './db';
 import { syncConfigFile, watchConfigFile } from './helpers/config-file-sync';
 import { getHost } from './helpers/get-host';
+import { renameStoredFiles } from './helpers/rename-stored-files';
 import './helpers/updater';
 import { pluginManager } from './plugins';
 import { enqueueActivityLog } from './queues/activity-log';
@@ -24,6 +25,7 @@ import { loadMediasoup } from './utils/mediasoup';
 import { printDebug } from './utils/print-debug';
 
 await loadDb();
+await renameStoredFiles();
 await syncConfigFile();
 watchConfigFile();
 await pluginManager.init();

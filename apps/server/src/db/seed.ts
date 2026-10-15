@@ -69,8 +69,6 @@ const seedDatabase = async () => {
     enableSearch: true,
     webRtcSimulcastEnabled: false,
     showWelcomeDialog: true,
-    // files are only served on a link that proves the viewer may see them, for new servers
-    storageSignedUrlsEnabled: true,
     storageSignedUrlsTtlSeconds: STORAGE_DEFAULT_SIGNED_URLS_TTL_SECONDS,
     storageImageOptimizationEnabled: false,
     storageImageOptimizationQuality: STORAGE_DEFAULT_IMAGE_OPTIMIZATION_QUALITY

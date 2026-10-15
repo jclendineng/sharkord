@@ -128,7 +128,6 @@ struct AdminStorage: Decodable {
         var storageMaxFilesPerMessage: Int
         var storageSpaceQuotaByUser: Int
         var storageOverflowAction: String
-        var storageSignedUrlsEnabled: Bool
         var storageSignedUrlsTtlSeconds: Int
         var storageImageOptimizationEnabled: Bool
         var storageImageOptimizationQuality: Int

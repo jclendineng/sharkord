@@ -65,7 +65,8 @@ describe('syncConfigFile', () => {
     const parsed = await readIni();
 
     expect(parsed.registration).toEqual({ allowNewUsers: true });
-    expect(parsed.storage).toEqual({ signedUrls: false });
+    // file links are always signed, there is no switch to write
+    expect(parsed.storage).toBeUndefined();
     expect(parsed.gifs).toEqual({ klipyApiKey: '' });
     expect(parsed.links).toEqual({ previewPrivateNetwork: false });
   });
@@ -87,22 +88,16 @@ describe('syncConfigFile', () => {
     const parsed = await readIni();
 
     parsed.registration = { allowNewUsers: false };
-    parsed.storage = { signedUrls: true };
     parsed.gifs = { klipyApiKey: 'from-the-file' };
     parsed.links = { previewPrivateNetwork: true };
     await writeIni(parsed);
 
     await syncConfigFile();
 
-    const {
-      allowNewUsers,
-      storageSignedUrlsEnabled,
-      klipyApiKey,
-      linkPreviewsPrivateNetwork
-    } = await getSettings();
+    const { allowNewUsers, klipyApiKey, linkPreviewsPrivateNetwork } =
+      await getSettings();
 
     expect(allowNewUsers).toBe(false);
-    expect(storageSignedUrlsEnabled).toBe(true);
     expect(klipyApiKey).toBe('from-the-file');
     expect(linkPreviewsPrivateNetwork).toBe(true);
   });
@@ -119,22 +114,21 @@ describe('syncConfigFile', () => {
     expect((await readIni()).registration).toEqual({ allowNewUsers: false });
   });
 
-  test('should carry over the old inviteOnly and forceSignedUrls keys', async () => {
+  test('should carry over the old inviteOnly key and drop the old signing switches', async () => {
     const parsed = await readIni();
 
     parsed.registration = { inviteOnly: true };
-    parsed.storage = { forceSignedUrls: true };
+    parsed.storage = { forceSignedUrls: true, signedUrls: false };
     await writeIni(parsed);
 
     await syncConfigFile();
 
-    const { allowNewUsers, storageSignedUrlsEnabled } = await getSettings();
+    const { allowNewUsers } = await getSettings();
     const after = await readIni();
 
     expect(allowNewUsers).toBe(false);
-    expect(storageSignedUrlsEnabled).toBe(true);
     expect(after.registration).toEqual({ allowNewUsers: false });
-    expect(after.storage).toEqual({ signedUrls: true });
+    expect(after.storage).toBeUndefined();
   });
 
   test('should not let the old empty klipy key wipe one saved in the settings', async () => {
@@ -177,14 +171,14 @@ describe('applyConfigFileEdits', () => {
     const publish = spyOn(pubsub, 'publish');
     const parsed = await readIni();
 
-    parsed.storage = { signedUrls: true };
+    parsed.links = { previewPrivateNetwork: true };
     await writeIni(parsed);
 
     await applyConfigFileEdits();
 
-    const { storageSignedUrlsEnabled } = await getSettings();
+    const { linkPreviewsPrivateNetwork } = await getSettings();
 
-    expect(storageSignedUrlsEnabled).toBe(true);
+    expect(linkPreviewsPrivateNetwork).toBe(true);
     expect(publish).toHaveBeenCalledWith(
       ServerEvents.SERVER_SETTINGS_UPDATE,
       expect.anything()
@@ -210,7 +204,6 @@ describe('others.updateSettings', () => {
 
     await caller.others.updateSettings({
       allowNewUsers: false,
-      storageSignedUrlsEnabled: true,
       klipyApiKey: 'typed-key',
       linkPreviewsPrivateNetwork: true
     });
@@ -218,7 +211,7 @@ describe('others.updateSettings', () => {
     const parsed = await readIni();
 
     expect(parsed.registration).toEqual({ allowNewUsers: false });
-    expect(parsed.storage).toEqual({ signedUrls: true });
+    expect(parsed.storage).toBeUndefined();
     expect(parsed.gifs).toEqual({ klipyApiKey: 'typed-key' });
     expect(parsed.links).toEqual({ previewPrivateNetwork: true });
   });

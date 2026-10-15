@@ -88,7 +88,6 @@ export type TStorageSettings = Pick<
   | 'storageMaxFilesPerMessage'
   | 'storageSpaceQuotaByUser'
   | 'storageOverflowAction'
-  | 'storageSignedUrlsEnabled'
   | 'storageSignedUrlsTtlSeconds'
   | 'storageImageOptimizationEnabled'
   | 'storageImageOptimizationQuality'

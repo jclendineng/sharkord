@@ -128,7 +128,6 @@ const seedTestDb = async (
     enableSearch: true,
     webRtcSimulcastEnabled: false,
     showWelcomeDialog: true,
-    storageSignedUrlsEnabled: false,
     storageSignedUrlsTtlSeconds: STORAGE_DEFAULT_SIGNED_URLS_TTL_SECONDS,
     storageImageOptimizationEnabled: false,
     storageImageOptimizationQuality: STORAGE_DEFAULT_IMAGE_OPTIMIZATION_QUALITY

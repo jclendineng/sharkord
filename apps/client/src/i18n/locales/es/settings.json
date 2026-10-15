@@ -340,8 +340,6 @@
   "imageOptimizationDesc": "Convierte las subidas de imágenes compatibles en archivos WebP optimizados.",
   "imageQualityLabel": "Calidad de imagen",
   "imageQualityDesc": "Controla la calidad WebP usada para las imágenes optimizadas. Los valores más altos conservan más detalle, pero usan más almacenamiento.",
-  "signedUrlsLabel": "URLs firmadas",
-  "signedUrlsDesc": "Cuando está habilitado, todas las URLs de archivos requieren un token firmado con un tiempo de expiración. Esto previene el acceso no autorizado a archivos por adivinación de URL. Cuando está deshabilitado, los archivos en canales públicos son accesibles por cualquiera con la URL.",
   "signedUrlsTtlLabel": "Expiración de URL firmada",
   "signedUrlsTtlDesc": "Cuánto tiempo una URL firmada permanece válida antes de expirar. Duraciones más cortas mejoran la seguridad pero pueden causar inconvenientes para los usuarios que acceden a los archivos.",
   "signedUrlsTtlUnit": "minutos",

@@ -73,17 +73,12 @@ const getFileByMessageId = async (
   return dbFile;
 };
 
-const enableSignedUrls = async (ttlSeconds: number = 3600) => {
-  await tdb.update(settings).set({
-    storageSignedUrlsEnabled: true,
-    storageSignedUrlsTtlSeconds: ttlSeconds
-  });
-};
+// every file but the logo is only served on a signed link, built here the way the server signs one
+const signedUrl = (file: { id: number; name: string }) => {
+  const expiresAt = Date.now() + 3_600_000;
+  const accessToken = generateFileToken(file.id, expiresAt);
 
-const disableSignedUrls = async () => {
-  await tdb.update(settings).set({
-    storageSignedUrlsEnabled: false
-  });
+  return `${testsBaseUrl}/public/${encodeURIComponent(file.name)}?accessToken=${accessToken}&expires=${expiresAt}`;
 };
 
 describe('/public', () => {
@@ -178,9 +173,7 @@ describe('/public', () => {
     expect(dbFile).toBeDefined();
     expect(dbFile?.name).toBeDefined();
 
-    const response = await fetch(
-      `${testsBaseUrl}/public/${encodeURIComponent(dbFile!.name)}`
-    );
+    const response = await fetch(signedUrl(dbFile!));
 
     expect(response.status).toBe(200);
     expect(response.headers.get('Content-Type')).toInclude('text/plain');
@@ -225,9 +218,7 @@ describe('/public', () => {
 
     expect(dbFile).toBeDefined();
 
-    const response = await fetch(
-      `${testsBaseUrl}/public/${encodeURIComponent(dbFile!.name)}`
-    );
+    const response = await fetch(signedUrl(dbFile!));
 
     expect(response.status).toBe(404);
 
@@ -269,9 +260,7 @@ describe('/public', () => {
       createdAt: Date.now()
     });
 
-    const response = await fetch(
-      `${testsBaseUrl}/public/${encodeURIComponent(missingFileName)}`
-    );
+    const response = await fetch(signedUrl(missingFile!));
 
     expect(response.status).toBe(404);
 
@@ -421,9 +410,7 @@ describe('/public', () => {
 
     expect(dbFile).toBeDefined();
 
-    const response = await fetch(
-      `${testsBaseUrl}/public/${encodeURIComponent(dbFile!.name)}`
-    );
+    const response = await fetch(signedUrl(dbFile!));
 
     expect(response.status).toBe(200);
 
@@ -468,9 +455,7 @@ describe('/public', () => {
 
     expect(dbFile).toBeDefined();
 
-    const response = await fetch(
-      `${testsBaseUrl}/public/${encodeURIComponent(dbFile!.name)}`
-    );
+    const response = await fetch(signedUrl(dbFile!));
 
     expect(response.status).toBe(200);
 
@@ -489,9 +474,7 @@ describe('/public', () => {
 
     expect(dbFile).toBeDefined();
 
-    const response = await fetch(
-      `${testsBaseUrl}/public/${encodeURIComponent(dbFile!.name)}`
-    );
+    const response = await fetch(signedUrl(dbFile!));
 
     expect(response.status).toBe(200);
 
@@ -510,9 +493,7 @@ describe('/public', () => {
 
     expect(dbFile).toBeDefined();
 
-    const response = await fetch(
-      `${testsBaseUrl}/public/${encodeURIComponent(dbFile!.name)}`
-    );
+    const response = await fetch(signedUrl(dbFile!));
 
     expect(response.status).toBe(200);
 
@@ -537,9 +518,7 @@ describe('/public', () => {
 
       expect(dbFile.originalName).toBe(name);
 
-      const response = await fetch(
-        `${testsBaseUrl}/public/${encodeURIComponent(dbFile.name)}`
-      );
+      const response = await fetch(signedUrl(dbFile));
 
       expect(response.status).toBe(200);
 
@@ -582,9 +561,7 @@ describe('/public', () => {
       expect(dbFile.name).toMatch(storedNamePattern(path.extname(diskName)));
       expect(dbFile.originalName).toBe(name);
 
-      const response = await fetch(
-        `${testsBaseUrl}/public/${encodeURIComponent(dbFile.name)}`
-      );
+      const response = await fetch(signedUrl(dbFile));
 
       expect(response.status).toBe(200);
       expect(response.headers.get('Content-Disposition')).toInclude(
@@ -605,9 +582,7 @@ describe('/public', () => {
     expect(first.name).not.toBe(second.name);
     expect(first.originalName).toBe(name);
 
-    const response = await fetch(
-      `${testsBaseUrl}/public/${encodeURIComponent(first.name)}`
-    );
+    const response = await fetch(signedUrl(first));
 
     expect(response.status).toBe(200);
     expect(response.headers.get('Content-Disposition')).toInclude(
@@ -624,9 +599,7 @@ describe('/public', () => {
     expect(dbFile.extension).toBe(`.${'я'.repeat(15)}`);
     expect(dbFile.originalName).toBe(name);
 
-    const response = await fetch(
-      `${testsBaseUrl}/public/${encodeURIComponent(dbFile.name)}`
-    );
+    const response = await fetch(signedUrl(dbFile));
 
     expect(response.status).toBe(200);
     expect(await response.text()).toBe('long extension');
@@ -645,7 +618,7 @@ describe('/public', () => {
       expect(dbFile.name).toMatch(storedNamePattern('.txt'));
       expect(dbFile.originalName).toBe(storedName);
 
-      const response = await fetch(`${testsBaseUrl}/public/${dbFile.name}`);
+      const response = await fetch(signedUrl(dbFile));
 
       expect(response.status).toBe(200);
       expect(await response.text()).toBe('bom');
@@ -667,9 +640,7 @@ describe('/public', () => {
 
     expect(pluginFile.name).toMatch(storedNamePattern(''));
 
-    const response = await fetch(
-      `${testsBaseUrl}/public/${encodeURIComponent(pluginFile.name)}`
-    );
+    const response = await fetch(signedUrl(pluginFile));
 
     expect(response.status).toBe(200);
     expect(response.headers.get('Content-Disposition')).toInclude(
@@ -700,27 +671,24 @@ describe('/public', () => {
     const file = filesToCreate[0];
     const dbFile = await getFileByMessageId(file!.messageId!);
 
-    const response = await fetch(
-      `${testsBaseUrl}/public/${encodeURIComponent(dbFile!.name)}`
-    );
+    const response = await fetch(signedUrl(dbFile!));
 
     expect(response.status).toBe(200);
     expect(response.headers.get('Accept-Ranges')).toBe('bytes');
   });
 
-  test('should include cache validators and public cache policy on normal requests', async () => {
+  test('should include cache validators and a private cache policy on signed requests', async () => {
     const file = filesToCreate[0];
     const dbFile = await getFileByMessageId(file!.messageId!);
 
-    const response = await fetch(
-      `${testsBaseUrl}/public/${encodeURIComponent(dbFile!.name)}`
-    );
+    const response = await fetch(signedUrl(dbFile!));
 
     expect(response.status).toBe(200);
     expect(response.headers.get('ETag')).toBeDefined();
     expect(response.headers.get('Last-Modified')).toBeDefined();
+    // a signed link is someone's own, kept for a few minutes at most
     expect(response.headers.get('Cache-Control')).toBe(
-      'public, max-age=3600, must-revalidate'
+      'private, max-age=300, must-revalidate'
     );
     expect(response.headers.get('Vary')).toBe('Range');
   });
@@ -729,22 +697,17 @@ describe('/public', () => {
     const file = filesToCreate[0];
     const dbFile = await getFileByMessageId(file!.messageId!);
 
-    const firstResponse = await fetch(
-      `${testsBaseUrl}/public/${encodeURIComponent(dbFile!.name)}`
-    );
+    const firstResponse = await fetch(signedUrl(dbFile!));
     const etag = firstResponse.headers.get('ETag');
 
     expect(firstResponse.status).toBe(200);
     expect(etag).toBeDefined();
 
-    const secondResponse = await fetch(
-      `${testsBaseUrl}/public/${encodeURIComponent(dbFile!.name)}`,
-      {
-        headers: {
-          'If-None-Match': etag!
-        }
+    const secondResponse = await fetch(signedUrl(dbFile!), {
+      headers: {
+        'If-None-Match': etag!
       }
-    );
+    });
 
     expect(secondResponse.status).toBe(304);
     expect(secondResponse.headers.get('ETag')).toBe(etag);
@@ -758,22 +721,17 @@ describe('/public', () => {
     const file = filesToCreate[0];
     const dbFile = await getFileByMessageId(file!.messageId!);
 
-    const firstResponse = await fetch(
-      `${testsBaseUrl}/public/${encodeURIComponent(dbFile!.name)}`
-    );
+    const firstResponse = await fetch(signedUrl(dbFile!));
     const lastModified = firstResponse.headers.get('Last-Modified');
 
     expect(firstResponse.status).toBe(200);
     expect(lastModified).toBeDefined();
 
-    const secondResponse = await fetch(
-      `${testsBaseUrl}/public/${encodeURIComponent(dbFile!.name)}`,
-      {
-        headers: {
-          'If-Modified-Since': lastModified!
-        }
+    const secondResponse = await fetch(signedUrl(dbFile!), {
+      headers: {
+        'If-Modified-Since': lastModified!
       }
-    );
+    });
 
     expect(secondResponse.status).toBe(304);
     expect(secondResponse.headers.get('Last-Modified')).toBe(lastModified);
@@ -785,12 +743,9 @@ describe('/public', () => {
     const totalSize = dbFile!.size;
 
     // request first 5 bytes
-    const response = await fetch(
-      `${testsBaseUrl}/public/${encodeURIComponent(dbFile!.name)}`,
-      {
-        headers: { Range: 'bytes=0-4' }
-      }
-    );
+    const response = await fetch(signedUrl(dbFile!), {
+      headers: { Range: 'bytes=0-4' }
+    });
 
     expect(response.status).toBe(206);
     expect(response.headers.get('Content-Range')).toBe(
@@ -809,22 +764,17 @@ describe('/public', () => {
     const file = filesToCreate[0];
     const dbFile = await getFileByMessageId(file!.messageId!);
 
-    const firstResponse = await fetch(
-      `${testsBaseUrl}/public/${encodeURIComponent(dbFile!.name)}`
-    );
+    const firstResponse = await fetch(signedUrl(dbFile!));
     const etag = firstResponse.headers.get('ETag');
 
     expect(etag).toBeDefined();
 
-    const response = await fetch(
-      `${testsBaseUrl}/public/${encodeURIComponent(dbFile!.name)}`,
-      {
-        headers: {
-          Range: 'bytes=0-4',
-          'If-None-Match': etag!
-        }
+    const response = await fetch(signedUrl(dbFile!), {
+      headers: {
+        Range: 'bytes=0-4',
+        'If-None-Match': etag!
       }
-    );
+    });
 
     expect(response.status).toBe(206);
     expect(response.headers.get('Content-Length')).toBe('5');
@@ -836,12 +786,9 @@ describe('/public', () => {
     const totalSize = dbFile!.size;
 
     // request from byte 5 to end
-    const response = await fetch(
-      `${testsBaseUrl}/public/${encodeURIComponent(dbFile!.name)}`,
-      {
-        headers: { Range: 'bytes=5-' }
-      }
-    );
+    const response = await fetch(signedUrl(dbFile!), {
+      headers: { Range: 'bytes=5-' }
+    });
 
     expect(response.status).toBe(206);
     expect(response.headers.get('Content-Range')).toBe(
@@ -860,12 +807,9 @@ describe('/public', () => {
     const totalSize = dbFile!.size;
     const lastByteIndex = totalSize - 1;
 
-    const response = await fetch(
-      `${testsBaseUrl}/public/${encodeURIComponent(dbFile!.name)}`,
-      {
-        headers: { Range: `bytes=${lastByteIndex}-${lastByteIndex}` }
-      }
-    );
+    const response = await fetch(signedUrl(dbFile!), {
+      headers: { Range: `bytes=${lastByteIndex}-${lastByteIndex}` }
+    });
 
     expect(response.status).toBe(206);
     expect(response.headers.get('Content-Length')).toBe('1');
@@ -880,12 +824,9 @@ describe('/public', () => {
     const dbFile = await getFileByMessageId(file!.messageId!);
     const totalSize = dbFile!.size;
 
-    const response = await fetch(
-      `${testsBaseUrl}/public/${encodeURIComponent(dbFile!.name)}`,
-      {
-        headers: { Range: `bytes=${totalSize}-${totalSize + 10}` }
-      }
-    );
+    const response = await fetch(signedUrl(dbFile!), {
+      headers: { Range: `bytes=${totalSize}-${totalSize + 10}` }
+    });
 
     expect(response.status).toBe(416);
     expect(response.headers.get('Content-Range')).toBe(`bytes */${totalSize}`);
@@ -896,12 +837,9 @@ describe('/public', () => {
     const dbFile = await getFileByMessageId(file!.messageId!);
     const totalSize = dbFile!.size;
 
-    const response = await fetch(
-      `${testsBaseUrl}/public/${encodeURIComponent(dbFile!.name)}`,
-      {
-        headers: { Range: 'bytes=abc-def' }
-      }
-    );
+    const response = await fetch(signedUrl(dbFile!), {
+      headers: { Range: 'bytes=abc-def' }
+    });
 
     expect(response.status).toBe(416);
     expect(response.headers.get('Content-Range')).toBe(`bytes */${totalSize}`);
@@ -912,12 +850,9 @@ describe('/public', () => {
     const dbFile = await getFileByMessageId(file!.messageId!);
     const totalSize = dbFile!.size;
 
-    const response = await fetch(
-      `${testsBaseUrl}/public/${encodeURIComponent(dbFile!.name)}`,
-      {
-        headers: { Range: 'bytes=10-5' }
-      }
-    );
+    const response = await fetch(signedUrl(dbFile!), {
+      headers: { Range: 'bytes=10-5' }
+    });
 
     expect(response.status).toBe(416);
     expect(response.headers.get('Content-Range')).toBe(`bytes */${totalSize}`);
@@ -935,7 +870,7 @@ describe('/public', () => {
     expect(data).toHaveProperty('error', 'File not found');
   });
 
-  test('should return 403 when signed URLs enabled and no token provided', async () => {
+  test('should return 403 and no token provided', async () => {
     const file = filesToCreate[0];
 
     expect(file).toBeDefined();
@@ -944,8 +879,6 @@ describe('/public', () => {
     const dbFile = await getFileByMessageId(file!.messageId!);
 
     expect(dbFile).toBeDefined();
-
-    await enableSignedUrls();
 
     const response = await fetch(
       `${testsBaseUrl}/public/${encodeURIComponent(dbFile!.name)}`
@@ -957,34 +890,26 @@ describe('/public', () => {
     const data = (await response.json()) as { error: string };
 
     expect(data).toHaveProperty('error', 'Forbidden');
-
-    await disableSignedUrls();
   });
 
-  test('should return 403 when signed URLs enabled and only accessToken provided without expires', async () => {
+  test('should return 403 and only accessToken provided without expires', async () => {
     const file = filesToCreate[0];
     const dbFile = await getFileByMessageId(file!.messageId!);
 
     expect(dbFile).toBeDefined();
-
-    await enableSignedUrls();
 
     const response = await fetch(
       `${testsBaseUrl}/public/${encodeURIComponent(dbFile!.name)}?accessToken=some-token`
     );
 
     expect(response.status).toBe(403);
-
-    await disableSignedUrls();
   });
 
-  test('should return 403 when signed URLs enabled and only expires provided without accessToken', async () => {
+  test('should return 403 and only expires provided without accessToken', async () => {
     const file = filesToCreate[0];
     const dbFile = await getFileByMessageId(file!.messageId!);
 
     expect(dbFile).toBeDefined();
-
-    await enableSignedUrls();
 
     const expiresAt = Date.now() + 3600000;
 
@@ -993,17 +918,13 @@ describe('/public', () => {
     );
 
     expect(response.status).toBe(403);
-
-    await disableSignedUrls();
   });
 
-  test('should return 200 when signed URLs enabled and valid token + expires provided', async () => {
+  test('should return 200 and valid token + expires provided', async () => {
     const file = filesToCreate[0];
     const dbFile = await getFileByMessageId(file!.messageId!);
 
     expect(dbFile).toBeDefined();
-
-    await enableSignedUrls();
 
     const expiresAt = Date.now() + 3600000;
     const validToken = generateFileToken(dbFile!.id, expiresAt);
@@ -1028,17 +949,13 @@ describe('/public', () => {
     const responseText = await response.text();
 
     expect(responseText).toBe(file!.content);
-
-    await disableSignedUrls();
   });
 
-  test('should return 403 when signed URLs enabled and token is expired', async () => {
+  test('should return 403 and token is expired', async () => {
     const file = filesToCreate[0];
     const dbFile = await getFileByMessageId(file!.messageId!);
 
     expect(dbFile).toBeDefined();
-
-    await enableSignedUrls();
 
     // set expires to 1 second in the past
     const expiresAt = Date.now() - 1000;
@@ -1049,17 +966,13 @@ describe('/public', () => {
     );
 
     expect(response.status).toBe(403);
-
-    await disableSignedUrls();
   });
 
-  test('should return 403 when signed URLs enabled and invalid token provided', async () => {
+  test('should return 403 and invalid token provided', async () => {
     const file = filesToCreate[0];
     const dbFile = await getFileByMessageId(file!.messageId!);
 
     expect(dbFile).toBeDefined();
-
-    await enableSignedUrls();
 
     const expiresAt = Date.now() + 3600000;
 
@@ -1068,28 +981,22 @@ describe('/public', () => {
     );
 
     expect(response.status).toBe(403);
-
-    await disableSignedUrls();
   });
 
-  test('should return 403 when signed URLs enabled and expires is not a valid number', async () => {
+  test('should return 403 and expires is not a valid number', async () => {
     const file = filesToCreate[0];
     const dbFile = await getFileByMessageId(file!.messageId!);
 
     expect(dbFile).toBeDefined();
-
-    await enableSignedUrls();
 
     const response = await fetch(
       `${testsBaseUrl}/public/${encodeURIComponent(dbFile!.name)}?accessToken=some-token&expires=not-a-number`
     );
 
     expect(response.status).toBe(403);
-
-    await disableSignedUrls();
   });
 
-  test('should enforce signed URLs on public channel files when enabled', async () => {
+  test('should enforce signed URLs on public channel files', async () => {
     const { caller } = await initTest();
 
     const channelId = await caller.channels.add({
@@ -1116,16 +1023,6 @@ describe('/public', () => {
 
     expect(dbFile).toBeDefined();
 
-    // without signed URLs, public channel file should be accessible
-    const responseWithout = await fetch(
-      `${testsBaseUrl}/public/${encodeURIComponent(dbFile!.name)}`
-    );
-
-    expect(responseWithout.status).toBe(200);
-
-    // enable signed URLs
-    await enableSignedUrls();
-
     // now it should be blocked without token
     const responseBlocked = await fetch(
       `${testsBaseUrl}/public/${encodeURIComponent(dbFile!.name)}`
@@ -1146,11 +1043,9 @@ describe('/public', () => {
     const responseText = await responseWithToken.text();
 
     expect(responseText).toBe(fileContent);
-
-    await disableSignedUrls();
   });
 
-  test('should enforce signed URLs on non-message files (e.g. avatars) when enabled', async () => {
+  test('should enforce signed URLs on non-message files (e.g. avatars)', async () => {
     // create a file that is not attached to a message but is linked (e.g. via a user avatar)
     const { caller } = await initTest();
 
@@ -1174,16 +1069,6 @@ describe('/public', () => {
 
     expect(dbFile).toBeDefined();
 
-    // without signed URLs, file should be accessible
-    const responseWithout = await fetch(
-      `${testsBaseUrl}/public/${encodeURIComponent(dbFile!.name)}`
-    );
-
-    expect(responseWithout.status).toBe(200);
-
-    // enable signed URLs
-    await enableSignedUrls();
-
     // now it should be blocked without token
     const responseBlocked = await fetch(
       `${testsBaseUrl}/public/${encodeURIComponent(dbFile!.name)}`
@@ -1200,30 +1085,18 @@ describe('/public', () => {
     );
 
     expect(responseWithToken.status).toBe(200);
-
-    await disableSignedUrls();
   });
 
-  test('should allow access to files without token when signed URLs are disabled', async () => {
-    await disableSignedUrls();
-
+  test('should serve the server logo without a token', async () => {
     const file = filesToCreate[0];
-
-    expect(file).toBeDefined();
-    expect(file!.messageId).toBeDefined();
-
     const dbFile = await getFileByMessageId(file!.messageId!);
 
-    expect(dbFile).toBeDefined();
+    await tdb.update(settings).set({ logoId: dbFile!.id });
 
     const response = await fetch(
       `${testsBaseUrl}/public/${encodeURIComponent(dbFile!.name)}`
     );
 
     expect(response.status).toBe(200);
-
-    const responseText = await response.text();
-
-    expect(responseText).toBe(file!.content);
   });
 });

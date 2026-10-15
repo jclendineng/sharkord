@@ -177,11 +177,11 @@ times it can be used, replacing the link it showed before.
 
 Uploaded files are stored under a random name (a uuid and the file's extension), never the
 name they were uploaded with, which is kept for display and downloads, and served from
-`/public/<name>`. Files uploaded before this kept their names. With **Signed File Links** on,
-the default for a new server, every link carries a token that expires and is only handed to
-someone who can see the channel. With it off, anyone who has a file's link can open it without
-signing in. It is in Server Settings, Storage. It is also `signedUrls` under `[storage]` in config.ini (see Settings in
-config.ini).
+`/public/<name>`. Files uploaded before this are moved to random names when the server starts
+(`helpers/rename-stored-files.ts`), once. Every file link carries a token that expires and is
+only handed to someone who can see the file, always: there is no switch to turn it off. The
+server logo is the one file served without a token, since it shows before anyone signs in. How
+long a link lasts is in Server Settings, Storage.
 
 A signed link only works for its lifetime, but no one has to reload for that. Every time the
 server sends a file (with its messages, a user, an emoji) it signs a new link. The web client
@@ -261,8 +261,8 @@ the other:
 [registration]
 allowNewUsers=false
 
-[storage]
-signedUrls=true
+[links]
+previewPrivateNetwork=false
 
 [gifs]
 klipyApiKey=your-key
@@ -274,12 +274,12 @@ database and pushed to everyone connected, so the screens show it straight away.
 
 `allowNewUsers=false` makes the server invite only: a new account needs an invite from someone
 with Manage Invites, single sign on cannot create accounts, and the apps say registration is
-closed. `signedUrls=true` makes every file link carry a token that expires, apart from the
-server logo, which shows before anyone signs in.
+closed. `previewPrivateNetwork` lets link previews load pages on the server's own network.
 
 What was last written is recorded in `config-sync.json` next to `config.ini`, so a value that
-differs from it is known to be an edit. The `inviteOnly` and `forceSignedUrls` keys from an
-earlier version of this fork are carried over once and then replaced. Code
+differs from it is known to be an edit. The `inviteOnly` key from an earlier version of this
+fork is carried over once and then replaced, and the old `signedUrls` and `forceSignedUrls` keys
+are removed, since file links are always signed. Code
 `apps/server/src/helpers/config-file-sync.ts`.
 
 ## Server settings in the app

@@ -31,13 +31,8 @@ const verifyFileToken = (
   );
 };
 
-const attachFileToken = (
-  file: TFile,
-  signedUrlsEnabled: boolean,
-  ttlSeconds: number
-): TFile => {
-  if (!signedUrlsEnabled) return file;
-
+// every file but the server's logo is served only on a link signed for it, see http/public.ts
+const attachFileToken = (file: TFile, ttlSeconds: number): TFile => {
   const expiresAt = Date.now() + ttlSeconds * 1000;
 
   return {
@@ -48,14 +43,10 @@ const attachFileToken = (
 };
 
 // used to attach token to the file, but in cases where the file might not exist (eg: user logo, user might not have a logo set, so file can be null)
-const signFile = (
-  file: TFile | null,
-  enabled: boolean,
-  ttl: number
-): TFile | null => {
+const signFile = (file: TFile | null, ttl: number): TFile | null => {
   if (!file) return null;
 
-  return attachFileToken(file, enabled, ttl);
+  return attachFileToken(file, ttl);
 };
 
 export { attachFileToken, generateFileToken, signFile, verifyFileToken };

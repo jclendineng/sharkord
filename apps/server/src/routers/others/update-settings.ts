@@ -31,7 +31,6 @@ const zStorageSettings = z.object({
     .optional(),
   storageSpaceQuotaByUser: z.number().min(0).optional(),
   storageOverflowAction: z.enum(StorageOverflowAction).optional(),
-  storageSignedUrlsEnabled: z.boolean().optional(),
   storageSignedUrlsTtlSeconds: z.number().int().min(0).optional(),
   storageImageOptimizationEnabled: z.boolean().optional(),
   storageImageOptimizationQuality: z
@@ -66,7 +65,6 @@ const zGeneralSettings = z.object({
 
 const CONFIG_FILE_SETTING_KEYS = [
   'allowNewUsers',
-  'storageSignedUrlsEnabled',
   'klipyApiKey',
   'linkPreviewsPrivateNetwork'
 ];

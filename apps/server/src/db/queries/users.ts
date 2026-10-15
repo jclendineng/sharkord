@@ -41,15 +41,14 @@ const getPublicUserById = async (
 
   if (!results) return undefined;
 
-  const [roles, { storageSignedUrlsEnabled, storageSignedUrlsTtlSeconds }] =
-    await Promise.all([
-      db
-        .select({ roleId: userRoles.roleId })
-        .from(userRoles)
-        .where(eq(userRoles.userId, userId))
-        .all(),
-      getSettings()
-    ]);
+  const [roles, { storageSignedUrlsTtlSeconds }] = await Promise.all([
+    db
+      .select({ roleId: userRoles.roleId })
+      .from(userRoles)
+      .where(eq(userRoles.userId, userId))
+      .all(),
+    getSettings()
+  ]);
 
   return {
     id: results.id,
@@ -58,16 +57,8 @@ const getPublicUserById = async (
     bio: results.bio,
     avatarId: results.avatarId,
     bannerId: results.bannerId,
-    avatar: signFile(
-      results.avatar,
-      storageSignedUrlsEnabled,
-      storageSignedUrlsTtlSeconds
-    ),
-    banner: signFile(
-      results.banner,
-      storageSignedUrlsEnabled,
-      storageSignedUrlsTtlSeconds
-    ),
+    avatar: signFile(results.avatar, storageSignedUrlsTtlSeconds),
+    banner: signFile(results.banner, storageSignedUrlsTtlSeconds),
     createdAt: results.createdAt,
     customStatus: results.customStatus,
     banned: results.banned,
@@ -81,8 +72,7 @@ const getPublicUsers = async (
   const avatarFiles = alias(files, 'avatarFiles');
   const bannerFiles = alias(files, 'bannerFiles');
 
-  const { storageSignedUrlsEnabled, storageSignedUrlsTtlSeconds } =
-    await getSettings();
+  const { storageSignedUrlsTtlSeconds } = await getSettings();
 
   if (returnIdentity) {
     const results = await db
@@ -130,16 +120,8 @@ const getPublicUsers = async (
       banned: result.banned,
       avatarId: result.avatarId,
       bannerId: result.bannerId,
-      avatar: signFile(
-        result.avatar,
-        storageSignedUrlsEnabled,
-        storageSignedUrlsTtlSeconds
-      ),
-      banner: signFile(
-        result.banner,
-        storageSignedUrlsEnabled,
-        storageSignedUrlsTtlSeconds
-      ),
+      avatar: signFile(result.avatar, storageSignedUrlsTtlSeconds),
+      banner: signFile(result.banner, storageSignedUrlsTtlSeconds),
       createdAt: result.createdAt,
       customStatus: result.customStatus,
       _identity: result._identity,
@@ -191,16 +173,8 @@ const getPublicUsers = async (
       bio: result.bio,
       avatarId: result.avatarId,
       bannerId: result.bannerId,
-      avatar: signFile(
-        result.avatar,
-        storageSignedUrlsEnabled,
-        storageSignedUrlsTtlSeconds
-      ),
-      banner: signFile(
-        result.banner,
-        storageSignedUrlsEnabled,
-        storageSignedUrlsTtlSeconds
-      ),
+      avatar: signFile(result.avatar, storageSignedUrlsTtlSeconds),
+      banner: signFile(result.banner, storageSignedUrlsTtlSeconds),
       createdAt: result.createdAt,
       customStatus: result.customStatus,
       roleIds: rolesMap[result.id] || []
@@ -267,28 +241,19 @@ const getJoinedUser = async (
 
   if (!user) return undefined;
 
-  const [roles, { storageSignedUrlsEnabled, storageSignedUrlsTtlSeconds }] =
-    await Promise.all([
-      db
-        .select({ roleId: userRoles.roleId })
-        .from(userRoles)
-        .where(eq(userRoles.userId, user.id))
-        .all(),
-      getSettings()
-    ]);
+  const [roles, { storageSignedUrlsTtlSeconds }] = await Promise.all([
+    db
+      .select({ roleId: userRoles.roleId })
+      .from(userRoles)
+      .where(eq(userRoles.userId, user.id))
+      .all(),
+    getSettings()
+  ]);
 
   return {
     ...user,
-    avatar: signFile(
-      user.avatar,
-      storageSignedUrlsEnabled,
-      storageSignedUrlsTtlSeconds
-    ),
-    banner: signFile(
-      user.banner,
-      storageSignedUrlsEnabled,
-      storageSignedUrlsTtlSeconds
-    ),
+    avatar: signFile(user.avatar, storageSignedUrlsTtlSeconds),
+    banner: signFile(user.banner, storageSignedUrlsTtlSeconds),
     roleIds: roles.map((r) => r.roleId)
   };
 };
@@ -342,40 +307,39 @@ const getUsers = async (): Promise<TJoinedUser[]> => {
   const avatarFiles = alias(files, 'avatarFiles');
   const bannerFiles = alias(files, 'bannerFiles');
 
-  const [results, { storageSignedUrlsEnabled, storageSignedUrlsTtlSeconds }] =
-    await Promise.all([
-      db
-        .select({
-          id: users.id,
-          name: users.name,
-          profileColor: users.profileColor,
-          bio: users.bio,
-          avatarId: users.avatarId,
-          bannerId: users.bannerId,
-          updatedAt: users.updatedAt,
-          createdAt: users.createdAt,
-          customStatus: users.customStatus,
-          identity: users.identity,
-          password: users.password,
-          lastLoginAt: users.lastLoginAt,
-          banned: users.banned,
-          banReason: users.banReason,
-          bannedAt: users.bannedAt,
-          tokenVersion: users.tokenVersion,
-          allowDirectMessages: users.allowDirectMessages,
-          presence: users.presence,
-          oidcSub: users.oidcSub,
-          oidcIssuer: users.oidcIssuer,
-          passwordSet: users.passwordSet,
-          avatar: avatarFiles,
-          banner: bannerFiles
-        })
-        .from(users)
-        .leftJoin(avatarFiles, eq(users.avatarId, avatarFiles.id))
-        .leftJoin(bannerFiles, eq(users.bannerId, bannerFiles.id))
-        .all(),
-      getSettings()
-    ]);
+  const [results, { storageSignedUrlsTtlSeconds }] = await Promise.all([
+    db
+      .select({
+        id: users.id,
+        name: users.name,
+        profileColor: users.profileColor,
+        bio: users.bio,
+        avatarId: users.avatarId,
+        bannerId: users.bannerId,
+        updatedAt: users.updatedAt,
+        createdAt: users.createdAt,
+        customStatus: users.customStatus,
+        identity: users.identity,
+        password: users.password,
+        lastLoginAt: users.lastLoginAt,
+        banned: users.banned,
+        banReason: users.banReason,
+        bannedAt: users.bannedAt,
+        tokenVersion: users.tokenVersion,
+        allowDirectMessages: users.allowDirectMessages,
+        presence: users.presence,
+        oidcSub: users.oidcSub,
+        oidcIssuer: users.oidcIssuer,
+        passwordSet: users.passwordSet,
+        avatar: avatarFiles,
+        banner: bannerFiles
+      })
+      .from(users)
+      .leftJoin(avatarFiles, eq(users.avatarId, avatarFiles.id))
+      .leftJoin(bannerFiles, eq(users.bannerId, bannerFiles.id))
+      .all(),
+    getSettings()
+  ]);
 
   // Get role IDs for all users
   const rolesByUser = await db
@@ -402,16 +366,8 @@ const getUsers = async (): Promise<TJoinedUser[]> => {
     bio: result.bio,
     avatarId: result.avatarId,
     bannerId: result.bannerId,
-    avatar: signFile(
-      result.avatar,
-      storageSignedUrlsEnabled,
-      storageSignedUrlsTtlSeconds
-    ),
-    banner: signFile(
-      result.banner,
-      storageSignedUrlsEnabled,
-      storageSignedUrlsTtlSeconds
-    ),
+    avatar: signFile(result.avatar, storageSignedUrlsTtlSeconds),
+    banner: signFile(result.banner, storageSignedUrlsTtlSeconds),
     createdAt: result.createdAt,
     updatedAt: result.updatedAt,
     identity: result.identity,

@@ -105,11 +105,7 @@ const getFilesByUserId = async (
   ]);
 
   const results = result.map((r) =>
-    attachFileToken(
-      r.file,
-      settings.storageSignedUrlsEnabled,
-      settings.storageSignedUrlsTtlSeconds
-    )
+    attachFileToken(r.file, settings.storageSignedUrlsTtlSeconds)
   );
 
   return results;

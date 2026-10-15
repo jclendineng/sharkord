@@ -13,7 +13,6 @@ import { CONFIG_INI_PATH, DATA_PATH } from './paths';
 // while running, is applied to the database and pushed to everyone connected
 type TMirroredValues = {
   allowNewUsers: boolean;
-  signedUrls: boolean;
   klipyApiKey: string;
   previewPrivateNetwork: boolean;
 };
@@ -21,12 +20,10 @@ type TMirroredValues = {
 type TFileValues = Partial<TMirroredValues> & {
   // from the version that only locked these, read once and then dropped from the file
   inviteOnly?: boolean;
-  forceSignedUrls?: boolean;
 };
 
 const MIRRORED_KEYS = [
   'allowNewUsers',
-  'signedUrls',
   'klipyApiKey',
   'previewPrivateNetwork'
 ] as const;
@@ -67,19 +64,16 @@ const readFileText = async () => {
 const readFileValues = async (): Promise<TFileValues> => {
   const parsed = parse(await readFileText());
   const registration = toSection(parsed.registration);
-  const storage = toSection(parsed.storage);
   const gifs = toSection(parsed.gifs);
   const links = toSection(parsed.links);
   const klipyApiKey = gifs.klipyApiKey;
 
   return {
     allowNewUsers: toBoolean(registration.allowNewUsers),
-    signedUrls: toBoolean(storage.signedUrls),
     klipyApiKey:
       typeof klipyApiKey === 'string' ? klipyApiKey.trim() : undefined,
     previewPrivateNetwork: toBoolean(links.previewPrivateNetwork),
-    inviteOnly: toBoolean(registration.inviteOnly),
-    forceSignedUrls: toBoolean(storage.forceSignedUrls)
+    inviteOnly: toBoolean(registration.inviteOnly)
   };
 };
 
@@ -88,7 +82,6 @@ const readDatabaseValues = async (): Promise<TMirroredValues> => {
 
   return {
     allowNewUsers: settings.allowNewUsers,
-    signedUrls: settings.storageSignedUrlsEnabled,
     klipyApiKey: settings.klipyApiKey ?? '',
     previewPrivateNetwork: settings.linkPreviewsPrivateNetwork
   };
@@ -105,7 +98,6 @@ const readLastSync = async (): Promise<TMirroredValues | undefined> => {
 const applyToDatabase = async (changes: Partial<TMirroredValues>) => {
   await updateSettings({
     allowNewUsers: changes.allowNewUsers,
-    storageSignedUrlsEnabled: changes.signedUrls,
     klipyApiKey:
       changes.klipyApiKey === undefined
         ? undefined
@@ -123,13 +115,19 @@ const writeFile = async (values: TMirroredValues) => {
   const links = toSection(parsed.links);
 
   delete registration.inviteOnly;
+  // file links are always signed now, there is nothing left to switch
   delete storage.forceSignedUrls;
+  delete storage.signedUrls;
 
   parsed.registration = {
     ...registration,
     allowNewUsers: values.allowNewUsers
   };
-  parsed.storage = { ...storage, signedUrls: values.signedUrls };
+  if (Object.keys(storage).length > 0) {
+    parsed.storage = storage;
+  } else {
+    delete parsed.storage;
+  }
   parsed.gifs = { ...gifs, klipyApiKey: values.klipyApiKey };
   parsed.links = {
     ...links,
@@ -165,10 +163,6 @@ const getFileEdits = (
 
   if (!last && file.inviteOnly === true) {
     edits.allowNewUsers = false;
-  }
-
-  if (!last && file.forceSignedUrls === true) {
-    edits.signedUrls = true;
   }
 
   return edits;

@@ -31,11 +31,10 @@ const getEmojiRows = () =>
 
 const parseEmoji = (
   row: TEmojiRow,
-  signedUrlsEnabled: boolean,
   signedUrlsTtlSeconds: number
 ): TJoinedEmoji => ({
   ...row.emoji,
-  file: attachFileToken(row.file, signedUrlsEnabled, signedUrlsTtlSeconds),
+  file: attachFileToken(row.file, signedUrlsTtlSeconds),
   user: { ...row.user, avatar: null, banner: null }
 });
 
@@ -44,21 +43,17 @@ const getEmojiById = async (id: number): Promise<TJoinedEmoji | undefined> => {
 
   if (!row) return undefined;
 
-  const { storageSignedUrlsEnabled, storageSignedUrlsTtlSeconds } =
-    await getSettings();
+  const { storageSignedUrlsTtlSeconds } = await getSettings();
 
-  return parseEmoji(row, storageSignedUrlsEnabled, storageSignedUrlsTtlSeconds);
+  return parseEmoji(row, storageSignedUrlsTtlSeconds);
 };
 
 const getEmojis = async (): Promise<TJoinedEmoji[]> => {
   const rows = await getEmojiRows();
 
-  const { storageSignedUrlsEnabled, storageSignedUrlsTtlSeconds } =
-    await getSettings();
+  const { storageSignedUrlsTtlSeconds } = await getSettings();
 
-  return rows.map((row) =>
-    parseEmoji(row, storageSignedUrlsEnabled, storageSignedUrlsTtlSeconds)
-  );
+  return rows.map((row) => parseEmoji(row, storageSignedUrlsTtlSeconds));
 };
 
 const emojiExists = async (
