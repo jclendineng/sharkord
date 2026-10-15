@@ -104,7 +104,11 @@ struct SearchScreen: View {
                 resultsList
             }
         }
-        .background(Theme.deepBackground)
+        // a tap or a scroll on what is below the search box puts the keyboard away
+        .scrollDismissesKeyboard(.immediately)
+        .simultaneousGesture(TapGesture().onEnded(unfocusField))
+        // under the keyboard too, or its rounded top corners show the window's black behind them
+        .background(Theme.deepBackground.ignoresSafeArea())
         // the search box sits in the navigation bar between its back button and the filters,
         // the bar staying keeps the swipe back
         .navigationBarTitleDisplayMode(.inline)
@@ -247,6 +251,12 @@ struct SearchScreen: View {
         token = picker
         query = ""
         isFieldFocused = true
+    }
+
+    // through uikit, as the field was focused: focus state alone may not know it has it
+    private func unfocusField() {
+        isFieldFocused = false
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 
     private func focusNavigationBarField() {

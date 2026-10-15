@@ -30,6 +30,8 @@ struct HomeView: View {
     // since in portrait only the list was ever on screen
     @State private var placeholderChannelId: Int?
     @State private var searchRoute: SearchRoute?
+    // the ipad's search cover following a swipe in from the left edge, as a pushed screen would
+    @State private var searchSwipe: CGFloat = 0
 
     // narrower in portrait, where the chat beside it has less room to read in
     private var panelWidth: CGFloat {
@@ -201,6 +203,16 @@ struct HomeView: View {
                     .chatDestinations()
             }
             .environment(session)
+            .background(Theme.deepBackground.ignoresSafeArea())
+            .offset(x: searchSwipe)
+            .overlay(alignment: .leading) {
+                Color.clear
+                    .frame(width: 24)
+                    .contentShape(.rect)
+                    .gesture(searchEdgeSwipe)
+            }
+            // see through, so a swipe back shows the screen behind as the search slides off
+            .presentationBackground(.clear)
         }
         // a result opened from search shows in the chat beside the list, search steps aside
         .onChange(of: session.requestedChannelId) { _, requested in
@@ -367,6 +379,41 @@ struct HomeView: View {
 
     private func closeSearch() {
         searchRoute = nil
+    }
+
+    // a full screen cover has no swipe back of its own. this one slides the search off to the
+    // right under the finger and, past a third of the way or on a flick, lets it go there
+    // rather than dropping it downwards as a cover leaves
+    private var searchEdgeSwipe: some Gesture {
+        DragGesture(minimumDistance: 8, coordinateSpace: .global)
+            .onChanged { value in
+                searchSwipe = max(value.translation.width, 0)
+            }
+            .onEnded { value in
+                let width = UIScreen.main.bounds.width
+                let landing = value.translation.width + value.velocity.width * 0.2
+
+                guard landing > width / 3 else {
+                    withAnimation(.interactiveSpring(response: 0.3, dampingFraction: 0.86)) {
+                        searchSwipe = 0
+                    }
+                    return
+                }
+
+                withAnimation(.smooth(duration: 0.22)) {
+                    searchSwipe = width
+                } completion: {
+                    var transaction = Transaction()
+
+                    transaction.disablesAnimations = true
+
+                    withTransaction(transaction) {
+                        searchRoute = nil
+                    }
+
+                    searchSwipe = 0
+                }
+            }
     }
 
     private func setSplit(_ split: Bool) {

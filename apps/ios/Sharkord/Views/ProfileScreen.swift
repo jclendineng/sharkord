@@ -46,7 +46,8 @@ struct ProfileScreen: View {
                         }
                     }
                     .buttonStyle(.plain)
-                    .padding(.bottom, 18)
+                    // clear of the banner above it, its outline included
+                    .padding(.bottom, 4)
                 }
                 .padding(.leading, 12)
                 .padding(.trailing, 16)
@@ -144,22 +145,12 @@ struct ProfileScreen: View {
         }
         .background(Theme.deepBackground)
         .overlay(alignment: .topLeading) {
-            Button("Close", systemImage: "xmark", action: close)
-                .labelStyle(.iconOnly)
-                .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(.white)
-                .frame(width: 36, height: 36)
-                .background(.black.opacity(0.35), in: .circle)
-                .padding(14)
+            BannerButton(title: "Close", systemImage: "xmark", weight: .bold, size: 15, action: close)
+                .padding(10)
         }
         .overlay(alignment: .topTrailing) {
-            Button("Settings", systemImage: "gearshape.fill", action: showSettings)
-                .labelStyle(.iconOnly)
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: 36, height: 36)
-                .background(.black.opacity(0.35), in: .circle)
-                .padding(14)
+            BannerButton(title: "Settings", systemImage: "gearshape.fill", weight: .semibold, size: 17, action: showSettings)
+                .padding(10)
         }
         .sheet(isPresented: $isSettingsPresented) {
             SettingsSheet()
@@ -199,6 +190,30 @@ struct ProfileScreen: View {
     private func signOut() {
         dismiss()
         servers.remove(session)
+    }
+}
+
+// a round button over the banner. the whole circle and a little around it takes the tap, not
+// just the glyph, which on an ipad's sheet is easy to miss
+private struct BannerButton: View {
+    let title: String
+    let systemImage: String
+    let weight: Font.Weight
+    let size: CGFloat
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.system(size: size, weight: weight))
+                .foregroundStyle(.white)
+                .frame(width: 36, height: 36)
+                .background(.black.opacity(0.35), in: .circle)
+                .frame(width: 44, height: 44)
+                .contentShape(.circle)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
     }
 }
 
