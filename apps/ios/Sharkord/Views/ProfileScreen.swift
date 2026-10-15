@@ -9,6 +9,7 @@ struct ProfileScreen: View {
     @State private var isEditPresented = false
     @State private var isSettingsPresented = false
     @State private var isStatusPresented = false
+    @State private var isFriendsPresented = false
 
     private var user: PublicUser? {
         session.ownUser
@@ -96,6 +97,27 @@ struct ProfileScreen: View {
                         }
                     }
 
+                    Button(action: showFriends) {
+                        HStack {
+                            Text("Friends")
+                                .font(.headline)
+                                .foregroundStyle(Theme.header)
+
+                            Spacer()
+
+                            Text("\(session.friendLists.friends.count)")
+                                .foregroundStyle(Theme.muted)
+
+                            Image(systemName: "chevron.right")
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(Theme.muted)
+                        }
+                        .padding(16)
+                        .background(Theme.listBackground, in: .rect(cornerRadius: 12))
+                        .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+
                     ProfileCard(title: "Server") {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(session.displayName)
@@ -142,6 +164,9 @@ struct ProfileScreen: View {
         .sheet(isPresented: $isSettingsPresented) {
             SettingsSheet()
         }
+        .sheet(isPresented: $isFriendsPresented) {
+            AddFriendsSheet()
+        }
         .sheet(isPresented: $isStatusPresented) {
             SetStatusSheet()
         }
@@ -149,6 +174,10 @@ struct ProfileScreen: View {
         .sheet(isPresented: $isEditPresented) {
             EditProfileSheet()
         }
+    }
+
+    private func showFriends() {
+        isFriendsPresented = true
     }
 
     private func setStatus() {

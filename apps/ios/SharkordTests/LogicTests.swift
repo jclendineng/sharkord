@@ -11,6 +11,20 @@ struct ServerAddressTests {
         #expect(!address.isInsecure)
     }
 
+    @Test(arguments: ["https://chat.example.com/?invite=abc123", "chat.example.com/?invite=abc123", "https://chat.example.com?invite=abc123"])
+    func anInviteLinkGivesTheServerAndTheCode(_ typed: String) throws {
+        let address = try #require(ServerAddress(userInput: typed))
+
+        #expect(address.baseURL.absoluteString == "https://chat.example.com")
+        #expect(ServerAddress.inviteCode(in: typed) == "abc123")
+    }
+
+    @Test func aCodeOnItsOwnIsTheCode() {
+        #expect(ServerAddress.inviteCode(in: " abc123 ") == "abc123")
+        #expect(ServerAddress.inviteCode(in: "chat.example.com") == nil)
+        #expect(ServerAddress.inviteCode(in: "") == nil)
+    }
+
     @Test(arguments: ["ftp://chat.example.com", "https://", ""])
     func nonsenseIsRefused(_ typed: String) {
         #expect(ServerAddress(userInput: typed) == nil)

@@ -29,6 +29,8 @@ struct ConnectView: View {
     @State private var identity = ""
     @State private var password = ""
     @State private var serverInfo: ServerInfo?
+    // an invite link or its code, from the address field or typed in on a closed server
+    @State private var invite = ""
     @State private var serverError: String?
     @State private var isCheckingServer = false
 
@@ -129,7 +131,7 @@ struct ConnectView: View {
 
     @ViewBuilder
     private func serverCard(intent: Intent) -> some View {
-        AuthTitle(title: "Enter your server", subtitle: "The address you use to reach it, like chat.example.com.")
+        AuthTitle(title: "Enter your server", subtitle: "The address you use to reach it, like chat.example.com, or the invite link you were sent.")
 
         AuthField(label: "Server Address") {
             TextField("", text: $serverURL, prompt: Text("chat.example.com").foregroundStyle(Theme.muted))
@@ -191,7 +193,17 @@ struct ConnectView: View {
 
         ServerBadge(info: serverInfo, address: ServerAddress(userInput: serverURL))
 
-        if serverInfo?.allowNewUsers == true && serverInfo?.oidcDisableLocalLogin != true {
+        if serverInfo?.allowNewUsers != true && serverInfo?.oidcDisableLocalLogin != true {
+            AuthField(label: "Invite Link") {
+                TextField("", text: $invite, prompt: Text("Paste the invite link you were sent").foregroundStyle(Theme.muted))
+                    .keyboardType(.URL)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .accessibilityLabel("Invite Link")
+            }
+        }
+
+        if (serverInfo?.allowNewUsers == true || inviteCode != nil) && serverInfo?.oidcDisableLocalLogin != true {
             credentialFields(passwordContent: .newPassword)
 
             Text("Pick a username and a password of at least 4 characters. You'll use them to log in.")
@@ -202,7 +214,7 @@ struct ConnectView: View {
 
             AuthButton(title: "Create Account", isEnabled: canSubmit, isWorking: isConnecting, action: signIn)
         } else if serverInfo?.allowNewUsers != true {
-            Text("\(serverInfo?.name ?? "This server") isn't taking new members right now. Ask its owner for an invite, or log in if you already have an account.")
+            Text("\(serverInfo?.name ?? "This server") only takes new members with an invite. Paste the link you were sent above, or log in if you already have an account.")
                 .font(.subheadline)
                 .foregroundStyle(Theme.text)
 
@@ -326,6 +338,10 @@ struct ConnectView: View {
         servers.cancelSignIn()
     }
 
+    private var inviteCode: String? {
+        ServerAddress.inviteCode(in: invite)
+    }
+
     private func checkServer(for intent: Intent) {
         guard let address = ServerAddress(userInput: serverURL) else {
             serverError = "That doesn't look like a server address."
@@ -340,10 +356,15 @@ struct ConnectView: View {
         serverError = nil
         isCheckingServer = true
 
+        // an invite link goes straight to making an account with it, as discord's does
+        if let code = ServerAddress.inviteCode(in: serverURL), serverURL.contains("invite=") {
+            invite = code
+        }
+
         Task {
             do {
                 serverInfo = try await AuthAPI.fetchInfo(address)
-                step = intent == .register ? .register : .login
+                step = intent == .register || inviteCode != nil ? .register : .login
             } catch {
                 serverError = "Couldn't reach a Sharkord server there. Check the address and try again."
             }
@@ -358,7 +379,7 @@ struct ConnectView: View {
         }
 
         Task {
-            await session.signIn(serverURL: serverURL, identity: identity, password: password)
+            await session.signIn(serverURL: serverURL, identity: identity, password: password, invite: step == .register ? inviteCode : nil)
         }
     }
 

@@ -29,7 +29,33 @@ struct ServerAddress: Hashable {
             return nil
         }
 
-        self.baseURL = url
+        // an invite link is the server's address with the code on it, the server is the address
+        var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        components?.query = nil
+        components?.fragment = nil
+
+        while components?.path.hasSuffix("/") == true {
+            components?.path.removeLast()
+        }
+
+        self.baseURL = components?.url ?? url
+    }
+
+    // the code in an invite link, https://chat.example.com/?invite=abc, or a code on its own
+    static func inviteCode(in userInput: String) -> String? {
+        let text = userInput.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if let components = URLComponents(string: text.contains("://") ? text : "https://\(text)"),
+           let code = components.queryItems?.first(where: { $0.name == "invite" })?.value,
+           !code.isEmpty {
+            return code
+        }
+
+        guard !text.isEmpty, !text.contains("/"), !text.contains("."), !text.contains(" ") else {
+            return nil
+        }
+
+        return text
     }
 
     static let insecureMessage = "This server isn't using HTTPS, so everything sent to it could be read on the way. Sharkord only uses plain HTTP on your local network or Tailscale. Add it with an https:// address."

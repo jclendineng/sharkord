@@ -539,14 +539,14 @@ final class SessionStore {
         await connect(address, token: token)
     }
 
-    func signIn(serverURL: String, identity: String, password: String) async {
+    func signIn(serverURL: String, identity: String, password: String, invite: String? = nil) async {
         guard let address = ServerAddress(userInput: serverURL) else {
             errorMessage = "Enter a valid server address."
             return
         }
 
         await signIn(address) {
-            try await AuthAPI.login(address, identity: identity, password: password)
+            try await AuthAPI.login(address, identity: identity, password: password, invite: invite)
         }
     }
 

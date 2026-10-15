@@ -90,6 +90,21 @@ struct AddFriendsScreen: View {
                 }
             }
 
+            let friends = users(session.friendLists.friends)
+                .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+
+            if !friends.isEmpty {
+                Section("Friends") {
+                    ForEach(friends) { user in
+                        FriendRow(user: user) {
+                            RoundIconButton(title: "Remove Friend", systemImage: "person.badge.minus", tint: Theme.muted) {
+                                change("remove", user)
+                            }
+                        }
+                    }
+                }
+            }
+
             Section("People on \(session.displayName)") {
                 ForEach(others) { user in
                     FriendRow(user: user) {

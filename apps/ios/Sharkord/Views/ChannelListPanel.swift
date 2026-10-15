@@ -199,7 +199,7 @@ private struct ChannelRow: View {
     private var icon: String {
         switch channel.type {
         case .text:
-            channel.private ? "lock" : "number"
+            "number"
         case .voice:
             "speaker.wave.2.fill"
         }
@@ -262,9 +262,19 @@ private struct ChannelRow: View {
 
     private var label: some View {
         HStack(spacing: 8) {
+            // discord's: the channel's own symbol with a small lock on it when it is private
             Image(systemName: icon)
                 .font(.system(size: 18, weight: .medium))
                 .frame(width: 24)
+                .overlay(alignment: .topTrailing) {
+                    if channel.private {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 8, weight: .bold))
+                            .padding(1.5)
+                            .background(Theme.panelBackground, in: .circle)
+                            .offset(x: 2, y: -2)
+                    }
+                }
 
             Text(channel.name)
                 .font(.body.weight(isUnread ? .semibold : .medium))

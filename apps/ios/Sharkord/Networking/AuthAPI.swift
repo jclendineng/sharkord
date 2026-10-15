@@ -11,6 +11,8 @@ enum AuthAPI {
     private struct LoginBody: Encodable {
         let identity: String
         let password: String
+        // lets a new account in on a server that is closed to everyone else
+        let invite: String?
     }
 
     private struct OIDCExchangeBody: Encodable {
@@ -36,12 +38,12 @@ enum AuthAPI {
         return try JSONDecoder().decode(ServerInfo.self, from: data)
     }
 
-    static func login(_ address: ServerAddress, identity: String, password: String) async throws -> String {
+    static func login(_ address: ServerAddress, identity: String, password: String, invite: String? = nil) async throws -> String {
         var request = URLRequest(url: address.url(path: "login"))
         request.httpMethod = "POST"
         request.setValue(AppInfo.userAgent, forHTTPHeaderField: "User-Agent")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONEncoder().encode(LoginBody(identity: identity, password: password))
+        request.httpBody = try JSONEncoder().encode(LoginBody(identity: identity, password: password, invite: invite))
 
         let (data, response) = try await URLSession.shared.data(for: request)
 

@@ -5,6 +5,8 @@ struct ReactionsView: View {
 
     @Environment(SessionStore.self) private var session
 
+    @State private var isPickerPresented = false
+
     private struct Group: Identifiable {
         let emoji: String
         let file: SharkordFile?
@@ -39,8 +41,38 @@ struct ReactionsView: View {
                     onTap: { toggle(group.emoji) }
                 )
             }
+
+            // discord's smiley at the end of the row, another reaction without the long press
+            if session.can(.reactToMessages) {
+                Button("Add Reaction", systemImage: "face.smiling", action: openPicker)
+                    .labelStyle(.iconOnly)
+                    .font(.system(size: 17))
+                    .foregroundStyle(Theme.muted)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Theme.listBackground, in: .rect(cornerRadius: 8))
+                    .buttonStyle(.plain)
+            }
         }
         .padding(.top, 2)
+        .sheet(isPresented: $isPickerPresented) {
+            EmojiPickerView(includesCustom: true, onPick: add)
+        }
+    }
+
+    private func openPicker() {
+        isPickerPresented = true
+    }
+
+    // one already on it from you stays, the picker only adds
+    private func add(_ emoji: String) {
+        let isMine = message.reactions.contains { $0.emoji == emoji && $0.userId == session.ownUserId }
+
+        guard !isMine else {
+            return
+        }
+
+        toggle(emoji)
     }
 
     private func toggle(_ emoji: String) {
