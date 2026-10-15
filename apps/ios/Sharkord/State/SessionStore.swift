@@ -1094,14 +1094,6 @@ final class SessionStore {
         isDirectMessage(channelId) ? conversationTitle(for: channelId) : channelName
     }
 
-    func placeSymbol(channelId: Int) -> String {
-        guard isDirectMessage(channelId) else {
-            return "number"
-        }
-
-        return group(for: channelId) == nil ? "at" : "person.2.fill"
-    }
-
     func conversationTitle(for channelId: Int) -> String {
         if let group = group(for: channelId) {
             if let name = group.name, !name.isEmpty {

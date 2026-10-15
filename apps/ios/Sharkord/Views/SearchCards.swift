@@ -286,6 +286,18 @@ private struct SearchCard<Preview: View, Details: View>: View {
         userId.flatMap { session.usersById[$0] }
     }
 
+    // discord's: a channel's #, the person's avatar for a direct message, a group's picture
+    @ViewBuilder
+    private var placeIcon: some View {
+        if !session.isDirectMessage(channelId) {
+            Image(systemName: "number")
+        } else if session.group(for: channelId) != nil {
+            GroupAvatar(size: 18)
+        } else {
+            AvatarView(user: session.directMessagePartner(for: channelId), size: 18)
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // discord's: the picture takes the card's width, a little shorter than it is wide
@@ -316,7 +328,7 @@ private struct SearchCard<Preview: View, Details: View>: View {
                     Text(session.placeName(channelId: channelId, channelName: channelName))
                         .lineLimit(1)
                 } icon: {
-                    Image(systemName: session.placeSymbol(channelId: channelId))
+                    placeIcon
                 }
                 .font(.subheadline)
                 .foregroundStyle(Theme.muted)
