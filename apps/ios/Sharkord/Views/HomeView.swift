@@ -97,6 +97,10 @@ struct HomeView: View {
                 .environment(session)
                 .interactiveDismissDisabled()
         }
+        .sheet(item: pendingApproval) { approval in
+            ApproveDeviceSheet(token: approval.token)
+                .environment(session)
+        }
         .sheet(isPresented: isShowingDevices) {
             NavigationStack {
                 DevicesScreen()
@@ -109,6 +113,24 @@ struct HomeView: View {
             .environment(session)
             .presentationBackground(Theme.deepBackground)
         }
+    }
+
+    // another device's code opened here, for the server it came from
+    private var pendingApproval: Binding<ServerListStore.LoginApproval?> {
+        Binding(
+            get: {
+                guard let approval = servers.pendingApproval, servers.session(approving: approval) === session else {
+                    return nil
+                }
+
+                return approval
+            },
+            set: { approval in
+                if approval == nil {
+                    servers.pendingApproval = nil
+                }
+            }
+        )
     }
 
     private var isShowingDevices: Binding<Bool> {
@@ -169,6 +191,16 @@ struct HomeView: View {
                     // the message bar clear of the card's rounded bottom, as discord's sits
                     .padding(.bottom, 8)
                     .background(Theme.chatBackground)
+                    // a swipe in from the card's edge goes back. the system's own loses it to a
+                    // screen that pages sideways, channel info's tabs among them
+                    .overlay(alignment: .leading) {
+                        if !path.isEmpty {
+                            Color.clear
+                                .frame(width: 22)
+                                .contentShape(.rect)
+                                .gesture(edgeSwipeBack)
+                        }
+                    }
                     .environment(\.showChannelList, isChatExpanded ? collapseChat : nil)
                     .environment(\.expandChat, isChatExpanded ? nil : expandForTyping)
                     .clipShape(.rect(cornerRadius: Self.cardRadius, style: .continuous))
@@ -275,6 +307,17 @@ struct HomeView: View {
 
     private func expandForTyping() {
         settleChat(expanded: true)
+    }
+
+    private var edgeSwipeBack: some Gesture {
+        DragGesture(minimumDistance: 10)
+            .onEnded { value in
+                let distance = value.translation.width + value.velocity.width * 0.15
+
+                if distance > 60 && !path.isEmpty {
+                    path.removeLast()
+                }
+            }
     }
 
     private func toggleChat() {

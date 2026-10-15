@@ -360,7 +360,7 @@ struct SearchScreen: View {
 
         try? await Task.sleep(for: .milliseconds(400))
 
-        guard !Task.isCancelled, let client = session.client else {
+        guard !Task.isCancelled, let client = try? await session.readyClient() else {
             return
         }
 

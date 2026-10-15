@@ -61,7 +61,7 @@ final class SearchHomeModel {
     }
 
     func load(_ tab: SearchTab, session: SessionStore) async {
-        guard !loading.contains(tab), let client = session.client else {
+        guard !loading.contains(tab), let client = try? await session.readyClient() else {
             return
         }
 

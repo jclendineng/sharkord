@@ -189,19 +189,33 @@ final class SessionStore {
         }
     }
 
-    // the settings screens call routes directly, these fail plainly while disconnected
-    func request<Output: Decodable>(_ path: String) async throws -> Output {
-        guard let client else {
+    // the client once the server knows who it is talking to. a screen opened straight after
+    // launch, or during a reconnect, asks while the sign in is still under way and the server
+    // turns that away as unauthenticated, so it waits that out, up to a few seconds
+    func readyClient() async throws -> TRPCClient {
+        var waited = 0
+
+        while phase == .connecting || phase == .reconnecting, waited < 150 {
+            try await Task.sleep(for: .milliseconds(100))
+            waited += 1
+        }
+
+        guard phase == .connected, let client else {
             throw TRPCError(message: "Not connected to the server.", code: nil)
         }
+
+        return client
+    }
+
+    // the settings screens call routes directly, these wait for the sign in to finish first
+    func request<Output: Decodable>(_ path: String) async throws -> Output {
+        let client = try await readyClient()
 
         return try await client.query(path)
     }
 
     func request<Input: Encodable, Output: Decodable>(_ path: String, _ input: Input) async throws -> Output {
-        guard let client else {
-            throw TRPCError(message: "Not connected to the server.", code: nil)
-        }
+        let client = try await readyClient()
 
         return try await client.query(path, input: input)
     }
@@ -223,17 +237,13 @@ final class SessionStore {
     }
 
     func perform<Input: Encodable>(_ path: String, _ input: Input) async throws {
-        guard let client else {
-            throw TRPCError(message: "Not connected to the server.", code: nil)
-        }
+        let client = try await readyClient()
 
         try await client.mutation(path, input: input)
     }
 
     func perform<Input: Encodable, Output: Decodable>(_ path: String, _ input: Input) async throws -> Output {
-        guard let client else {
-            throw TRPCError(message: "Not connected to the server.", code: nil)
-        }
+        let client = try await readyClient()
 
         return try await client.mutation(path, input: input)
     }
@@ -564,6 +574,13 @@ final class SessionStore {
         }
     }
 
+    // a qr code this device shows, approved on one already signed in
+    func signIn(address: ServerAddress, loginRequest: AuthAPI.LoginRequest) async {
+        await signIn(address) {
+            try await AuthAPI.waitForLoginRequestApproval(address, request: loginRequest)
+        }
+    }
+
     // authenticate shows the provider in a browser sheet and returns the url it redirected
     // back to, it lives in the view since that is where SwiftUI hands out the session
     func signInWithOIDC(serverURL: String, authenticate: (URL) async throws -> URL) async {
@@ -602,6 +619,11 @@ final class SessionStore {
 
             await connect(address, token: token)
         } catch let error as ASWebAuthenticationSessionError where error.code == .canceledLogin {
+            phase = .signedOut
+        } catch is CancellationError {
+            // left the screen that was waiting, there is nothing to report
+            phase = .signedOut
+        } catch let error as URLError where error.code == .cancelled {
             phase = .signedOut
         } catch {
             phase = .signedOut

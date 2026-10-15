@@ -398,8 +398,9 @@ private struct DirectMessageActionsSheet: View {
                 }
             }
             .padding(.horizontal, 16)
+            .fittedSheet()
         }
-        .presentationDetents([.medium])
+        .scrollBounceBehavior(.basedOnSize)
         .presentationDragIndicator(.visible)
         .presentationBackground(Theme.deepBackground)
         .sheet(isPresented: $isProfilePresented) {

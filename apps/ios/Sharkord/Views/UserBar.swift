@@ -81,6 +81,7 @@ struct UserBar: View {
         .shadow(color: .black.opacity(0.4), radius: 20, y: 8)
         .sheet(isPresented: $isProfilePresented) {
             ProfileScreen()
+                .presentationSizing(TallerFormSizing())
         }
         .sheet(isPresented: $isUnreadsPresented) {
             InboxSheet()
@@ -93,5 +94,16 @@ struct UserBar: View {
 
     private func showUnreads() {
         isUnreadsPresented = true
+    }
+}
+
+// the ipad's usual sheet a little taller, so the profile's log out shows without scrolling. a
+// phone's sheet already runs the screen's height
+private struct TallerFormSizing: PresentationSizing {
+    func proposedSize(for root: PresentationSizingRoot, context: PresentationSizingContext) -> ProposedViewSize {
+        let form: FormPresentationSizing = .form
+        let size = form.proposedSize(for: root, context: context)
+
+        return ProposedViewSize(width: size.width, height: size.height.map { $0 + 24 })
     }
 }
