@@ -150,5 +150,11 @@
   "noGifsFound": "No se encontraron GIFs.",
   "searchStickers": "Encuentra el sticker perfecto",
   "noStickers": "Este servidor aún no tiene stickers. Los administradores pueden añadirlos en Ajustes del servidor.",
-  "noStickersFound": "Ningún sticker coincide."
+  "noStickersFound": "Ningún sticker coincide.",
+  "groupMembers_one": "{{count}} miembro",
+  "groupMembers_other": "{{count}} miembros",
+  "addFriend": "Añadir amigo",
+  "removeFriend": "Eliminar amigo",
+  "acceptFriend": "Aceptar solicitud de amistad",
+  "cancelFriendRequest": "Cancelar solicitud de amistad"
 }

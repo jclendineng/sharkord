@@ -6,8 +6,10 @@ import type {
   TChannel,
   TChannelUserPermissionsMap,
   TCommandsMapByPlugin,
+  TDirectMessageConversation,
   TExternalStream,
   TExternalStreamsMap,
+  TFriendLists,
   TJoinedEmoji,
   TJoinedMessage,
   TJoinedPublicUser,
@@ -87,6 +89,9 @@ export interface IServerState {
   pluginCapabilityAccess: TPluginCapabilityAccessRule[];
   activeFullscreenPluginId: string | undefined;
   dmsOpen: boolean;
+  // the caller's conversations, groups among them, newest first
+  directMessages: TDirectMessageConversation[];
+  friendLists: TFriendLists;
 }
 
 const initialState: IServerState = {
@@ -145,6 +150,8 @@ const initialState: IServerState = {
   pluginCapabilityAccess: [],
   activeFullscreenPluginId: undefined,
   dmsOpen: false,
+  directMessages: [],
+  friendLists: { friends: [], incoming: [], outgoing: [] },
   hideOwnScreenShare: getLocalStorageItemBool(
     LocalStorageKey.HIDE_OWN_SCREEN_SHARE,
     false
@@ -967,6 +974,15 @@ export const serverSlice = createSlice({
 
     // OTHERS ------------------------------------------------------------
 
+    setDirectMessages: (
+      state,
+      action: PayloadAction<TDirectMessageConversation[]>
+    ) => {
+      state.directMessages = action.payload;
+    },
+    setFriendLists: (state, action: PayloadAction<TFriendLists>) => {
+      state.friendLists = action.payload;
+    },
     setDmsOpen: (state, action: PayloadAction<boolean>) => {
       state.dmsOpen = action.payload;
 

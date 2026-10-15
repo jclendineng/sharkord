@@ -19,6 +19,7 @@ import {
   currentVoiceChannelIdSelector,
   selectedChannelIdSelector
 } from './channels/selectors';
+import { directMessagesSelector } from './dms/selectors';
 import { emojisSelector } from './emojis/selectors';
 import { canViewChannel, hasUnreadMentionInMessages } from './helpers';
 import {
@@ -440,3 +441,33 @@ export const userSettingsPluginsSelector = createSelector(
     return plugins.length > 0 ? plugins : DEFAULT_USER_SETTINGS_PLUGINS;
   }
 );
+
+export const conversationByChannelIdSelector = createCachedSelector(
+  [directMessagesSelector, (_: IRootState, channelId: number) => channelId],
+  (conversations, channelId) =>
+    conversations.find((conversation) => conversation.channelId === channelId)
+)((_, channelId: number) => channelId);
+
+// what a conversation is called: a group's name, or its people, or the other person
+export const conversationTitleSelector = createCachedSelector(
+  [conversationByChannelIdSelector, usersMapSelector],
+  (conversation, usersMap) => {
+    if (!conversation) {
+      return undefined;
+    }
+
+    if (conversation.group) {
+      if (conversation.group.name) {
+        return conversation.group.name;
+      }
+
+      const names = conversation.group.memberIds
+        .map((userId) => usersMap[userId]?.name)
+        .filter((name): name is string => !!name);
+
+      return names.join(', ');
+    }
+
+    return usersMap[conversation.userId]?.name;
+  }
+)((_, channelId: number) => channelId);

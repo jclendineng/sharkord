@@ -152,5 +152,11 @@
   "noGifsFound": "No GIFs found.",
   "searchStickers": "Find the perfect sticker",
   "noStickers": "This server has no stickers yet. Admins can add some in Server Settings.",
-  "noStickersFound": "No stickers match that."
+  "noStickersFound": "No stickers match that.",
+  "groupMembers_one": "{{count}} Member",
+  "groupMembers_other": "{{count}} Members",
+  "addFriend": "Add Friend",
+  "removeFriend": "Remove Friend",
+  "acceptFriend": "Accept Friend Request",
+  "cancelFriendRequest": "Cancel Friend Request"
 }

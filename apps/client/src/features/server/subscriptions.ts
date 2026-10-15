@@ -4,6 +4,7 @@ import { type TPublicServerSettings } from '@sharkord/shared';
 import { setPublicServerSettings } from './actions';
 import { subscribeToCategories } from './categories/subscriptions';
 import { subscribeToChannels } from './channels/subscriptions';
+import { subscribeToDirectMessages } from './dms/subscriptions';
 import { subscribeToEmojis } from './emojis/subscriptions';
 import { subscribeToMessages } from './messages/subscriptions';
 import { subscribeToPlugins } from './plugins/subscriptions';
@@ -43,7 +44,8 @@ const initSubscriptions = () => {
     subscribeToMessages,
     subscribeToVoice,
     subscribeToCategories,
-    subscribeToPlugins
+    subscribeToPlugins,
+    subscribeToDirectMessages
   ];
 
   const unsubscribes = subscriptors.map((subscriptor) => subscriptor());

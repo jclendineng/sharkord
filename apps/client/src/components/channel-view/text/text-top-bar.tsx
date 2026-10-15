@@ -2,9 +2,17 @@ import { PluginSlotRenderer } from '@/components/plugin-slot-renderer';
 import { toggleChannelMuted } from '@/features/app/actions';
 import { useIsChannelMuted } from '@/features/app/hooks';
 import { useChannelById } from '@/features/server/channels/hooks';
+import { useConversation, useConversationTitle } from '@/features/server/hooks';
 import { ChannelType, PluginSlot } from '@sharkord/shared';
 import { IconButton, Tooltip } from '@sharkord/ui';
-import { BellOff, Hash, MessageCircleMore, Volume2, X } from 'lucide-react';
+import {
+  BellOff,
+  Hash,
+  MessageCircleMore,
+  Users,
+  Volume2,
+  X
+} from 'lucide-react';
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PinnedMessagesPopover } from './pinned-messages-popover';
@@ -20,6 +28,8 @@ const TextTopbar = memo(
     const { t } = useTranslation();
     const channel = useChannelById(channelId);
     const isMuted = useIsChannelMuted(channelId);
+    const conversation = useConversation(channelId);
+    const conversationTitle = useConversationTitle(channelId);
 
     const onUnmuteClick = useCallback(() => {
       toggleChannelMuted(channelId);
@@ -29,10 +39,13 @@ const TextTopbar = memo(
 
     const info = useMemo(() => {
       if (channel?.isDm) {
+        const group = conversation?.group;
+
         return {
-          name: 'Direct Message',
-          topic:
-            'This is a direct message channel for conversations between you and the recipient.'
+          name: conversationTitle ?? t('directMessage'),
+          topic: group
+            ? t('groupMembers', { count: group.memberIds.length + 1 })
+            : undefined
         };
       }
 
@@ -40,9 +53,13 @@ const TextTopbar = memo(
         name: channel?.name,
         topic: channel?.topic
       };
-    }, [channel]);
+    }, [channel, conversation, conversationTitle, t]);
 
     const getIcon = useCallback(() => {
+      if (conversation?.group) {
+        return <Users className="inline-block text-muted-foreground h-4 w-4" />;
+      }
+
       if (channel?.isDm) {
         return (
           <MessageCircleMore className="inline-block text-muted-foreground h-4 w-4" />
@@ -60,7 +77,7 @@ const TextTopbar = memo(
       }
 
       return null;
-    }, [channel]);
+    }, [channel, conversation]);
 
     return (
       <div className="flex h-12 border-b border-border bg-card w-auto overflow-hidden">

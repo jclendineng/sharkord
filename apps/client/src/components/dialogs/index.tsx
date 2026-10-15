@@ -9,6 +9,8 @@ import { CreateInviteDialog } from './create-invite-dialog';
 import { CreatePollDialog } from './create-poll';
 import { DeleteUserDialog } from './delete-user';
 import { Dialog } from './dialogs';
+import { FriendsDialog } from './friends';
+import { GroupDmDialog } from './group-dm';
 import { PluginInstallConfirmDialog } from './plugin-install-confirm';
 import { SearchDialog } from './search';
 import { ServerPasswordDialog } from './server-password';
@@ -32,7 +34,9 @@ const DialogsMap: any = {
   [Dialog.DELETE_USER]: DeleteUserDialog,
   [Dialog.SEARCH]: SearchDialog,
   [Dialog.WELCOME_PROFILE_SETUP]: WelcomeProfileSetupDialog,
-  [Dialog.VOICE_DEBUG]: VoiceDebugDialog
+  [Dialog.VOICE_DEBUG]: VoiceDebugDialog,
+  [Dialog.GROUP_DM]: GroupDmDialog,
+  [Dialog.FRIENDS]: FriendsDialog
 };
 
 const DialogsProvider = memo(() => {

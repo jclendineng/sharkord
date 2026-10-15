@@ -150,5 +150,11 @@
   "noGifsFound": "Žádné GIFy nenalezeny.",
   "searchStickers": "Najdi tu pravou nálepku",
   "noStickers": "Tento server zatím nemá žádné nálepky. Správci je mohou přidat v Nastavení serveru.",
-  "noStickersFound": "Žádná nálepka neodpovídá."
+  "noStickersFound": "Žádná nálepka neodpovídá.",
+  "groupMembers_one": "{{count}} člen",
+  "groupMembers_other": "{{count}} členů",
+  "addFriend": "Přidat přítele",
+  "removeFriend": "Odebrat přítele",
+  "acceptFriend": "Přijmout žádost o přátelství",
+  "cancelFriendRequest": "Zrušit žádost o přátelství"
 }

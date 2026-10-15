@@ -150,5 +150,11 @@
   "noGifsFound": "未找到 GIF。",
   "searchStickers": "找到最合适的贴纸",
   "noStickers": "此服务器还没有贴纸。管理员可以在服务器设置中添加。",
-  "noStickersFound": "没有匹配的贴纸。"
+  "noStickersFound": "没有匹配的贴纸。",
+  "groupMembers_one": "{{count}} 位成员",
+  "groupMembers_other": "{{count}} 位成员",
+  "addFriend": "添加好友",
+  "removeFriend": "删除好友",
+  "acceptFriend": "接受好友请求",
+  "cancelFriendRequest": "取消好友请求"
 }

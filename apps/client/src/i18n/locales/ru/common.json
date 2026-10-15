@@ -150,5 +150,11 @@
   "noGifsFound": "GIF не найдены.",
   "searchStickers": "Найдите идеальный стикер",
   "noStickers": "На этом сервере пока нет стикеров. Администраторы могут добавить их в настройках сервера.",
-  "noStickersFound": "Нет подходящих стикеров."
+  "noStickersFound": "Нет подходящих стикеров.",
+  "groupMembers_one": "{{count}} участник",
+  "groupMembers_other": "{{count}} участников",
+  "addFriend": "Добавить в друзья",
+  "removeFriend": "Удалить из друзей",
+  "acceptFriend": "Принять заявку в друзья",
+  "cancelFriendRequest": "Отменить заявку в друзья"
 }

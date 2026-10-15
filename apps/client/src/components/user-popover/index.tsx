@@ -1,6 +1,11 @@
 import { PluginSlotRenderer } from '@/components/plugin-slot-renderer';
 import { setModViewOpen, setSelectedDmChannelId } from '@/features/app/actions';
 import { setDmsOpen } from '@/features/server/actions';
+import {
+  changeFriendship,
+  type TFriendshipAction
+} from '@/features/server/dms/actions';
+import { useFriendStatus } from '@/features/server/dms/hooks';
 import { usePublicServerSettings, useUserRoles } from '@/features/server/hooks';
 import { useIsOwnUser, useUserById } from '@/features/server/users/hooks';
 import { getFileUrl } from '@/helpers/get-file-url';
@@ -22,7 +27,17 @@ import {
   PopoverTrigger
 } from '@sharkord/ui';
 import { format } from 'date-fns';
-import { MessageSquare, ShieldCheck, Trash, UserCog } from 'lucide-react';
+import {
+  MessageSquare,
+  ShieldCheck,
+  Trash,
+  UserCheck,
+  UserCog,
+  UserMinus,
+  UserPlus,
+  UserX,
+  type LucideIcon
+} from 'lucide-react';
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -43,6 +58,7 @@ const UserPopover = memo(({ userId, children }: TUserPopoverProps) => {
   const roles = useUserRoles(userId);
   const settings = usePublicServerSettings();
   const isOwnUser = useIsOwnUser(userId);
+  const friendStatus = useFriendStatus(userId);
 
   const pluginProps = useMemo(() => ({ userId }), [userId]);
 
@@ -59,11 +75,41 @@ const UserPopover = memo(({ userId, children }: TUserPopoverProps) => {
     }
   }, [userId, t]);
 
+  // one button that does the next thing: ask, accept, take back the request, or unfriend
+  const friendButton = useMemo((): {
+    icon: LucideIcon;
+    title: string;
+    action: TFriendshipAction;
+  } => {
+    if (friendStatus === 'friend') {
+      return { icon: UserMinus, title: t('removeFriend'), action: 'remove' };
+    }
+
+    if (friendStatus === 'incoming') {
+      return { icon: UserCheck, title: t('acceptFriend'), action: 'accept' };
+    }
+
+    if (friendStatus === 'outgoing') {
+      return { icon: UserX, title: t('cancelFriendRequest'), action: 'remove' };
+    }
+
+    return { icon: UserPlus, title: t('addFriend'), action: 'request' };
+  }, [friendStatus, t]);
+
+  const onFriendClick = useCallback(() => {
+    changeFriendship(friendButton.action, userId);
+  }, [friendButton, userId]);
+
+  const onModerateClick = useCallback(() => {
+    setModViewOpen(true, userId);
+  }, [userId]);
+
   if (!user) return <>{children}</>;
 
   const isDeleted = user.name === DELETED_USER_IDENTITY_AND_NAME;
   const showDmButton =
     settings?.directMessagesEnabled && !isDeleted && !isOwnUser;
+  const showFriendButton = !isDeleted && !isOwnUser && !user.banned;
 
   return (
     <Popover>
@@ -154,6 +200,16 @@ const UserPopover = memo(({ userId, children }: TUserPopoverProps) => {
                 props={pluginProps}
               />
 
+              {showFriendButton && (
+                <IconButton
+                  icon={friendButton.icon}
+                  variant="ghost"
+                  size="sm"
+                  title={friendButton.title}
+                  onClick={onFriendClick}
+                />
+              )}
+
               {showDmButton && (
                 <IconButton
                   data-testid={TestId.USER_POPOVER_DM}
@@ -173,7 +229,7 @@ const UserPopover = memo(({ userId, children }: TUserPopoverProps) => {
                     variant="ghost"
                     size="sm"
                     title={t('moderationView')}
-                    onClick={() => setModViewOpen(true, user.id)}
+                    onClick={onModerateClick}
                   />
                 </Protect>
               }

@@ -152,6 +152,13 @@ other, so privacy, search in DMs, pushes and read states treat it the same, and 
 can see it. `dms.get` marks a group conversation with its name and members. In the app, New Group
 is in the new message sheet, and a group's screen has Add Friends, Rename Group and Leave Group.
 
+The web client has the same: the direct messages list shows each conversation's last message and
+groups by name, with Add Friends (add by username, requests, sent, friends and everyone else on
+the server) and New Group beside the new conversation button. Right clicking a conversation offers
+Mark As Read, Mute, Close DM, and for a group Add Friends, Rename Group and Leave Group. A user's
+popover has a friend button that sends, accepts, cancels or removes, and a conversation's header
+shows its name and, for a group, how many people are in it.
+
 Search from the Messages panel covers your direct messages only ("Search in DMs"), as Discord's:
 `messages.search` takes `scope: 'directMessages'`, which narrows where it looks but is not a
 filter by itself. Its tabs are Recent, People (the people you have conversations with), Media,

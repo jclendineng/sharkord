@@ -1,15 +1,8 @@
+import type { TFriendLists } from '@sharkord/shared';
 import { and, eq, or } from 'drizzle-orm';
 import { db } from '..';
 import { friendships } from '../schema';
 import { normalizePair } from './dms';
-
-type TFriendLists = {
-  friends: number[];
-  // asked by them, waiting on this user
-  incoming: number[];
-  // asked by this user, waiting on them
-  outgoing: number[];
-};
 
 const getFriendship = async (userId: number, otherUserId: number) => {
   const [userOneId, userTwoId] = normalizePair(userId, otherUserId);
@@ -66,4 +59,3 @@ const getFriendIds = async (userId: number): Promise<Set<number>> => {
 };
 
 export { getFriendIds, getFriendLists, getFriendship };
-export type { TFriendLists };

@@ -1,6 +1,9 @@
+import { store } from '@/features/store';
 import { logDebug } from '@/helpers/browser-logger';
 import { getTRPCClient } from '@/lib/trpc';
 import type { TJoinedMessage } from '@sharkord/shared';
+import { channelByIdSelector } from '../channels/selectors';
+import { loadDirectMessages } from '../dms/actions';
 import { handleSubscriptionError } from '../subscription-error';
 import {
   addMessages,
@@ -17,6 +20,13 @@ const subscribeToMessages = () => {
     onData: (message: TJoinedMessage) => {
       logDebug('[EVENTS] messages.onNew', { message });
       addMessages(message.channelId, [message], true);
+
+      // the conversation list's order and previews follow its newest message
+      const channel = channelByIdSelector(store.getState(), message.channelId);
+
+      if (channel?.isDm) {
+        loadDirectMessages();
+      }
     },
     onError: handleSubscriptionError('onMessage')
   });

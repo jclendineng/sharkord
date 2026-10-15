@@ -152,5 +152,11 @@
   "noGifsFound": "Nenhum GIF encontrado.",
   "searchStickers": "Encontre a figurinha perfeita",
   "noStickers": "Este servidor ainda não tem figurinhas. Os administradores podem adicioná-las nas Configurações do servidor.",
-  "noStickersFound": "Nenhuma figurinha corresponde."
+  "noStickersFound": "Nenhuma figurinha corresponde.",
+  "groupMembers_one": "{{count}} membro",
+  "groupMembers_other": "{{count}} membros",
+  "addFriend": "Adicionar amigo",
+  "removeFriend": "Remover amigo",
+  "acceptFriend": "Aceitar pedido de amizade",
+  "cancelFriendRequest": "Cancelar pedido de amizade"
 }

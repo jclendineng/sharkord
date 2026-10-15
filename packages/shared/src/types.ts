@@ -213,6 +213,15 @@ export type TChannelUserPermissionsMap = Record<
 
 export type TReadStateMap = Record<number, number>;
 
+// friends.get, as user ids
+export type TFriendLists = {
+  friends: number[];
+  // asked by them, waiting on this user
+  incoming: number[];
+  // asked by this user, waiting on them
+  outgoing: number[];
+};
+
 export type TDirectMessageConversation = {
   channelId: number;
   userId: number;

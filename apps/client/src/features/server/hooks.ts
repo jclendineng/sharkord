@@ -9,6 +9,8 @@ import {
   categoryHasUnreadMentionsSelector,
   categoryUnreadMessagesCountSelector,
   connectedSelector,
+  conversationByChannelIdSelector,
+  conversationTitleSelector,
   disconnectInfoSelector,
   dmsOpenSelector,
   hasSharingScreenUsersSelector,
@@ -184,3 +186,13 @@ export const useDmsOpen = () => useSelector(dmsOpenSelector);
 
 export const useUserSettingsPlugins = () =>
   useSelector(userSettingsPluginsSelector);
+
+export const useConversation = (channelId: number) =>
+  useSelector((state: IRootState) =>
+    conversationByChannelIdSelector(state, channelId)
+  );
+
+export const useConversationTitle = (channelId: number) =>
+  useSelector((state: IRootState) =>
+    conversationTitleSelector(state, channelId)
+  );
