@@ -7,6 +7,7 @@ import { publishMessage } from '../../db/publishers';
 import { getReaction } from '../../db/queries/messages';
 import { messageReactions } from '../../db/schema';
 import { loadMessageForWrite } from '../../helpers/load-message-for-write';
+import { grantOnboardingRole } from '../../helpers/onboarding';
 import { resolveKnownEmojiFileId } from '../../helpers/resolve-known-emoji-file-id';
 import { eventBus } from '../../plugins/event-bus';
 import { protectedProcedure, rateLimitedProcedure } from '../../utils/trpc';
@@ -63,6 +64,10 @@ const toggleMessageReactionRoute = rateLimitedProcedure(protectedProcedure, {
       userId: ctx.user.id,
       emoji: input.emoji
     });
+
+    if (!reaction) {
+      await grantOnboardingRole(ctx.user.id, input.messageId);
+    }
   });
 
 export { toggleMessageReactionRoute };

@@ -138,5 +138,12 @@
   "friendRequests": "Žádosti",
   "sentRequests": "Odeslané",
   "friendsSection": "Přátelé",
-  "peopleOnServer": "Lidé na {{server}}"
+  "peopleOnServer": "Lidé na {{server}}",
+  "failedSetRules": "Zprávu s pravidly se nepodařilo upravit",
+  "rulesSetupTitle": "Zpráva s pravidly",
+  "rulesRoleLabel": "Reakce dává roli",
+  "rulesRolePlaceholder": "Vyberte roli",
+  "rulesRoleHelp": "Potom v oprávněních každého kanálu otevřete kanály serveru této roli a skryjte je všem ostatním. Noví členové skončí zde, v jediném kanálu, který vidí, dokud nezareagují.",
+  "rulesGiveExisting": "Dát ji všem současným členům",
+  "rulesGiveExistingHelp": "Bez toho přijdou členové, kteří se připojili před pravidly, o kanály, které zavřete."
 }

@@ -138,5 +138,12 @@
   "friendRequests": "Solicitudes",
   "sentRequests": "Enviadas",
   "friendsSection": "Amigos",
-  "peopleOnServer": "Personas en {{server}}"
+  "peopleOnServer": "Personas en {{server}}",
+  "failedSetRules": "No se pudo actualizar el mensaje de reglas",
+  "rulesSetupTitle": "Mensaje de reglas",
+  "rulesRoleLabel": "Reaccionar otorga",
+  "rulesRolePlaceholder": "Elige un rol",
+  "rulesRoleHelp": "Después abre los canales del servidor a este rol en los permisos de cada canal y ocúltalos a los demás. Los nuevos miembros llegan aquí, el único canal que ven, hasta que reaccionen.",
+  "rulesGiveExisting": "Dárselo a todos los que ya están",
+  "rulesGiveExistingHelp": "Sin esto, los miembros que se unieron antes de las reglas pierden los canales que cierres."
 }

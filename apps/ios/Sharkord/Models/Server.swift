@@ -61,6 +61,8 @@ struct PublicSettings: Decodable {
     let storageMaxFilesPerMessage: Int
     // missing on a server from before gifs
     let gifsEnabled: Bool?
+    // the rules message members react to for access, missing from an older server
+    let onboardingMessageId: Int?
 }
 
 struct Role: Decodable, Hashable, Identifiable {

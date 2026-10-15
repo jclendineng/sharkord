@@ -138,5 +138,12 @@
   "friendRequests": "请求",
   "sentRequests": "已发送",
   "friendsSection": "好友",
-  "peopleOnServer": "{{server}} 上的用户"
+  "peopleOnServer": "{{server}} 上的用户",
+  "failedSetRules": "无法更新规则消息",
+  "rulesSetupTitle": "规则消息",
+  "rulesRoleLabel": "回应后获得",
+  "rulesRolePlaceholder": "选择角色",
+  "rulesRoleHelp": "然后在每个频道的权限中向此角色开放服务器频道，并对其他人隐藏。新成员会来到这里，这是他们唯一能看到的频道，直到他们回应。",
+  "rulesGiveExisting": "授予所有现有成员",
+  "rulesGiveExistingHelp": "否则，在规则之前加入的成员将失去你关闭的频道。"
 }

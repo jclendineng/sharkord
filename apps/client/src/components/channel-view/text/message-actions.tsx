@@ -27,6 +27,7 @@ import {
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { RulesButton } from './rules-button';
 
 const MAX_QUICK_EMOJIS = 4;
 
@@ -213,6 +214,10 @@ const MessageActions = memo(
               title={isPinned ? t('unpinMessage') : t('pinMessage')}
             />
           </Protect>
+        )}
+
+        {!isThreadReply && (
+          <RulesButton messageId={messageId} channelId={channelId} />
         )}
 
         <PluginSlotRenderer

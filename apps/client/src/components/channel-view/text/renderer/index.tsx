@@ -23,6 +23,7 @@ import { FileCard } from '../file-card';
 import { MessageReactions } from '../message-reactions';
 import { YoutubeOverride } from '../overrides/youtube';
 import { Poll } from '../poll';
+import { RulesNote } from '../rules-note';
 import {
   getIsEmojiOnly,
   getParsedMessageHtml,
@@ -188,6 +189,8 @@ const MessageRenderer = memo(
             messageId={message.id}
           />
         )}
+
+        <RulesNote messageId={message.id} />
 
         <PluginSlotRenderer
           slotId={PluginSlot.MESSAGE_FOOTER}

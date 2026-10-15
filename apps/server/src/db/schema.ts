@@ -123,7 +123,17 @@ const settings = sqliteTable(
       'storage_image_optimization_quality'
     )
       .notNull()
-      .default(80)
+      .default(80),
+    // the rules a new member accepts: reacting to this message gives them the onboarding role,
+    // which is what the server's public channels are opened to
+    onboardingMessageId: integer('onboarding_message_id').references(
+      (): AnySQLiteColumn => messages.id,
+      { onDelete: 'set null' }
+    ),
+    onboardingRoleId: integer('onboarding_role_id').references(
+      (): AnySQLiteColumn => roles.id,
+      { onDelete: 'set null' }
+    )
   },
   (t) => [
     index('settings_server_idx').on(t.serverId),

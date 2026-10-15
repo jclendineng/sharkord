@@ -22,6 +22,7 @@ struct MessageActionsSheet: View {
     @State private var isDoubleTapPickerPresented = false
     @State private var isForwardPresented = false
     @State private var isReportUnavailable = false
+    @State private var isRulesSetupPresented = false
     // exactly as tall as every action, delete included, with nothing to scroll or drag to
     @State private var fittedHeight: CGFloat?
 
@@ -117,6 +118,14 @@ struct MessageActionsSheet: View {
                     if !isOwn, message.userId != nil {
                         ActionRow(title: "Mention", systemImage: "at", action: mention)
                     }
+
+                    if canSetRules {
+                        if isRulesMessage {
+                            ActionRow(title: "Stop Using as Rules", systemImage: "checkmark.seal", action: stopUsingAsRules)
+                        } else {
+                            ActionRow(title: "Use as Rules Message", systemImage: "checkmark.seal", action: openRulesSetup)
+                        }
+                    }
                 }
 
                 ActionGroup {
@@ -152,6 +161,9 @@ struct MessageActionsSheet: View {
         }
         .sheet(isPresented: $isForwardPresented, onDismiss: close) {
             ForwardSheet(message: message)
+        }
+        .sheet(isPresented: $isRulesSetupPresented, onDismiss: close) {
+            RulesSetupSheet(messageId: message.id)
         }
         .alert("Reporting isn't set up", isPresented: $isReportUnavailable) {
             Button("OK", role: .cancel) {}
@@ -215,6 +227,47 @@ struct MessageActionsSheet: View {
         Task {
             do {
                 try await store.markUnread(from: message)
+            } catch {
+                session.showError(error)
+            }
+        }
+    }
+
+    // the new member lounge's rules, a message in a channel rather than a direct message
+    private var canSetRules: Bool {
+        store.scope == .channel && session.can(.manageSettings) && session.channel(message.channelId)?.isDm == false
+    }
+
+    private var isRulesMessage: Bool {
+        session.settings?.onboardingMessageId == message.id
+    }
+
+    private func openRulesSetup() {
+        isRulesSetupPresented = true
+    }
+
+    private func stopUsingAsRules() {
+        struct ClearInput: Encodable {
+            let messageId: Int?
+            let roleId: Int?
+
+            func encode(to encoder: Encoder) throws {
+                var container = encoder.container(keyedBy: CodingKeys.self)
+
+                try container.encode(messageId, forKey: .messageId)
+                try container.encode(roleId, forKey: .roleId)
+            }
+
+            private enum CodingKeys: String, CodingKey {
+                case messageId, roleId
+            }
+        }
+
+        dismiss()
+
+        Task {
+            do {
+                try await session.perform("others.setOnboarding", ClearInput(messageId: nil, roleId: nil))
             } catch {
                 session.showError(error)
             }

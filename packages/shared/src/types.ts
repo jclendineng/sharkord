@@ -69,6 +69,7 @@ export type TPublicServerSettings = Pick<
   | 'enableSearch'
   | 'showWelcomeDialog'
   | 'storageSignedUrlsEnabled'
+  | 'onboardingMessageId'
 > & {
   webRtcMaxBitrate: number;
   // a gif provider key is set, so the pickers offer gifs

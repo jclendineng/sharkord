@@ -6,6 +6,7 @@ import { getStorageSettingsRoute } from './get-storage-settings';
 import { getUpdateRoute } from './get-update';
 import { handshakeRoute } from './handshake';
 import { joinServerRoute } from './join';
+import { setOnboardingRoute } from './set-onboarding';
 import { updateServerRoute } from './update-server';
 import { updateSettingsRoute } from './update-settings';
 import { useSecretTokenRoute } from './use-secret-token';
@@ -20,5 +21,6 @@ export const othersRouter = t.router({
   useSecretToken: useSecretTokenRoute,
   getStorageSettings: getStorageSettingsRoute,
   getUpdate: getUpdateRoute,
-  updateServer: updateServerRoute
+  updateServer: updateServerRoute,
+  setOnboarding: setOnboardingRoute
 });

@@ -138,5 +138,12 @@
   "friendRequests": "Richieste",
   "sentRequests": "Inviate",
   "friendsSection": "Amici",
-  "peopleOnServer": "Persone su {{server}}"
+  "peopleOnServer": "Persone su {{server}}",
+  "failedSetRules": "Impossibile aggiornare il messaggio delle regole",
+  "rulesSetupTitle": "Messaggio delle regole",
+  "rulesRoleLabel": "Reagire assegna",
+  "rulesRolePlaceholder": "Scegli un ruolo",
+  "rulesRoleHelp": "Poi apri i canali del server a questo ruolo nei permessi di ogni canale e nascondili a tutti gli altri. I nuovi membri arrivano qui, l'unico canale visibile, finché non reagiscono.",
+  "rulesGiveExisting": "Assegnalo a tutti i membri attuali",
+  "rulesGiveExistingHelp": "Senza questo, i membri entrati prima delle regole perdono i canali che chiudi."
 }

@@ -82,6 +82,12 @@ struct MessageRow: View {
                     ReactionsView(message: message)
                 }
 
+                if message.id == session.settings?.onboardingMessageId {
+                    Label("React to this message to accept the rules and see the rest of the server.", systemImage: "checkmark.seal.fill")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.muted)
+                }
+
                 if showsThreadLink, let replyCount = message.replyCount, replyCount > 0 {
                     NavigationLink(value: ThreadRoute(parent: message)) {
                         Label(replyCount == 1 ? "1 reply" : "\(replyCount) replies", systemImage: "arrow.turn.down.right")

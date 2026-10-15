@@ -158,5 +158,10 @@
   "addFriend": "Add Friend",
   "removeFriend": "Remove Friend",
   "acceptFriend": "Accept Friend Request",
-  "cancelFriendRequest": "Cancel Friend Request"
+  "cancelFriendRequest": "Cancel Friend Request",
+  "useAsRules": "Use as Rules Message",
+  "stopUsingAsRules": "Stop Using as Rules",
+  "stopUsingAsRulesMsg": "Members will no longer get a role by reacting to this message.",
+  "rulesNote": "React to this message to accept the rules and see the rest of the server.",
+  "failedSetRules": "Could not update the rules message"
 }

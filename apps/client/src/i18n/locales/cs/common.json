@@ -156,5 +156,10 @@
   "addFriend": "Přidat přítele",
   "removeFriend": "Odebrat přítele",
   "acceptFriend": "Přijmout žádost o přátelství",
-  "cancelFriendRequest": "Zrušit žádost o přátelství"
+  "cancelFriendRequest": "Zrušit žádost o přátelství",
+  "useAsRules": "Použít jako zprávu s pravidly",
+  "stopUsingAsRules": "Přestat používat jako pravidla",
+  "stopUsingAsRulesMsg": "Členové už nebudou reakcí na tuto zprávu získávat roli.",
+  "rulesNote": "Reagujte na tuto zprávu, přijměte pravidla a uvidíte zbytek serveru.",
+  "failedSetRules": "Zprávu s pravidly se nepodařilo upravit"
 }

@@ -138,5 +138,12 @@
   "friendRequests": "Pedidos",
   "sentRequests": "Enviados",
   "friendsSection": "Amigos",
-  "peopleOnServer": "Pessoas em {{server}}"
+  "peopleOnServer": "Pessoas em {{server}}",
+  "failedSetRules": "Não foi possível atualizar a mensagem de regras",
+  "rulesSetupTitle": "Mensagem de regras",
+  "rulesRoleLabel": "Reagir concede",
+  "rulesRolePlaceholder": "Escolha um cargo",
+  "rulesRoleHelp": "Depois abra os canais do servidor para este cargo nas permissões de cada canal e oculte-os dos demais. Novos membros chegam aqui, o único canal que veem, até reagirem.",
+  "rulesGiveExisting": "Dar a todos que já estão aqui",
+  "rulesGiveExistingHelp": "Sem isso, membros que entraram antes das regras perdem os canais que você fechar."
 }

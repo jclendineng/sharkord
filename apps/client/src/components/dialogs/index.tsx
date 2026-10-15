@@ -12,6 +12,7 @@ import { Dialog } from './dialogs';
 import { FriendsDialog } from './friends';
 import { GroupDmDialog } from './group-dm';
 import { PluginInstallConfirmDialog } from './plugin-install-confirm';
+import { RulesSetupDialog } from './rules-setup';
 import { SearchDialog } from './search';
 import { ServerPasswordDialog } from './server-password';
 import { SoundsDialog } from './sounds';
@@ -36,7 +37,8 @@ const DialogsMap: any = {
   [Dialog.WELCOME_PROFILE_SETUP]: WelcomeProfileSetupDialog,
   [Dialog.VOICE_DEBUG]: VoiceDebugDialog,
   [Dialog.GROUP_DM]: GroupDmDialog,
-  [Dialog.FRIENDS]: FriendsDialog
+  [Dialog.FRIENDS]: FriendsDialog,
+  [Dialog.RULES_SETUP]: RulesSetupDialog
 };
 
 const DialogsProvider = memo(() => {

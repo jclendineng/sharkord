@@ -156,5 +156,10 @@
   "addFriend": "添加好友",
   "removeFriend": "删除好友",
   "acceptFriend": "接受好友请求",
-  "cancelFriendRequest": "取消好友请求"
+  "cancelFriendRequest": "取消好友请求",
+  "useAsRules": "设为规则消息",
+  "stopUsingAsRules": "停止用作规则",
+  "stopUsingAsRulesMsg": "成员将不再通过回应此消息获得角色。",
+  "rulesNote": "回应此消息以接受规则并查看服务器的其余部分。",
+  "failedSetRules": "无法更新规则消息"
 }

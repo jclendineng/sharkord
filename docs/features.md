@@ -291,3 +291,12 @@ web client.
 
 The fork's server image is built from the `push` branch on every push and published as
 `ghcr.io/jclendineng/sharkord:push` (`.github/workflows/fork-image.yml`).
+
+A new member lounge, as Discord's rules screening: an admin picks a message with the rules
+(**Use as Rules Message** on a message, needing Manage Settings) and the role reacting to it
+gives (`others.setOnboarding`). The server puts a ✅ on the message to tap, and can give the role
+to everyone already there so nobody is locked out. Open the server's channels to that role and
+hide them from everyone else in each channel's permissions: a new member then lands in the rules
+channel, the only one they see, and the rest appears as soon as they react. Taking the reaction
+back keeps the role. The rules message says what reacting does, the owner's role and the default
+role cannot be the one given, and deleting the message turns the lounge off.

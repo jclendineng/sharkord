@@ -156,5 +156,10 @@
   "addFriend": "Añadir amigo",
   "removeFriend": "Eliminar amigo",
   "acceptFriend": "Aceptar solicitud de amistad",
-  "cancelFriendRequest": "Cancelar solicitud de amistad"
+  "cancelFriendRequest": "Cancelar solicitud de amistad",
+  "useAsRules": "Usar como mensaje de reglas",
+  "stopUsingAsRules": "Dejar de usar como reglas",
+  "stopUsingAsRulesMsg": "Los miembros ya no obtendrán un rol al reaccionar a este mensaje.",
+  "rulesNote": "Reacciona a este mensaje para aceptar las reglas y ver el resto del servidor.",
+  "failedSetRules": "No se pudo actualizar el mensaje de reglas"
 }

@@ -138,5 +138,12 @@
   "friendRequests": "Demandes",
   "sentRequests": "Envoyées",
   "friendsSection": "Amis",
-  "peopleOnServer": "Personnes sur {{server}}"
+  "peopleOnServer": "Personnes sur {{server}}",
+  "failedSetRules": "Impossible de mettre à jour le message des règles",
+  "rulesSetupTitle": "Message des règles",
+  "rulesRoleLabel": "Réagir donne",
+  "rulesRolePlaceholder": "Choisissez un rôle",
+  "rulesRoleHelp": "Ouvrez ensuite les salons du serveur à ce rôle dans les permissions de chaque salon et masquez-les aux autres. Les nouveaux membres arrivent ici, le seul salon visible, jusqu'à ce qu'ils réagissent.",
+  "rulesGiveExisting": "Le donner à tous les membres actuels",
+  "rulesGiveExistingHelp": "Sans cela, les membres arrivés avant les règles perdent les salons que vous fermez."
 }
