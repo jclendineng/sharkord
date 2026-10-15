@@ -100,6 +100,56 @@ final class ServerListStore {
         signingInSession = makeSession(nil)
     }
 
+    // an invite link opened from outside the app, waiting for the sign in screen to take it up
+    var pendingInviteLink: String?
+
+    // an invite link tapped anywhere: a server already signed in to just opens, as discord does
+    // for a server you are in, and any other starts adding it with the invite filled in
+    func open(inviteURL url: URL) {
+        guard let link = Self.inviteLink(from: url), let address = ServerAddress(userInput: link) else {
+            return
+        }
+
+        if let existing = sessions.first(where: { $0.address == address }), existing.phase != .signedOut {
+            select(existing)
+            return
+        }
+
+        pendingInviteLink = link
+        signingInSession = makeSession(nil)
+    }
+
+    // the server's own invite link as it is, or the app's sharkord://join?server=…&invite=… which
+    // the web client hands over for a server whose links the app cannot open by itself
+    static func inviteLink(from url: URL) -> String? {
+        if url.scheme == "sharkord" {
+            let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+
+            guard
+                let server = items.first(where: { $0.name == "server" })?.value,
+                let invite = items.first(where: { $0.name == "invite" })?.value,
+                !server.isEmpty, !invite.isEmpty
+            else {
+                return nil
+            }
+
+            let base = server.contains("://") ? server : "https://\(server)"
+            let code = invite.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? invite
+
+            return "\(base)/?invite=\(code)"
+        }
+
+        guard
+            url.scheme == "https" || url.scheme == "http",
+            url.query()?.contains("invite=") == true,
+            ServerAddress.inviteCode(in: url.absoluteString) != nil
+        else {
+            return nil
+        }
+
+        return url.absoluteString
+    }
+
     func signInAgain(_ session: SessionStore) {
         signingInSession = session
     }

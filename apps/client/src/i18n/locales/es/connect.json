@@ -22,5 +22,6 @@
   },
   "loggingInAutomatically": "Iniciando sesión automáticamente...",
   "loadingApp": "Cargando Sharkord",
-  "loadingPlugins": "Cargando plugins"
+  "loadingPlugins": "Cargando plugins",
+  "openInApp": "Abrir en la app de Sharkord"
 }

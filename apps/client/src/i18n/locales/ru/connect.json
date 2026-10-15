@@ -22,5 +22,6 @@
   },
   "loggingInAutomatically": "Автоматический вход...",
   "loadingApp": "Загрузка Sharkord",
-  "loadingPlugins": "Загрузка плагинов"
+  "loadingPlugins": "Загрузка плагинов",
+  "openInApp": "Открыть в приложении Sharkord"
 }

@@ -288,6 +288,14 @@ struct ConnectView: View {
 
     // signing in again to a server whose session ended skips straight to its login card
     private func resumeSignIn() {
+        // an invite link that opened the app goes straight to making an account with it
+        if let link = servers.pendingInviteLink {
+            servers.pendingInviteLink = nil
+            serverURL = link
+            checkServer(for: .register)
+            return
+        }
+
         guard serverURL.isEmpty, let address = session.address else {
             return
         }

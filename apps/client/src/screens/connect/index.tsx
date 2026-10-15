@@ -50,6 +50,21 @@ const Connect = memo(() => {
   const [loading, setLoading] = useState(false);
   const info = useInfo();
 
+  // an iphone or ipad, where the app can take the invite over from the browser
+  const appInviteLink = useMemo(() => {
+    const isAppleMobile =
+      /iPhone|iPad|iPod/.test(navigator.userAgent) ||
+      (navigator.userAgent.includes('Macintosh') &&
+        navigator.maxTouchPoints > 1);
+    const invite = new URLSearchParams(window.location.search).get('invite');
+
+    if (!isAppleMobile || !invite) {
+      return undefined;
+    }
+
+    return `sharkord://join?server=${encodeURIComponent(window.location.origin)}&invite=${encodeURIComponent(invite)}`;
+  }, []);
+
   const inviteCode = useMemo(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const invite = urlParams.get('invite');
@@ -269,6 +284,12 @@ const Connect = memo(() => {
                   </span>
                 </AlertDescription>
               </Alert>
+            )}
+
+            {appInviteLink && (
+              <Button asChild variant="outline">
+                <a href={appInviteLink}>{t('openInApp')}</a>
+              </Button>
             )}
           </div>
         </CardContent>

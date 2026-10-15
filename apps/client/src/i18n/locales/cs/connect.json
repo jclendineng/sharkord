@@ -22,5 +22,6 @@
   },
   "loggingInAutomatically": "Automaticky se připojuji...",
   "loadingApp": "Načítám Sharkord",
-  "loadingPlugins": "Načítám rozšíření"
+  "loadingPlugins": "Načítám rozšíření",
+  "openInApp": "Otevřít v aplikaci Sharkord"
 }

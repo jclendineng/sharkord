@@ -312,3 +312,11 @@ Joining with an invite in the app: the server address field takes an invite link
 server closed to new members asks for the link when making one. The code is sent with the sign
 up, as the web client's invite links do.
 
+Invite links open the app. The server answers `/.well-known/apple-app-site-association` for the
+iOS app, so on an iPhone with the app installed its invite links (`/?invite=CODE`) open in the app
+instead of the browser. iOS only does this for domains the app lists when it is built, which for
+this fork is `chat.livingroomplay.com`. For any other server the web page has **Open in the
+Sharkord app** on an iPhone or iPad, a `sharkord://join?server=…&invite=…` link. Either way a
+server already signed in to just opens, and any other goes straight to making an account with
+the invite filled in.
+

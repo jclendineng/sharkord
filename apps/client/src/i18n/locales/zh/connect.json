@@ -22,5 +22,6 @@
   },
   "loggingInAutomatically": "正在自动登录...",
   "loadingApp": "正在加载 Sharkord",
-  "loadingPlugins": "正在加载插件"
+  "loadingPlugins": "正在加载插件",
+  "openInApp": "在 Sharkord 应用中打开"
 }
