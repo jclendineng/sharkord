@@ -122,6 +122,50 @@ final class ChannelMessagesStore {
         focusedMessageId = messageId
     }
 
+    // discord's "new messages since" bar: how many were unread when the chat opened, counted back
+    // from the newest message there was then, so messages arriving after do not shift it
+    struct UnreadMarker: Equatable {
+        let count: Int
+        let anchorMessageId: Int
+    }
+
+    var unreadMarker: UnreadMarker?
+
+    func setUnreadMarker(count: Int) {
+        guard count > 0, hasLoaded, !hasNewer, let newest = messages.last else {
+            unreadMarker = nil
+            return
+        }
+
+        unreadMarker = UnreadMarker(count: count, anchorMessageId: newest.id)
+    }
+
+    // the first unread message, when it is loaded
+    var firstUnreadMessage: Message? {
+        guard let unreadMarker, let anchor = messages.firstIndex(where: { $0.id == unreadMarker.anchorMessageId }) else {
+            return nil
+        }
+
+        let index = anchor - unreadMarker.count + 1
+
+        return messages.indices.contains(index) ? messages[index] : nil
+    }
+
+    // older pages until the first unread one is in, then the list goes to it
+    func jumpToFirstUnread() async {
+        while firstUnreadMessage == nil, hasOlder, unreadMarker != nil {
+            let before = messages.count
+
+            await loadOlder()
+
+            if messages.count == before {
+                break
+            }
+        }
+
+        focusedMessageId = firstUnreadMessage?.id ?? messages.first?.id
+    }
+
     func loadOlder() async {
         guard hasOlder, let nextCursor, let page = await fetchPage(cursor: nextCursor) else {
             return

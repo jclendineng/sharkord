@@ -17,6 +17,12 @@ struct MessageListView<Header: View>: View {
 
     // the message a jump landed on, lit up for a moment like discord's
     @State private var highlightedMessageId: Int?
+    // far enough up the conversation for discord's round button back down
+    @State private var isAwayFromBottom = false
+
+    private var firstUnreadId: Int? {
+        store.firstUnreadMessage?.id
+    }
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -24,7 +30,29 @@ struct MessageListView<Header: View>: View {
                 .task(id: store.focusedMessageId) {
                     await scrollToFocused(proxy)
                 }
+                .overlay(alignment: .bottomTrailing) {
+                    if isAwayFromBottom, !store.hasNewer {
+                        JumpToBottomButton {
+                            scrollToBottom(proxy)
+                        }
+                        .padding(12)
+                        .transition(.scale(scale: 0.6).combined(with: .opacity))
+                    }
+                }
+                .animation(.snappy(duration: 0.2), value: isAwayFromBottom)
         }
+        .overlay(alignment: .top) {
+            if let unreadMarker = store.unreadMarker {
+                NewMessagesBar(
+                    count: unreadMarker.count,
+                    since: store.firstUnreadMessage?.createdDate,
+                    onJump: jumpToFirstUnread,
+                    onClose: dismissUnreadMarker
+                )
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.snappy(duration: 0.25), value: store.unreadMarker)
         // the list is a window around an older message, a way back to the newest
         .overlay(alignment: .bottom) {
             if store.hasNewer {
@@ -55,9 +83,13 @@ struct MessageListView<Header: View>: View {
                         DaySeparator(date: message.createdDate)
                     }
 
+                    if message.id == firstUnreadId {
+                        NewMessagesDivider()
+                    }
+
                     MessageRow(
                         message: message,
-                        showsHeader: showsHeader(at: index),
+                        showsHeader: showsHeader(at: index) || message.id == firstUnreadId,
                         showsThreadLink: store.scope == .channel,
                         onLongPress: { showActions(for: message) },
                         onDoubleTap: { react(to: message) }
@@ -69,6 +101,13 @@ struct MessageListView<Header: View>: View {
         }
         .defaultScrollAnchor(.bottom)
         .defaultScrollAnchor(.bottom, for: .sizeChanges)
+        .onScrollGeometryChange(for: Bool.self) { geometry in
+            let distance = geometry.contentSize.height - geometry.contentOffset.y - geometry.containerSize.height
+
+            return distance > 600
+        } action: { _, isAway in
+            isAwayFromBottom = isAway
+        }
         .scrollDismissesKeyboard(.interactively)
         // like the keyboard: a swipe down on the conversation drags the attachment panel with
         // it while the conversation scrolls, a tap puts it away
@@ -157,6 +196,27 @@ struct MessageListView<Header: View>: View {
         }
 
         store.focusedMessageId = nil
+    }
+
+    private func scrollToBottom(_ proxy: ScrollViewProxy) {
+        guard let last = store.messages.last else {
+            return
+        }
+
+        withAnimation(.smooth(duration: 0.35)) {
+            proxy.scrollTo(last.id, anchor: .bottom)
+        }
+    }
+
+    private func jumpToFirstUnread() {
+        Task {
+            await store.jumpToFirstUnread()
+            store.unreadMarker = nil
+        }
+    }
+
+    private func dismissUnreadMarker() {
+        store.unreadMarker = nil
     }
 
     private func returnToPresent() {
@@ -272,5 +332,102 @@ private struct JumpToPresentBar: View {
             .padding(.horizontal, 12)
         }
         .buttonStyle(.plain)
+    }
+}
+
+// discord's blue bar across the top of a conversation opened with unread messages: how many
+// and since when, a tap goes to the first of them
+private struct NewMessagesBar: View {
+    let count: Int
+    let since: Date?
+    let onJump: () -> Void
+    let onClose: () -> Void
+
+    private var title: String {
+        let amount = count >= 25 ? "25+" : "\(count)"
+        let noun = count == 1 ? "new message" : "new messages"
+
+        guard let since else {
+            return "\(amount) \(noun)"
+        }
+
+        let time = Calendar.current.isDateInToday(since)
+            ? since.formatted(date: .omitted, time: .shortened)
+            : since.formatted(date: .abbreviated, time: .shortened)
+
+        return "\(amount) \(noun) since \(time)"
+    }
+
+    var body: some View {
+        HStack(spacing: 0) {
+            Button(action: onJump) {
+                HStack(spacing: 8) {
+                    Text(title)
+                        .lineLimit(1)
+
+                    Spacer(minLength: 8)
+
+                    Text("Jump")
+                        .fontWeight(.semibold)
+
+                    Image(systemName: "arrow.up")
+                        .font(.caption.weight(.bold))
+                }
+                .padding(.leading, 16)
+                .frame(maxHeight: .infinity)
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+
+            Button("Dismiss", systemImage: "xmark", action: onClose)
+                .labelStyle(.iconOnly)
+                .font(.body.weight(.semibold))
+                .frame(width: 48)
+                .frame(maxHeight: .infinity)
+                .buttonStyle(.plain)
+        }
+        .font(.subheadline)
+        .foregroundStyle(.white)
+        .frame(height: 40)
+        .background(Theme.blurple)
+    }
+}
+
+// the red line above the first unread message
+private struct NewMessagesDivider: View {
+    var body: some View {
+        HStack(spacing: 8) {
+            Theme.red.frame(height: 1)
+
+            Text("NEW MESSAGES")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(Theme.red)
+                .fixedSize()
+
+            Theme.red.frame(height: 1)
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 14)
+        .padding(.bottom, 2)
+    }
+}
+
+// the round button over the bottom right corner once the conversation is scrolled well up
+private struct JumpToBottomButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button("Jump to Bottom", systemImage: "arrow.down", action: action)
+            .labelStyle(.iconOnly)
+            .font(.body.weight(.semibold))
+            .foregroundStyle(Theme.text)
+            .frame(width: 44, height: 44)
+            .background(Theme.listBackground, in: .rect(cornerRadius: 12))
+            .overlay {
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Theme.divider, lineWidth: 1)
+            }
+            .shadow(color: .black.opacity(0.3), radius: 6, y: 2)
+            .buttonStyle(.plain)
     }
 }

@@ -100,7 +100,11 @@ struct ChatScreen: View {
         .task {
             session.rememberChannel(channelId)
             store.isVisible = true
+
+            let unreadCount = session.unreadCounts[channelId, default: 0]
+
             await store.loadIfNeeded()
+            store.setUnreadMarker(count: unreadCount)
             await session.markAsRead(channelId)
         }
         .onDisappear {
