@@ -15,8 +15,9 @@ struct LinkPreviewCard: View {
         preview.previewImageURL
     }
 
+    // the address, as imessage shows it, a site's own name when it gives one
     private var source: String {
-        if let siteName = preview.siteName, !siteName.isEmpty {
+        if let siteName = preview.siteName, !siteName.isEmpty, siteName != preview.title {
             return siteName
         }
 
@@ -46,23 +47,30 @@ struct LinkPreviewCard: View {
                     }
                 }
 
-                VStack(alignment: .leading, spacing: 3) {
-                    if let title = preview.title, !title.isEmpty {
-                        Text(title)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Theme.header)
-                            .lineLimit(2)
-                            .multilineTextAlignment(.leading)
-                    }
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        if let title = preview.title, !title.isEmpty {
+                            Text(title)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(Theme.header)
+                                .lineLimit(2)
+                                .multilineTextAlignment(.leading)
+                        }
 
-                    Text(source)
-                        .font(.caption)
-                        .foregroundStyle(Theme.muted)
-                        .lineLimit(1)
+                        Text(source)
+                            .font(.caption)
+                            .foregroundStyle(Theme.muted)
+                            .lineLimit(1)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    // no picture of its own, so its icon on the right, as imessage shows it
+                    if imageURL == nil, let faviconURL = preview.faviconURL {
+                        FaviconImage(url: faviconURL)
+                    }
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
             .frame(maxWidth: 280)
             .background(Theme.listBackground)
@@ -75,6 +83,23 @@ struct LinkPreviewCard: View {
     private func open() {
         if let url {
             openURL(url)
+        }
+    }
+}
+
+// a page's icon, which takes no room when it will not load
+private struct FaviconImage: View {
+    let url: URL
+
+    var body: some View {
+        AsyncImage(url: url) { phase in
+            if case .success(let image) = phase {
+                image
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 40, height: 40)
+                    .clipShape(.rect(cornerRadius: 8, style: .continuous))
+            }
         }
     }
 }

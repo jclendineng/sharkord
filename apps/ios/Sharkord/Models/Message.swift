@@ -133,6 +133,8 @@ struct MessageMetadata: Codable, Hashable {
     let siteName: String?
     let description: String?
     let images: [String]?
+    // the page's icons, its favicon at least, shown beside a preview without a picture
+    var favicons: [String]?
 
     var isImage: Bool {
         kind == "media" && mediaType == "image"
@@ -142,6 +144,12 @@ struct MessageMetadata: Codable, Hashable {
     // over every image on it, often an svg logo first
     var previewImageURL: URL? {
         (images ?? [])
+            .compactMap(URL.init(string:))
+            .first { !["svg", "svgz"].contains($0.pathExtension.lowercased()) }
+    }
+
+    var faviconURL: URL? {
+        (favicons ?? [])
             .compactMap(URL.init(string:))
             .first { !["svg", "svgz"].contains($0.pathExtension.lowercased()) }
     }
