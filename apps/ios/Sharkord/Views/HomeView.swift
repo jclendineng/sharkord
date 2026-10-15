@@ -69,6 +69,33 @@ struct HomeView: View {
                 .environment(session)
                 .interactiveDismissDisabled()
         }
+        .sheet(isPresented: isShowingDevices) {
+            NavigationStack {
+                DevicesScreen()
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done", action: closeDevices)
+                        }
+                    }
+            }
+            .environment(session)
+            .presentationBackground(Theme.deepBackground)
+        }
+    }
+
+    private var isShowingDevices: Binding<Bool> {
+        Binding(
+            get: { servers.devicesRequest == ObjectIdentifier(session) },
+            set: { isShowing in
+                if !isShowing {
+                    servers.devicesRequest = nil
+                }
+            }
+        )
+    }
+
+    private func closeDevices() {
+        servers.devicesRequest = nil
     }
 
     @ViewBuilder

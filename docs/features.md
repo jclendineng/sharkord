@@ -320,3 +320,9 @@ Sharkord app** on an iPhone or iPad, a `sharkord://join?server=…&invite=…` l
 server already signed in to just opens, and any other goes straight to making an account with
 the invite filled in.
 
+New login alerts, as Discord's: whenever an account signs in somewhere (a password or single sign
+on), every other device it has the app on with notifications gets **New login detected**, naming
+the new device. The device that signed in is left out, and do not disturb does not hold it back.
+Tapping it opens that server's Devices, to sign the new one out if it was not you. Code
+`apps/server/src/queues/push-notifications/login.ts`.
+

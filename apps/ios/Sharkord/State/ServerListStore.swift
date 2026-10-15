@@ -15,6 +15,8 @@ final class ServerListStore {
 
     // the rail's "more options", the channel panel opens the server sheet for it
     var serverSheetRequest: ObjectIdentifier?
+    // a tapped new login alert, which opens that server's devices
+    var devicesRequest: ObjectIdentifier?
 
     struct RailMenu {
         let server: SessionStore
@@ -183,6 +185,11 @@ final class ServerListStore {
         select(session)
         isShowingDirectMessages = session.channel(channelId)?.isDm == true
         session.requestedChannelId = channelId
+    }
+
+    func showDevices(for session: SessionStore) {
+        select(session)
+        devicesRequest = ObjectIdentifier(session)
     }
 
     func session(serverId: String) -> SessionStore? {

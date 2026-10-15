@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 import { db } from '../db';
 import { getServerToken } from '../db/queries/server';
 import { sessions } from '../db/schema';
+import { enqueueLoginNotification } from '../queues/push-notifications';
 import type { TConnectionInfo } from '../types';
 import { disconnectSessions } from '../utils/wss';
 
@@ -41,6 +42,8 @@ const createSessionToken = async (
     createdAt: now,
     lastActiveAt: now
   });
+
+  enqueueLoginNotification(userId, sessionId, info);
 
   return signSessionToken(userId, tokenVersion, sessionId);
 };

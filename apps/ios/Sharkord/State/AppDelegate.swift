@@ -40,6 +40,18 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     }
 
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
+        let userInfo = response.notification.request.content.userInfo
+
+        // a new login somewhere else: the devices, to sign it out if it was not you
+        if
+            userInfo["kind"] as? String == "newLogin",
+            let serverId = userInfo["serverId"] as? String,
+            let session = servers?.session(serverId: serverId)
+        {
+            servers?.showDevices(for: session)
+            return
+        }
+
         if let (session, channelId) = target(response.notification) {
             servers?.open(channelId: channelId, in: session)
         }
