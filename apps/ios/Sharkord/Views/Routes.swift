@@ -41,6 +41,8 @@ private struct RequestedChannelOpener: ViewModifier {
     @Environment(ServerListStore.self) private var servers
     @Environment(SessionStore.self) private var session
     @Binding var path: NavigationPath
+    // the ipad's chat beside the list, which a channel replaces rather than being pushed onto
+    var detailChannelId: Binding<Int?>?
 
     // the phase is part of it so a request made while connecting runs once channels arrive, and
     // whether the channel is known yet, so a direct message just opened is shown once it arrives
@@ -67,14 +69,21 @@ private struct RequestedChannelOpener: ViewModifier {
         }
 
         servers.isShowingDirectMessages = channel.isDm
-        path = NavigationPath([ChatRoute(channelId: channelId)])
+
+        if let detailChannelId {
+            detailChannelId.wrappedValue = channelId
+            path = NavigationPath()
+        } else {
+            path = NavigationPath([ChatRoute(channelId: channelId)])
+        }
+
         session.requestedChannelId = nil
     }
 }
 
 extension View {
     // a tapped notification, a search result or a server picked in the rail asks for a channel
-    func opensRequestedChannel(_ path: Binding<NavigationPath>) -> some View {
-        modifier(RequestedChannelOpener(path: path))
+    func opensRequestedChannel(_ path: Binding<NavigationPath>, detailChannelId: Binding<Int?>? = nil) -> some View {
+        modifier(RequestedChannelOpener(path: path, detailChannelId: detailChannelId))
     }
 }

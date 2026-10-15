@@ -11,40 +11,32 @@ struct HomeView: View {
 
     @State private var path = NavigationPath()
 
-    var body: some View {
-        NavigationStack(path: $path) {
-            HStack(spacing: 0) {
-                ServerRail(onSelectServer: selectServer, onSelectDirectMessages: showDirectMessages)
+    // discord's ipad in landscape: the list and the chat side by side. in portrait, or a narrow
+    // window, it is the phone's, the chat pushed over the list
+    @State private var isSplit = false
+    @State private var detailChannelId: Int?
 
-                panel
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .clipShape(UnevenRoundedRectangle(topLeadingRadius: 20, style: .continuous))
-                    .background {
-                        // runs on under the user bar, so the bottom has no strip of the rail's color
-                        UnevenRoundedRectangle(topLeadingRadius: 20, style: .continuous)
-                            .fill(Theme.panelBackground)
-                            .stroke(Theme.panelEdge, lineWidth: 1)
-                            .ignoresSafeArea(edges: .bottom)
-                    }
-                    .id(ObjectIdentifier(session))
-            }
-            .background(Theme.railBackground.ignoresSafeArea())
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                VStack(spacing: 6) {
-                    if let voiceSession = servers.voiceSession {
-                        VoiceBar()
-                            .environment(voiceSession)
-                    }
+    private static let panelWidth: CGFloat = 320
 
-                    UserBar()
-                }
-                .padding(.horizontal, 8)
-                .padding(.top, 6)
-            }
-            .toolbarVisibility(.hidden, for: .navigationBar)
-            .chatDestinations()
-            .opensRequestedChannel($path)
+    private static func isSplit(_ size: CGSize) -> Bool {
+        #if DEBUG
+        if DebugLaunch.forcesSplit {
+            return true
         }
+        #endif
+
+        return size.width >= 1000 && size.width > size.height
+    }
+
+    var body: some View {
+        Group {
+            if isSplit {
+                splitLayout
+            } else {
+                stackedLayout
+            }
+        }
+        .onGeometryChange(for: Bool.self, of: { Self.isSplit($0.size) }, action: setSplit)
         .environment(session)
         .coordinateSpace(.named(Self.coordinateSpace))
         .overlay {
@@ -63,6 +55,11 @@ struct HomeView: View {
         .animation(.snappy, value: session.toastMessage)
         .onChange(of: ObjectIdentifier(session)) {
             path = NavigationPath()
+            detailChannelId = nil
+
+            if isSplit {
+                showDefaultChannel()
+            }
         }
         .sheet(isPresented: needsServerPassword) {
             ServerPasswordView()
@@ -96,6 +93,121 @@ struct HomeView: View {
 
     private func closeDevices() {
         servers.devicesRequest = nil
+    }
+
+    private var stackedLayout: some View {
+        NavigationStack(path: $path) {
+            HStack(spacing: 0) {
+                ServerRail(onSelectServer: selectServer, onSelectDirectMessages: showDirectMessages)
+
+                styledPanel
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            .background(Theme.railBackground.ignoresSafeArea())
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                bottomBars
+            }
+            .toolbarVisibility(.hidden, for: .navigationBar)
+            .chatDestinations()
+            .opensRequestedChannel($path)
+        }
+    }
+
+    private var splitLayout: some View {
+        HStack(spacing: 0) {
+            HStack(spacing: 0) {
+                ServerRail(onSelectServer: selectServer, onSelectDirectMessages: showDirectMessages)
+
+                styledPanel
+                    .frame(width: Self.panelWidth)
+                    .frame(maxHeight: .infinity)
+            }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                bottomBars
+            }
+            .background(Theme.railBackground.ignoresSafeArea())
+
+            NavigationStack(path: $path) {
+                detail
+                    .chatDestinations()
+            }
+            .frame(maxWidth: .infinity)
+            .overlay(alignment: .leading) {
+                Theme.panelEdge
+                    .frame(width: 1)
+                    .ignoresSafeArea()
+            }
+        }
+        .background(Theme.chatBackground.ignoresSafeArea())
+        .opensRequestedChannel($path, detailChannelId: $detailChannelId)
+        .onAppear(perform: showDefaultChannel)
+        // the channels arrive after the screen does, the first of them is opened then
+        .onChange(of: session.defaultChannelId) {
+            showDefaultChannel()
+        }
+    }
+
+    @ViewBuilder
+    private var detail: some View {
+        if let detailChannelId, session.channel(detailChannelId) != nil {
+            ChatScreen(channelId: detailChannelId)
+                .id(detailChannelId)
+        } else {
+            ContentUnavailableView(
+                "Nothing open",
+                systemImage: "bubble.left.and.bubble.right",
+                description: Text("Pick a channel or a conversation on the left.")
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Theme.chatBackground)
+            .toolbarVisibility(.hidden, for: .navigationBar)
+        }
+    }
+
+    private var styledPanel: some View {
+        panel
+            .clipShape(UnevenRoundedRectangle(topLeadingRadius: 20, style: .continuous))
+            .background {
+                // runs on under the user bar, so the bottom has no strip of the rail's color
+                UnevenRoundedRectangle(topLeadingRadius: 20, style: .continuous)
+                    .fill(Theme.panelBackground)
+                    .stroke(Theme.panelEdge, lineWidth: 1)
+                    .ignoresSafeArea(edges: .bottom)
+            }
+            .id(ObjectIdentifier(session))
+    }
+
+    private var bottomBars: some View {
+        VStack(spacing: 6) {
+            if let voiceSession = servers.voiceSession {
+                VoiceBar()
+                    .environment(voiceSession)
+            }
+
+            UserBar()
+        }
+        .padding(.horizontal, 8)
+        .padding(.top, 6)
+    }
+
+    private func setSplit(_ split: Bool) {
+        guard split != isSplit else {
+            return
+        }
+
+        isSplit = split
+        path = NavigationPath()
+
+        if split {
+            showDefaultChannel()
+        }
+    }
+
+    // the chat beside the list starts on the channel last open, as discord's does
+    private func showDefaultChannel() {
+        if detailChannelId == nil || session.channel(detailChannelId ?? -1) == nil {
+            detailChannelId = session.defaultChannelId
+        }
     }
 
     @ViewBuilder
@@ -138,7 +250,12 @@ struct HomeView: View {
     }
 
     private func openChannel(_ channelId: Int) {
-        path.append(ChatRoute(channelId: channelId))
+        if isSplit {
+            detailChannelId = channelId
+            path = NavigationPath()
+        } else {
+            path.append(ChatRoute(channelId: channelId))
+        }
     }
 }
 

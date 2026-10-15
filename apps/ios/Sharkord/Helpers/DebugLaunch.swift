@@ -34,5 +34,11 @@ enum DebugLaunch {
     static var voiceChannelId: Int? {
         environment["SHARKORD_DEV_VOICE"].flatMap(Int.init)
     }
+
+    // the simulator cannot be turned from the command line, so a run can ask for the ipad's
+    // landscape layout at any size
+    static var forcesSplit: Bool {
+        environment["SHARKORD_DEV_SPLIT"] == "1"
+    }
 }
 #endif

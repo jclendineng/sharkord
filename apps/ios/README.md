@@ -22,7 +22,7 @@ breaks here at runtime, not at compile time.
 
 Done: several servers at once (Discord style server rail, one socket per server), search
 including direct messages, invite links, an inbox with mentions and unreads, sign in, OIDC
-sign in, server password, channel list with unread counts, a "new messages since" bar and NEW line that jump to the first unread message, a button back to the bottom, the new member lounge (Use as Rules Message), message history with pagination,
+sign in, server password, channel list with unread counts, an iPad landscape layout with the list and the chat side by side, a "new messages since" bar and NEW line that jump to the first unread message, a button back to the bottom, the new member lounge (Use as Rules Message), message history with pagination,
 sending, live new/edited/deleted messages, auto reconnect, DMs, threads, reactions with emoji
 picker, uploads, files opened in Quick Look with a preview of their first page, rich message rendering, push notifications, voice with webcams and watching
 screen shares, sharing your own screen, profile editing, settings (account, devices, voice and

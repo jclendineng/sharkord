@@ -68,6 +68,8 @@ struct SettingsSheet: View {
                 }
             }
         }
+        // a page on ipad, as wide as discord's settings, rather than a narrow card in the middle
+        .presentationSizing(.page)
         .presentationBackground(Theme.deepBackground)
     }
 
@@ -104,7 +106,7 @@ struct SettingsRow: View {
                     .foregroundStyle(Theme.muted)
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, UIDevice.current.userInterfaceIdiom == .pad ? 8 : 4)
     }
 }
 

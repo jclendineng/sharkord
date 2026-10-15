@@ -16,14 +16,10 @@ struct SharkordApp: App {
                     appDelegate.servers = servers
                     await servers.restore()
                 }
-                // the sharkord:// scheme, and the server's own invite links once ios hands them over
+                // sharkord:// links, invites and sign in codes alike, which work with any server
+                // since nothing ties the app to one domain
                 .onOpenURL { url in
                     servers.open(inviteURL: url)
-                }
-                .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { activity in
-                    if let url = activity.webpageURL {
-                        servers.open(inviteURL: url)
-                    }
                 }
                 .onChange(of: scenePhase) { _, newPhase in
                     switch newPhase {
