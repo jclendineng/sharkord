@@ -4,6 +4,7 @@ struct ChatScreen: View {
     let channelId: Int
 
     @Environment(SessionStore.self) private var session
+    @Environment(ServerListStore.self) private var servers
     @Environment(\.dismiss) private var dismiss
     @Environment(\.showChannelList) private var showChannelList
 
@@ -102,8 +103,12 @@ struct ChatScreen: View {
                 .accessibilityLabel("Search")
             }
         }
+        // handed over by hand: opened from the toolbar on a mac, the sheet does not inherit them
+        // and crashed on the first read
         .sheet(isPresented: $isPinsPresented) {
             PinnedMessagesSheet(channelId: channelId)
+                .environment(session)
+                .environment(servers)
         }
         .task {
             session.rememberChannel(channelId)

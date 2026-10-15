@@ -115,3 +115,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - Signing out many devices in a row no longer hits a rate limit.
 - Requests made straight after opening the app wait for its sign in to finish rather than
   failing as unauthenticated.
+- On a Mac, opening pinned messages, or a sheet from channel info's toolbar, no longer crashes
+  the app.
+- On a Mac, the app shows up as macOS in Devices, login alerts and sign in approvals instead of
+  as an iPad, and iPads get an iPad icon in Devices rather than a phone.

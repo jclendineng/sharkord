@@ -82,16 +82,23 @@ struct ChannelInfoScreen: View {
                 }
             }
         }
+        // handed over by hand: a sheet opened from the toolbar on a mac does not inherit them
         .sheet(isPresented: $isInvitePresented) {
             InviteSheet()
+                .environment(session)
+                .environment(servers)
         }
         .sheet(isPresented: $isNotificationsPresented) {
             if let channel {
                 ChannelNotificationsSheet(channel: channel)
+                    .environment(session)
+                    .environment(servers)
             }
         }
         .sheet(item: $profileUser) { user in
             MemberProfileSheet(user: user, onMessage: { openDirectMessage(with: user) })
+                .environment(session)
+                .environment(servers)
         }
         .sheet(isPresented: $isAddingToGroup) {
             if let group {

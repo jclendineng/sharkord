@@ -123,15 +123,17 @@ private struct DeviceRow: View {
     let device: DeviceSession
     let onRevoke: (() -> Void)?
 
+    // an ipad reports ios as its system, so the model tells it apart from a phone
     private var icon: String {
         let os = device.os?.lowercased() ?? ""
+        let model = device.device?.lowercased() ?? ""
+
+        if model.contains("ipad") || model.contains("tablet") {
+            return "ipad"
+        }
 
         if os.contains("ios") || os.contains("android") {
             return "iphone"
-        }
-
-        if os.contains("ipad") {
-            return "ipad"
         }
 
         return "desktopcomputer"
