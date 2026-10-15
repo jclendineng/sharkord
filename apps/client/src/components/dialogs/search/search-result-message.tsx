@@ -7,9 +7,10 @@ import { usePluginMetadata } from '@/features/server/plugins/hooks';
 import type { TMessageJumpToTarget } from '@/types';
 import { TestId } from '@sharkord/shared';
 import { IconButton, Tooltip } from '@sharkord/ui';
-import { ArrowRight, Hash } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { SearchResultPlace } from './search-result-place';
 import type { TSearchResultMessage } from './types';
 
 type TSearchResultMessageCardProps = {
@@ -54,12 +55,11 @@ const SearchResultMessageCard = memo(
                 {(relativeTime) => <span>{relativeTime}</span>}
               </RelativeTime>
               <span>•</span>
-              <span className="inline-flex min-w-0 max-w-full items-center gap-1">
-                <Hash className="h-3 w-3" />
-                <span className="truncate wrap-anywhere">
-                  {message.channelName}
-                </span>
-              </span>
+              <SearchResultPlace
+                channelId={message.channelId}
+                channelName={message.channelName}
+                isDm={message.channelIsDm}
+              />
               {!!message.parentMessageId && (
                 <>
                   <span>•</span>

@@ -26,7 +26,7 @@ struct FileCardTile: View {
 
     var body: some View {
         OpenFileButton(file: file.file) { isLoading in
-            SearchCard(userId: file.userId, channelName: file.channelName) {
+            SearchCard(userId: file.userId, channelId: file.channelId, channelName: file.channelName) {
                 preview
                     .overlay {
                         if isLoading {
@@ -92,6 +92,7 @@ struct LinkCardTile: View {
     let url: URL
     let preview: MessageMetadata?
     let userId: Int?
+    let channelId: Int
     let channelName: String
     let onJump: () -> Void
 
@@ -99,7 +100,7 @@ struct LinkCardTile: View {
 
     var body: some View {
         Button(action: open) {
-            SearchCard(userId: userId, channelName: channelName) {
+            SearchCard(userId: userId, channelId: channelId, channelName: channelName) {
                 if let image = preview?.previewImageURL {
                     AsyncImage(url: image) { phase in
                         if case .success(let image) = phase {
@@ -169,7 +170,7 @@ struct PinCardTile: View {
 
     var body: some View {
         Button(action: onOpen) {
-            SearchCard(userId: message.userId, channelName: channelName) {
+            SearchCard(userId: message.userId, channelId: message.channelId, channelName: channelName) {
                 preview
             } details: {
                 if !text.isEmpty && !message.isMediaLinkOnly {
@@ -274,6 +275,7 @@ private struct CardActions: View {
 // the card both share: the preview filling its top, then the details, the poster and the channel
 private struct SearchCard<Preview: View, Details: View>: View {
     let userId: Int?
+    let channelId: Int
     let channelName: String
     @ViewBuilder let preview: Preview
     @ViewBuilder let details: Details
@@ -311,10 +313,10 @@ private struct SearchCard<Preview: View, Details: View>: View {
                 }
 
                 Label {
-                    Text(channelName)
+                    Text(session.placeName(channelId: channelId, channelName: channelName))
                         .lineLimit(1)
                 } icon: {
-                    Image(systemName: "number")
+                    Image(systemName: session.placeSymbol(channelId: channelId))
                 }
                 .font(.subheadline)
                 .foregroundStyle(Theme.muted)

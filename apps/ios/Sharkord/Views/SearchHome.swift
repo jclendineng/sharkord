@@ -939,6 +939,7 @@ private struct LinksPage: View {
                         url: entry.url,
                         preview: entry.preview,
                         userId: entry.message.userId,
+                        channelId: entry.message.channelId,
                         channelName: entry.message.channelName,
                         onJump: { onOpenMessage(entry.message.channelId, entry.message.id) }
                     )

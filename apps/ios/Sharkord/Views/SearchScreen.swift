@@ -408,7 +408,7 @@ private struct MessageResultRow: View {
             return "#\(message.channelName)"
         }
 
-        return "@\(session.directMessagePartner(for: message.channelId)?.name ?? "Direct Message")"
+        return "@\(session.conversationTitle(for: message.channelId))"
     }
 
     var body: some View {
@@ -450,6 +450,8 @@ private struct FileResultRow: View {
     let file: SearchFile
     let onOpen: () -> Void
 
+    @Environment(SessionStore.self) private var session
+
     var body: some View {
         Button(action: onOpen) {
             HStack(spacing: 12) {
@@ -463,7 +465,7 @@ private struct FileResultRow: View {
                         .foregroundStyle(Theme.link)
                         .lineLimit(1)
 
-                    Text("#\(file.channelName)")
+                    Text(session.isDirectMessage(file.channelId) ? "@\(session.conversationTitle(for: file.channelId))" : "#\(file.channelName)")
                         .font(.caption)
                         .foregroundStyle(Theme.muted)
                 }

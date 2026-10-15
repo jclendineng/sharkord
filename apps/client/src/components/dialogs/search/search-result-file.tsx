@@ -2,8 +2,9 @@ import { RelativeTime } from '@/components/relative-time';
 import { getFileUrl } from '@/helpers/get-file-url';
 import type { TMessageJumpToTarget } from '@/types';
 import { Button } from '@sharkord/ui';
-import { FileText, Hash } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import { memo, useCallback } from 'react';
+import { SearchResultPlace } from './search-result-place';
 import type { TSearchResultFile } from './types';
 
 type TSearchResultFileCardProps = {
@@ -39,10 +40,11 @@ const SearchResultFileCard = memo(
         </div>
 
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-          <span className="inline-flex min-w-0 max-w-full items-center gap-1">
-            <Hash className="h-3 w-3" />
-            <span className="truncate wrap-anywhere">{result.channelName}</span>
-          </span>
+          <SearchResultPlace
+            channelId={result.channelId}
+            channelName={result.channelName}
+            isDm={result.channelIsDm}
+          />
           <RelativeTime date={new Date(result.messageCreatedAt)}>
             {(relativeTime) => <span>{relativeTime}</span>}
           </RelativeTime>

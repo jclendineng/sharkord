@@ -1084,6 +1084,24 @@ final class SessionStore {
     }
 
     // what a conversation is called: the other person, or a group's name, or its people
+    // a direct message's channel is named after its two ids, "DM - 2:5", which means nothing to
+    // anyone: it goes by the person or group instead
+    func isDirectMessage(_ channelId: Int) -> Bool {
+        channel(channelId)?.isDm == true || directMessages.contains { $0.channelId == channelId }
+    }
+
+    func placeName(channelId: Int, channelName: String) -> String {
+        isDirectMessage(channelId) ? conversationTitle(for: channelId) : channelName
+    }
+
+    func placeSymbol(channelId: Int) -> String {
+        guard isDirectMessage(channelId) else {
+            return "number"
+        }
+
+        return group(for: channelId) == nil ? "at" : "person.2.fill"
+    }
+
     func conversationTitle(for channelId: Int) -> String {
         if let group = group(for: channelId) {
             if let name = group.name, !name.isEmpty {
