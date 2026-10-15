@@ -17,6 +17,9 @@ struct HomeView: View {
     @State private var detailChannelId: Int?
     // the conversation beside the list when messages were last picked in the rail
     @State private var lastDirectMessageId: Int?
+    // the chat the side pane filled in by itself, which a rotation to portrait does not push,
+    // since in portrait only the list was ever on screen
+    @State private var placeholderChannelId: Int?
     @State private var searchRoute: SearchRoute?
 
     private static let panelWidth: CGFloat = 320
@@ -182,6 +185,12 @@ struct HomeView: View {
                 lastDirectMessageId = channelId
             }
         }
+        // picking a channel by hand, even the one already showing, makes it the user's own
+        .onChange(of: session.requestedChannelId) { _, requested in
+            if requested != nil {
+                placeholderChannelId = nil
+            }
+        }
     }
 
     @ViewBuilder
@@ -266,7 +275,7 @@ struct HomeView: View {
         } else {
             path = NavigationPath()
 
-            if let detailChannelId, session.channel(detailChannelId) != nil {
+            if let detailChannelId, detailChannelId != placeholderChannelId, session.channel(detailChannelId) != nil {
                 path.append(ChatRoute(channelId: detailChannelId))
             }
 
@@ -282,6 +291,7 @@ struct HomeView: View {
 
         if detailChannelId == nil || session.channel(detailChannelId ?? -1) == nil {
             detailChannelId = session.defaultChannelId
+            placeholderChannelId = detailChannelId
         }
     }
 
@@ -304,6 +314,8 @@ struct HomeView: View {
         } else {
             detailChannelId = session.defaultChannelId
         }
+
+        placeholderChannelId = detailChannelId
     }
 
     @ViewBuilder
@@ -346,6 +358,8 @@ struct HomeView: View {
     }
 
     private func openChannel(_ channelId: Int) {
+        placeholderChannelId = nil
+
         if isSplit {
             detailChannelId = channelId
             path = NavigationPath()

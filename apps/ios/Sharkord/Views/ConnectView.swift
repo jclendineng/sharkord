@@ -1,3 +1,4 @@
+import AVFoundation
 import AuthenticationServices
 import SwiftUI
 
@@ -35,6 +36,7 @@ struct ConnectView: View {
     @State private var invite = ""
     @State private var serverError: String?
     @State private var isScannerPresented = false
+    private let hasCamera = AVCaptureDevice.default(for: .video) != nil
     @State private var isCheckingServer = false
 
     var body: some View {
@@ -129,12 +131,15 @@ struct ConnectView: View {
                         .background(Color(hex: "#090B33"), in: .rect(cornerRadius: 12))
                 }
 
-                // a device already signed in shows a code in settings, no server or password to type
-                Button(action: showScanner) {
-                    Label("Scan a QR Code", systemImage: "qrcode.viewfinder")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity, minHeight: 40)
+                // a device already signed in shows a code in settings, no server or password to
+                // type. left out where there is no camera to scan it with, a mac mini or studio
+                if hasCamera {
+                    Button(action: showScanner) {
+                        Label("Scan a QR Code", systemImage: "qrcode.viewfinder")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity, minHeight: 40)
+                    }
                 }
             }
             .buttonStyle(.plain)
