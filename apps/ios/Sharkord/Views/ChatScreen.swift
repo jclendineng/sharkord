@@ -12,6 +12,9 @@ struct ChatScreen: View {
 
     @State private var isPinsPresented = false
     @State private var dropdown: ChatDropdown?
+    // the mac's search box lives in the top bar and types into the dropdown's search
+    @State private var searchModel = SearchQueryModel()
+    @FocusState private var isSearchFocused: Bool
     // a yes or no rather than the width itself: the width changes every frame of the ipad's
     // card sliding, and redrawing the chat each frame dropped the top bar's buttons until it
     // settled
@@ -96,7 +99,7 @@ struct ChatScreen: View {
                         .contentShape(.rect)
                         .onTapGesture(perform: closeDropdown)
 
-                    ChatDropdownPanel(dropdown: dropdown, channelId: channelId, onClose: closeDropdown)
+                    ChatDropdownPanel(dropdown: dropdown, channelId: channelId, searchModel: searchModel, onClose: closeDropdown)
                         .transition(.move(edge: .top))
                 }
             }
@@ -169,14 +172,23 @@ struct ChatScreen: View {
                 }
             }
 
-            ToolbarItem(placement: .topBarTrailing) {
-                if ProcessInfo.processInfo.isiOSAppOnMac {
-                    Button(action: toggleSearch) {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundStyle(Theme.text)
+            if ProcessInfo.processInfo.isiOSAppOnMac {
+                // discord's mac: the box itself sits in the top bar, the results drop down under
+                ToolbarItem(placement: .topBarTrailing) {
+                    HStack(spacing: 8) {
+                        SearchBox(
+                            model: searchModel,
+                            prompt: searchModel.prompt(in: session, directMessages: false),
+                            isFocused: $isSearchFocused
+                        )
+                        .frame(width: 240)
+
+                        FilterMenu(isFiltering: !searchModel.filters.isEmpty, onChoose: chooseFilter)
                     }
-                    .accessibilityLabel("Search")
-                } else {
+                }
+                .sharedBackgroundVisibility(.hidden)
+            } else {
+                ToolbarItem(placement: .topBarTrailing) {
                     SearchLink(route: SearchRoute(channelId: channelId)) {
                         Image(systemName: "magnifyingglass")
                             .foregroundStyle(Theme.text)
@@ -186,7 +198,21 @@ struct ChatScreen: View {
                 }
             }
         }
+        .onChange(of: isSearchFocused) { _, isFocused in
+            if isFocused {
+                dropdown = .search
+            }
+        }
+        .onChange(of: searchModel.query) { _, query in
+            if !query.isEmpty {
+                dropdown = .search
+            }
+        }
+        .onChange(of: searchModel.focusRequest) {
+            isSearchFocused = true
+        }
         .task {
+            searchModel.applyOpening(channel: channel, directMessages: false)
             session.rememberChannel(channelId)
             session.shownChannelId = channelId
             store.isVisible = true
@@ -222,9 +248,19 @@ struct ChatScreen: View {
         }
     }
 
-    private func toggleSearch() {
-        dismissKeyboard()
-        toggleDropdown(.search)
+    // a filter picked from the menu beside the box goes in as its token, the dropdown listing
+    // its choices; a date filter is picked in the dropdown, which owns the date wheel
+    private func chooseFilter(_ picker: FilterPicker) {
+        dropdown = .search
+
+        if picker.isDate {
+            searchModel.pendingDatePicker = picker
+            return
+        }
+
+        searchModel.token = picker
+        searchModel.query = ""
+        isSearchFocused = true
     }
 
     private func toggleDropdown(_ shown: ChatDropdown) {
@@ -233,6 +269,7 @@ struct ChatScreen: View {
 
     private func closeDropdown() {
         dropdown = nil
+        isSearchFocused = false
     }
 
     // before another screen goes over the chat: swiftui gives a field its focus back when the
@@ -251,6 +288,7 @@ private enum ChatDropdown {
 private struct ChatDropdownPanel: View {
     let dropdown: ChatDropdown
     let channelId: Int
+    let searchModel: SearchQueryModel
     let onClose: () -> Void
 
     var body: some View {
@@ -263,7 +301,7 @@ private struct ChatDropdownPanel: View {
             // wide enough for every tab of the strip without it scrolling
             panel(width: 500, maxHeight: 640) {
                 NavigationStack {
-                    SearchScreen(channelId: channelId, directMessages: false)
+                    SearchScreen(channelId: channelId, directMessages: false, model: searchModel, showsSearchBox: false)
                 }
             }
         }

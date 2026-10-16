@@ -13,18 +13,34 @@ struct SearchScreen: View {
     @Environment(ServerListStore.self) private var servers
     @Environment(SessionStore.self) private var session
 
-    @State private var query = ""
-    @State private var filters = SearchFilters()
-    // the filter whose choices are listed under the box, its token sitting in the box
-    @State private var token: FilterPicker?
+    // shared with a search box outside the screen, the mac's chat top bar, or its own
+    var model: SearchQueryModel?
+    // false when that outside box is the one shown, so the screen has none of its own
+    var showsSearchBox = true
+
+    @State private var ownModel = SearchQueryModel()
     @State private var datePicker: FilterPicker?
     @State private var results: SearchResults?
     @State private var errorMessage: String?
     @State private var isSearching = false
-    // the opening channel goes in once, so removing its chip sticks
-    @State private var hasAppliedChannel = false
     @State private var homes = SearchHomeCache()
     @FocusState private var isFieldFocused: Bool
+
+    private var state: SearchQueryModel {
+        model ?? ownModel
+    }
+
+    private var query: String {
+        state.query
+    }
+
+    private var filters: SearchFilters {
+        state.filters
+    }
+
+    private var token: FilterPicker? {
+        state.token
+    }
 
     // while a token is up, what is typed narrows its choices rather than searching
     private var trimmedQuery: String {
@@ -50,17 +66,8 @@ struct SearchScreen: View {
             .map { $0 }
     }
 
-    // discord names the channel being searched, or the server when it is all of it
     private var prompt: String {
-        guard token == nil else {
-            return ""
-        }
-
-        guard let channel = filters.channel else {
-            return directMessages ? "Search in DMs" : "Search in \(session.displayName)"
-        }
-
-        return "Search in \(FilterChips.place(channel, in: session))"
+        state.prompt(in: session, directMessages: directMessages)
     }
 
     // nothing typed and no filter beyond the channel it was opened from shows discord's tabs
@@ -77,7 +84,7 @@ struct SearchScreen: View {
     // the opening channel before onAppear has put it in the filters, so the first frame does
     // not load the whole server's tabs
     private var browsingScope: Channel? {
-        guard hasAppliedChannel else {
+        guard state.hasAppliedChannel else {
             return channelId.flatMap { session.channel($0) }
         }
 
@@ -115,12 +122,14 @@ struct SearchScreen: View {
         .toolbarBackground(Theme.deepBackground, for: .navigationBar)
         .toolbarBackgroundVisibility(.visible, for: .navigationBar)
         .toolbar {
-            ToolbarItem(placement: .principal) {
-                searchBox
-            }
+            if showsSearchBox {
+                ToolbarItem(placement: .principal) {
+                    SearchBox(model: state, prompt: prompt, isFocused: $isFieldFocused)
+                }
 
-            ToolbarItem(placement: .topBarTrailing) {
-                FilterMenu(isFiltering: !filters.isEmpty, onChoose: choose)
+                ToolbarItem(placement: .topBarTrailing) {
+                    FilterMenu(isFiltering: !filters.isEmpty, onChoose: choose)
+                }
             }
         }
         // handed over by hand: on a mac a sheet's background is worked out before it inherits
@@ -136,64 +145,35 @@ struct SearchScreen: View {
         .task(id: searchKey) {
             await search()
         }
-        .onAppear {
-            if !hasAppliedChannel, let channelId, let channel = session.channel(channelId) {
-                filters.channel = channel
+        .onChange(of: state.pendingDatePicker, initial: true) { _, picker in
+            if let picker {
+                datePicker = picker
+                state.pendingDatePicker = nil
             }
-
-            hasAppliedChannel = true
-            filters.directMessagesOnly = directMessages
+        }
+        .onAppear {
+            state.applyOpening(channel: channelId.flatMap { session.channel($0) }, directMessages: directMessages)
         }
         // the field sits in the navigation bar, where focus state alone does not bring up the
         // keyboard, so once the screen has slid in the field is made first responder directly.
         // the mac's dropdown does not slide, so typing works there almost at once
+        // a box outside the screen leaves no bar of its own, a page pushed from here keeps its
+        .toolbarVisibility(showsSearchBox ? .automatic : .hidden, for: .navigationBar)
         .task {
+            guard showsSearchBox else {
+                return
+            }
+
             try? await Task.sleep(for: .milliseconds(ProcessInfo.processInfo.isiOSAppOnMac ? 50 : 450))
             isFieldFocused = true
             focusNavigationBarField()
         }
     }
 
-    // discord's search box, with the filter being picked sitting in it as a token
-    private var searchBox: some View {
-        HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(Theme.muted)
-
-                if let token {
-                    Button(action: clearToken) {
-                        Text(token.token)
-                            .font(.subheadline)
-                            .foregroundStyle(Theme.header)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 5)
-                            .background(Theme.inputBackground, in: .rect(cornerRadius: 6))
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Remove \(token.token) filter")
-                }
-
-                TextField("", text: $query, prompt: Text(prompt).foregroundStyle(Theme.muted))
-                    .focused($isFieldFocused)
-                    .foregroundStyle(Theme.header)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .submitLabel(.search)
-            }
-        .padding(.horizontal, 12)
-        .frame(height: 38)
-        .frame(maxWidth: .infinity)
-        .background(Theme.listBackground, in: .rect(cornerRadius: 12, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(isFieldFocused ? Theme.blurple : Theme.divider, lineWidth: 1)
-        }
-    }
-
     private var resultsList: some View {
         List {
             if !filters.isEmpty {
-                FilterChips(filters: $filters)
+                FilterChips(filters: Bindable(state).filters)
                     .listRowBackground(Color.clear)
                     .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
             }
@@ -254,9 +234,18 @@ struct SearchScreen: View {
             return
         }
 
-        token = picker
-        query = ""
-        isFieldFocused = true
+        state.token = picker
+        state.query = ""
+        focusField()
+    }
+
+    // the box may be the mac's in the top bar, which watches for the request
+    private func focusField() {
+        if showsSearchBox {
+            isFieldFocused = true
+        } else {
+            state.focusRequest += 1
+        }
     }
 
     // through uikit, as the field was focused: focus state alone may not know it has it
@@ -291,27 +280,26 @@ struct SearchScreen: View {
     }
 
     private func clearToken() {
-        token = nil
-        query = ""
+        state.clearToken()
     }
 
     private func pick(_ user: PublicUser) {
         if token == .from {
-            filters.from = user
+            state.filters.from = user
         } else {
-            filters.mentions = user
+            state.filters.mentions = user
         }
 
         clearToken()
     }
 
     private func pick(_ channel: Channel) {
-        filters.channel = channel
+        state.filters.channel = channel
         clearToken()
     }
 
     private func pick(_ kind: SearchFilters.Has) {
-        filters.has = kind
+        state.filters.has = kind
         clearToken()
     }
 
@@ -319,15 +307,15 @@ struct SearchScreen: View {
     private func apply(_ date: Date, for picker: FilterPicker) {
         switch picker {
         case .on:
-            filters.on = date
-            filters.before = nil
-            filters.after = nil
+            state.filters.on = date
+            state.filters.before = nil
+            state.filters.after = nil
         case .before:
-            filters.before = date
-            filters.on = nil
+            state.filters.before = date
+            state.filters.on = nil
         case .after:
-            filters.after = date
-            filters.on = nil
+            state.filters.after = date
+            state.filters.on = nil
         case .from, .channel, .mentions, .has:
             break
         }
@@ -413,6 +401,99 @@ struct SearchScreen: View {
                 errorMessage = error.localizedDescription
             }
         }
+    }
+}
+
+
+// what is being searched, kept apart from the screen so a search box elsewhere, the mac's in
+// the chat's top bar, can type into the same search the dropdown under it shows
+@Observable
+final class SearchQueryModel {
+    var query = ""
+    var filters = SearchFilters()
+    // the filter whose choices are listed under the box, its token sitting in the box
+    var token: FilterPicker?
+    // the opening channel goes in once, so removing its chip sticks
+    var hasAppliedChannel = false
+    // bumped to put the cursor in a box the screen does not own
+    var focusRequest = 0
+    // a date filter chosen from a menu outside the screen, which opens the screen's date wheel
+    var pendingDatePicker: FilterPicker?
+
+    func applyOpening(channel: Channel?, directMessages: Bool) {
+        if !hasAppliedChannel, let channel {
+            filters.channel = channel
+        }
+
+        hasAppliedChannel = true
+        filters.directMessagesOnly = directMessages
+    }
+
+    func clearToken() {
+        token = nil
+        query = ""
+    }
+
+    // discord names the channel being searched, or the server when it is all of it
+    func prompt(in session: SessionStore, directMessages: Bool) -> String {
+        guard token == nil else {
+            return ""
+        }
+
+        guard let channel = filters.channel else {
+            return directMessages ? "Search in DMs" : "Search in \(session.displayName)"
+        }
+
+        return "Search in \(FilterChips.place(channel, in: session))"
+    }
+}
+
+// discord's search box, with the filter being picked sitting in it as a token. the same box in
+// a search screen's bar and in the mac's chat top bar
+struct SearchBox: View {
+    let model: SearchQueryModel
+    let prompt: String
+    var isFocused: FocusState<Bool>.Binding
+
+    var body: some View {
+        @Bindable var model = model
+
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(Theme.muted)
+
+            if let token = model.token {
+                Button(action: clearToken) {
+                    Text(token.token)
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.header)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 5)
+                        .background(Theme.inputBackground, in: .rect(cornerRadius: 6))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Remove \(token.token) filter")
+            }
+
+            TextField("", text: $model.query, prompt: Text(prompt).foregroundStyle(Theme.muted))
+                .focused(isFocused)
+                .foregroundStyle(Theme.header)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .submitLabel(.search)
+        }
+        .padding(.horizontal, 12)
+        .frame(height: 38)
+        .frame(maxWidth: .infinity)
+        .background(Theme.listBackground, in: .rect(cornerRadius: 12, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(isFocused.wrappedValue ? Theme.blurple : Theme.divider, lineWidth: 1)
+        }
+    }
+
+    private func clearToken() {
+        model.clearToken()
     }
 }
 

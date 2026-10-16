@@ -50,10 +50,13 @@ struct SearchLink<Label: View>: View {
                 label
             }
             .popover(isPresented: $isDropdownPresented, arrowEdge: .top) {
+                // the same card as the chat's search dropdown: its width fits every tab without
+                // the strip scrolling, and the panel colour rather than the popover's glass
                 NavigationStack {
                     SearchScreen(channelId: route.channelId, directMessages: route.directMessages)
                 }
-                .frame(idealWidth: 460, idealHeight: 640)
+                .frame(idealWidth: 500, idealHeight: 640)
+                .presentationBackground(Theme.deepBackground)
                 .presentationCompactAdaptation(.popover)
                 .environment(session)
                 .environment(servers)
