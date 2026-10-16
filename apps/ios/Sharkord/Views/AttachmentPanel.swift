@@ -76,7 +76,7 @@ struct AttachmentPanel: View {
             RoundedRectangle(cornerRadius: 28, style: .continuous)
                 .strokeBorder(.white.opacity(0.06), lineWidth: 1)
         }
-        .shadow(color: .black.opacity(0.45), radius: 24, y: 10)
+        .shadow(color: .black.opacity(0.12), radius: 8, y: 3)
         .compositingGroup()
         .padding(.horizontal, 28)
         .padding(.bottom, 6)

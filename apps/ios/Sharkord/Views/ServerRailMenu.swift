@@ -89,7 +89,7 @@ struct ServerRailMenu: View {
         .overlay {
             RoundedRectangle(cornerRadius: 16).stroke(Theme.divider, lineWidth: 1)
         }
-        .shadow(color: .black.opacity(0.4), radius: 16, y: 6)
+        .shadow(color: .black.opacity(0.12), radius: 8, y: 3)
         .compositingGroup()
         .onGeometryChange(for: CGFloat.self) { proxy in
             proxy.size.height

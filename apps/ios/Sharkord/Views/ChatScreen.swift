@@ -176,6 +176,9 @@ struct ChatScreen: View {
                             .hoverPop()
                     }
                     .accessibilityLabel(isMemberListShown ? "Hide Member List" : "Show Member List")
+                    // the icon grows under the pointer, as discord's do. the system's own circle drawn behind
+                    // it on top of that read as a shadow
+                    .hoverEffectDisabled()
                 }
             }
 
@@ -187,6 +190,7 @@ struct ChatScreen: View {
                             .hoverPop()
                     }
                     .accessibilityLabel("Threads")
+                    .hoverEffectDisabled()
                 }
             }
 
@@ -203,6 +207,7 @@ struct ChatScreen: View {
                         .hoverPop()
                 }
                 .accessibilityLabel("Pinned Messages")
+                .hoverEffectDisabled()
                 // pins hang off the button on an ipad, a phone and a mac get the dropdown.
                 // handed the stores by hand: a popover from the toolbar does not inherit them
                 .popover(isPresented: $isPinsPresented) {
@@ -417,7 +422,7 @@ private struct ChatDropdownPanel: View {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .strokeBorder(Theme.panelEdge, lineWidth: 1)
             }
-            .shadow(color: .black.opacity(0.4), radius: 20, y: 8)
+            .shadow(color: .black.opacity(0.12), radius: 8, y: 3)
             // one layer with its shadow: faded on its own, the shadow showed through the half clear
             // card as a dark box
             .compositingGroup()
@@ -472,6 +477,7 @@ private struct NotificationBell: View {
                 .hoverPop()
         }
         .accessibilityLabel("Notification Settings")
+        .hoverEffectDisabled()
     }
 
     private func setLevel(_ newLevel: ChannelNotificationLevel) {
@@ -681,5 +687,6 @@ private struct InboxButton: View {
                 }
         }
         .accessibilityLabel("Inbox")
+        .hoverEffectDisabled()
     }
 }

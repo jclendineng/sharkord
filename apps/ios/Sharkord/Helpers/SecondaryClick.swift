@@ -363,7 +363,7 @@ struct PointerMenuLayer: View {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .strokeBorder(Theme.panelEdge, lineWidth: 1)
             }
-            .shadow(color: .black.opacity(0.4), radius: 16, y: 6)
+            .shadow(color: .black.opacity(0.12), radius: 8, y: 3)
             .compositingGroup()
     }
 

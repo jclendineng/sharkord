@@ -31,7 +31,7 @@ struct SearchDropdownCard: View {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .strokeBorder(Theme.panelEdge, lineWidth: 1)
                 }
-                .shadow(color: .black.opacity(0.4), radius: 20, y: 8)
+                .shadow(color: .black.opacity(0.12), radius: 8, y: 3)
                 .compositingGroup()
                 .offset(x: max(12, left), y: top)
             }
