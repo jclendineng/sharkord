@@ -15,6 +15,7 @@ struct MessageActionsSheet: View {
     let onDelete: (Message) -> Void
 
     @Environment(SessionStore.self) private var session
+    @Environment(ServerListStore.self) private var servers
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
 
@@ -129,8 +130,13 @@ struct MessageActionsSheet: View {
         .scrollBounceBehavior(.basedOnSize)
         .presentationDragIndicator(.visible)
         .presentationBackground(Theme.deepBackground)
+        // handed over by hand: on a mac a sheet's background is worked out before it inherits
+        // anything, so a sheet reading a store it was not given crashed on opening
         .sheet(isPresented: $isPickerPresented) {
             EmojiPickerView(includesCustom: true, onPick: react)
+                .environment(session)
+                .environment(servers)
+                .appSheet(addsClose: true)
         }
         .sheet(isPresented: $isDoubleTapPickerPresented) {
             EmojiPickerView(
@@ -141,12 +147,21 @@ struct MessageActionsSheet: View {
                 detents: [.large],
                 onPick: setDoubleTapReaction
             )
+                .environment(session)
+                .environment(servers)
+                .appSheet(addsClose: true)
         }
         .sheet(isPresented: $isForwardPresented, onDismiss: close) {
             ForwardSheet(message: message)
+                .environment(session)
+                .environment(servers)
+                .appSheet()
         }
         .sheet(isPresented: $isRulesSetupPresented, onDismiss: close) {
             RulesSetupSheet(messageId: message.id)
+                .environment(session)
+                .environment(servers)
+                .appSheet()
         }
         .alert("Reporting isn't set up", isPresented: $isReportUnavailable) {
             Button("OK", role: .cancel) {}

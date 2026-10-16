@@ -82,7 +82,8 @@ private struct ServerRailItem: View {
         }
         // discord keeps the icon in place and opens a menu beside it, the system context
         // menu lifts the whole row out instead
-        .simultaneousGesture(LongPressGesture(minimumDuration: 0.3).onEnded(showMenu))
+        .simultaneousGesture(LongPressGesture(minimumDuration: 0.3).onEnded(longPressed))
+        .onSecondaryClick(perform: rightClicked)
     }
 
     // releasing a long press also counts as a tap, which must not switch servers
@@ -94,7 +95,16 @@ private struct ServerRailItem: View {
         onSelect(server)
     }
 
-    private func showMenu(_: Bool) {
+    private func longPressed(_: Bool) {
+        showMenu()
+    }
+
+    // the menu already opens beside the icon, wherever on it the click was
+    private func rightClicked(_: SecondaryClick) {
+        showMenu()
+    }
+
+    private func showMenu() {
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         servers.railMenu = ServerListStore.RailMenu(server: server, iconFrame: frame)
     }
@@ -102,15 +112,6 @@ private struct ServerRailItem: View {
 
 struct ServerIcon: View {
     let server: SessionStore
-
-    private var initials: String {
-        server.displayName
-            .split(separator: " ")
-            .prefix(3)
-            .compactMap(\.first)
-            .map(String.init)
-            .joined()
-    }
 
     var body: some View {
         if let logo = server.serverInfo?.logo, let address = server.address {
@@ -123,7 +124,7 @@ struct ServerIcon: View {
     }
 
     private var placeholder: some View {
-        Text(initials)
+        Text(server.initials)
             .font(.system(size: 16, weight: .semibold))
             .foregroundStyle(Theme.header)
             .frame(maxWidth: .infinity, maxHeight: .infinity)

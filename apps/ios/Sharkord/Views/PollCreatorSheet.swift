@@ -25,6 +25,7 @@ struct PollCreatorSheet: View {
     let channelId: Int
 
     @Environment(SessionStore.self) private var session
+    @Environment(ServerListStore.self) private var servers
     @Environment(\.dismiss) private var dismiss
 
     @State private var question = ""
@@ -124,10 +125,15 @@ struct PollCreatorSheet: View {
                     }
                 }
             }
+            // handed over by hand: on a mac a sheet's background is worked out before it inherits
+            // anything, so a sheet reading a store it was not given crashed on opening
             .sheet(item: $emojiFor) { target in
                 EmojiPickerView(includesCustom: false) { shortcode in
                     setEmoji(shortcode, for: target.id)
                 }
+                    .environment(session)
+                    .environment(servers)
+                    .appSheet(addsClose: true)
             }
         }
         .presentationBackground(Theme.deepBackground)

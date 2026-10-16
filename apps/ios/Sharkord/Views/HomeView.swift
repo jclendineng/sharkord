@@ -14,6 +14,8 @@ struct HomeView: View {
     // the ipad's: the list and the chat side by side as two cards, in either orientation. a
     // phone, or a narrow ipad window, pushes the chat over the list
     @State private var isSplit = false
+    @State private var bottomSafeArea: CGFloat = 0
+    @State private var width: CGFloat = 0
     // the chat opens beside the list, and its handle slides it over the list to the full width
     // and back
     @State private var isPortrait = false
@@ -68,6 +70,12 @@ struct HomeView: View {
         .onGeometryChange(for: Bool.self, of: { $0.size.height > $0.size.width }) { portrait in
             isPortrait = portrait
         }
+        .onGeometryChange(for: CGFloat.self, of: { $0.safeAreaInsets.bottom }) { inset in
+            bottomSafeArea = inset
+        }
+        .onGeometryChange(for: CGFloat.self, of: \.size.width) { newWidth in
+            width = newWidth
+        }
         .environment(session)
         .coordinateSpace(.named(Self.coordinateSpace))
         .overlay {
@@ -92,14 +100,20 @@ struct HomeView: View {
                 showDefaultChannel()
             }
         }
+        // handed over by hand: on a mac a sheet's background is worked out before it inherits
+        // anything, so a sheet reading a store it was not given crashed on opening
         .sheet(isPresented: needsServerPassword) {
             ServerPasswordView()
                 .environment(session)
                 .interactiveDismissDisabled()
+                .environment(servers)
+                .appSheet()
         }
         .sheet(item: pendingApproval) { approval in
             ApproveDeviceSheet(token: approval.token)
                 .environment(session)
+                .environment(servers)
+                .appSheet()
         }
         .sheet(isPresented: isShowingDevices) {
             NavigationStack {
@@ -112,6 +126,8 @@ struct HomeView: View {
             }
             .environment(session)
             .presentationBackground(Theme.deepBackground)
+            .environment(servers)
+            .appSheet()
         }
     }
 
@@ -245,6 +261,7 @@ struct HomeView: View {
             }
             // see through, so a swipe back shows the screen behind as the search slides off
             .presentationBackground(.clear)
+            .environment(servers)
         }
         // a result opened from search shows in the chat beside the list, search steps aside
         .onChange(of: session.requestedChannelId) { _, requested in
@@ -403,6 +420,16 @@ struct HomeView: View {
             .id(ObjectIdentifier(session))
     }
 
+    // an ipad's home indicator lifts the bars clear of the card's bottom edge. a mac window or a
+    // home button ipad has no inset, so the bars are lifted by hand to sit the same way
+    private var barLift: CGFloat {
+        guard isSplit else {
+            return 0
+        }
+
+        return max(Self.cardGap + 12 - bottomSafeArea, 0)
+    }
+
     private var bottomBars: some View {
         VStack(spacing: 6) {
             if let voiceSession = servers.voiceSession {
@@ -414,6 +441,7 @@ struct HomeView: View {
         }
         .padding(.horizontal, 8)
         .padding(.top, 6)
+        .padding(.bottom, barLift)
     }
 
     private func showSearch(_ route: SearchRoute) {
@@ -433,7 +461,6 @@ struct HomeView: View {
                 searchSwipe = max(value.translation.width, 0)
             }
             .onEnded { value in
-                let width = UIScreen.main.bounds.width
                 let landing = value.translation.width + value.velocity.width * 0.2
 
                 guard landing > width / 3 else {
@@ -528,6 +555,9 @@ struct HomeView: View {
             switch session.phase {
             case .signedOut:
                 SignedOutPanel()
+            // the channels from the last visit stand in until the join comes back
+            case .connecting where !session.channels.isEmpty:
+                ChannelListPanel()
             case .connecting, .needsServerPassword:
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)

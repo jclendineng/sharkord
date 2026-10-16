@@ -107,26 +107,43 @@ struct ServerSheet: View {
         }
         // like discord's, it rises to just below the server name and stays there, the
         // contents scroll inside and a swipe down closes it
-        .presentationDetents([.fraction(0.86)])
+        .sheetDetents([.fraction(0.86)])
         .presentationContentInteraction(.scrolls)
         .presentationDragIndicator(.visible)
         .presentationBackground(Theme.deepBackground)
+        // handed over by hand: on a mac the sheet's background is worked out before it inherits
+        // anything, and the inbox crashed on its first read
         .sheet(isPresented: $isInboxPresented) {
             InboxSheet()
+                .environment(servers)
+                .environment(session)
+                .appSheet()
         }
         .sheet(isPresented: $isNotificationsPresented) {
             NavigationStack {
                 NotificationSettingsScreen()
             }
+            .environment(session)
+            .environment(servers)
+            .appSheet(addsClose: true)
         }
         .sheet(isPresented: $isEditProfilePresented) {
             EditProfileSheet()
+                .environment(session)
+                .environment(servers)
+                .appSheet()
         }
         .sheet(isPresented: $isEmojiManagerPresented) {
             EmojiManagerScreen()
+                .environment(session)
+                .environment(servers)
+                .appSheet()
         }
         .sheet(isPresented: $isSettingsPresented) {
             ServerSettingsScreen()
+                .environment(session)
+                .environment(servers)
+                .appSheet()
         }
         .alert("Reporting isn't set up", isPresented: $isReportUnavailable) {
             Button("OK", role: .cancel) {}

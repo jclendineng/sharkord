@@ -5,10 +5,15 @@ struct MessageListView<Header: View>: View {
     @ViewBuilder let header: Header
 
     @Environment(SessionStore.self) private var session
+    @Environment(ServerListStore.self) private var servers
     // the root's, which asks before leaving the app, see LinkGuard
     @Environment(\.openURL) private var openURL
 
     @State private var actionsMessage: Message?
+    // where a right click asks the mac's menu to open, and the list's own place in the window
+    // that it is worked out against
+    @State private var menuAnchor = UnitPoint.center
+    @State private var listFrame = CGRect.zero
     @State private var deletingMessage: Message?
     @State private var openedThread: Message?
 
@@ -98,7 +103,8 @@ struct MessageListView<Header: View>: View {
                         showsHeader: showsHeader,
                         showsThreadLink: store.scope == .channel,
                         onLongPress: { showActions(for: message) },
-                        onDoubleTap: { react(to: message) }
+                        onDoubleTap: { react(to: message) },
+                        onSecondaryClick: { click in showActions(for: message, at: click) }
                     )
                     .background {
                         if highlightedMessageId == message.id {
@@ -138,7 +144,12 @@ struct MessageListView<Header: View>: View {
         .environment(\.isShowingMessageActions, actionsMessage != nil)
         // the same for a link in the message, which opens on the finger lifting
         .environment(\.openURL, OpenURLAction(handler: openUnlessShowingActions))
-        .sheet(item: $actionsMessage) { message in
+        // handed over by hand: on a mac a sheet's background is worked out before it inherits
+        // anything, so a sheet reading a store it was not given crashed on opening
+        .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }) { frame in
+            listFrame = frame
+        }
+        .actionsPresentation(item: $actionsMessage, anchor: menuAnchor) { message in
             MessageActionsSheet(
                 message: message,
                 store: store,
@@ -146,10 +157,14 @@ struct MessageListView<Header: View>: View {
                 onOpenThread: { openThread(message) },
                 onDelete: confirmDelete
             )
+                .environment(session)
+                .environment(servers)
         }
         .fullScreenCover(item: $deletingMessage) { message in
             DeleteMessageConfirmation(message: message, onConfirm: { delete(message) })
                 .presentationBackground(.clear)
+                .environment(session)
+                .environment(servers)
         }
         .transaction(value: deletingMessage) { transaction in
             // the card fades in over the chat on its own, without the cover sliding up
@@ -177,6 +192,18 @@ struct MessageListView<Header: View>: View {
     private func showActions(for message: Message) {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         actionsMessage = message
+    }
+
+    private func showActions(for message: Message, at click: SecondaryClick) {
+        guard listFrame.width > 0, listFrame.height > 0 else {
+            return
+        }
+
+        menuAnchor = UnitPoint(
+            x: (click.windowPoint.x - listFrame.minX) / listFrame.width,
+            y: (click.windowPoint.y - listFrame.minY) / listFrame.height
+        )
+        showActions(for: message)
     }
 
     private func openUnlessShowingActions(_ url: URL) -> OpenURLAction.Result {

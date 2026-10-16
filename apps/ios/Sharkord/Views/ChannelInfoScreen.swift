@@ -87,18 +87,21 @@ struct ChannelInfoScreen: View {
             InviteSheet()
                 .environment(session)
                 .environment(servers)
+                .appSheet()
         }
         .sheet(isPresented: $isNotificationsPresented) {
             if let channel {
                 ChannelNotificationsSheet(channel: channel)
                     .environment(session)
                     .environment(servers)
+                    .appSheet()
             }
         }
         .sheet(item: $profileUser) { user in
             MemberProfileSheet(user: user, onMessage: { openDirectMessage(with: user) })
                 .environment(session)
                 .environment(servers)
+                .appSheet(addsClose: true)
         }
         .sheet(isPresented: $isAddingToGroup) {
             if let group {
@@ -106,6 +109,9 @@ struct ChannelInfoScreen: View {
                     GroupFriendPicker(mode: .add(channelId: channelId, memberIds: group.memberIds), onDone: addedToGroup)
                 }
                 .presentationBackground(Theme.deepBackground)
+                .environment(session)
+                .environment(servers)
+                .appSheet()
             }
         }
         .alert("Rename Group", isPresented: $isRenamingGroup) {

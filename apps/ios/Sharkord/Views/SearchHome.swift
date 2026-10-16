@@ -651,6 +651,7 @@ private struct MediaGrid: View {
     let onJump: (MediaItem) -> Void
 
     @Environment(SessionStore.self) private var session
+    @Environment(ServerListStore.self) private var servers
     @Environment(\.openURL) private var openURL
 
     @State private var viewing: MediaItem?
@@ -688,9 +689,13 @@ private struct MediaGrid: View {
             }
         }
         .padding(.horizontal, 14)
+        // handed over by hand: on a mac a sheet's background is worked out before it inherits
+        // anything, so a sheet reading a store it was not given crashed on opening
         .fullScreenCover(item: $viewing) { item in
             MediaViewer(items: items, startingAt: item, onJump: onJump)
                 .navigationTransition(.zoom(sourceID: item.id, in: zoom))
+                .environment(session)
+                .environment(servers)
         }
     }
 

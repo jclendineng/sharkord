@@ -33,9 +33,33 @@ struct SearchLink<Label: View>: View {
     @ViewBuilder let label: Label
 
     @Environment(\.presentSearch) private var presentSearch
+    @Environment(SessionStore.self) private var session
+    @Environment(ServerListStore.self) private var servers
+
+    @State private var isDropdownPresented = false
 
     var body: some View {
-        if let presentSearch {
+        if ProcessInfo.processInfo.isiOSAppOnMac {
+            // discord's mac search drops down from the box, filters and results in it, and a
+            // result opens in the window behind as the dropdown goes. handed the stores by hand:
+            // on a mac a presentation is worked out before it inherits anything
+            Button(action: showDropdown) {
+                label
+            }
+            .popover(isPresented: $isDropdownPresented, arrowEdge: .top) {
+                NavigationStack {
+                    SearchScreen(channelId: route.channelId, directMessages: route.directMessages)
+                }
+                .frame(idealWidth: 460, idealHeight: 640)
+                .environment(session)
+                .environment(servers)
+            }
+            .onChange(of: session.requestedChannelId) { _, channelId in
+                if channelId != nil {
+                    isDropdownPresented = false
+                }
+            }
+        } else if let presentSearch {
             Button {
                 presentSearch(route)
             } label: {
@@ -46,6 +70,12 @@ struct SearchLink<Label: View>: View {
                 label
             }
         }
+    }
+}
+
+extension SearchLink {
+    private func showDropdown() {
+        isDropdownPresented = true
     }
 }
 

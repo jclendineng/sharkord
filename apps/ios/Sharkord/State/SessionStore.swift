@@ -98,7 +98,7 @@ final class SessionStore {
     private var pushToken: String?
     private var hasRequestedPush = false
     private var voice: VoiceConnection?
-    private var screenReceiver: ScreenShareReceiver?
+    private var screenCapture: ScreenCapture?
     // present when the call was joined with app audio on, see AppSettings.shareAppAudio
     private var mixingDevice: MixingAudioDevice?
     // the server drops a socket's voice session with the socket, so a reconnect rejoins it
@@ -120,6 +120,16 @@ final class SessionStore {
         }
 
         return address?.baseURL.host() ?? "Server"
+    }
+
+    // what stands in for a server with no icon
+    var initials: String {
+        displayName
+            .split(separator: " ")
+            .prefix(3)
+            .compactMap(\.first)
+            .map(String.init)
+            .joined()
     }
 
     // text channels and conversations with something unread, for the unreads inbox
@@ -183,7 +193,7 @@ final class SessionStore {
 
     // the logo and description live in /info, read again after an admin changes them
     func refreshServerInfo() async {
-        if let address, let info = try? await AuthAPI.fetchInfo(address) {
+        if let info = await fetchServerInfo() {
             serverInfo = info
             serverName = info.name
         }
@@ -548,6 +558,12 @@ final class SessionStore {
             return
         }
 
+        // still connecting, but with the channels from last time on screen meanwhile
+        if channels.isEmpty, let snapshot = JoinSnapshot.load(for: address) {
+            apply(snapshot)
+            serverInfo = JoinSnapshot.loadInfo(for: address)
+        }
+
         await connect(address, token: token)
     }
 
@@ -662,6 +678,7 @@ final class SessionStore {
 
         if let address {
             CredentialStore.deleteToken(for: address)
+            JoinSnapshot.delete(for: address)
         }
 
         if let address {
@@ -841,8 +858,6 @@ final class SessionStore {
             for key in producers.keys {
                 await connection.consume(key)
             }
-
-            listenForScreenShare()
         } catch {
             showError(error)
             await leaveVoice()
@@ -892,66 +907,74 @@ final class SessionStore {
         }
     }
 
-    // the broadcast extension connects to this when someone starts sharing from the picker
-    private func listenForScreenShare() {
-        screenReceiver?.stop()
+    // the share button: the system picker first, sharing starts once something is picked
+    func toggleScreenShare() async {
+        if isSharingScreen {
+            await stopScreenShare()
+            return
+        }
 
-        let quality = AppSettings.shared.streamQuality
-        let receiver = ScreenShareReceiver(
-            maxDimension: quality.maxDimension,
-            framesPerSecond: quality.framesPerSecond,
-            shareAudio: mixingDevice != nil,
-            onConnect: { [weak self] in
+        guard voice != nil else {
+            return
+        }
+
+        let capture = screenCapture ?? ScreenCapture(
+            onPicked: { [weak self] in
                 Task { @MainActor in
                     await self?.startScreenShare()
                 }
             },
-            onDisconnect: { [weak self] in
+            onStopped: { [weak self] in
                 Task { @MainActor in
                     await self?.stopScreenShare()
                 }
             }
         )
 
-        receiver.start()
-        screenReceiver = receiver
+        screenCapture = capture
+        capture.presentPicker()
     }
 
+    // takes effect on the next share
     func setStreamQuality(_ quality: AppSettings.StreamQuality) {
         AppSettings.shared.streamQuality = quality
-        screenReceiver?.setQuality(maxDimension: quality.maxDimension, framesPerSecond: quality.framesPerSecond)
     }
 
     private func startScreenShare() async {
-        guard let voice, let screenReceiver else {
+        guard !isSharingScreen, let voice, let screenCapture else {
             return
+        }
+
+        let quality = AppSettings.shared.streamQuality
+        var onAudio: ScreenCapture.AudioHandler?
+
+        if let mixer = mixingDevice {
+            onAudio = { samples in
+                mixer.writeGameAudio(samples)
+            }
         }
 
         do {
             let sink = try await voice.startScreenShare()
 
-            screenReceiver.setFrameHandler { pixelBuffer in
-                sink.push(pixelBuffer)
-            }
-
-            if let mixer = mixingDevice {
-                screenReceiver.setAudioHandler { samples in
-                    mixer.writeGameAudio(samples)
-                }
-            }
+            try await screenCapture.start(
+                sink: sink,
+                maxDimension: quality.maxDimension,
+                framesPerSecond: quality.framesPerSecond,
+                onAudio: onAudio
+            )
 
             isSharingScreen = true
             await updateVoiceState(["sharingScreen": true])
         } catch {
             showError(error)
-            // the extension sees the connection close and ends the broadcast
-            screenReceiver.dropClient()
+            await screenCapture.stop()
+            await voice.stopScreenShare()
         }
     }
 
     private func stopScreenShare() async {
-        screenReceiver?.setFrameHandler(nil)
-        screenReceiver?.setAudioHandler(nil)
+        await screenCapture?.stop()
         mixingDevice?.clearGameAudio()
 
         guard isSharingScreen, let voice else {
@@ -1227,11 +1250,63 @@ final class SessionStore {
             let password: String?
         }
 
-        let result: JoinResult = try await client.query(
+        let data = try await client.rawQuery(
             "others.joinServer",
             input: JoinInput(handshakeHash: handshakeHash, password: password)
         )
+        let result = try JSONDecoder().decode(JoinResult.self, from: data)
 
+        apply(result)
+
+        if let address {
+            JoinSnapshot.save(data, for: address)
+        }
+
+        self.handshakeHash = nil
+        reconnectAttempt = 0
+        phase = .connected
+        hideReconnectingBanner()
+
+        subscribe(client)
+
+        // none of these needs another's answer, so they go out together rather than one round
+        // trip after the next, the direct messages and friends no longer waiting at the back
+        async let info = fetchServerInfo()
+        async let directMessages: Void = loadDirectMessages()
+        async let push: Void = enablePushIfAvailable()
+        async let renewedToken: Void = refreshToken()
+        async let personalSettings: Void = loadPersonalSettings()
+        async let friends: Void = loadFriends()
+
+        if let channelId = voiceChannelToRejoin {
+            voiceChannelToRejoin = nil
+            await joinVoice(channelId)
+        }
+
+        // a failed fetch keeps what the snapshot had, the icon stays rather than going blank
+        if let freshInfo = await info {
+            serverInfo = freshInfo
+        }
+        _ = await (directMessages, push, renewedToken, personalSettings, friends)
+
+        // anything that arrived while disconnected was missed by the subscriptions
+        for store in Array(messageStores.values) + Array(threadStores.values) where store.hasLoaded {
+            await store.reload()
+        }
+    }
+
+    private func fetchServerInfo() async -> ServerInfo? {
+        guard let address, let data = try? await AuthAPI.fetchInfoData(address) else {
+            return nil
+        }
+
+        JoinSnapshot.saveInfo(data, for: address)
+
+        return try? JSONDecoder().decode(ServerInfo.self, from: data)
+    }
+
+    // the server as a join describes it, from the live join or the last one kept on disk
+    private func apply(_ result: JoinResult) {
         serverName = result.serverName
         serverId = result.serverId
         lastChannelId = address.flatMap(CredentialStore.lastChannelId(for:))
@@ -1243,6 +1318,8 @@ final class SessionStore {
         usersById = Dictionary(uniqueKeysWithValues: result.users.map { ($0.id, $0) })
         // joining is what makes this account online, whatever the list said a moment before
         usersById[result.ownUserId]?.status = .online
+        // the user bar's status at once, users.getPresence confirms it a moment later
+        ownCustomStatus = usersById[result.ownUserId]?.customStatus
         rolesById = Dictionary(uniqueKeysWithValues: result.roles.map { ($0.id, $0) })
         customEmojis = result.emojis
         stickers = result.stickers ?? []
@@ -1263,34 +1340,6 @@ final class SessionStore {
                     users[userId] = user.value
                 }
             }
-        }
-
-        self.handshakeHash = nil
-        reconnectAttempt = 0
-        phase = .connected
-        hideReconnectingBanner()
-
-        subscribe(client)
-
-        if let address {
-            serverInfo = try? await AuthAPI.fetchInfo(address)
-        }
-
-        await loadDirectMessages()
-        await enablePushIfAvailable()
-
-        if let channelId = voiceChannelToRejoin {
-            voiceChannelToRejoin = nil
-            await joinVoice(channelId)
-        }
-
-        await refreshToken()
-        await loadPersonalSettings()
-        await loadFriends()
-
-        // anything that arrived while disconnected was missed by the subscriptions
-        for store in Array(messageStores.values) + Array(threadStores.values) where store.hasLoaded {
-            await store.reload()
         }
     }
 
@@ -1466,8 +1515,13 @@ final class SessionStore {
     }
 
     private func stopVoice() {
-        screenReceiver?.stop()
-        screenReceiver = nil
+        if let screenCapture {
+            Task {
+                await screenCapture.stop()
+            }
+        }
+
+        screenCapture = nil
         isSharingScreen = false
         voice?.close()
         voice = nil

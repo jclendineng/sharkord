@@ -92,7 +92,7 @@ struct SetStatusSheet: View {
             }
             .onAppear(perform: fill)
         }
-        .presentationDetents([.medium, .large])
+        .sheetDetents([.medium, .large])
         .presentationBackground(Theme.deepBackground)
     }
 

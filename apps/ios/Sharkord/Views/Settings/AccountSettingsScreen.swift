@@ -2,6 +2,7 @@ import SwiftUI
 
 struct AccountSettingsScreen: View {
     @Environment(SessionStore.self) private var session
+    @Environment(ServerListStore.self) private var servers
 
     @State private var isEditPresented = false
     @State private var currentPassword = ""
@@ -69,8 +70,13 @@ struct AccountSettingsScreen: View {
         .settingsListStyle()
         .navigationTitle("Account")
         .navigationBarTitleDisplayMode(.inline)
+        // handed over by hand: on a mac a sheet's background is worked out before it inherits
+        // anything, so a sheet reading a store it was not given crashed on opening
         .sheet(isPresented: $isEditPresented) {
             EditProfileSheet()
+                .environment(session)
+                .environment(servers)
+                .appSheet()
         }
     }
 

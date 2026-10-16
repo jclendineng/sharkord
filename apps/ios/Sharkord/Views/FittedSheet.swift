@@ -10,7 +10,7 @@ private struct FittedSheet: ViewModifier {
         content
             .padding(.bottom, 16)
             .onGeometryChange(for: CGFloat.self, of: \.size.height, action: fit)
-            .presentationDetents([height.map { .height($0) } ?? .medium])
+            .sheetDetents([height.map { .height($0) } ?? .medium])
     }
 
     private func fit(_ measured: CGFloat) {

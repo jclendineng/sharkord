@@ -83,8 +83,13 @@ struct ConnectView: View {
         }
         .animation(.snappy(duration: 0.3), value: step)
         .onAppear(perform: resumeSignIn)
+        // handed over by hand: on a mac a sheet's background is worked out before it inherits
+        // anything, so a sheet reading a store it was not given crashed on opening
         .sheet(isPresented: $isScannerPresented) {
             QRScannerSheet(onScan: scanned)
+                .environment(session)
+                .environment(servers)
+                .appSheet()
         }
     }
 

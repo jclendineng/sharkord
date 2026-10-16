@@ -9,6 +9,9 @@ struct ChatScreen: View {
     @Environment(\.showChannelList) private var showChannelList
 
     @State private var isPinsPresented = false
+    @State private var width: CGFloat = 0
+    // discord's member list beside a server channel, on by default, the header's button hides it
+    @AppStorage("showsMemberList") private var showsMemberList = true
 
     private var store: ChannelMessagesStore {
         session.messages(for: channelId)
@@ -38,7 +41,14 @@ struct ChatScreen: View {
         return channel?.isDm != true || settings.storageFileSharingInDirectMessages
     }
 
-    var body: some View {
+    // a mac window with room for it beside the conversation, never a direct message
+    private var canShowMembers: Bool {
+        ProcessInfo.processInfo.isiOSAppOnMac
+            && channel?.isDm == false
+            && width >= 520 + MembersColumn.width
+    }
+
+    private var conversation: some View {
         MessageListView(store: store) {
             ChannelWelcome(title: title, isDirectMessage: channel?.isDm == true, partner: partner)
         }
@@ -56,6 +66,21 @@ struct ChatScreen: View {
         // a panel in the keyboard's place never rides the keyboard: the two trade places, or the
         // keyboard comes up over the panel for its search, see AttachPanelModel
         .ignoresSafeArea(store.attachPanel.isHandingOff || store.attachPanel.isOpen ? .keyboard : [], edges: .bottom)
+    }
+
+    var body: some View {
+        HStack(spacing: 0) {
+            conversation
+
+            if canShowMembers && showsMemberList {
+                MembersColumn()
+                    .transition(.move(edge: .trailing))
+            }
+        }
+        .onGeometryChange(for: CGFloat.self, of: \.size.width) { newWidth in
+            width = newWidth
+        }
+        .animation(.snappy(duration: 0.25), value: showsMemberList)
         .safeAreaInset(edge: .top, spacing: 0) {
             if session.showsReconnectingBanner {
                 ReconnectingBanner()
@@ -86,12 +111,30 @@ struct ChatScreen: View {
                 .simultaneousGesture(TapGesture().onEnded(dismissKeyboard))
             }
 
+            if canShowMembers {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(action: toggleMemberList) {
+                        Image(systemName: showsMemberList ? "person.2.fill" : "person.2")
+                            .foregroundStyle(showsMemberList ? Theme.header : Theme.text)
+                    }
+                    .accessibilityLabel(showsMemberList ? "Hide Member List" : "Show Member List")
+                }
+            }
+
             ToolbarItem(placement: .topBarTrailing) {
                 Button(action: showPins) {
                     Image(systemName: "pin")
                         .foregroundStyle(Theme.text)
                 }
                 .accessibilityLabel("Pinned Messages")
+                // discord's pins hang off the button on a wide screen, a phone gets a sheet.
+                // handed the stores by hand: a popover from the toolbar does not inherit them
+                .popover(isPresented: $isPinsPresented) {
+                    PinnedMessagesSheet(channelId: channelId)
+                        .frame(idealWidth: 420, idealHeight: 560)
+                        .environment(session)
+                        .environment(servers)
+                }
             }
 
             ToolbarItem(placement: .topBarTrailing) {
@@ -102,13 +145,6 @@ struct ChatScreen: View {
                 .simultaneousGesture(TapGesture().onEnded(dismissKeyboard))
                 .accessibilityLabel("Search")
             }
-        }
-        // handed over by hand: opened from the toolbar on a mac, the sheet does not inherit them
-        // and crashed on the first read
-        .sheet(isPresented: $isPinsPresented) {
-            PinnedMessagesSheet(channelId: channelId)
-                .environment(session)
-                .environment(servers)
         }
         .task {
             session.rememberChannel(channelId)
@@ -132,6 +168,10 @@ struct ChatScreen: View {
         }
     }
 
+    private func toggleMemberList() {
+        showsMemberList.toggle()
+    }
+
     private func showPins() {
         dismissKeyboard()
         isPinsPresented = true
@@ -151,16 +191,10 @@ private struct PlainToolbarItem<Content: View>: ToolbarContent {
     @ViewBuilder let content: Content
 
     var body: some ToolbarContent {
-        if #available(iOS 26.0, *) {
-            ToolbarItem(placement: placement) {
-                content
-            }
-            .sharedBackgroundVisibility(.hidden)
-        } else {
-            ToolbarItem(placement: placement) {
-                content
-            }
+        ToolbarItem(placement: placement) {
+            content
         }
+        .sharedBackgroundVisibility(.hidden)
     }
 }
 

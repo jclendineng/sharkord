@@ -4,10 +4,10 @@ import WebRTC
 
 // webrtc's own ios audio device only ever records the microphone. this one stands in for it
 // when a screen share should carry the game's sound: it records the mic and plays the call
-// through AVAudioEngine like the built in one does, and mixes in audio the broadcast extension
-// sends over. only used when "share app audio" is on, every other call keeps webrtc's device
+// through AVAudioEngine like the built in one does, and mixes in the game audio ScreenCapture
+// hands over. only used when "share app audio" is on, every other call keeps webrtc's device
 nonisolated final class MixingAudioDevice: NSObject, RTCAudioDevice, @unchecked Sendable {
-    // what the extension sends, see SampleHandler.sendAudio
+    // what ScreenCapture hands over
     static let gameSampleRate = 48_000.0
     // enough for the largest buffer core audio hands a callback
     private static let maxFrames = 8192
@@ -53,9 +53,9 @@ nonisolated final class MixingAudioDevice: NSObject, RTCAudioDevice, @unchecked 
         set { flags.withLock { $0.isMicMuted = newValue } }
     }
 
-    // MARK: game audio from the extension
+    // MARK: game audio from the screen share
 
-    // mono float samples at gameSampleRate, from the screen share receiver's thread
+    // mono float samples at gameSampleRate, from the screen capture's thread
     func writeGameAudio(_ samples: UnsafeBufferPointer<Float>) {
         guard !samples.isEmpty else {
             return
@@ -240,7 +240,7 @@ nonisolated final class MixingAudioDevice: NSObject, RTCAudioDevice, @unchecked 
         }
 
         engine.attach(sink)
-        engine.connect(input, to: sink, format: inputFormat)
+        try engine.connectNode(input, to: sink, format: inputFormat)
 
         guard let playoutFormat = AVAudioFormat(standardFormatWithSampleRate: outputRate, channels: 1) else {
             throw VoiceConnection.VoiceError(message: "Could not set up call audio.")
@@ -251,7 +251,7 @@ nonisolated final class MixingAudioDevice: NSObject, RTCAudioDevice, @unchecked 
         }
 
         engine.attach(source)
-        engine.connect(source, to: engine.mainMixerNode, format: playoutFormat)
+        try engine.connectNode(source, to: engine.mainMixerNode, format: playoutFormat)
 
         sinkNode = sink
         sourceNode = source

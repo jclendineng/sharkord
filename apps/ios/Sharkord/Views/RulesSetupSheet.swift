@@ -64,7 +64,7 @@ struct RulesSetupSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .sheetDetents([.medium, .large])
         .presentationBackground(Theme.deepBackground)
         .task {
             await loadRoles()

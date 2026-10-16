@@ -6,6 +6,7 @@ struct MessageRow: View {
     var showsThreadLink = true
     let onLongPress: () -> Void
     let onDoubleTap: () -> Void
+    var onSecondaryClick: (SecondaryClick) -> Void = { _ in }
 
     @Environment(SessionStore.self) private var session
 
@@ -106,6 +107,7 @@ struct MessageRow: View {
         // simultaneous so it also works over an attachment's own button, a voice message's play
         // button for one. the sheet opening cancels that button's tap
         .simultaneousGesture(LongPressGesture(minimumDuration: 0.4).onEnded(longPressed))
+        .onSecondaryClick(perform: onSecondaryClick)
     }
 
     private func longPressed(_: Bool) {

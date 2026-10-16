@@ -89,7 +89,7 @@ struct MemberProfileSheet: View {
             }
         }
         .background(Theme.deepBackground)
-        .presentationDetents([.large])
+        .sheetDetents([.large])
         .presentationDragIndicator(.visible)
         .presentationBackground(Theme.deepBackground)
     }

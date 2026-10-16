@@ -119,3 +119,27 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   the app.
 - On a Mac, the app shows up as macOS in Devices, login alerts and sign in approvals instead of
   as an iPad, and iPads get an iPad icon in Devices rather than a phone.
+- On a Mac, no sheet crashes the app on opening anymore, the inbox under the bell among them.
+- The mic test in Voice & Video settings no longer crashes the app, plays your voice back when
+  Hear yourself is on, and keeps working with AirPods.
+- The voice channel sheet no longer has its own invite button, which repeated the server invite
+  already at the top of the channel list.
+- On a Mac, the user bar sits inside the channel list's card instead of on the window's bottom
+  edge.
+- On a Mac, scrolling in a sheet no longer fades it out as if closing it.
+- Sheets with no button of their own to close them get an X in the top left, as the profile has.
+- On a Mac, sheets open centred in the window instead of pinned to its bottom edge.
+- On a Mac, a right click opens a menu beside the pointer with what a long press opens:
+  message, channel, conversation and server actions. Right clicking elsewhere moves the menu.
+- The iOS app now needs iOS 27 or later.
+- Screen sharing on the phone uses iOS 27's ScreenCaptureKit picker and captures inside the app,
+  so frames go straight to the call instead of through a broadcast extension.
+- The iOS app opens on the server as it was last seen, channels, avatars and server icons drawn
+  at once, while it reconnects. Pictures are decoded at the size they are shown, and the
+  requests after joining a server go out together instead of one after another.
+- In the iOS app's server Overview, a new or removed icon shows as a preview and is only applied
+  with Save, along with the other fields.
+- On a Mac, the header's search opens Discord's dropdown under it, filters and results inside,
+  and a result opens in the window as the dropdown closes.
+- On a Mac, a server channel shows the member list down the right, online then offline, with a
+  header button to hide it. A member opens their profile beside the list.

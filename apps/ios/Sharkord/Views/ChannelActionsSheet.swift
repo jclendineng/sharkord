@@ -7,6 +7,7 @@ struct ChannelActionsSheet: View {
     let onMute: () -> Void
 
     @Environment(SessionStore.self) private var session
+    @Environment(ServerListStore.self) private var servers
     @Environment(\.dismiss) private var dismiss
 
     @State private var isInvitePresented = false
@@ -56,11 +57,19 @@ struct ChannelActionsSheet: View {
         .scrollBounceBehavior(.basedOnSize)
         .presentationDragIndicator(.visible)
         .presentationBackground(Theme.deepBackground)
+        // handed over by hand: on a mac a sheet's background is worked out before it inherits
+        // anything, so a sheet reading a store it was not given crashed on opening
         .sheet(isPresented: $isInvitePresented) {
             InviteSheet()
+                .environment(session)
+                .environment(servers)
+                .appSheet()
         }
         .sheet(isPresented: $isNotificationsPresented) {
             ChannelNotificationsSheet(channel: channel)
+                .environment(session)
+                .environment(servers)
+                .appSheet()
         }
 
     }
@@ -127,7 +136,7 @@ struct ChannelNotificationsSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .sheetDetents([.medium])
         .presentationBackground(Theme.deepBackground)
     }
 

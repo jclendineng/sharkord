@@ -17,19 +17,40 @@ struct GeneralSettingsScreen: View {
     @State private var logoItem: PhotosPickerItem?
     @State private var errorMessage: String?
     @State private var isSaving = false
-    @State private var isUploadingLogo = false
+    // picked or removed but not saved yet, the server's icon stays until save
+    @State private var pendingLogo: PendingLogo?
+    @State private var isReadingLogo = false
+
+    private enum PendingLogo {
+        case replace(Data, UIImage)
+        case remove
+    }
+
+    private var hasSettingsChanges: Bool {
+        let hadPassword = !(saved?.password ?? "").isEmpty
+
+        return settings != saved || hasPassword != hadPassword
+    }
+
+    private var showsRemoveIcon: Bool {
+        switch pendingLogo {
+        case .replace:
+            true
+        case .remove:
+            false
+        case nil:
+            session.serverInfo?.logo != nil
+        }
+    }
 
     private var canSave: Bool {
         guard let settings else {
             return false
         }
 
-        // the icon saves the moment it is picked, so only the fields below count as changes
-        let hadPassword = !(saved?.password ?? "").isEmpty
-        let hasChanges = settings != saved || hasPassword != hadPassword
-
         return !isSaving
-            && hasChanges
+            && !isReadingLogo
+            && (hasSettingsChanges || pendingLogo != nil)
             && Self.nameRange.contains(settings.name.trimmingCharacters(in: .whitespaces).count)
             && (settings.description ?? "").count <= Self.descriptionLimit
             && (settings.password ?? "").count <= Self.passwordLimit
@@ -58,7 +79,7 @@ struct GeneralSettingsScreen: View {
         List {
             Section {
                 HStack(spacing: 16) {
-                    ServerIcon(server: session)
+                    iconPreview
                         .frame(width: 72, height: 72)
                         .clipShape(.rect(cornerRadius: 20))
 
@@ -66,21 +87,19 @@ struct GeneralSettingsScreen: View {
                         PhotosPicker(selection: $logoItem, matching: .images) {
                             Text("Change Icon")
                         }
-                        .disabled(isUploadingLogo)
+                        .disabled(isReadingLogo || isSaving)
 
-                        if session.serverInfo?.logo != nil {
+                        if showsRemoveIcon {
                             Button("Remove Icon", role: .destructive, action: removeLogo)
-                                .disabled(isUploadingLogo)
+                                .disabled(isReadingLogo || isSaving)
                         }
 
-                        if isUploadingLogo {
+                        if isReadingLogo {
                             ProgressView()
                         }
                     }
                     .buttonStyle(.borderless)
                 }
-            } footer: {
-                Text("The icon changes as soon as you pick it.")
             }
 
             Section("Server Name") {
@@ -197,10 +216,30 @@ struct GeneralSettingsScreen: View {
         }
         .onChange(of: logoItem) { _, item in
             if let item {
-                uploadLogo(item)
+                readLogo(item)
             }
         }
     }
+
+    // what the icon will be once saved
+    @ViewBuilder
+    private var iconPreview: some View {
+        switch pendingLogo {
+        case .replace(_, let image):
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+        case .remove:
+            Text(session.initials)
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundStyle(Theme.header)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Theme.panelControl)
+        case nil:
+            ServerIcon(server: session)
+        }
+    }
+
 
     private func load() async {
         do {
@@ -285,10 +324,29 @@ struct GeneralSettingsScreen: View {
         isSaving = true
         errorMessage = nil
 
+        let logo = pendingLogo
+        let settingsChanged = hasSettingsChanges
+
         Task {
             do {
-                try await session.perform("others.updateSettings", input)
+                if let logo {
+                    try await saveLogo(logo)
+                }
+
+                if settingsChanged {
+                    try await session.perform("others.updateSettings", input)
+                }
+
                 await session.refreshServerInfo()
+
+                // the picked picture goes into the cache under the file the server made of it,
+                // before anything draws the new icon, so it never shows the old one or downloads
+                if case .replace(let data, let image) = logo, let file = session.serverInfo?.logo, let address = session.address {
+                    FileImageCache.store(data, image: image, for: file, at: address.fileURL(file))
+                }
+
+                // kept until here, so the preview does not fall back to the old icon meanwhile
+                pendingLogo = nil
                 self.saved = settings
                 isSaving = false
                 // like discord, a save closes the screen, which is how you know it went through
@@ -308,55 +366,53 @@ struct GeneralSettingsScreen: View {
         return trimmed.isEmpty ? nil : trimmed
     }
 
-    private func uploadLogo(_ item: PhotosPickerItem) {
-        guard let address = session.address, let token = session.token else {
-            return
-        }
-
-        isUploadingLogo = true
+    // read for the preview only, the upload waits for save
+    private func readLogo(_ item: PhotosPickerItem) {
+        isReadingLogo = true
         errorMessage = nil
 
         Task {
             do {
-                guard let data = try await item.loadTransferable(type: Data.self) else {
+                guard let data = try await item.loadTransferable(type: Data.self), let image = UIImage(data: data) else {
                     throw AuthAPI.RequestError(message: "Could not read that picture.")
                 }
 
-                let url = FileManager.default.temporaryDirectory.appending(path: "logo-\(UUID().uuidString).png")
-
-                try data.write(to: url)
-
-                defer {
-                    try? FileManager.default.removeItem(at: url)
-                }
-
-                let file = try await UploadAPI.upload(fileAt: url, name: "logo.png", to: address, token: token)
-
-                try await session.perform("others.changeLogo", ["fileId": file.id])
-                await session.refreshServerInfo()
+                pendingLogo = .replace(data, image)
             } catch {
                 errorMessage = error.localizedDescription
             }
 
             logoItem = nil
-            isUploadingLogo = false
+            isReadingLogo = false
         }
     }
 
     private func removeLogo() {
-        isUploadingLogo = true
+        pendingLogo = .remove
+    }
 
-        Task {
-            do {
-                struct NoFile: Encodable {}
-
-                try await session.perform("others.changeLogo", NoFile())
-                await session.refreshServerInfo()
-            } catch {
-                errorMessage = error.localizedDescription
+    private func saveLogo(_ logo: PendingLogo) async throws {
+        switch logo {
+        case .replace(let data, _):
+            guard let address = session.address, let token = session.token else {
+                return
             }
 
-            isUploadingLogo = false
+            let url = FileManager.default.temporaryDirectory.appending(path: "logo-\(UUID().uuidString).png")
+
+            try data.write(to: url)
+
+            defer {
+                try? FileManager.default.removeItem(at: url)
+            }
+
+            let file = try await UploadAPI.upload(fileAt: url, name: "logo.png", to: address, token: token)
+
+            try await session.perform("others.changeLogo", ["fileId": file.id])
+        case .remove:
+            struct NoFile: Encodable {}
+
+            try await session.perform("others.changeLogo", NoFile())
         }
     }
 }

@@ -287,7 +287,7 @@ struct DateFilterSheet: View {
                     }
                 }
         }
-        .presentationDetents([.height(330)])
+        .sheetDetents([.height(330)])
         .presentationDragIndicator(.visible)
         .presentationBackground(Theme.listBackground)
     }

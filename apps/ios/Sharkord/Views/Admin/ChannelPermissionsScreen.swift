@@ -87,6 +87,7 @@ struct ChannelPermissionsScreen: View {
     let channelId: Int
 
     @Environment(SessionStore.self) private var session
+    @Environment(ServerListStore.self) private var servers
 
     @State private var overrides: [PermissionTarget: Set<ChannelPermission>] = [:]
     @State private var errorMessage: String?
@@ -180,8 +181,13 @@ struct ChannelPermissionsScreen: View {
                 Button("Add Roles or Members", systemImage: "plus", action: showAdd)
             }
         }
+        // handed over by hand: on a mac a sheet's background is worked out before it inherits
+        // anything, so a sheet reading a store it was not given crashed on opening
         .sheet(isPresented: $isAddPresented) {
             AddPermissionTargetSheet(taken: Set(overrides.keys), onPick: add)
+                .environment(session)
+                .environment(servers)
+                .appSheet()
         }
         .navigationDestination(item: $opened) { target in
             PermissionOverrideEditor(

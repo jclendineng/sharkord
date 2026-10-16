@@ -121,6 +121,7 @@ private struct MemberDetail: View {
     let onChange: () -> Void
 
     @Environment(SessionStore.self) private var session
+    @Environment(ServerListStore.self) private var servers
     @Environment(\.dismiss) private var dismiss
 
     @State private var roleIds: Set<Int> = []
@@ -209,10 +210,15 @@ private struct MemberDetail: View {
         .settingsListStyle()
         .navigationTitle(user.name)
         .navigationBarTitleDisplayMode(.inline)
+        // handed over by hand: on a mac a sheet's background is worked out before it inherits
+        // anything, so a sheet reading a store it was not given crashed on opening
         .sheet(item: $pending) { action in
             ConfirmModeration(action: action, name: user.name, reason: $reason, wipe: $wipe) {
                 perform(action)
             }
+                .environment(session)
+                .environment(servers)
+                .appSheet()
         }
         .onAppear {
             roleIds = Set(user.roleIds)
@@ -356,7 +362,7 @@ private struct ConfirmModeration: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .sheetDetents([.medium])
         .presentationBackground(Theme.deepBackground)
     }
 

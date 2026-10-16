@@ -5,6 +5,7 @@ struct AttachmentView: View {
     let file: SharkordFile
 
     @Environment(SessionStore.self) private var session
+    @Environment(ServerListStore.self) private var servers
     @Environment(\.isShowingMessageActions) private var isShowingMessageActions
 
     @State private var isViewerPresented = false
@@ -20,8 +21,12 @@ struct AttachmentView: View {
                         .clipShape(.rect(cornerRadius: 8))
                 }
                 .buttonStyle(.plain)
+                // handed over by hand: on a mac a sheet's background is worked out before it inherits
+                // anything, so a sheet reading a store it was not given crashed on opening
                 .fullScreenCover(isPresented: $isViewerPresented) {
                     ImageViewer(url: url)
+                        .environment(session)
+                        .environment(servers)
                 }
             } else if file.isAudio {
                 AudioPlayerCard(file: file, url: url)

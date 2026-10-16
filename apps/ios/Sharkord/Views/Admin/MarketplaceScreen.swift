@@ -7,6 +7,7 @@ struct MarketplaceScreen: View {
     let onChange: () -> Void
 
     @Environment(SessionStore.self) private var session
+    @Environment(ServerListStore.self) private var servers
 
     @State private var entries: [MarketplaceEntry] = []
     @State private var query = ""
@@ -56,10 +57,15 @@ struct MarketplaceScreen: View {
         }
         .navigationTitle("Browse Plugins")
         .navigationBarTitleDisplayMode(.inline)
+        // handed over by hand: on a mac a sheet's background is worked out before it inherits
+        // anything, so a sheet reading a store it was not given crashed on opening
         .sheet(item: $confirming) { entry in
             InstallWarningSheet(entry: entry, isUpdate: installedVersions[entry.id] != nil) {
                 install(entry)
             }
+                .environment(session)
+                .environment(servers)
+                .appSheet()
         }
         .task {
             installedVersions = Dictionary(installed.map { ($0.id, $0.version ?? "") }, uniquingKeysWith: { first, _ in first })
@@ -263,7 +269,7 @@ private struct InstallWarningSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .sheetDetents([.medium, .large])
         .presentationBackground(Theme.deepBackground)
     }
 

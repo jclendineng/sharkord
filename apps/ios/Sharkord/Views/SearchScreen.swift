@@ -123,10 +123,15 @@ struct SearchScreen: View {
                 FilterMenu(isFiltering: !filters.isEmpty, onChoose: choose)
             }
         }
+        // handed over by hand: on a mac a sheet's background is worked out before it inherits
+        // anything, so a sheet reading a store it was not given crashed on opening
         .sheet(item: $datePicker) { picker in
             DateFilterSheet(picker: picker) { date in
                 apply(date, for: picker)
             }
+                .environment(session)
+                .environment(servers)
+                .appSheet()
         }
         .task(id: searchKey) {
             await search()
@@ -140,9 +145,10 @@ struct SearchScreen: View {
             filters.directMessagesOnly = directMessages
         }
         // the field sits in the navigation bar, where focus state alone does not bring up the
-        // keyboard, so once the screen has slid in the field is made first responder directly
+        // keyboard, so once the screen has slid in the field is made first responder directly.
+        // the mac's dropdown does not slide, so typing works there almost at once
         .task {
-            try? await Task.sleep(for: .milliseconds(450))
+            try? await Task.sleep(for: .milliseconds(ProcessInfo.processInfo.isiOSAppOnMac ? 50 : 450))
             isFieldFocused = true
             focusNavigationBarField()
         }

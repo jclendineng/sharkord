@@ -54,7 +54,7 @@ struct ApproveDeviceSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .sheetDetents([.medium, .large])
         .presentationBackground(Theme.deepBackground)
         // once the server is connected, which a cold start from the camera app is not yet
         .task(id: session.phase == .connected) {

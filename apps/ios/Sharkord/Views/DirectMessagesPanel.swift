@@ -4,6 +4,7 @@ struct DirectMessagesPanel: View {
     let onOpen: (Int) -> Void
 
     @Environment(SessionStore.self) private var session
+    @Environment(ServerListStore.self) private var servers
 
     @State private var isNewMessagePresented = false
     @State private var isAddFriendsPresented = false
@@ -49,11 +50,19 @@ struct DirectMessagesPanel: View {
             }
             .background(Theme.panelBackground)
         }
+        // handed over by hand: on a mac a sheet's background is worked out before it inherits
+        // anything, so a sheet reading a store it was not given crashed on opening
         .sheet(isPresented: $isNewMessagePresented) {
             NewDirectMessageSheet(onOpened: onOpen)
+                .environment(session)
+                .environment(servers)
+                .appSheet()
         }
         .sheet(isPresented: $isAddFriendsPresented) {
             AddFriendsSheet()
+                .environment(session)
+                .environment(servers)
+                .appSheet()
         }
     }
 
@@ -162,9 +171,11 @@ private struct ConversationRow: View {
     let onOpen: () -> Void
 
     @Environment(SessionStore.self) private var session
+    @Environment(ServerListStore.self) private var servers
 
     @State private var isPressed = false
     @State private var isActionsPresented = false
+    @State private var menuAnchor = UnitPoint.center
     // mute was picked in the menu, its lengths open once the menu has gone: two sheets closing
     // at once brought the menu back for a moment
     @State private var wantsMute = false
@@ -186,10 +197,13 @@ private struct ConversationRow: View {
             .animation(.snappy(duration: 0.2), value: isPressed)
             .onTapGesture(perform: onOpen)
             .onLongPressGesture(minimumDuration: 0.3, perform: showActions, onPressingChanged: setPressed)
+            .onSecondaryClick(perform: showActionsAtPointer)
             .accessibilityAddTraits(.isButton)
             .accessibilityAction(named: "More Options", showActions)
-            .sheet(isPresented: $isActionsPresented, onDismiss: showMuteIfWanted) {
+            .actionsPresentation(isPresented: $isActionsPresented, anchor: menuAnchor, onDismiss: showMuteIfWanted) {
                 DirectMessageActionsSheet(conversation: conversation, user: user, onMute: requestMute)
+                    .environment(session)
+                    .environment(servers)
             }
             .sheet(isPresented: $isMutePresented) {
                 MuteDurationSheet(
@@ -197,6 +211,9 @@ private struct ConversationRow: View {
                     subtitle: "@\(user?.name ?? "Unknown")",
                     channelId: conversation.channelId
                 )
+                    .environment(session)
+                    .environment(servers)
+                    .appSheet()
             }
     }
 
@@ -218,6 +235,11 @@ private struct ConversationRow: View {
 
     private func showActions() {
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        isActionsPresented = true
+    }
+
+    private func showActionsAtPointer(_ click: SecondaryClick) {
+        menuAnchor = click.anchor
         isActionsPresented = true
     }
 
@@ -406,6 +428,9 @@ private struct DirectMessageActionsSheet: View {
         .sheet(isPresented: $isProfilePresented) {
             if let user {
                 MemberProfileSheet(user: user, onMessage: openConversation)
+                    .environment(session)
+                    .environment(servers)
+                    .appSheet(addsClose: true)
             }
         }
 
@@ -562,7 +587,7 @@ private struct NewDirectMessageSheet: View {
                 }
             }
         }
-        .presentationDetents([.large])
+        .sheetDetents([.large])
         .presentationBackground(Theme.deepBackground)
     }
 

@@ -53,7 +53,7 @@ struct PinnedMessagesSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .sheetDetents([.medium, .large])
         .presentationDragIndicator(.visible)
         .presentationBackground(Theme.deepBackground)
         .task {

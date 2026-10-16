@@ -2,6 +2,7 @@ import SwiftUI
 
 struct VoiceBar: View {
     @Environment(SessionStore.self) private var session
+    @Environment(ServerListStore.self) private var servers
 
     @State private var isRoomPresented = false
 
@@ -52,9 +53,12 @@ struct VoiceBar: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .background(Color(hex: "#202125"), in: .rect(cornerRadius: 20))
+        // handed over by hand: on a mac a sheet's background is worked out before it inherits
+        // anything, so a sheet reading a store it was not given crashed on opening
         .fullScreenCover(isPresented: $isRoomPresented) {
             VoiceRoomScreen()
                 .environment(session)
+                .environment(servers)
         }
     }
 

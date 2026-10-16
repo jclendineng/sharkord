@@ -1,0 +1,74 @@
+import SwiftUI
+
+extension View {
+    // on a mac a trackpad scroll past a sheet's top drags it to close, fading the whole sheet
+    // out, so the drag is turned off there. a sheet with no close of its own gets an x like the
+    // toolbar's in a row across its top, everywhere: a mac has no other way out, and a phone's
+    // swipe is not obvious to everyone
+    func appSheet(addsClose: Bool = false) -> some View {
+        modifier(AppSheet(addsClose: addsClose))
+    }
+
+    // a sheet given heights pins itself to the bottom of a mac window and runs off it, so there
+    // it is left as the usual form centred in the window
+    func sheetDetents(_ detents: Set<PresentationDetent>) -> some View {
+        modifier(SheetDetents(detents: detents))
+    }
+}
+
+private struct SheetDetents: ViewModifier {
+    let detents: Set<PresentationDetent>
+
+    func body(content: Content) -> some View {
+        if ProcessInfo.processInfo.isiOSAppOnMac {
+            content
+        } else {
+            content.presentationDetents(detents)
+        }
+    }
+}
+
+private struct AppSheet: ViewModifier {
+    let addsClose: Bool
+
+    @Environment(\.dismiss) private var dismiss
+
+    private let isOnMac = ProcessInfo.processInfo.isiOSAppOnMac
+
+    func body(content: Content) -> some View {
+        content
+            .interactiveDismissDisabled(isOnMac)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                if addsClose {
+                    HStack {
+                        SheetCloseButton(action: close)
+
+                        Spacer()
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.top, 10)
+                }
+            }
+    }
+
+    private func close() {
+        dismiss()
+    }
+}
+
+// the toolbar's own close, a sheet like new message has: glass with the x in the tint colour
+private struct SheetCloseButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "xmark")
+                .font(.system(size: 17, weight: .medium))
+                .foregroundStyle(.tint)
+                .frame(width: 44, height: 44)
+        }
+        .buttonStyle(.plain)
+        .glassEffect(.regular.interactive(), in: .circle)
+        .accessibilityLabel("Close")
+    }
+}

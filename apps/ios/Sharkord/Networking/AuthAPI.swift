@@ -31,11 +31,16 @@ enum AuthAPI {
     }
 
     static func fetchInfo(_ address: ServerAddress) async throws -> ServerInfo {
+        try JSONDecoder().decode(ServerInfo.self, from: try await fetchInfoData(address))
+    }
+
+    // as the server sent it, for JoinSnapshot to keep
+    static func fetchInfoData(_ address: ServerAddress) async throws -> Data {
         let (data, response) = try await URLSession.shared.data(from: address.url(path: "info"))
 
         try check(data, response)
 
-        return try JSONDecoder().decode(ServerInfo.self, from: data)
+        return data
     }
 
     static func login(_ address: ServerAddress, identity: String, password: String, invite: String? = nil) async throws -> String {

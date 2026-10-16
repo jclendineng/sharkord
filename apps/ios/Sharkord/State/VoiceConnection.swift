@@ -167,8 +167,8 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
         _ = try? await signal("voice.closeProducer", json)
     }
 
-    // frames come from the broadcast extension through ScreenShareReceiver, the returned sink
-    // takes them on whatever thread they arrive
+    // frames come from ScreenCapture, the returned sink takes them on whatever thread they
+    // arrive
     func startScreenShare() async throws -> ScreenFrameSink {
         try await onQueueResult {
             try self.produceScreen()
@@ -599,7 +599,7 @@ nonisolated struct VoiceStreamKey: Hashable, Sendable, CustomStringConvertible {
     }
 }
 
-// hands broadcast frames to the screen track's source. webrtc's sources take frames from any
+// hands screen frames to the screen track's source. webrtc's sources take frames from any
 // thread, so this needs no queue of its own
 nonisolated final class ScreenFrameSink: @unchecked Sendable {
     private let source: RTCVideoSource
@@ -610,11 +610,11 @@ nonisolated final class ScreenFrameSink: @unchecked Sendable {
         self.capturer = capturer
     }
 
-    func push(_ pixelBuffer: CVPixelBuffer) {
+    func push(_ pixelBuffer: CVPixelBuffer, rotation: RTCVideoRotation) {
         let buffer = RTCCVPixelBuffer(pixelBuffer: pixelBuffer)
         let frame = RTCVideoFrame(
             buffer: buffer,
-            rotation: ._0,
+            rotation: rotation,
             timeStampNs: Int64(CACurrentMediaTime() * 1_000_000_000)
         )
 

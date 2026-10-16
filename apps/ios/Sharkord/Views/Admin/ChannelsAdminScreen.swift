@@ -4,6 +4,7 @@ import SwiftUI
 // the lists come from the session, which the channel and category events keep current
 struct ChannelsAdminScreen: View {
     @Environment(SessionStore.self) private var session
+    @Environment(ServerListStore.self) private var servers
 
     @State private var editMode = EditMode.inactive
     @State private var creating: ChannelType?
@@ -98,9 +99,17 @@ struct ChannelsAdminScreen: View {
         }
         .sheet(item: $creating) { type in
             NewChannelSheet(type: type, categories: sortedCategories)
+                .environment(session)
+                .environment(servers)
+                .appSheet()
         }
+        // handed over by hand: on a mac a sheet's background is worked out before it inherits
+        // anything, so a sheet reading a store it was not given crashed on opening
         .sheet(isPresented: $isCategoryOrderPresented) {
             CategoryOrderSheet(categories: sortedCategories)
+                .environment(session)
+                .environment(servers)
+                .appSheet()
         }
         .alert("New Category", isPresented: $isNewCategoryPresented) {
             TextField("Name", text: $newName)
@@ -393,7 +402,7 @@ private struct NewChannelSheet: View {
                 categoryId = categoryId ?? categories.first?.id
             }
         }
-        .presentationDetents([.medium, .large])
+        .sheetDetents([.medium, .large])
         .presentationBackground(Theme.deepBackground)
     }
 

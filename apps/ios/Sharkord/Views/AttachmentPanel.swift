@@ -317,6 +317,7 @@ final class PhotoLibrary {
         assets = fetched
     }
 
+    // size is in pixels, the cell knows its screen's scale and this does not
     func thumbnail(for asset: PHAsset, size: CGSize) async -> UIImage? {
         let options = PHImageRequestOptions()
 
@@ -324,12 +325,9 @@ final class PhotoLibrary {
         options.isNetworkAccessAllowed = true
         options.resizeMode = .fast
 
-        let scale = UIScreen.main.scale
-        let target = CGSize(width: size.width * scale, height: size.height * scale)
-
         // opportunistic delivery calls back twice, a quick degraded image and then the real one
         let stream = AsyncStream<UIImage?> { continuation in
-            imageManager.requestImage(for: asset, targetSize: target, contentMode: .aspectFill, options: options) { image, info in
+            imageManager.requestImage(for: asset, targetSize: size, contentMode: .aspectFill, options: options) { image, info in
                 continuation.yield(image)
 
                 let isDegraded = (info?[PHImageResultIsDegradedKey] as? Bool) ?? false
@@ -362,8 +360,12 @@ final class PhotoLibrary {
             throw AuthAPI.RequestError(message: "That item could not be loaded.")
         }
 
+        // photos names a resource only when it has a name for it, a nameless one is named after
+        // its type so the upload still has an extension
+        let filename = original.filename ?? "attachment.\(UTType(original.uniformTypeIdentifier)?.preferredFilenameExtension ?? "dat")"
+
         if asset.mediaType == .video {
-            let target = directory.appending(path: original.originalFilename)
+            let target = directory.appending(path: filename)
             let options = PHAssetResourceRequestOptions()
 
             options.isNetworkAccessAllowed = true
@@ -374,7 +376,7 @@ final class PhotoLibrary {
         }
 
         let data = try await imageData(for: asset)
-        let name = (original.originalFilename as NSString).deletingPathExtension
+        let name = (filename as NSString).deletingPathExtension
 
         // heic doesn't open in most browsers, the web client has to show it too
         if let type = UTType(original.uniformTypeIdentifier), type.conforms(to: .heic) || type.conforms(to: .heif),
@@ -386,7 +388,7 @@ final class PhotoLibrary {
             return target
         }
 
-        let target = directory.appending(path: original.originalFilename)
+        let target = directory.appending(path: filename)
 
         try data.write(to: target)
 
@@ -417,6 +419,8 @@ private struct AssetCell: View {
     let library: PhotoLibrary
     let isSelected: Bool
     let onTap: () -> Void
+
+    @Environment(\.displayScale) private var displayScale
 
     @State private var image: UIImage?
 
@@ -464,7 +468,7 @@ private struct AssetCell: View {
             .contentShape(.rect)
             .onTapGesture(perform: onTap)
             .task(id: asset.localIdentifier) {
-                image = await library.thumbnail(for: asset, size: CGSize(width: 100, height: 100))
+                image = await library.thumbnail(for: asset, size: CGSize(width: 100 * displayScale, height: 100 * displayScale))
             }
     }
 }

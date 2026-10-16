@@ -3,6 +3,7 @@ import SwiftUI
 // invites.getAll, add and delete
 struct InvitesScreen: View {
     @Environment(SessionStore.self) private var session
+    @Environment(ServerListStore.self) private var servers
 
     @State private var invites: [AdminInvite] = []
     @State private var errorMessage: String?
@@ -47,8 +48,13 @@ struct InvitesScreen: View {
                 Button("New Invite", systemImage: "plus", action: showCreate)
             }
         }
+        // handed over by hand: on a mac a sheet's background is worked out before it inherits
+        // anything, so a sheet reading a store it was not given crashed on opening
         .sheet(isPresented: $isCreatePresented) {
             CreateInviteSheet(onCreated: reload)
+                .environment(session)
+                .environment(servers)
+                .appSheet()
         }
         .task {
             await load()
@@ -221,7 +227,7 @@ private struct CreateInviteSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .sheetDetents([.medium, .large])
         .presentationBackground(Theme.deepBackground)
     }
 

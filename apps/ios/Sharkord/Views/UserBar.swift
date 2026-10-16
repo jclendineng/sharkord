@@ -70,6 +70,14 @@ struct UserBar: View {
                             .offset(x: -8, y: 8)
                     }
                 }
+                // hangs off the bell on a wide screen, a phone gets a sheet. handed the stores
+                // by hand: on a mac a presentation is worked out before it inherits anything
+                .popover(isPresented: $isUnreadsPresented) {
+                    InboxSheet()
+                        .frame(idealWidth: 420, idealHeight: 560)
+                        .environment(servers)
+                        .environment(session)
+                }
         }
         .padding(.horizontal, isCompact ? 10 : 12)
         .padding(.vertical, isCompact ? 7 : 10)
@@ -79,12 +87,14 @@ struct UserBar: View {
                 .strokeBorder(.white.opacity(0.06), lineWidth: 1)
         }
         .shadow(color: .black.opacity(0.4), radius: 20, y: 8)
+        // handed over by hand: on a mac a sheet's background is worked out before it inherits
+        // anything, so a sheet reading a store it was not given crashed on opening
         .sheet(isPresented: $isProfilePresented) {
             ProfileScreen()
                 .presentationSizing(TallerFormSizing())
-        }
-        .sheet(isPresented: $isUnreadsPresented) {
-            InboxSheet()
+                .environment(session)
+                .environment(servers)
+                .appSheet()
         }
     }
 

@@ -88,12 +88,19 @@ struct ComposerView: View {
             allowsMultipleSelection: true,
             onCompletion: importFiles
         )
+        // handed over by hand: on a mac a sheet's background is worked out before it inherits
+        // anything, so a sheet reading a store it was not given crashed on opening
         .sheet(isPresented: $isPollCreatorPresented) {
             PollCreatorSheet(channelId: store.channelId)
+                .environment(session)
+                .environment(servers)
+                .appSheet()
         }
         .fullScreenCover(isPresented: $isCameraPresented) {
             CameraPicker(onCapture: importCapture)
                 .ignoresSafeArea()
+                .environment(session)
+                .environment(servers)
         }
         .onChange(of: photoSelection) { _, items in
             importPhotos(items)

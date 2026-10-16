@@ -225,9 +225,12 @@ private struct VoiceControls: View {
                 action: toggleCamera
             )
 
-            BroadcastPickerButton(isSharing: session.isSharingScreen)
-                .frame(width: 56, height: 56)
-                .background(session.isSharingScreen ? Color.white : Theme.listBackground, in: .circle)
+            ControlButton(
+                title: session.isSharingScreen ? "Stop Sharing Screen" : "Share Screen",
+                systemImage: session.isSharingScreen ? "rectangle.on.rectangle.slash" : "rectangle.on.rectangle",
+                isActive: session.isSharingScreen,
+                action: toggleScreenShare
+            )
 
             ControlButton(
                 title: session.micMuted ? "Unmute" : "Mute",
@@ -257,6 +260,10 @@ private struct VoiceControls: View {
 
     private func toggleCamera() {
         Task { await session.toggleCamera() }
+    }
+
+    private func toggleScreenShare() {
+        Task { await session.toggleScreenShare() }
     }
 
     private func toggleMic() {

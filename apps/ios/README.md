@@ -1,7 +1,7 @@
 # Sharkord for iOS
 
 Native SwiftUI client. Open `Sharkord.xcodeproj` in Xcode and run the `Sharkord` scheme.
-Requires Xcode 26+ and iOS 18+.
+Requires Xcode 27+ and iOS 27+.
 
 Source files live in `Sharkord/`, which is a synchronized folder: new files added there
 are picked up by the project automatically, no project file edits needed.
@@ -48,12 +48,12 @@ animated WebPs, decoding frames off the main thread at the size they are shown.
 
 ## Screen sharing
 
-`SharkordBroadcast` is a ReplayKit broadcast upload extension. It only forwards frames: each
-one is shrunk to 1280px, encoded as a jpeg and sent over loopback tcp to the app, which is
-already in the voice channel and publishes them as the `screen` stream. The app writes the
-port and a random secret to a keychain group both targets share
-(`$(AppIdentifierPrefix)com.sharkord.shared`), and the extension has to send that secret
-first. A keychain group needs no setup in the developer portal, unlike an App Group.
+`ScreenCapture` uses ScreenCaptureKit, which iOS 27 brought to the phone. The share button
+shows the system picker, and once the screen is picked the app captures it itself with an
+`SCStream`, sized to the stream quality setting, and hands each frame straight to the
+`screen` producer, its orientation passed along as webrtc's rotation rather than drawn in. With
+app audio on, the stream also captures the other apps' sound, converted to 48khz mono for
+`MixingAudioDevice`. There is no broadcast extension any more.
 
 ## Sessions
 

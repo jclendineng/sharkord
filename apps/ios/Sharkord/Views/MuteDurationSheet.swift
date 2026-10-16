@@ -44,7 +44,7 @@ struct MuteDurationSheet: View {
                 }
             }
         }
-        .presentationDetents([.large])
+        .sheetDetents([.large])
         .presentationBackground(Theme.deepBackground)
     }
 

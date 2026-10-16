@@ -6,9 +6,9 @@ struct VoiceChannelSheet: View {
     let channel: Channel
 
     @Environment(SessionStore.self) private var session
+    @Environment(ServerListStore.self) private var servers
     @Environment(\.dismiss) private var dismiss
 
-    @State private var isInvitePresented = false
     @State private var isRoomPresented = false
 
     private var participants: [(user: PublicUser?, state: VoiceUserState)] {
@@ -38,13 +38,6 @@ struct VoiceChannelSheet: View {
                     .background(Theme.deepBackground, in: .rect(cornerRadius: 10))
 
                 Spacer()
-
-                Button("Invite", systemImage: "person.badge.plus", action: showInvite)
-                    .labelStyle(.iconOnly)
-                    .font(.headline)
-                    .foregroundStyle(Theme.header)
-                    .frame(width: 40, height: 40)
-                    .background(Theme.deepBackground, in: .rect(cornerRadius: 10))
             }
             .padding(16)
 
@@ -73,15 +66,15 @@ struct VoiceChannelSheet: View {
             JoinBar(isConnectedHere: isConnectedHere, onJoin: join, onOpen: openRoom)
         }
         .background(Theme.listBackground)
-        .presentationDetents([.medium, .large])
+        .sheetDetents([.medium, .large])
         .presentationDragIndicator(.visible)
         .presentationBackground(Theme.listBackground)
-        .sheet(isPresented: $isInvitePresented) {
-            InviteSheet()
-        }
+        // handed over by hand: on a mac a sheet's background is worked out before it inherits
+        // anything, so a sheet reading a store it was not given crashed on opening
         .fullScreenCover(isPresented: $isRoomPresented, onDismiss: close) {
             VoiceRoomScreen()
                 .environment(session)
+                .environment(servers)
         }
     }
 
@@ -97,10 +90,6 @@ struct VoiceChannelSheet: View {
 
     private func openRoom() {
         isRoomPresented = true
-    }
-
-    private func showInvite() {
-        isInvitePresented = true
     }
 
     private func close() {

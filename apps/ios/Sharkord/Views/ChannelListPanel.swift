@@ -46,11 +46,19 @@ struct ChannelListPanel: View {
                 ReconnectingBanner()
             }
         }
+        // handed over by hand: on a mac a sheet's background is worked out before it inherits
+        // anything, so a sheet reading a store it was not given crashed on opening
         .sheet(isPresented: $isInvitePresented) {
             InviteSheet()
+                .environment(session)
+                .environment(servers)
+                .appSheet()
         }
         .sheet(isPresented: $isServerSheetPresented, onDismiss: showQueuedInvite) {
             ServerSheet(onInvite: queueInvite)
+                .environment(session)
+                .environment(servers)
+                .appSheet(addsClose: true)
         }
         .onChange(of: servers.serverSheetRequest, initial: true) { _, request in
             guard request == ObjectIdentifier(session) else {
@@ -172,9 +180,11 @@ private struct CategoryHeader: View {
 
 private struct ChannelRow: View {
     @Environment(SessionStore.self) private var session
+    @Environment(ServerListStore.self) private var servers
 
     @State private var isVoiceSheetPresented = false
     @State private var isActionsSheetPresented = false
+    @State private var menuAnchor = UnitPoint.center
     // see ConversationRow, the mute lengths open once the menu has gone
     @State private var wantsMute = false
     @State private var isMutePresented = false
@@ -212,16 +222,25 @@ private struct ChannelRow: View {
             .background(isPressed ? Theme.panelSelected : .clear, in: .rect(cornerRadius: 6))
             .onTapGesture(perform: open)
             .onLongPressGesture(minimumDuration: 0.35, perform: showActions, onPressingChanged: setPressed)
+            .onSecondaryClick(perform: showActionsAtPointer)
             .accessibilityAddTraits(.isButton)
             .accessibilityAction(named: "More Options", showActions)
-            .sheet(isPresented: $isActionsSheetPresented, onDismiss: showMuteIfWanted) {
+            .actionsPresentation(isPresented: $isActionsSheetPresented, anchor: menuAnchor, onDismiss: showMuteIfWanted) {
                 ChannelActionsSheet(channel: channel, onMute: requestMute)
+                    .environment(session)
+                    .environment(servers)
             }
             .sheet(isPresented: $isMutePresented) {
                 MuteDurationSheet(title: "Mute Channel", subtitle: "#\(channel.name)", channelId: channel.id)
+                    .environment(session)
+                    .environment(servers)
+                    .appSheet()
             }
             .sheet(isPresented: $isVoiceSheetPresented) {
                 VoiceChannelSheet(channel: channel)
+                    .environment(session)
+                    .environment(servers)
+                    .appSheet()
             }
     }
 
@@ -257,6 +276,11 @@ private struct ChannelRow: View {
 
     private func showActions() {
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        isActionsSheetPresented = true
+    }
+
+    private func showActionsAtPointer(_ click: SecondaryClick) {
+        menuAnchor = click.anchor
         isActionsSheetPresented = true
     }
 

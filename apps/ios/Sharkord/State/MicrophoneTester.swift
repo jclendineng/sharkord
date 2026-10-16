@@ -9,7 +9,9 @@ final class MicrophoneTester {
     private(set) var isRunning = false
     private(set) var errorMessage: String?
 
-    @ObservationIgnored private let engine = AVAudioEngine()
+    // a new engine each run, so a connection from hearing yourself last time does not linger
+    @ObservationIgnored private var engine = AVAudioEngine()
+    @ObservationIgnored private var configurationTask: Task<Void, Never>?
 
     func start(playback: Bool) async {
         guard !isRunning else {
@@ -24,13 +26,21 @@ final class MicrophoneTester {
         do {
             let session = AVAudioSession.sharedInstance()
 
-            try session.setCategory(.playAndRecord, mode: .voiceChat, options: [.defaultToSpeaker, .allowBluetoothHFP])
+            // voice chat's echo cancellation takes your own voice out of the speaker as if it were
+            // echo, so hearing yourself needs the plain mode
+            try session.setCategory(.playAndRecord, mode: playback ? .default : .voiceChat, options: [.defaultToSpeaker, .allowBluetoothHFP])
             try session.setActive(true)
+
+            engine = AVAudioEngine()
 
             let input = engine.inputNode
             let format = input.outputFormat(forBus: 0)
 
-            input.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
+            // sendable so it is not tied to the main actor like the rest of the app: the engine
+            // calls it on its audio thread, and a main actor closure there traps. ios 27's
+            // replacement, installTap with an error, reaches swift only as __installTap returning
+            // a bool, so this stays until the sdk gives it a swift name
+            input.installTap(onBus: 0, bufferSize: 1024, format: format) { @Sendable [weak self] buffer, _ in
                 let level = Self.rms(buffer)
 
                 Task { @MainActor in
@@ -39,12 +49,13 @@ final class MicrophoneTester {
             }
 
             if playback {
-                engine.connect(input, to: engine.mainMixerNode, format: format)
+                try engine.connectNode(input, to: engine.mainMixerNode, format: format)
             }
 
             try engine.start()
             isRunning = true
             errorMessage = nil
+            restartOnConfigurationChange(playback: playback)
         } catch {
             errorMessage = error.localizedDescription
             stop()
@@ -52,12 +63,31 @@ final class MicrophoneTester {
     }
 
     func stop() {
+        configurationTask?.cancel()
+        configurationTask = nil
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
-        engine.reset()
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         isRunning = false
         level = 0
+    }
+
+    // airpods switch the mic to a different sample rate once the session is active, and the
+    // engine stops itself on that rather than carry on, so the test starts over on the new route
+    private func restartOnConfigurationChange(playback: Bool) {
+        let notifications = NotificationCenter.default.notifications(named: .AVAudioEngineConfigurationChange, object: engine)
+
+        configurationTask = Task { [weak self] in
+            for await _ in notifications {
+                guard let self, !Task.isCancelled else {
+                    return
+                }
+
+                stop()
+                await start(playback: playback)
+                return
+            }
+        }
     }
 
     // a rough loudness from 0 to 1, a meter needs nothing more exact

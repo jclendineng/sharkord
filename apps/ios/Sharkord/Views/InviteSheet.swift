@@ -98,7 +98,7 @@ struct InviteSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .sheetDetents([.medium, .large])
         .presentationBackground(Theme.listBackground)
         .task(id: settingsKey) {
             await createInvite()

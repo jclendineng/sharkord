@@ -91,6 +91,10 @@ final class TRPCClient {
         try await requestData(method: "query", path: path, input: nil)
     }
 
+    func rawQuery<Input: Encodable>(_ path: String, input: Input) async throws -> Data {
+        try await requestData(method: "query", path: path, input: try jsonObject(input))
+    }
+
     func subscribe<Output: Decodable>(_ path: String, onData: @escaping (Output) -> Void) {
         let id = makeId()
 

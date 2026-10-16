@@ -87,7 +87,7 @@ struct EmojiPickerView: View {
                 }
             }
         }
-        .presentationDetents(detents)
+        .sheetDetents(detents)
         .presentationBackground(Theme.chatBackground)
     }
 

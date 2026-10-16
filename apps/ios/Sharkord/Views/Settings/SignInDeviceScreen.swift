@@ -17,6 +17,7 @@ struct SignInDeviceScreen: View {
     }
 
     @Environment(SessionStore.self) private var session
+    @Environment(ServerListStore.self) private var servers
 
     @State private var link: LoginLink?
     @State private var state: LoginLinkState?
@@ -80,12 +81,19 @@ struct SignInDeviceScreen: View {
         .task {
             await run()
         }
+        // handed over by hand: on a mac a sheet's background is worked out before it inherits
+        // anything, so a sheet reading a store it was not given crashed on opening
         .sheet(isPresented: $isScannerPresented) {
             QRScannerSheet(onScan: scanned)
+                .environment(session)
+                .environment(servers)
+                .appSheet()
         }
         .sheet(item: $scannedApproval) { approval in
             ApproveDeviceSheet(token: approval.token)
                 .environment(session)
+                .environment(servers)
+                .appSheet()
         }
     }
 

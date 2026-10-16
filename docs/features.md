@@ -15,6 +15,17 @@ The app only connects over HTTPS, apart from addresses on the local network (`10
 `192.168.x`, `172.16` to `172.31`, `localhost`, `.local`, `.lan`, `.home.arpa`,
 `.internal`) and Tailscale (`100.64.0.0/10`, `.ts.net`), which is already encrypted.
 
+The same app runs on a Mac as the iPad app, with the desk in mind: a right click opens a
+message's, channel's, conversation's or server's menu beside the pointer, header buttons
+(pins, the inbox) open popovers, search drops down from its box, and a server channel shows
+the member list down the right. Sheets there close with their own buttons or an X rather than
+a swipe, which a trackpad scroll would set off by mistake (`Helpers/AppSheet.swift`,
+`Helpers/SecondaryClick.swift`, `Views/MembersColumn.swift`).
+
+The app opens on each server as it was last seen, from the last join kept on disk
+(`State/JoinSnapshot.swift`), so channels, avatars and icons are there before the server has
+answered.
+
 ## Push notifications
 
 The server sends to Apple's push service directly with the operator's own key. Off until
