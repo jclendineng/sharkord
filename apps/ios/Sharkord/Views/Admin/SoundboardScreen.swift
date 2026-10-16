@@ -197,6 +197,7 @@ struct SoundboardScreen: View {
             let found: FreesoundPage = try await session.request("soundboard.searchFreesound", SearchInput(query: trimmed, page: page))
 
             results = page == 1 ? found.sounds : results + found.sounds
+            errorMessage = nil
             hasMoreResults = found.hasMore
             resultsPage = page
         } catch {
