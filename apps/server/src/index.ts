@@ -16,7 +16,6 @@ import { loadDb } from './db';
 import { syncConfigFile, watchConfigFile } from './helpers/config-file-sync';
 import { getHost } from './helpers/get-host';
 import { renameStoredFiles } from './helpers/rename-stored-files';
-import './helpers/updater';
 import { pluginManager } from './plugins';
 import { enqueueActivityLog } from './queues/activity-log';
 import { initVoiceRuntimes } from './runtimes';

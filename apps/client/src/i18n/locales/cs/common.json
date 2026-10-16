@@ -58,7 +58,6 @@
   "notificationPermissionDenied": "Oprávnění k oznámením bylo zamítnuto",
   "uploadsDisabled": "Nahrávání souborů je na tomto serveru zakázáno",
   "noUploadPermission": "Nemáte oprávnění nahrávat soubory",
-  "serverUpdateInitiated": "Aktualizace serveru zahájena",
   "failedSendReply": "Odeslání odpovědi se nezdařilo",
   "messageTooLong": "Zpráva je příliš dlouhá, maximum je {{max}} znaků",
   "pinnedBy": "Připnuto uživatelem {{name}}",

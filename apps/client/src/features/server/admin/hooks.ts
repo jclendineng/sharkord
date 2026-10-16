@@ -1,4 +1,3 @@
-import { requestConfirmation } from '@/features/dialogs/actions';
 import { getTRPCClient, type TRouterOutputs } from '@/lib/trpc';
 import {
   DELETED_USER_IDENTITY_AND_NAME,
@@ -21,8 +20,6 @@ import {
   type TTrpcErrors
 } from '@sharkord/shared';
 import { useCallback, useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 
 export type TAdminUser = TRouterOutputs['users']['getAll'][number];
 export type TAdminUserInfo = TRouterOutputs['users']['getInfo']['user'];
@@ -47,75 +44,6 @@ export const useAdminGeneral = () => {
   }, [fetchSettings]);
 
   return { settings, refetch: fetchSettings, loading };
-};
-
-export const useAdminUpdates = () => {
-  const { t } = useTranslation('common');
-  const [loading, setLoading] = useState(true);
-  const [errors, setErrors] = useState<TTrpcErrors>({});
-  const [hasUpdate, setHasUpdate] = useState(false);
-  const [latestVersion, setLatestVersion] = useState<string | null>(null);
-  const [currentVersion, setCurrentVersion] = useState<string | null>(null);
-  const [canUpdate, setCanUpdate] = useState(false);
-
-  const fetchUpdate = useCallback(async () => {
-    setLoading(true);
-
-    const trpc = getTRPCClient();
-
-    try {
-      const { hasUpdate, latestVersion, canUpdate, currentVersion } =
-        await trpc.others.getUpdate.query();
-
-      setHasUpdate(hasUpdate);
-      setLatestVersion(latestVersion);
-      setCurrentVersion(currentVersion);
-      setCanUpdate(canUpdate);
-    } catch (error) {
-      console.error('Error fetching update:', error);
-      setErrors(parseTrpcErrors(error));
-    }
-
-    setLoading(false);
-  }, []);
-
-  const update = useCallback(async () => {
-    const answer = await requestConfirmation({
-      title: 'Are you sure you want to update the server?',
-      message:
-        'This will download and install the latest version of the server. The server will be restarted during the process, which may cause temporary downtime.',
-      confirmLabel: 'Update',
-      cancelLabel: 'Cancel'
-    });
-
-    if (!answer) return;
-
-    const trpc = getTRPCClient();
-
-    try {
-      trpc.others.updateServer.mutate();
-
-      toast.success(t('common:serverUpdateInitiated'));
-    } catch (error) {
-      console.error('Error updating server:', error);
-      setErrors(parseTrpcErrors(error));
-    }
-  }, [t]);
-
-  useEffect(() => {
-    fetchUpdate();
-  }, [fetchUpdate]);
-
-  return {
-    refetch: fetchUpdate,
-    loading,
-    hasUpdate,
-    latestVersion,
-    currentVersion,
-    canUpdate,
-    errors,
-    update
-  };
 };
 
 export const useAdminPlugins = (canManagePlugins: boolean) => {

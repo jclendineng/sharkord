@@ -122,12 +122,11 @@ enum ServerSettingsPage: Hashable {
     case channels
     case storage
     case plugins
-    case updates
 
     static let sections: [(title: String?, pages: [ServerSettingsPage])] = [
         (nil, [.overview, .roles, .emoji, .stickers, .soundboard]),
         ("Community", [.members, .invites, .channels]),
-        ("Server", [.storage, .plugins, .updates])
+        ("Server", [.storage, .plugins])
     ]
 
     var title: String {
@@ -152,8 +151,6 @@ enum ServerSettingsPage: Hashable {
             "Storage"
         case .plugins:
             "Plugins"
-        case .updates:
-            "Updates"
         }
     }
 
@@ -179,8 +176,6 @@ enum ServerSettingsPage: Hashable {
             "internaldrive.fill"
         case .plugins:
             "puzzlepiece.extension.fill"
-        case .updates:
-            "arrow.down.circle.fill"
         }
     }
 
@@ -204,8 +199,6 @@ enum ServerSettingsPage: Hashable {
             session.can(.manageStorage)
         case .plugins:
             session.can(.managePlugins)
-        case .updates:
-            session.can(.manageUpdates)
         }
     }
 
@@ -232,8 +225,6 @@ enum ServerSettingsPage: Hashable {
             StorageSettingsScreen()
         case .plugins:
             PluginsScreen()
-        case .updates:
-            UpdatesScreen()
         }
     }
 }

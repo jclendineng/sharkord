@@ -18,6 +18,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   group direct messages, private notes, the new member lounge, QR sign in and the soundboard.
   Upstream's plugin storage migrations run as this fork's `0060_plugin_storage`, after the
   fork's own, so a database that already ran `0059` still gets them.
+- `0069_drop_manage_updates_permission` takes Manage Updates off every role, since the self
+  updater it ran is gone.
 - `0068_user_totp` adds the table that holds two-factor secrets, apart from users.
 - `0067_channel_retention` adds a retention period to channels, off on every channel until
   set.
@@ -233,6 +235,13 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   original ones.
 - Link previews skip error pages and use only pictures the page itself declares.
 - The iPhone app stays in portrait. Landscape is for the iPad.
+
+### Removed
+
+- The server's self updater, its Updates page in the web client and the app, the Manage Updates
+  permission and the `server.autoupdate` setting. It checked upstream's releases, so a server
+  run outside Docker would have replaced this fork with upstream. Update by pulling the new
+  image instead.
 
 ### Fixed
 

@@ -493,7 +493,7 @@ fails to bind `::` and has no voice, which is why it is not the default
 ## Server settings in the app
 
 Overview, roles, members, invites, channels with per channel permissions, emoji, stickers,
-storage, plugins (marketplace, settings, who can use them, logs) and updates are all in the
+storage and plugins (marketplace, settings, who can use them, logs) are all in the
 app, each shown only to people with the permission for it. They use the same routes as the
 web client.
 

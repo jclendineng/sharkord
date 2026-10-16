@@ -38,7 +38,6 @@ const zConfig = z.object({
         'basePath looks like /sharkord, with no trailing slash'
       ),
     debug: z.coerce.boolean(),
-    autoupdate: z.coerce.boolean(),
     backupDatabase: z.coerce.boolean(),
     maxRequestBodyBytes: z.coerce.number().int().positive(),
     allowedOrigins: z
@@ -133,7 +132,6 @@ const defaultConfig: TConfig = {
     port: 4991,
     basePath: '',
     debug: IS_DEVELOPMENT,
-    autoupdate: false,
     backupDatabase: true,
     maxRequestBodyBytes: 256 * 1024,
     allowedOrigins: ['*'],
@@ -332,7 +330,6 @@ const envOverridesMap: Record<string, string> = {
   'server.port': 'SHARKORD_PORT',
   'server.basePath': 'SHARKORD_BASE_PATH',
   'server.debug': 'SHARKORD_DEBUG',
-  'server.autoupdate': 'SHARKORD_AUTOUPDATE',
   'server.backupDatabase': 'SHARKORD_BACKUP_DATABASE',
   'server.maxRequestBodyBytes': 'SHARKORD_MAX_REQUEST_BODY_BYTES',
   'server.allowedOrigins': 'SHARKORD_ALLOWED_ORIGINS',

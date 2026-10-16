@@ -58,7 +58,6 @@
   "notificationPermissionDenied": "通知权限被拒绝",
   "uploadsDisabled": "此服务器已禁用文件上传",
   "noUploadPermission": "您没有上传文件的权限",
-  "serverUpdateInitiated": "服务器更新已启动",
   "failedSendReply": "发送回复失败",
   "messageTooLong": "消息太长，最多 {{max}} 个字符",
   "pinnedBy": "置顶者：{{name}}",

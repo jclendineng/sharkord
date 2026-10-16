@@ -28,8 +28,7 @@ const ServerDropdownMenu = memo(() => {
       Permission.MANAGE_SOUNDBOARD,
       Permission.MANAGE_STORAGE,
       Permission.MANAGE_USERS,
-      Permission.MANAGE_INVITES,
-      Permission.MANAGE_UPDATES
+      Permission.MANAGE_INVITES
     ],
     []
   );

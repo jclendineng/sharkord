@@ -58,7 +58,6 @@
   "notificationPermissionDenied": "Autorisation de notification refusée",
   "uploadsDisabled": "Les envois de fichiers sont désactivés sur ce serveur",
   "noUploadPermission": "Vous n’avez pas la permission d’envoyer des fichiers",
-  "serverUpdateInitiated": "Mise à jour du serveur lancée",
   "failedSendReply": "Échec de l'envoi de la réponse",
   "messageTooLong": "Le message est trop long, le maximum est de {{max}} caractères",
   "pinnedBy": "Épinglé par {{name}}",

@@ -26,7 +26,6 @@ enum Permission: String, CaseIterable, Codable {
     case manageMessages = "MANAGE_MESSAGES"
     case manageStorage = "MANAGE_STORAGE"
     case manageInvites = "MANAGE_INVITES"
-    case manageUpdates = "MANAGE_UPDATES"
     case managePlugins = "MANAGE_PLUGINS"
     case managePluginPermissions = "MANAGE_PLUGIN_PERMISSIONS"
     case usePlugins = "USE_PLUGINS"
@@ -193,14 +192,6 @@ struct AdminStorage: Decodable {
     let storageSettings: Settings
     let diskMetrics: Disk
     let pluginStorage: [PluginUsage]
-}
-
-// others.getUpdate
-struct AdminUpdate: Decodable {
-    let canUpdate: Bool
-    let latestVersion: String
-    let hasUpdate: Bool
-    let currentVersion: String?
 }
 
 // plugins.get, TPluginInfo

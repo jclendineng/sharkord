@@ -484,6 +484,13 @@
       "when": 1792167423420,
       "tag": "0068_user_totp",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "6",
+      "when": 1792194692244,
+      "tag": "0069_drop_manage_updates_permission",
+      "breakpoints": true
     }
   ]
 }

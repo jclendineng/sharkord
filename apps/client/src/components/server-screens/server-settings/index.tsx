@@ -6,7 +6,6 @@ import {
   Blocks,
   Mail,
   Package,
-  RefreshCw,
   Settings,
   Shield,
   Smile,
@@ -27,7 +26,6 @@ import { Roles } from './roles';
 import { Soundboard } from './soundboard';
 import { Stickers } from './stickers';
 import { Storage } from './storage';
-import { Updates } from './updates';
 import { Users as UsersSection } from './users';
 
 type TServerSettingsProps = TServerScreenBaseProps;
@@ -100,13 +98,6 @@ const ServerSettings = memo(({ close }: TServerSettingsProps) => {
         icon: Mail,
         content: <Invites />,
         permission: Permission.MANAGE_INVITES
-      },
-      {
-        id: 'updates',
-        label: t('updatesTab'),
-        icon: RefreshCw,
-        content: <Updates />,
-        permission: Permission.MANAGE_UPDATES
       },
       {
         id: 'plugins',

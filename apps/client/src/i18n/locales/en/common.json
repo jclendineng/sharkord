@@ -58,7 +58,6 @@
   "notificationPermissionDenied": "Notification permission was denied",
   "uploadsDisabled": "File uploads are disabled on this server",
   "noUploadPermission": "You do not have permission to upload files",
-  "serverUpdateInitiated": "Server update initiated",
   "failedSendReply": "Failed to send reply",
   "messageTooLong": "Message is too long, the maximum is {{max}} characters",
   "pinnedBy": "Pinned by {{name}}",
