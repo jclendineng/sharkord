@@ -14,6 +14,17 @@ struct VoiceVideoSettingsScreen: View {
         servers.voiceSession != nil
     }
 
+    // a call joined without it has webrtc's own device, which cannot play the mic back
+    private var hearYourselfFooter: String {
+        let note = "Plays your mic back to you while you talk. Use headphones to avoid feedback."
+
+        if let voiceSession = servers.voiceSession, !voiceSession.canHearYourselfNow {
+            return note + " Turning it on applies the next time you join a voice channel."
+        }
+
+        return note
+    }
+
     var body: some View {
         @Bindable var settings = settings
 
@@ -71,6 +82,15 @@ struct VoiceVideoSettingsScreen: View {
                 .padding(.vertical, 4)
 
                 Toggle("Use Speaker by Default", isOn: $settings.speakerByDefault)
+            }
+
+            Section {
+                Toggle("Hear Yourself in Calls", isOn: $settings.hearYourselfInCalls)
+                    .onChange(of: settings.hearYourselfInCalls) { _, hears in
+                        servers.voiceSession?.setHearsYourself(hears)
+                    }
+            } footer: {
+                Text(hearYourselfFooter)
             }
 
             Section {

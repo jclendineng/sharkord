@@ -28,6 +28,7 @@ final class AppSettings {
         static let outputVolume = "settings.outputVolume"
         static let streamQuality = "settings.streamQuality"
         static let shareAppAudio = "settings.shareAppAudio"
+        static let hearYourselfInCalls = "settings.hearYourselfInCalls"
         static let doubleTapReaction = "settings.doubleTapReaction"
     }
 
@@ -64,6 +65,12 @@ final class AppSettings {
         didSet { defaults.set(shareAppAudio, forKey: Key.shareAppAudio) }
     }
 
+    // plays your own mic back to you during a call. like app audio it needs MixingAudioDevice,
+    // the built in device has no way to send the mic to the speaker
+    var hearYourselfInCalls: Bool {
+        didSet { defaults.set(hearYourselfInCalls, forKey: Key.hearYourselfInCalls) }
+    }
+
     // the shortcode a double tap on a message reacts with, picked from the message menu's
     // edit link like discord's
     var doubleTapReaction: String {
@@ -86,6 +93,7 @@ final class AppSettings {
         speakerByDefault = defaults.bool(forKey: Key.speakerByDefault)
         outputVolume = defaults.double(forKey: Key.outputVolume)
         shareAppAudio = defaults.bool(forKey: Key.shareAppAudio)
+        hearYourselfInCalls = defaults.bool(forKey: Key.hearYourselfInCalls)
         doubleTapReaction = defaults.string(forKey: Key.doubleTapReaction) ?? "heart"
         streamQuality = defaults.string(forKey: Key.streamQuality).flatMap(StreamQuality.init(rawValue:)) ?? .standard
     }

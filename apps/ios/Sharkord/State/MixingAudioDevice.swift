@@ -5,7 +5,8 @@ import WebRTC
 // webrtc's own ios audio device only ever records the microphone. this one stands in for it
 // when a screen share should carry the game's sound: it records the mic and plays the call
 // through AVAudioEngine like the built in one does, and mixes in the game audio ScreenCapture
-// hands over. only used when "share app audio" is on, every other call keeps webrtc's device
+// hands over. it also plays the mic back for hearing yourself. only used when "share app audio"
+// or "hear yourself in calls" is on, every other call keeps webrtc's device
 nonisolated final class MixingAudioDevice: NSObject, RTCAudioDevice, @unchecked Sendable {
     // what ScreenCapture hands over
     static let gameSampleRate = 48_000.0
@@ -13,6 +14,8 @@ nonisolated final class MixingAudioDevice: NSObject, RTCAudioDevice, @unchecked 
     private static let maxFrames = 8192
     // game audio further behind than this is dropped rather than played late
     private static let maxGameLatency = 0.2
+    // your own voice is played back no later than this, any more and it sounds like an echo
+    private static let maxMonitorLatency = 0.08
 
     private let engine = AVAudioEngine()
     private let options: VoiceConnection.AudioOptions
@@ -23,6 +26,11 @@ nonisolated final class MixingAudioDevice: NSObject, RTCAudioDevice, @unchecked 
     private var outputRate = 48_000.0
     private var gameConverter: AVAudioConverter?
     private let gameAudio = GameAudioRing(capacity: 48_000)
+    // the mic on its way to the speaker, written on the input thread and read on the output one
+    private let monitorAudio = GameAudioRing(capacity: 48_000)
+    private let monitorScratch = UnsafeMutablePointer<Float>.allocate(capacity: MixingAudioDevice.maxFrames)
+    // the mic brought to the speaker's rate, which on a headset can be several times the mic's
+    private let resampleScratch = UnsafeMutablePointer<Float>.allocate(capacity: MixingAudioDevice.maxFrames * 4)
     private let recordScratch = UnsafeMutablePointer<Int16>.allocate(capacity: MixingAudioDevice.maxFrames)
     private let playoutScratch = UnsafeMutablePointer<Int16>.allocate(capacity: MixingAudioDevice.maxFrames)
     private let gameScratch = UnsafeMutablePointer<Float>.allocate(capacity: MixingAudioDevice.maxFrames)
@@ -35,6 +43,7 @@ nonisolated final class MixingAudioDevice: NSObject, RTCAudioDevice, @unchecked 
         var isPlaying = false
         var isRecording = false
         var isMicMuted = false
+        var isMonitoring = false
     }
 
     init(options: VoiceConnection.AudioOptions) {
@@ -45,12 +54,25 @@ nonisolated final class MixingAudioDevice: NSObject, RTCAudioDevice, @unchecked 
         recordScratch.deallocate()
         playoutScratch.deallocate()
         gameScratch.deallocate()
+        monitorScratch.deallocate()
+        resampleScratch.deallocate()
     }
 
     // with game audio in the same track, muting has to silence only the voice
     var isMicMuted: Bool {
         get { flags.withLock { $0.isMicMuted } }
         set { flags.withLock { $0.isMicMuted = newValue } }
+    }
+
+    var isMonitoring: Bool {
+        get { flags.withLock { $0.isMonitoring } }
+        set {
+            flags.withLock { $0.isMonitoring = newValue }
+
+            if !newValue {
+                monitorAudio.clear()
+            }
+        }
     }
 
     // MARK: game audio from the screen share
@@ -136,6 +158,7 @@ nonisolated final class MixingAudioDevice: NSObject, RTCAudioDevice, @unchecked 
             try session.setPreferredSampleRate(Self.gameSampleRate)
             try session.setPreferredIOBufferDuration(0.01)
             try session.setActive(true)
+            Self.preferHeadset(session)
             try setUpEngine()
         } catch {
             print("[voice] mixing audio device could not start: \(error)")
@@ -208,6 +231,20 @@ nonisolated final class MixingAudioDevice: NSObject, RTCAudioDevice, @unchecked 
         }
 
         return true
+    }
+
+    // airpods or any other headset, when one is there. the session comes up before a bluetooth
+    // headset's call link does, and default to speaker then keeps the call on the speaker with
+    // the headset in. asking for its mic moves the sound there with it. a pick in the output
+    // picker afterwards still wins
+    private static func preferHeadset(_ session: AVAudioSession) {
+        let headsets: Set<AVAudioSession.Port> = [.bluetoothHFP, .headsetMic, .usbAudio]
+
+        guard let headset = session.availableInputs?.first(where: { headsets.contains($0.portType) }) else {
+            return
+        }
+
+        try? session.setPreferredInput(headset)
     }
 
     // MARK: engine
@@ -289,6 +326,15 @@ nonisolated final class MixingAudioDevice: NSObject, RTCAudioDevice, @unchecked 
         let mic = buffers.first?.mData?.assumingMemoryBound(to: Float.self)
         let gameFrames = gameAudio.read(into: gameScratch, count: frames)
 
+        if state.isMonitoring, !state.isMicMuted, let mic {
+            let count = resample(mic, frames: frames)
+
+            monitorAudio.write(
+                UnsafeBufferPointer(start: resampleScratch, count: count),
+                keepAtMost: Int(outputRate * Self.maxMonitorLatency)
+            )
+        }
+
         for index in 0..<frames {
             let voice = state.isMicMuted || mic == nil ? 0 : mic![index]
             let game = index < gameFrames ? gameScratch[index] : 0
@@ -310,6 +356,25 @@ nonisolated final class MixingAudioDevice: NSObject, RTCAudioDevice, @unchecked 
         return delegate.deliverRecordedData(&actionFlags, timestamp, 1, UInt32(frames), &recorded, nil, nil)
     }
 
+    // the mic at the speaker's rate, by straight lines between samples: a headset can record at
+    // a lower rate than it plays, and played as it came the voice would be pitched. nothing is
+    // allocated, this runs on the realtime input thread
+    private func resample(_ mic: UnsafeMutablePointer<Float>, frames: Int) -> Int {
+        let ratio = outputRate / inputRate
+        let count = min(Int(Double(frames) * ratio), Self.maxFrames * 4)
+
+        for index in 0..<count {
+            let position = Double(index) / ratio
+            let lower = min(Int(position), frames - 1)
+            let upper = min(lower + 1, frames - 1)
+            let fraction = Float(position - Double(lower))
+
+            resampleScratch[index] = mic[lower] + (mic[upper] - mic[lower]) * fraction
+        }
+
+        return count
+    }
+
     // the realtime output thread: webrtc mixes everyone in the call into 16 bit samples
     private func renderPlayout(
         timestamp: UnsafePointer<AudioTimeStamp>,
@@ -323,24 +388,35 @@ nonisolated final class MixingAudioDevice: NSObject, RTCAudioDevice, @unchecked 
             return noErr
         }
 
-        guard flags.withLock({ $0.isPlaying }), let delegate else {
-            output.update(repeating: 0, count: Int(frameCount))
-            return noErr
+        let state = flags.withLock { $0 }
+        let monitoredFrames = state.isMonitoring ? monitorAudio.read(into: monitorScratch, count: frames) : 0
+        var callStatus: OSStatus = -1
+
+        // webrtc only starts playing once someone else's audio arrives, so alone in a channel
+        // there is no call to mix your own voice into, and it plays by itself
+        if state.isPlaying, let delegate {
+            var playout = AudioBufferList(
+                mNumberBuffers: 1,
+                mBuffers: AudioBuffer(
+                    mNumberChannels: 1,
+                    mDataByteSize: UInt32(frames * MemoryLayout<Int16>.size),
+                    mData: playoutScratch
+                )
+            )
+            var actionFlags = AudioUnitRenderActionFlags()
+
+            callStatus = delegate.getPlayoutData(&actionFlags, timestamp, 0, UInt32(frames), &playout)
         }
 
-        var playout = AudioBufferList(
-            mNumberBuffers: 1,
-            mBuffers: AudioBuffer(
-                mNumberChannels: 1,
-                mDataByteSize: UInt32(frames * MemoryLayout<Int16>.size),
-                mData: playoutScratch
-            )
-        )
-        var actionFlags = AudioUnitRenderActionFlags()
-        let status = delegate.getPlayoutData(&actionFlags, timestamp, 0, UInt32(frames), &playout)
-
         for index in 0..<frames {
-            output[index] = status == noErr ? Float(playoutScratch[index]) / Float(Int16.max) : 0
+            let call = callStatus == noErr ? Float(playoutScratch[index]) / Float(Int16.max) : 0
+            let own = index < monitoredFrames ? monitorScratch[index] : 0
+
+            output[index] = max(-1, min(1, call + own))
+        }
+
+        if Int(frameCount) > frames {
+            (output + frames).update(repeating: 0, count: Int(frameCount) - frames)
         }
 
         return noErr

@@ -824,8 +824,10 @@ final class SessionStore {
                 speakerByDefault: settings.speakerByDefault,
                 outputVolume: settings.outputVolume
             )
-            let mixer = settings.shareAppAudio ? MixingAudioDevice(options: audioOptions) : nil
+            let needsMixer = settings.shareAppAudio || settings.hearYourselfInCalls
+            let mixer = needsMixer ? MixingAudioDevice(options: audioOptions) : nil
 
+            mixer?.isMonitoring = settings.hearYourselfInCalls
             mixingDevice = mixer
 
             let connection = VoiceConnection(
@@ -1587,6 +1589,15 @@ final class SessionStore {
         if speaking != speakingUserIds {
             speakingUserIds = speaking
         }
+    }
+
+    // whether hearing yourself can be switched on in this call, which needs the mixing device
+    var canHearYourselfNow: Bool {
+        mixingDevice != nil
+    }
+
+    func setHearsYourself(_ hears: Bool) {
+        mixingDevice?.isMonitoring = hears
     }
 
     private func voiceConnectionFailed() {

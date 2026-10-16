@@ -152,6 +152,11 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   even when the account is still connected elsewhere.
 - Long presses on channels and messages open their menu after the same 0.3 seconds as servers
   and conversations.
+- Hear Yourself in calls plays your mic back to you, in the voice channel sheet's new Voice &
+  Video settings (pulled up under Join Voice, with Deafen, audio output and noise suppression)
+  and in Voice & Video settings.
+- A call joined with AirPods or another headset connected plays through the headset instead of
+  staying on the speaker when Use Speaker by Default is on, with Hear Yourself or app audio.
 - On the phone and iPad a lowered call is Discord's floating tile, dragged anywhere and let go
   into the nearest corner, and tapped to open the call again. It replaces the voice bar above
   the user bar, which stays on the Mac.

@@ -1,7 +1,9 @@
+import AVKit
 import SwiftUI
 
 // discord's voice channel sheet: who is in the channel, a mute toggle to join muted, and the
-// join button. joining goes straight on to the call screen
+// join button, with the voice settings under them once the sheet is pulled up. joining goes
+// straight on to the call screen
 struct VoiceChannelSheet: View {
     let channel: Channel
 
@@ -10,6 +12,7 @@ struct VoiceChannelSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var isRoomPresented = false
+    @State private var isSettingsPresented = false
 
     private var participants: [(user: PublicUser?, state: VoiceUserState)] {
         session.voiceParticipants(in: channel.id)
@@ -41,29 +44,37 @@ struct VoiceChannelSheet: View {
             }
             .padding(16)
 
-            Group {
-                if participants.isEmpty {
-                    VStack(spacing: 4) {
-                        Text("No one's here yet!")
-                        Text("When you are ready to talk, just hop in.")
-                    }
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.text)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    ScrollView {
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 88), spacing: 12)], spacing: 16) {
-                            ForEach(participants, id: \.user?.id) { participant in
-                                ParticipantBadge(user: participant.user, state: participant.state)
+            // one scroll, so pulling up past the join bar opens the sheet onto the settings
+            ScrollView {
+                VStack(spacing: 0) {
+                    Group {
+                        if participants.isEmpty {
+                            VStack(spacing: 4) {
+                                Text("No one's here yet!")
+                                Text("When you are ready to talk, just hop in.")
                             }
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.text)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
+                        } else {
+                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 88), spacing: 12)], spacing: 16) {
+                                ForEach(participants, id: \.user?.id) { participant in
+                                    ParticipantBadge(user: participant.user, state: participant.state)
+                                }
+                            }
+                            .padding(.horizontal, 16)
                         }
-                        .padding(.horizontal, 16)
                     }
+                    // the half height sheet ends just below the join bar
+                    .frame(minHeight: 200)
+
+                    JoinBar(isConnectedHere: isConnectedHere, onJoin: join, onOpen: openRoom)
+
+                    VoiceSheetSettings(onOpenSettings: showSettings)
                 }
             }
-
-            JoinBar(isConnectedHere: isConnectedHere, onJoin: join, onOpen: openRoom)
+            .scrollBounceBehavior(.basedOnSize)
         }
         .background(Theme.listBackground)
         .sheetDetents([.medium, .large])
@@ -71,6 +82,14 @@ struct VoiceChannelSheet: View {
         .presentationBackground(Theme.listBackground)
         // handed over by hand: on a mac a sheet's background is worked out before it inherits
         // anything, so a sheet reading a store it was not given crashed on opening
+        .sheet(isPresented: $isSettingsPresented) {
+            NavigationStack {
+                VoiceVideoSettingsScreen()
+            }
+            .environment(session)
+            .environment(servers)
+            .appSheet(addsClose: true)
+        }
         .fullScreenCover(isPresented: $isRoomPresented) {
             VoiceRoomScreen()
                 .environment(session)
@@ -91,6 +110,10 @@ struct VoiceChannelSheet: View {
 
     private func openRoom() {
         isRoomPresented = true
+    }
+
+    private func showSettings() {
+        isSettingsPresented = true
     }
 
     private func close() {
@@ -178,4 +201,168 @@ private struct JoinBar: View {
             await session.toggleMicMuted()
         }
     }
+}
+
+// discord's voice and video settings under the join bar: what can be changed right here,
+// before or during the call, and the way into the rest
+private struct VoiceSheetSettings: View {
+    let onOpenSettings: () -> Void
+
+    @Environment(SessionStore.self) private var session
+
+    @State private var settings = AppSettings.shared
+
+    private var isDeafened: Binding<Bool> {
+        Binding(
+            get: { session.soundMuted },
+            set: { _ in toggleSound() }
+        )
+    }
+
+    // a call joined without them cannot take them up until the next one
+    private var footnote: String? {
+        guard session.currentVoiceChannelId != nil else {
+            return nil
+        }
+
+        if settings.hearYourselfInCalls && !session.canHearYourselfNow {
+            return "Hear Yourself applies the next time you join a voice channel."
+        }
+
+        return "Noise Suppression applies the next time you join a voice channel."
+    }
+
+    var body: some View {
+        @Bindable var settings = settings
+
+        VStack(alignment: .leading, spacing: 8) {
+            Text("VOICE & VIDEO SETTINGS")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(Theme.muted)
+                .padding(.horizontal, 4)
+
+            VStack(spacing: 0) {
+                SettingToggle(title: "Deafen", subtitle: "Mutes everyone in the call", systemImage: "headphones", isOn: isDeafened)
+
+                Theme.divider.frame(height: 1).padding(.leading, 52)
+
+                HStack(spacing: 14) {
+                    Image(systemName: "speaker.wave.2.fill")
+                        .frame(width: 24)
+
+                    Text("Audio Output")
+
+                    Spacer()
+
+                    AudioRoutePicker()
+                        .frame(width: 36, height: 36)
+                }
+                .foregroundStyle(Theme.header)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+
+                Theme.divider.frame(height: 1).padding(.leading, 52)
+
+                SettingToggle(
+                    title: "Hear Yourself",
+                    subtitle: "Plays your mic back to you, use headphones",
+                    systemImage: "ear",
+                    isOn: $settings.hearYourselfInCalls
+                )
+                .onChange(of: settings.hearYourselfInCalls) { _, hears in
+                    session.setHearsYourself(hears)
+                }
+
+                Theme.divider.frame(height: 1).padding(.leading, 52)
+
+                SettingToggle(
+                    title: "Noise Suppression",
+                    subtitle: "Cuts background noise from your mic",
+                    systemImage: "waveform",
+                    isOn: $settings.noiseSuppression
+                )
+            }
+            .background(Theme.deepBackground, in: .rect(cornerRadius: 14))
+
+            if let footnote {
+                Text(footnote)
+                    .font(.caption)
+                    .foregroundStyle(Theme.muted)
+                    .padding(.horizontal, 4)
+            }
+
+            Button(action: onOpenSettings) {
+                HStack(spacing: 14) {
+                    Image(systemName: "gearshape.fill")
+                        .frame(width: 24)
+
+                    Text("Voice & Video Settings")
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(Theme.muted)
+                }
+                .foregroundStyle(Theme.header)
+                .padding(14)
+                .background(Theme.deepBackground, in: .rect(cornerRadius: 14))
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 8)
+        }
+        .padding(.horizontal, 12)
+        .padding(.top, 12)
+        .padding(.bottom, 24)
+    }
+
+    private func toggleSound() {
+        Task {
+            await session.toggleSoundMuted()
+        }
+    }
+}
+
+private struct SettingToggle: View {
+    let title: String
+    let subtitle: String
+    let systemImage: String
+    @Binding var isOn: Bool
+
+    var body: some View {
+        Toggle(isOn: $isOn) {
+            HStack(spacing: 14) {
+                Image(systemName: systemImage)
+                    .frame(width: 24)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .foregroundStyle(Theme.header)
+
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(Theme.muted)
+                }
+            }
+        }
+        .foregroundStyle(Theme.header)
+        .tint(Theme.blurple)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+    }
+}
+
+// the system's own picker for where the call plays, the speaker, headphones or airpods
+private struct AudioRoutePicker: UIViewRepresentable {
+    func makeUIView(context: Context) -> AVRoutePickerView {
+        let picker = AVRoutePickerView()
+
+        picker.tintColor = UIColor(Theme.header)
+        picker.activeTintColor = UIColor(Theme.blurple)
+
+        return picker
+    }
+
+    func updateUIView(_ picker: AVRoutePickerView, context: Context) {}
 }
