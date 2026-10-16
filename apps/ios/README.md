@@ -55,6 +55,10 @@ shows the system picker, and once the screen is picked the app captures it itsel
 app audio on, the stream also captures the other apps' sound, converted to 48khz mono for
 `MixingAudioDevice`. There is no broadcast extension any more.
 
+The share keeps running with the app in the background only because `Info.plist` lists the
+`screen-capture` background mode beside `audio`. Without it iOS stops the stream the moment the
+app leaves the screen (`SCStreamErrorMissingBackgroundMode`).
+
 ## On a Mac
 
 The app runs on the Mac as the iPad app. A Mac hands it a right click only as a context menu

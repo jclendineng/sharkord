@@ -144,7 +144,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - On a Mac, a server channel shows the member list down the right, online then offline, with a
   header button to hide it. A member opens their profile beside the list.
 - Starting a screen share on the phone no longer crashes the app once something is picked to
-  share.
+  share, and the share keeps going after switching to another app instead of stopping.
 - Joining voice from another device takes the seat over, as in Discord, instead of failing with
   "User already in a voice channel". The device that had it ends its call, and the iOS app
   shows a bar offering to reconnect there. A phone coming back from the background rejoins
