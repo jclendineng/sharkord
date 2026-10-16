@@ -10,6 +10,11 @@ struct ExpressionPanel: View {
         case stickers = "Stickers"
 
         var id: Self { self }
+
+        // the order the tabs run in, the mac's matching its buttons in the message box
+        static var shown: [Tab] {
+            ProcessInfo.processInfo.isiOSAppOnMac ? [.gifs, .stickers, .emoji] : allCases
+        }
     }
 
     let model: AttachPanelModel
@@ -44,6 +49,45 @@ struct ExpressionPanel: View {
     }
 }
 
+// the mac's picker: discord's card over the chat, above the message box at its right, its tabs in
+// the order of the buttons that open it
+struct ExpressionPicker: View {
+    static let height: CGFloat = 520
+
+    let model: AttachPanelModel
+    let onEmoji: (String) -> Void
+    let onBackspace: () -> Void
+    let onGif: (Gif) -> Void
+    let onSticker: (Sticker) -> Void
+
+    var body: some View {
+        @Bindable var model = model
+
+        VStack(spacing: 0) {
+            TabPicker(selection: $model.expressionTab)
+                .padding(10)
+
+            switch model.expressionTab {
+            case .emoji:
+                EmojiTab(onPick: onEmoji, onBackspace: onBackspace)
+            case .gifs:
+                GifTab(onPick: onGif)
+            case .stickers:
+                StickerTab(onPick: onSticker)
+            }
+        }
+        .frame(width: 480, height: Self.height)
+        .background(Theme.deepBackground)
+        .clipShape(.rect(cornerRadius: 12, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(Theme.panelEdge, lineWidth: 1)
+        }
+        .shadow(color: .black.opacity(0.45), radius: 20, y: 8)
+        .environment(model)
+    }
+}
+
 // discord's segmented control, a raised pill on the picked tab
 private struct TabPicker: View {
     @Binding var selection: ExpressionPanel.Tab
@@ -52,7 +96,7 @@ private struct TabPicker: View {
 
     var body: some View {
         HStack(spacing: 4) {
-            ForEach(ExpressionPanel.Tab.allCases) { tab in
+            ForEach(ExpressionPanel.Tab.shown) { tab in
                 TabButton(tab: tab, isSelected: tab == selection, pill: pill) {
                     withAnimation(.snappy(duration: 0.2)) {
                         selection = tab

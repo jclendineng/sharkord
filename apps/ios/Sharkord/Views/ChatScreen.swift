@@ -115,8 +115,10 @@ struct ChatScreen: View {
                         .contentShape(.rect)
                         .onTapGesture(perform: closeDropdown)
 
+                    // fades and settles in from its corner, as discord's do; slid down from under
+                    // the top bar it looked to come out of the bar itself
                     ChatDropdownPanel(dropdown: dropdown, channelId: channelId, searchModel: searchModel, onClose: closeDropdown, onOpenThread: openThreadFromList)
-                        .transition(.move(edge: .top))
+                        .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .topTrailing)))
 
                     // escape puts it away, as it does the server's search card
                     Button("Close", action: closeDropdown)
@@ -124,8 +126,7 @@ struct ChatScreen: View {
                         .hidden()
                 }
             }
-            .clipped()
-            .animation(.easeOut(duration: 0.2), value: dropdown)
+            .animation(.snappy(duration: 0.18), value: dropdown)
         }
         .onChange(of: session.requestedChannelId) { _, requestedChannelId in
             if requestedChannelId != nil {
@@ -169,11 +170,11 @@ struct ChatScreen: View {
             if canShowMembers {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: toggleMemberList) {
-                        Image(systemName: showsMemberList ? "person.2.fill" : "person.2")
-                            .foregroundStyle(showsMemberList ? Theme.header : Theme.text)
+                        Image(systemName: isMemberListShown ? "person.2.fill" : "person.2")
+                            .foregroundStyle(isMemberListShown ? Theme.header : Theme.text)
                             .hoverPop()
                     }
-                    .accessibilityLabel(showsMemberList ? "Hide Member List" : "Show Member List")
+                    .accessibilityLabel(isMemberListShown ? "Hide Member List" : "Show Member List")
                 }
             }
 
@@ -306,7 +307,20 @@ struct ChatScreen: View {
         threadParent = nil
     }
 
+    // on screen, not just wanted: a thread panel stands in its place
+    private var isMemberListShown: Bool {
+        showsMemberList && threadParent == nil
+    }
+
+    // the thread panel stands in the member list's place, so the button brings the list back
+    // in its stead rather than doing nothing under it
     private func toggleMemberList() {
+        if threadParent != nil {
+            threadParent = nil
+            showsMemberList = true
+            return
+        }
+
         showsMemberList.toggle()
     }
 
@@ -655,9 +669,11 @@ private struct InboxButton: View {
         }
         .accessibilityLabel("Inbox")
         // handed the stores by hand: a popover from the toolbar does not inherit them
+        // a popover even in a narrow window, which counts as compact and slid it up as a sheet
         .popover(isPresented: $isPresented) {
             InboxSheet()
                 .frame(width: 420, height: 560)
+                .macPopover()
                 .environment(servers)
                 .environment(session)
         }

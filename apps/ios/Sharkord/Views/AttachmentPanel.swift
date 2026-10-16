@@ -580,6 +580,9 @@ final class AttachPanelModel {
     private(set) var kind = Kind.attachments
     // the expression panel's tab, kept here so the mac's gif and sticker buttons open on theirs
     var expressionTab = ExpressionPanel.Tab.emoji
+    // the mac's picker, a card over the chat rather than a panel in the keyboard's place, so
+    // the message box never moves. here so a click on the conversation closes it with the rest
+    var isPickerOpen = false
     private(set) var settledHeight = restingHeight
     private(set) var dragOffset: CGFloat = 0
     // while the keyboard and the panel trade places the conversation stops making room for the
@@ -710,6 +713,8 @@ final class AttachPanelModel {
 
     // slides away, the composer coming down with it in the same motion
     func close() {
+        isPickerOpen = false
+
         guard isOpen else {
             return
         }

@@ -78,6 +78,29 @@ struct ComposerView: View {
                     }
             }
         }
+        // the mac's picker rises over the conversation above the box, its bottom at the box's top
+        .overlay(alignment: .topTrailing) {
+            if store.attachPanel.isPickerOpen {
+                ExpressionPicker(
+                    model: store.attachPanel,
+                    onEmoji: insertEmoji,
+                    onBackspace: deleteBackward,
+                    onGif: sendGif,
+                    onSticker: sendSticker
+                )
+                .padding(.trailing, 12)
+                // its own height and a little more up from the box's top, so it sits just above
+                .offset(y: -(ExpressionPicker.height + 6))
+                .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .bottomTrailing)))
+                // escape puts it away, as it does discord's
+                .background {
+                    Button("Close Picker", action: closePicker)
+                        .keyboardShortcut(.cancelAction)
+                        .hidden()
+                }
+            }
+        }
+        .animation(.snappy(duration: 0.18), value: store.attachPanel.isPickerOpen)
         .modifier(PanelSlide(model: store.attachPanel))
         // runs on behind the keyboard, whose rounded top corners would otherwise show the
         // window's black
@@ -203,10 +226,6 @@ struct ComposerView: View {
                 onGif: sendGif,
                 onSticker: sendSticker
             )
-            // discord's picker width under the emoji button on a mac: across a whole window the
-            // phone's grids spread out, eight emoji over a thousand points
-            .frame(maxWidth: ProcessInfo.processInfo.isiOSAppOnMac ? 460 : .infinity)
-            .frame(maxWidth: .infinity, alignment: .trailing)
         }
     }
 
@@ -431,20 +450,21 @@ struct ComposerView: View {
         openExpressions(on: .emoji)
     }
 
-    // the mac's buttons: one opens the panel on its own tab, again on the same tab closes it
+    // the mac's buttons: one opens the picker on its own tab, again on the same tab closes it
     private func openExpressions(on tab: ExpressionPanel.Tab) {
         let panel = store.attachPanel
 
-        if areExpressionsOpen && panel.expressionTab == tab {
-            panel.close()
+        if panel.isPickerOpen && panel.expressionTab == tab {
+            panel.isPickerOpen = false
             return
         }
 
         panel.expressionTab = tab
+        panel.isPickerOpen = true
+    }
 
-        if !areExpressionsOpen {
-            panel.open(.expressions)
-        }
+    private func closePicker() {
+        store.attachPanel.isPickerOpen = false
     }
 
     private func unfocusField() {
@@ -467,6 +487,8 @@ struct ComposerView: View {
 
     private func sendExpression(content: String, stickerId: Int?) {
         errorMessage = nil
+        // sent, the mac's picker goes, as discord's does
+        store.attachPanel.isPickerOpen = false
 
         Task {
             do {

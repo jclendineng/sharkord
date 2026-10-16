@@ -33,11 +33,15 @@ enum EmojiCatalog {
         var byGroup: [String: [EmojiEntry]] = [:]
 
         for entry in all where entry.group != "components" {
-            if byGroup[entry.group] == nil {
+            // the letters lead the smileys in the data, discord keeps them with the symbols. the
+            // sections keep the data's own order, so the symbols still come after the faces
+            let group = entry.name.hasPrefix("regional_indicator_") ? "symbols" : entry.group
+
+            if !order.contains(entry.group) {
                 order.append(entry.group)
             }
 
-            byGroup[entry.group, default: []].append(entry)
+            byGroup[group, default: []].append(entry)
         }
 
         return order.map { ($0, byGroup[$0, default: []]) }
