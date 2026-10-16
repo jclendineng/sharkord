@@ -289,6 +289,21 @@ Server Settings, Overview, Report Email. The apps' Report action on a server or 
 opens an email to this address, with the server, channel and message filled in. It is
 published in `/info` so a report can be sent without an account. Setting `reportEmail`.
 
+## Permissions and settings from upstream issues
+
+- **Pin messages in direct messages** (`PIN_DM_MESSAGES`): pinning in direct messages and
+  group conversations has its own permission, so members can pin there without pinning in
+  channels. `messages.togglePin` checks it when the message's channel is a direct message.
+  On upgrade every role that could pin messages gets it, so nothing changes until an admin
+  turns it off ([#481](https://github.com/Sharkord/sharkord/issues/481)).
+- **Mute Stream Audio** (web, Settings, Devices): screen shares with sound start muted for
+  you, each one unmuted from its own volume control. Kept in the browser's device settings
+  ([#749](https://github.com/Sharkord/sharkord/issues/749)).
+- **Unique names**: renaming to a name another member already uses, ignoring case, is
+  refused. Names two people already shared before the upgrade stay, and a name from an SSO
+  provider that is taken becomes a generated one
+  ([#828](https://github.com/Sharkord/sharkord/issues/828)).
+
 ## Web features in the app
 
 The app also has what the web client does with routes that predate this fork: typing

@@ -18,6 +18,9 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   group direct messages, private notes, the new member lounge, QR sign in and the soundboard.
   Upstream's plugin storage migrations run as this fork's `0060_plugin_storage`, after the
   fork's own, so a database that already ran `0059` still gets them.
+- `0061_grant_pin_dm_messages` gives the new Pin Messages in Direct Messages permission to
+  every role that has Pin Messages. An iOS app from before it shows the roles screen without
+  that permission; this release's app keeps permissions it does not know when saving a role.
 - The soundboard's permissions are granted on upgrade: Use Soundboard to every role that can
   join voice, Manage Soundboard to every role that manages emoji.
 - An iOS app from before the soundboard can't open the roles screen on an upgraded server,
@@ -116,6 +119,9 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - GIF and sticker tabs in the picker, sticker settings and a Klipy key field.
 - Signed file links refresh while the page is open.
 
+- Mute Stream Audio in Devices settings: screen shares with sound start muted
+  ([#749](https://github.com/Sharkord/sharkord/issues/749)).
+
 #### From upstream
 
 - Hotkeys in the web client for mute, deafen, push to talk and more, set in a new Hotkeys
@@ -125,6 +131,14 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   messages, and take arguments in their commands.
 
 ### Changed
+
+- Pinning in direct messages has its own permission, Pin Messages in Direct Messages. Roles
+  that could pin keep it in direct messages
+  ([#481](https://github.com/Sharkord/sharkord/issues/481)).
+- A name another member already uses, whatever its case, can't be taken on rename
+  ([#828](https://github.com/Sharkord/sharkord/issues/828)).
+- An open voice channel chat follows you when you switch voice channels. It still never
+  opens by itself ([#716](https://github.com/Sharkord/sharkord/issues/716)).
 
 - File links are always signed. Uploads are stored under random names rather than their
   original ones.
