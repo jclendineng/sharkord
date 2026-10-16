@@ -15,6 +15,7 @@ struct MessageListView<Header: View>: View {
     @State private var menuAnchor = UnitPoint.center
     @State private var listFrame = CGRect.zero
     @State private var deletingMessage: Message?
+    @State private var menuSheet: MessageMenuSheet?
     @State private var openedThread: Message?
     // opened once the actions sheet has finished going, pushed under it the two moved at once
     @State private var threadAfterActions: Message?
@@ -162,10 +163,24 @@ struct MessageListView<Header: View>: View {
                 store: store,
                 canOpenThread: store.scope == .channel,
                 onOpenThread: { openThread(message) },
-                onDelete: confirmDelete
+                onDelete: confirmDelete,
+                onShowSheet: showMenuSheet
             )
                 .environment(session)
                 .environment(servers)
+        }
+        .sheet(item: $menuSheet) { sheet in
+            Group {
+                switch sheet {
+                case .forward(let message):
+                    ForwardSheet(message: message)
+                case .rulesSetup(let messageId):
+                    RulesSetupSheet(messageId: messageId)
+                }
+            }
+            .environment(session)
+            .environment(servers)
+            .appSheet()
         }
         .fullScreenCover(item: $deletingMessage) { message in
             DeleteMessageConfirmation(message: message, onConfirm: { delete(message) })
@@ -382,6 +397,10 @@ struct MessageListView<Header: View>: View {
     private func reply(to message: Message) {
         store.editing = nil
         store.replyingTo = message
+    }
+
+    private func showMenuSheet(_ sheet: MessageMenuSheet) {
+        menuSheet = sheet
     }
 
     private func confirmDelete(_ message: Message) {

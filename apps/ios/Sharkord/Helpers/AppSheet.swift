@@ -46,6 +46,14 @@ private struct AppSheet: ViewModifier {
             // left alone elsewhere: an outer false here would override a sheet that turns the
             // swipe off for itself, the voice channel's open one does
             .modifier(MacDismissLock(isOnMac: isOnMac))
+            // escape closes it, as it does a mac sheet
+            .background {
+                if isOnMac {
+                    Button("Close", action: close)
+                        .keyboardShortcut(.cancelAction)
+                        .hidden()
+                }
+            }
             .safeAreaInset(edge: .top, spacing: 0) {
                 if addsClose {
                     HStack {

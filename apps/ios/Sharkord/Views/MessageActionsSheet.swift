@@ -13,6 +13,9 @@ struct MessageActionsSheet: View {
     let onOpenThread: () -> Void
     // the list asks for confirmation once this sheet is gone, like discord
     let onDelete: (Message) -> Void
+    // the mac's menu hands forward and the rules setup to the list, a sheet shown from the menu
+    // left it open behind
+    var onShowSheet: ((MessageMenuSheet) -> Void)?
 
     @Environment(SessionStore.self) private var session
     @Environment(ServerListStore.self) private var servers
@@ -239,6 +242,10 @@ struct MessageActionsSheet: View {
     }
 
     private func forward() {
+        guard !showFromList(.forward(message)) else {
+            return
+        }
+
         isForwardPresented = true
     }
 
@@ -271,7 +278,22 @@ struct MessageActionsSheet: View {
     }
 
     private func openRulesSetup() {
+        guard !showFromList(.rulesSetup(messageId: message.id)) else {
+            return
+        }
+
         isRulesSetupPresented = true
+    }
+
+    private func showFromList(_ sheet: MessageMenuSheet) -> Bool {
+        guard isPointerMenu, let onShowSheet else {
+            return false
+        }
+
+        closeMenu()
+        onShowSheet(sheet)
+
+        return true
     }
 
     private func stopUsingAsRules() {
@@ -364,6 +386,20 @@ struct MessageActionsSheet: View {
             closePointerMenu()
         } else {
             dismiss()
+        }
+    }
+}
+
+enum MessageMenuSheet: Identifiable {
+    case forward(Message)
+    case rulesSetup(messageId: Int)
+
+    var id: String {
+        switch self {
+        case .forward(let message):
+            return "forward-\(message.id)"
+        case .rulesSetup(let messageId):
+            return "rules-\(messageId)"
         }
     }
 }

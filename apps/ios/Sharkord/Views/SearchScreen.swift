@@ -145,9 +145,10 @@ struct SearchScreen: View {
                 resultsList
             }
         }
-        // a tap or a scroll on what is below the search box puts the keyboard away
+        // a tap or a scroll on what is below the search box puts the keyboard away. not on a
+        // mac, which has no keyboard to put away and where the tap ate the clicks on results
         .scrollDismissesKeyboard(.immediately)
-        .simultaneousGesture(TapGesture().onEnded(unfocusField))
+        .simultaneousGesture(TapGesture().onEnded(unfocusField), including: ProcessInfo.processInfo.isiOSAppOnMac ? .subviews : .all)
         // under the keyboard too, or its rounded top corners show the window's black behind them
         .background(Theme.deepBackground.ignoresSafeArea())
         // handed over by hand: on a mac a sheet's background is worked out before it inherits

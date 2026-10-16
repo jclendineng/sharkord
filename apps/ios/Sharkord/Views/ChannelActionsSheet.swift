@@ -5,6 +5,8 @@ struct ChannelActionsSheet: View {
     let channel: Channel
     // the row opens the mute lengths once this sheet has gone
     let onMute: () -> Void
+    // the mac's menu hands the invite to its row, a sheet shown from the menu left it open behind
+    var onInvite: (() -> Void)?
 
     @Environment(SessionStore.self) private var session
     @Environment(ServerListStore.self) private var servers
@@ -97,7 +99,11 @@ struct ChannelActionsSheet: View {
     }
 
     private func showInvite() {
-        isInvitePresented = true
+        if isPointerMenu, let onInvite {
+            onInvite()
+        } else {
+            isInvitePresented = true
+        }
     }
 
     private func togglePinned() {

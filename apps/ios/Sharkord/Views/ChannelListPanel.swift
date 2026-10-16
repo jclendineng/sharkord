@@ -186,6 +186,8 @@ private struct ChannelRow: View {
     // see ConversationRow, the mute lengths open once the menu has gone
     @State private var wantsMute = false
     @State private var isMutePresented = false
+    @State private var wantsInvite = false
+    @State private var isInvitePresented = false
     @State private var isPressed = false
     @State private var isHovered = false
 
@@ -225,13 +227,19 @@ private struct ChannelRow: View {
             .onSecondaryClick(perform: showActionsAtPointer)
             .accessibilityAddTraits(.isButton)
             .accessibilityAction(named: "More Options", showActions)
-            .actionsPresentation(isPresented: $isActionsSheetPresented, anchor: menuAnchor, onDismiss: showMuteIfWanted) {
-                ChannelActionsSheet(channel: channel, onMute: requestMute)
+            .actionsPresentation(isPresented: $isActionsSheetPresented, anchor: menuAnchor, onDismiss: showWantedSheet) {
+                ChannelActionsSheet(channel: channel, onMute: requestMute, onInvite: requestInvite)
                     .environment(session)
                     .environment(servers)
             }
             .sheet(isPresented: $isMutePresented) {
                 MuteDurationSheet(title: "Mute Channel", subtitle: "#\(channel.name)", channelId: channel.id)
+                    .environment(session)
+                    .environment(servers)
+                    .appSheet()
+            }
+            .sheet(isPresented: $isInvitePresented) {
+                InviteSheet()
                     .environment(session)
                     .environment(servers)
                     .appSheet()
@@ -271,10 +279,20 @@ private struct ChannelRow: View {
         isActionsSheetPresented = false
     }
 
-    private func showMuteIfWanted() {
+    private func requestInvite() {
+        wantsInvite = true
+        isActionsSheetPresented = false
+    }
+
+    private func showWantedSheet() {
         if wantsMute {
             wantsMute = false
             isMutePresented = true
+        }
+
+        if wantsInvite {
+            wantsInvite = false
+            isInvitePresented = true
         }
     }
 
