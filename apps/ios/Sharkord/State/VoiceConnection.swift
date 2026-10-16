@@ -50,6 +50,7 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
     private var screenProducer: Producer?
     private var screenTrack: RTCVideoTrack?
     private var rtpCapabilities = "{}"
+    private var sendVideoCodec: String?
     private var soundMuted = false
     private var outputVolume: Double
     private let audioOptions: AudioOptions
@@ -74,13 +75,18 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
         self.signal = signal
         self.onFailure = onFailure
         self.onVideo = onVideo
+        // the factories are passed either way: the plain init knows only h264 baseline, so the
+        // phone could not take vp8, vp9 or av1 from a browser
         self.factory = mixingDevice.map { mixer in
             RTCPeerConnectionFactory(
                 encoderFactory: RTCDefaultVideoEncoderFactory(),
                 decoderFactory: RTCDefaultVideoDecoderFactory(),
                 audioDevice: mixer
             )
-        } ?? RTCPeerConnectionFactory()
+        } ?? RTCPeerConnectionFactory(
+            encoderFactory: RTCDefaultVideoEncoderFactory(),
+            decoderFactory: RTCDefaultVideoDecoderFactory()
+        )
         self.device = Device(pcFactory: factory)
     }
 
@@ -88,6 +94,7 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
         try await onQueue {
             try self.device.load(with: routerRtpCapabilities)
             self.rtpCapabilities = try self.device.rtpCapabilities()
+            self.sendVideoCodec = Self.baselineH264(in: self.rtpCapabilities)
             self.soundMuted = soundMuted
         }
 
@@ -373,6 +380,30 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
         }
     }
 
+    // the phone sends h264 baseline: the hardware encodes it and chrome, safari and firefox all
+    // decode it. left to itself mediasoup takes the server's first codec, vp9, encoded in software
+    private static func baselineH264(in capabilities: String) -> String? {
+        guard
+            let object = try? JSONSerialization.jsonObject(with: Data(capabilities.utf8)) as? [String: Any],
+            let codecs = object["codecs"] as? [[String: Any]]
+        else {
+            return nil
+        }
+
+        let codec = codecs.first { codec in
+            let parameters = codec["parameters"] as? [String: Any]
+            let profile = parameters?["profile-level-id"] as? String
+
+            return (codec["mimeType"] as? String)?.lowercased() == "video/h264" && profile?.hasPrefix("42e0") == true
+        }
+
+        guard let codec, let data = try? JSONSerialization.data(withJSONObject: codec) else {
+            return nil
+        }
+
+        return String(decoding: data, as: UTF8.self)
+    }
+
     private func produceScreen() throws -> ScreenFrameSink {
         guard let sendTransport else {
             throw VoiceError(message: "Join a voice channel before sharing your screen.")
@@ -388,7 +419,7 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
             for: track,
             encodings: nil,
             codecOptions: nil,
-            codec: nil,
+            codec: sendVideoCodec,
             appData: "{\"kind\":\"screen\"}"
         )
 
@@ -418,7 +449,7 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
             for: track,
             encodings: nil,
             codecOptions: nil,
-            codec: nil,
+            codec: sendVideoCodec,
             appData: "{\"kind\":\"video\"}"
         )
 
@@ -483,6 +514,7 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
             }
 
             let own = self.producer.flatMap { Self.audioLevel(in: $0.stats, type: "media-source") }
+
 
             return (own, remote)
         }

@@ -111,6 +111,7 @@ final class SessionStore {
     private var pushToken: String?
     private var hasRequestedPush = false
     private var voice: VoiceConnection?
+    private var producerSubscriptions: (client: TRPCClient, ids: [Int])?
     @ObservationIgnored private let soundboardPlayer = SoundboardPlayer()
     private var screenCapture: ScreenCapture?
     // present when the call was joined with app audio on, see AppSettings.shareAppAudio
@@ -919,6 +920,8 @@ final class SessionStore {
                 canSpeak: canSpeak
             )
 
+            subscribeToProducers(client)
+
             // the only voice procedure that is a query, so it cannot go through the signal
             let producers: RemoteProducers = try await client.query("voice.getProducers")
 
@@ -1602,6 +1605,43 @@ final class SessionStore {
         try await client.mutation(kind.rawValue, input: ImageInput(fileId: fileId))
     }
 
+    // the server scopes these two to the voice channel the socket is in when it subscribes, so
+    // they are taken out after each join; subscribed at connect they would never send anything
+    private func subscribeToProducers(_ client: TRPCClient) {
+        let newProducerId = client.subscribe("voice.onNewProducer") { [weak self] (event: VoiceProducerEvent) in
+            guard
+                let self,
+                let kind = VoiceStreamKey.Kind(rawValue: event.kind),
+                event.channelId == self.currentVoiceChannelId,
+                event.remoteId != self.ownUserId
+            else {
+                return
+            }
+
+            let key = VoiceStreamKey(kind: kind, remoteId: event.remoteId)
+
+            guard self.wantsStream(key) else {
+                return
+            }
+
+            Task { await self.voice?.consume(key) }
+        }
+
+        let producerClosedId = client.subscribe("voice.onProducerClosed") { [weak self] (event: VoiceProducerEvent) in
+            guard
+                let self,
+                let kind = VoiceStreamKey.Kind(rawValue: event.kind),
+                event.channelId == self.currentVoiceChannelId
+            else {
+                return
+            }
+
+            self.voice?.closeConsumer(VoiceStreamKey(kind: kind, remoteId: event.remoteId))
+        }
+
+        producerSubscriptions = (client, [newProducerId, producerClosedId])
+    }
+
     private func stopVoice() {
         if let screenCapture {
             Task {
@@ -1611,6 +1651,13 @@ final class SessionStore {
 
         screenCapture = nil
         isSharingScreen = false
+
+        // the ids belong to the client that subscribed, a reconnected one numbers its own from one
+        if let producerSubscriptions {
+            producerSubscriptions.ids.forEach(producerSubscriptions.client.unsubscribe)
+        }
+
+        producerSubscriptions = nil
         voice?.close()
         voice = nil
         speakingTask?.cancel()
@@ -1968,37 +2015,6 @@ final class SessionStore {
             if isOwnLeave, !isInVoiceElsewhere {
                 self.voiceTakenOverChannelId = nil
             }
-        }
-
-        client.subscribe("voice.onNewProducer") { [weak self] (event: VoiceProducerEvent) in
-            guard
-                let self,
-                let kind = VoiceStreamKey.Kind(rawValue: event.kind),
-                event.channelId == self.currentVoiceChannelId,
-                event.remoteId != self.ownUserId
-            else {
-                return
-            }
-
-            let key = VoiceStreamKey(kind: kind, remoteId: event.remoteId)
-
-            guard self.wantsStream(key) else {
-                return
-            }
-
-            Task { await self.voice?.consume(key) }
-        }
-
-        client.subscribe("voice.onProducerClosed") { [weak self] (event: VoiceProducerEvent) in
-            guard
-                let self,
-                let kind = VoiceStreamKey.Kind(rawValue: event.kind),
-                event.channelId == self.currentVoiceChannelId
-            else {
-                return
-            }
-
-            self.voice?.closeConsumer(VoiceStreamKey(kind: kind, remoteId: event.remoteId))
         }
 
         client.subscribe("voice.onReaction") { [weak self] (event: VoiceReactionEvent) in
