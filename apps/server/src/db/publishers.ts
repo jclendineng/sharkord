@@ -6,6 +6,7 @@ import {
 } from '@sharkord/shared';
 import { count, eq } from 'drizzle-orm';
 import { db } from '.';
+import { enforceVoicePermissions } from '../helpers/enforce-voice-permissions';
 import { getCapabilityAccessRules } from '../helpers/plugin-capability-access';
 import { logger } from '../logger';
 import { pubsub } from '../utils/pubsub';
@@ -332,6 +333,8 @@ const publishChannelPermissions = async (affectedUserIds: number[]) => {
       updatedPermissions
     );
   }
+
+  await enforceVoicePermissions(affectedUserIds);
 };
 
 const publishChannelAccessChange = async (

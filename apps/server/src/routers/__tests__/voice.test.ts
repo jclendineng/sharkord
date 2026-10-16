@@ -7,7 +7,7 @@ import {
 } from '@sharkord/shared';
 import { describe, expect, test } from 'bun:test';
 import { and, eq } from 'drizzle-orm';
-import { initTest } from '../../__tests__/helpers';
+import { createFakeSocket, initTest } from '../../__tests__/helpers';
 import { tdb } from '../../__tests__/setup';
 import { config } from '../../config';
 import {
@@ -1059,5 +1059,169 @@ describe('voice producer subscriptions', () => {
     } finally {
       subscription.unsubscribe();
     }
+  });
+
+  // closing the mediasoup producers themselves needs a real transport, so these assert the
+  // voice state and its broadcast, which is what tells every client the stream is gone
+  describe('losing a stream permission mid call', () => {
+    const grantToDefaultRole = async (permissions: ChannelPermission[]) => {
+      const defaultRole = await tdb
+        .select({ id: roles.id })
+        .from(roles)
+        .where(eq(roles.isDefault, true))
+        .get();
+
+      await tdb.insert(channelRolePermissions).values(
+        permissions.map((permission) => ({
+          channelId: PRIVATE_VOICE_CHANNEL_ID,
+          roleId: defaultRole!.id,
+          permission,
+          allow: true,
+          createdAt: Date.now()
+        }))
+      );
+
+      return defaultRole!.id;
+    };
+
+    // the permission update only reaches online users, so the member holds a socket
+    const joinPrivateVoiceChannel = async () => {
+      const runtime = new VoiceRuntime(PRIVATE_VOICE_CHANNEL_ID);
+
+      runtime.addUser(2, { micMuted: false, soundMuted: false });
+
+      const { caller } = await initTest(
+        2,
+        { socket: createFakeSocket() },
+        { currentVoiceChannelId: PRIVATE_VOICE_CHANNEL_ID }
+      );
+
+      return { runtime, caller };
+    };
+
+    test('should turn off the webcam when its permission is taken away', async () => {
+      const roleId = await grantToDefaultRole([
+        ChannelPermission.VIEW_CHANNEL,
+        ChannelPermission.WEBCAM,
+        ChannelPermission.SHARE_SCREEN
+      ]);
+      const { caller: owner } = await initTest(1);
+      const { runtime, caller } = await joinPrivateVoiceChannel();
+
+      const updates: { userId: number; webcamEnabled: boolean }[] = [];
+
+      const subscription = pubsub
+        .subscribe(ServerEvents.USER_VOICE_STATE_UPDATE)
+        .subscribe({
+          next: ({ userId, state }) => {
+            updates.push({ userId, webcamEnabled: state.webcamEnabled });
+          }
+        });
+
+      try {
+        await caller.voice.updateState({
+          webcamEnabled: true,
+          sharingScreen: true
+        });
+
+        await owner.channels.updatePermissions({
+          channelId: PRIVATE_VOICE_CHANNEL_ID,
+          roleId,
+          permissions: [
+            ChannelPermission.VIEW_CHANNEL,
+            ChannelPermission.SHARE_SCREEN
+          ]
+        });
+
+        expect(runtime.getUserState(2)).toMatchObject({
+          webcamEnabled: false,
+          sharingScreen: true
+        });
+        expect(updates.at(-1)).toEqual({ userId: 2, webcamEnabled: false });
+      } finally {
+        subscription.unsubscribe();
+        await runtime.destroy();
+      }
+    });
+
+    test('should stop a screen share when its permission is taken away', async () => {
+      const roleId = await grantToDefaultRole([
+        ChannelPermission.VIEW_CHANNEL,
+        ChannelPermission.WEBCAM,
+        ChannelPermission.SHARE_SCREEN
+      ]);
+      const { caller: owner } = await initTest(1);
+      const { runtime, caller } = await joinPrivateVoiceChannel();
+
+      try {
+        await caller.voice.updateState({
+          webcamEnabled: true,
+          sharingScreen: true
+        });
+
+        await owner.channels.updatePermissions({
+          channelId: PRIVATE_VOICE_CHANNEL_ID,
+          roleId,
+          permissions: [
+            ChannelPermission.VIEW_CHANNEL,
+            ChannelPermission.WEBCAM
+          ]
+        });
+
+        expect(runtime.getUserState(2)).toMatchObject({
+          webcamEnabled: true,
+          sharingScreen: false
+        });
+      } finally {
+        await runtime.destroy();
+      }
+    });
+
+    test('should leave streams alone when a permission change keeps them allowed', async () => {
+      const roleId = await grantToDefaultRole([
+        ChannelPermission.VIEW_CHANNEL,
+        ChannelPermission.WEBCAM
+      ]);
+      const { caller: owner } = await initTest(1);
+      const { runtime, caller } = await joinPrivateVoiceChannel();
+
+      try {
+        await caller.voice.updateState({ webcamEnabled: true });
+
+        await owner.channels.updatePermissions({
+          channelId: PRIVATE_VOICE_CHANNEL_ID,
+          roleId,
+          permissions: [
+            ChannelPermission.VIEW_CHANNEL,
+            ChannelPermission.WEBCAM,
+            ChannelPermission.SEND_MESSAGES
+          ]
+        });
+
+        expect(runtime.getUserState(2).webcamEnabled).toBe(true);
+      } finally {
+        await runtime.destroy();
+      }
+    });
+
+    test('should turn off the webcam when its channel is made private', async () => {
+      const { caller: owner } = await initTest(1);
+      const { runtime, caller } = await joinVoiceChannelTwo(2);
+
+      try {
+        await caller.voice.updateState({ webcamEnabled: true });
+
+        expect(runtime.getUserState(2).webcamEnabled).toBe(true);
+
+        await owner.channels.update({
+          channelId: VOICE_CHANNEL_ID,
+          private: true
+        });
+
+        expect(runtime.getUserState(2).webcamEnabled).toBe(false);
+      } finally {
+        await runtime.destroy();
+      }
+    });
   });
 });

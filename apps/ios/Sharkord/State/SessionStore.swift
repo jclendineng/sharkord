@@ -1666,6 +1666,32 @@ final class SessionStore {
         }
     }
 
+    // the server turns the camera or screen share off when its permission is taken away mid call.
+    // only a change from on to off on the server counts, the user's own toggles are already applied
+    private func followServerStreamChanges(_ event: VoiceJoinEvent) {
+        guard
+            event.userId == ownUserId,
+            event.channelId == currentVoiceChannelId,
+            let previous = voiceUsers[event.channelId]?[event.userId]
+        else {
+            return
+        }
+
+        if previous.webcamEnabled, !event.state.webcamEnabled, cameraEnabled, let voice, let ownUserId {
+            cameraEnabled = false
+
+            Task {
+                await voice.stopCamera(ownUserId: ownUserId)
+            }
+        }
+
+        if previous.sharingScreen, !event.state.sharingScreen, isSharingScreen {
+            Task {
+                await stopScreenShare()
+            }
+        }
+    }
+
     private func setVoiceUser(_ userId: Int, in channelId: Int, state: VoiceUserState?) {
         var users = voiceUsers[channelId] ?? [:]
 
@@ -1854,6 +1880,7 @@ final class SessionStore {
         }
 
         client.subscribe("voice.onUpdateState") { [weak self] (event: VoiceJoinEvent) in
+            self?.followServerStreamChanges(event)
             self?.setVoiceUser(event.userId, in: event.channelId, state: event.state)
         }
 

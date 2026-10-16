@@ -878,6 +878,23 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     setScreenShareProducer
   ]);
 
+  // the server turns the webcam or screen share off when its permission is taken away mid call
+  useEffect(() => {
+    if (!ownVoiceState.webcamEnabled && localVideoStream) {
+      stopWebcamStream();
+    }
+  }, [ownVoiceState.webcamEnabled, localVideoStream, stopWebcamStream]);
+
+  useEffect(() => {
+    if (!ownVoiceState.sharingScreen && localScreenShareStream) {
+      stopScreenShareStream();
+    }
+  }, [
+    ownVoiceState.sharingScreen,
+    localScreenShareStream,
+    stopScreenShareStream
+  ]);
+
   const startScreenShareStream = useCallback(async () => {
     try {
       voiceLogger.info('screen: starting');

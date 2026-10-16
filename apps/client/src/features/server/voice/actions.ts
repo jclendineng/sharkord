@@ -52,6 +52,35 @@ const syncOwnServerMute = (
   updateOwnVoiceState({ serverMuted: false });
 };
 
+// only a change the server made counts: the user's own toggle already updated their state
+const syncOwnStreamsTurnedOff = (
+  userId: number,
+  previousState: TVoiceUserState | undefined,
+  newState: Partial<TVoiceUserState>
+): void => {
+  const state = store.getState();
+  const ownUserId = ownUserIdSelector(state);
+  const ownVoiceState = ownVoiceStateSelector(state);
+
+  if (userId !== ownUserId) return;
+
+  if (
+    newState.webcamEnabled === false &&
+    previousState?.webcamEnabled &&
+    ownVoiceState.webcamEnabled
+  ) {
+    updateOwnVoiceState({ webcamEnabled: false });
+  }
+
+  if (
+    newState.sharingScreen === false &&
+    previousState?.sharingScreen &&
+    ownVoiceState.sharingScreen
+  ) {
+    updateOwnVoiceState({ sharingScreen: false });
+  }
+};
+
 export const addUserToVoiceChannel = (
   userId: number,
   channelId: number,
@@ -181,10 +210,9 @@ export const updateVoiceUserState = (
   const state = store.getState();
   const ownUserId = ownUserIdSelector(state);
   const currentChannelId = currentVoiceChannelIdSelector(state);
+  const currentUserState = state.server.voiceMap[channelId]?.users[userId];
 
   if (userId !== ownUserId && channelId === currentChannelId) {
-    const currentUserState = state.server.voiceMap[channelId]?.users[userId];
-
     if (newState.sharingScreen === true && !currentUserState?.sharingScreen) {
       playSound(SoundType.REMOTE_USER_STARTED_SCREENSHARE);
     } else if (
@@ -201,6 +229,7 @@ export const updateVoiceUserState = (
 
   if (channelId === currentChannelId) {
     syncOwnServerMute(userId, newState);
+    syncOwnStreamsTurnedOff(userId, currentUserState, newState);
   }
 };
 
