@@ -1,3 +1,4 @@
+export * from './avatar-colors';
 export * from './command-parser';
 export * from './extract-palette';
 export * from './extract-urls';

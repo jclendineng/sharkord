@@ -4,9 +4,9 @@ import { getInitialsFromName } from '@/helpers/get-initials-from-name';
 import { getRenderedUsername } from '@/helpers/get-rendered-username';
 import { cn } from '@/lib/utils';
 import { AvatarImage } from '@radix-ui/react-avatar';
-import { UserStatus } from '@sharkord/shared';
+import { getAvatarGradient, UserStatus } from '@sharkord/shared';
 import { Avatar, AvatarFallback } from '@sharkord/ui';
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { UserPopover } from '../user-popover';
 import { UserStatusBadge } from '../user-status';
 
@@ -27,6 +27,13 @@ const UserAvatar = memo(
     onClick
   }: TUserAvatarProps) => {
     const user = useUserById(userId);
+    const profileColor = user?.profileColor;
+
+    const fallbackStyle = useMemo(() => {
+      const { from, to } = getAvatarGradient(userId ?? 0, profileColor);
+
+      return { backgroundImage: `linear-gradient(135deg, ${from}, ${to})` };
+    }, [userId, profileColor]);
 
     if (!user) return null;
 
@@ -34,7 +41,10 @@ const UserAvatar = memo(
       <div className="relative size-fit" onClick={onClick}>
         <Avatar className={cn('size-8 bg-muted', className)}>
           <AvatarImage src={getFileUrl(user.avatar)} key={user.avatarId} />
-          <AvatarFallback className="bg-muted text-xs">
+          <AvatarFallback
+            className="text-xs font-semibold text-white"
+            style={fallbackStyle}
+          >
             {getInitialsFromName(getRenderedUsername(user))}
           </AvatarFallback>
         </Avatar>
