@@ -58,6 +58,8 @@
   "cpuEncoder": "CPU ({{encoder}})",
   "unknownEncoder": "Неизвестный ({{encoder}})",
   "membersHeader": "Участники — {{count}}",
+  "membersEveryone": "Показать всех",
+  "membersThisChannel": "Только этот канал",
   "openDirectMessages": "Открыть личные сообщения",
   "closeDirectMessages": "Закрыть личные сообщения",
   "openChat": "Открыть текстовый чат",

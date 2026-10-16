@@ -5,10 +5,20 @@ import SwiftUI
 struct MembersColumn: View {
     static let width: CGFloat = 240
 
+    let channelId: Int
+
     @Environment(SessionStore.self) private var session
 
+    // who can see a private channel, nil for a public one, which everyone can
+    @State private var channelMemberIds: Set<Int>?
+
+    private var isPrivateChannel: Bool {
+        session.channel(channelId)?.private == true
+    }
+
     private var sections: [(title: String, users: [PublicUser])] {
-        let sorted = session.members.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        let visible = session.members.filter { channelMemberIds?.contains($0.id) ?? true }
+        let sorted = visible.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
         let online = sorted.filter { $0.status != .offline }
         let offline = sorted.filter { $0.status == .offline }
 
@@ -35,6 +45,9 @@ struct MembersColumn: View {
             .padding(.bottom, 12)
         }
         .scrollIndicators(.hidden)
+        .task(id: channelId) {
+            await loadChannelMembers()
+        }
         .frame(width: Self.width)
         .background(Theme.chatBackground)
         .overlay(alignment: .leading) {
@@ -42,6 +55,20 @@ struct MembersColumn: View {
                 .fill(Theme.panelEdge)
                 .frame(width: 1)
         }
+    }
+}
+
+extension MembersColumn {
+    // the full list stays up if this fails, which is what the column showed before
+    private func loadChannelMembers() async {
+        guard isPrivateChannel else {
+            channelMemberIds = nil
+            return
+        }
+
+        let ids: [Int]? = try? await session.request("channels.getMembers", ["channelId": channelId])
+
+        channelMemberIds = ids.map(Set.init)
     }
 }
 

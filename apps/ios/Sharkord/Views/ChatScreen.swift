@@ -79,7 +79,7 @@ struct ChatScreen: View {
             conversation
 
             if canShowMembers && showsMemberList {
-                MembersColumn()
+                MembersColumn(channelId: channelId)
                     .transition(.opacity)
             }
         }

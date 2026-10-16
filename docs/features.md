@@ -313,6 +313,9 @@ published in `/info` so a report can be sent without an account. Setting `report
   through `voice.closeConsumer`, so they stop using the connection. Turning it back on consumes
   what is running then ([#123](https://github.com/Sharkord/sharkord/issues/123),
   [#657](https://github.com/Sharkord/sharkord/issues/657)).
+- **Member list per channel**: in a private channel the member list shows who can see it,
+  from `channels.getMembers`, and a header switch shows everyone again. Public channels are
+  open to all, so their list is unchanged ([#458](https://github.com/Sharkord/sharkord/issues/458)).
 - **Unique names**: renaming to a name another member already uses, ignoring case, is
   refused. Names two people already shared before the upgrade stay, and a name from an SSO
   provider that is taken becomes a generated one

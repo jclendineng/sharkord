@@ -130,6 +130,9 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   cameras and screen shares stop reaching you at all, to save a weak connection
   ([#123](https://github.com/Sharkord/sharkord/issues/123),
   [#657](https://github.com/Sharkord/sharkord/issues/657)).
+- In a private channel the member list shows only who can see it, with a switch back to
+  everyone, on the web and in the Mac app's member column
+  ([#458](https://github.com/Sharkord/sharkord/issues/458)).
 - Mute Stream Audio in Devices settings: screen shares with sound start muted
   ([#749](https://github.com/Sharkord/sharkord/issues/749)).
 

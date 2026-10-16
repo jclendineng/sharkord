@@ -58,6 +58,8 @@
   "cpuEncoder": "CPU ({{encoder}})",
   "unknownEncoder": "Neznámý ({{encoder}})",
   "membersHeader": "Členové — {{count}}",
+  "membersEveryone": "Zobrazit všechny",
+  "membersThisChannel": "Jen tento kanál",
   "openDirectMessages": "Otevřít přímé zprávy",
   "closeDirectMessages": "Zavřít přímé zprávy",
   "openChat": "Otevřít textový chat",

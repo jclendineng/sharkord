@@ -58,6 +58,8 @@
   "cpuEncoder": "CPU ({{encoder}})",
   "unknownEncoder": "Desconocido ({{encoder}})",
   "membersHeader": "Miembros — {{count}}",
+  "membersEveryone": "Mostrar a todos",
+  "membersThisChannel": "Solo este canal",
   "openDirectMessages": "Abrir mensajes directos",
   "closeDirectMessages": "Cerrar mensajes directos",
   "openChat": "Abrir chat de texto",
