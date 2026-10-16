@@ -194,6 +194,13 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 ### Changed
 
+- In the app on a phone, joining a voice channel, or Open Call, grows the voice sheet into the
+  call in one motion, starting at the tap, as Discord's does. Before, a second screen slid up
+  over the sheet after the join. A swipe down puts the call away and it goes on.
+- On a Mac, whatever can be picked lights up under the pointer: search results, tabs, cards
+  and filters, direct messages, the emoji, GIF and sticker panel, reactions, poll options,
+  soundboard sounds, the rows of every sheet and list, and the user bar. Server icons square off
+  with a short pill, as Discord's do.
 - Pinning in direct messages has its own permission, Pin Messages in Direct Messages. Roles
   that could pin keep it in direct messages
   ([#481](https://github.com/Sharkord/sharkord/issues/481)).
@@ -209,6 +216,16 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 ### Fixed
 
+- In the app, a call is heard both ways: whoever joined after the app, or started talking or
+  sharing a camera after it joined, was never heard or seen, since the app listened for new
+  streams before it was in the call.
+- In the app, cameras and screen shares from a browser show. The app could only take H264
+  baseline, and browsers send VP8 or VP9. The phone keeps sending H264, which its hardware
+  encodes and every browser plays.
+- On a Mac, a server's menu opened while the search card was out no longer hides under it:
+  opening either one closes the other.
+- On a Mac, a lit row in a server's menu, Log Out's red one too, sits whole inside the menu
+  rather than cut off by its corners.
 - On a Mac, the server search above the channel list is a card drawn over the window, like
   the chat's, rather than a popover, so a right click on a member in it opens their menu.
   Members in search light up under the pointer.

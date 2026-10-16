@@ -52,6 +52,26 @@ panel over the conversation, a drag down slides the composer and panel together 
 offset, so nothing is laid out again under the finger. `AnimatedImage` plays GIFs, APNGs and
 animated WebPs, decoding frames off the main thread at the size they are shown.
 
+## Voice and video
+
+The server scopes `voice.onNewProducer` and `voice.onProducerClosed` to the voice channel a
+socket is in at the moment it subscribes, so the app subscribes to both after each join and
+stops them on leave (`subscribeToProducers`). Subscribed at connect they never sent anything,
+and whoever spoke or turned a camera on after the app joined was never heard or seen.
+
+The WebRTC factory always gets the default video encoder and decoder factories: the plain one
+knows only H264 baseline, which left the phone unable to take a browser's VP8 or VP9. The phone
+sends H264 baseline on purpose (`baselineH264`), the hardware encodes it and every browser
+decodes it, where mediasoup's own pick would be the server's first codec, VP9, in software.
+
+On a phone, joining or Open Call grows the voice sheet itself into the call, as Discord's does,
+rather than covering it with a second screen. A sheet height picked through SwiftUI is jumped to,
+so the call's detent is added first and then selected through the sheet's own
+`UISheetPresentationController` in `animateChanges`, found by the name SwiftUI gives it
+(`Custom:CallDetent`). The contents only learn the final height, so the call fades in on a timer
+over the join box. The rise starts at the tap and the join runs under it; a failed join drops
+the sheet back. A Mac and an iPad keep the full screen call.
+
 ## Screen sharing
 
 `ScreenCapture` uses ScreenCaptureKit, which iOS 27 brought to the phone. The share button
@@ -74,6 +94,13 @@ menus themselves are the long press sheets drawn compact (`isPointerMenu`) in on
 window (`PointerMenuLayer`), not system popovers: a popover's backdrop swallowed the next right
 click and was slow to close. That layer also draws the submenus beside a menu and the hover
 tooltips.
+
+Whatever can be picked lights up under the pointer, so it is clear what a click will do. Rows use
+`hoverHighlight()`, tiles and cards with a background of their own `hoverBrighten()`
+(`Helpers/HoverHighlight.swift`), and a `List` `listHoverHighlight()`, which tints the cell
+under the pointer through the list's collection view. The server rail squares an icon off and
+shows a short pill instead, as Discord's does. A server menu and the search card close each
+other, since they are drawn in separate layers.
 
 ## Sessions
 
