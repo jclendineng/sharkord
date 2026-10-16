@@ -151,6 +151,9 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 ### Fixed
 
+- The web client joins its call again after a dropped connection comes back, instead of
+  showing a call the server had already ended, as the app already did
+  ([#849](https://github.com/Sharkord/sharkord/issues/849)).
 - Voice works in Firefox when `announcedAddress` is a hostname. The server sends the
   addresses it resolves the name to beside the hostname, which Firefox ignores
   ([#756](https://github.com/Sharkord/sharkord/issues/756)).

@@ -29,6 +29,7 @@ import {
   currentVoiceChannelIdSelector,
   selectedChannelIdSelector
 } from '../channels/selectors';
+import { ownVoiceUserSelector } from '../selectors';
 import { serverSliceActions } from '../slice';
 import { SoundType } from '../types';
 import { ownUserIdSelector } from '../users/selectors';
@@ -369,6 +370,24 @@ export const leaveVoice = async (options?: {
     });
     toast.error(getTrpcError(error, i18n.t('common:failedLeaveVoiceChannel')));
   }
+};
+
+// the server ends the call of a socket that closes, so a connection that dropped mid call comes
+// back with the call gone while this client still shows it. the stale session is released and
+// the call joined again, the way a move is
+export const rejoinVoiceAfterReconnect = (): void => {
+  const state = store.getState();
+  const currentVoiceChannelId = currentVoiceChannelIdSelector(state);
+  const ownVoiceUser = ownVoiceUserSelector(state);
+
+  if (currentVoiceChannelId === undefined || ownVoiceUser) return;
+
+  voiceLogger.info('session: call ended by the reconnect, joining again', {
+    channelId: currentVoiceChannelId
+  });
+
+  clearLocalVoiceSession();
+  setVoiceMoveTargetChannelId(currentVoiceChannelId);
 };
 
 export const setVoiceMoveTargetChannelId = (

@@ -30,6 +30,7 @@ import {
 import { connectedSelector, infoSelector } from './selectors';
 import { serverSliceActions } from './slice';
 import { SoundType, type TDisconnectInfo } from './types';
+import { rejoinVoiceAfterReconnect } from './voice/actions';
 
 let unsubscribeFromServer: (() => void) | null = null;
 
@@ -215,6 +216,7 @@ export const reconnectToServer = (info: TDisconnectInfo) => {
       // so reconnecting stays true until setInitialData clears it
       await connect();
       cancelReconnect();
+      rejoinVoiceAfterReconnect();
 
       pushVoiceDebugEvent('ws', 'reconnected', {
         voiceChannelId: currentVoiceChannelIdSelector(store.getState())
