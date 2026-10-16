@@ -28,6 +28,7 @@ import {
   webRtcServerListenInfo
 } from '../utils/mediasoup';
 import { pubsub } from '../utils/pubsub';
+import { resolveIceCandidates } from '../utils/resolve-ice-candidates';
 
 const voiceRuntimes = new Map<number, VoiceRuntime>();
 
@@ -577,7 +578,7 @@ class VoiceRuntime {
     const params: TTransportParams = {
       id: transport.id,
       iceParameters: transport.iceParameters,
-      iceCandidates: transport.iceCandidates,
+      iceCandidates: await resolveIceCandidates(transport.iceCandidates),
       dtlsParameters: transport.dtlsParameters
     };
 
