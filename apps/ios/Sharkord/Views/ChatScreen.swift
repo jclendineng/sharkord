@@ -6,6 +6,7 @@ struct ChatScreen: View {
     @Environment(SessionStore.self) private var session
     @Environment(ServerListStore.self) private var servers
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.showChannelList) private var showChannelList
     // set only while the channel list sits beside the chat, see HomeView
     @Environment(\.expandChat) private var expandChat
@@ -202,9 +203,8 @@ struct ChatScreen: View {
                         .hoverPop()
                 }
                 .accessibilityLabel("Pinned Messages")
-                // pins hang off the button on an ipad, a phone gets a sheet and a mac the
-                // dropdown. handed the stores by hand: a popover from the toolbar does not
-                // inherit them
+                // pins hang off the button on an ipad, a phone and a mac get the dropdown.
+                // handed the stores by hand: a popover from the toolbar does not inherit them
                 .popover(isPresented: $isPinsPresented) {
                     PinnedMessagesSheet(channelId: channelId)
                         .frame(idealWidth: 420, idealHeight: 560)
@@ -331,7 +331,7 @@ struct ChatScreen: View {
     private func showPins() {
         dismissKeyboard()
 
-        if ProcessInfo.processInfo.isiOSAppOnMac {
+        if ProcessInfo.processInfo.isiOSAppOnMac || horizontalSizeClass == .compact {
             toggleDropdown(.pins)
         } else {
             isPinsPresented = true
@@ -376,7 +376,7 @@ private enum ChatDropdown {
     case inbox
 }
 
-// the mac's pins or search below the top bar, as tall as the window allows
+// pins, search, threads or the inbox below the top bar, as tall as the window allows
 private struct ChatDropdownPanel: View {
     let dropdown: ChatDropdown
     let channelId: Int
@@ -407,8 +407,9 @@ private struct ChatDropdownPanel: View {
     }
 
     private func panel(width: CGFloat, maxHeight: CGFloat, @ViewBuilder content: () -> some View) -> some View {
+        // as wide as a phone allows, less the margins
         content()
-            .frame(width: width)
+            .frame(maxWidth: width)
             .frame(maxHeight: maxHeight)
             .background(Theme.deepBackground)
             .clipShape(.rect(cornerRadius: 12, style: .continuous))
@@ -418,7 +419,7 @@ private struct ChatDropdownPanel: View {
             }
             .shadow(color: .black.opacity(0.4), radius: 20, y: 8)
             .padding(.top, 8)
-            .padding(.trailing, 12)
+            .padding(.horizontal, 12)
             .padding(.bottom, 12)
     }
 }

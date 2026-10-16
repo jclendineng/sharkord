@@ -3,7 +3,7 @@ import SwiftUI
 // the pin button in a channel's top bar, like the web's pinned messages popover
 struct PinnedMessagesSheet: View {
     let channelId: Int
-    // set when it is the mac's dropdown rather than a presentation, which dismiss would not close
+    // set when it is the dropdown under the top bar rather than a presentation, which dismiss would not close
     var onClose: (() -> Void)?
 
     @Environment(SessionStore.self) private var session
@@ -25,8 +25,7 @@ struct PinnedMessagesSheet: View {
     @ViewBuilder
     private var content: some View {
         if onClose != nil {
-            // the mac's dropdown names itself: a navigation title there goes up into the
-            // window's top bar
+            // the dropdown names itself: a navigation title there goes up into the top bar
             VStack(spacing: 0) {
                 Text("Pinned Messages")
                     .font(.headline)
