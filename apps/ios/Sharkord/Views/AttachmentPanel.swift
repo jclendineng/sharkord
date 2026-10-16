@@ -120,7 +120,7 @@ struct AttachmentPanel: View {
     }
 
     private func openSettings() {
-        if let url = URL(string: UIApplication.openSettingsURLString) {
+        if let url = SystemSettings.url(for: .photos) {
             openURL(url)
         }
     }
@@ -482,13 +482,13 @@ private struct NoAccessView: View {
                 .font(.system(size: 40))
                 .foregroundStyle(Theme.muted)
 
-            Text("Sharkord can't see your photos. Allow access in Settings, or pick one with Photos below.")
+            Text("Sharkord can't see your photos. Allow access in \(SystemSettings.name), or pick one with Photos below.")
                 .font(.subheadline)
                 .foregroundStyle(Theme.muted)
                 .multilineTextAlignment(.center)
 
             Button(action: openSettings) {
-                Label("Open Settings", systemImage: "gearshape.fill")
+                Label("Open \(SystemSettings.name)", systemImage: "gearshape.fill")
                     .font(.headline)
                     .foregroundStyle(.white)
                     .padding(.horizontal, 22)
@@ -501,7 +501,7 @@ private struct NoAccessView: View {
     }
 
     private func openSettings() {
-        if let url = URL(string: UIApplication.openSettingsURLString) {
+        if let url = SystemSettings.url(for: .photos) {
             openURL(url)
         }
     }

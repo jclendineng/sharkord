@@ -45,9 +45,9 @@ struct QRScannerSheet: View {
             ContentUnavailableView {
                 Label("Can't use the camera", systemImage: "camera.fill")
             } description: {
-                Text("Allow Sharkord to use the camera in Settings, or point the Camera app at the code instead.")
+                Text("Allow Sharkord to use the camera in \(SystemSettings.name), or point the Camera app at the code instead.")
             } actions: {
-                Button("Open Settings", action: openSettings)
+                Button("Open \(SystemSettings.name)", action: openSettings)
                     .buttonStyle(.borderedProminent)
             }
         }
@@ -65,7 +65,7 @@ struct QRScannerSheet: View {
     }
 
     private func openSettings() {
-        if let url = URL(string: UIApplication.openSettingsURLString) {
+        if let url = SystemSettings.url(for: .camera) {
             openURL(url)
         }
     }

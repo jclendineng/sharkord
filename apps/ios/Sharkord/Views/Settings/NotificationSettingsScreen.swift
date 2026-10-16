@@ -33,9 +33,11 @@ struct NotificationSettingsScreen: View {
                         .foregroundStyle(Theme.muted)
                 }
 
-                Button("Open iOS Settings", action: openSettings)
+                Button("Open \(SystemSettings.name)", action: openSettings)
             } footer: {
-                Text("Sounds, banners and the lock screen are set in iOS Settings.")
+                Text(ProcessInfo.processInfo.isiOSAppOnMac
+                    ? "Sounds, banners and alerts are set in System Settings, under Notifications."
+                    : "Sounds, banners and the lock screen are set in Settings.")
             }
 
             Section {
@@ -57,7 +59,7 @@ struct NotificationSettingsScreen: View {
     }
 
     private func openSettings() {
-        if let url = URL(string: UIApplication.openNotificationSettingsURLString) {
+        if let url = SystemSettings.url(for: .notifications) {
             openURL(url)
         }
     }
