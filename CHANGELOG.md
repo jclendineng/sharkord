@@ -50,6 +50,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 ### Added
 
+- `messages.getThreads`: a channel's threads, the one replied to last first, for the apps'
+  threads list.
 #### iOS app
 
 - A native iOS and iPad app, signing in to any server by its address, with push
@@ -194,6 +196,13 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 ### Changed
 
+- On a Mac: the user bar has mute, deafen and settings, user settings fill the window with a
+  search, the message box has GIF, sticker and emoji buttons (the emoji's face changes and
+  colours in under the pointer), buttons bounce a little under the pointer, a channel's threads
+  list from the top bar, the inbox sits in the top bar, back and forward through channels
+  (⌘[ and ⌘]), the member list groups people under their role, Voice & Video has push to talk
+  and an input volume where the mic allows it, and clicking the message box no longer pushes the
+  channel list aside.
 - On a Mac the app is laid out like Discord's: the server's menu drops down under its name,
   server settings fill the window with their pages down the side, a thread opens in a panel
   beside the chat, the plus by the message box opens a short menu, the emoji picker keeps to
