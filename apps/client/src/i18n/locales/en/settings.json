@@ -563,6 +563,8 @@
   "soundLibraryDesc": "Free sounds that come with the server, from Kenney (kenney.nl). Pick the ones this server should have.",
   "soundboardVolumeLabel": "Soundboard Volume",
   "soundboardVolumeDesc": "How loud sounds from the soundboard play for you.",
+  "muteStreamAudioLabel": "Mute Stream Audio",
+  "muteStreamAudioDesc": "Screen shares with sound start muted for you. Unmute one from its volume control.",
   "freesoundApiKeyLabel": "Freesound API Key",
   "freesoundApiKeyDesc": "Turns on searching Freesound for soundboard sounds. Get a free key at freesound.org/apiv2/apply, it's the client secret. Searches go through this server, so the key stays private.",
   "freesoundApiKeyPlaceholder": "Paste a key to turn on sound search",

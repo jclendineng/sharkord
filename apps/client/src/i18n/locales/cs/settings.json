@@ -561,6 +561,8 @@
   "soundLibraryDesc": "Volné zvuky dodávané se serverem od Kenneyho (kenney.nl). Vyberte, které má tento server mít.",
   "soundboardVolumeLabel": "Hlasitost zvukové desky",
   "soundboardVolumeDesc": "Jak hlasitě se vám přehrávají zvuky ze zvukové desky.",
+  "muteStreamAudioLabel": "Ztlumit zvuk streamů",
+  "muteStreamAudioDesc": "Sdílení obrazovky se zvukem začne pro tebe ztlumené. Zvuk zapneš v jeho ovládání hlasitosti.",
   "freesoundApiKeyLabel": "API klíč Freesound",
   "freesoundApiKeyDesc": "Zapne hledání zvuků pro zvukovou desku na Freesound. Klíč zdarma získáte na freesound.org/apiv2/apply. Hledání probíhá přes tento server, takže klíč zůstane soukromý.",
   "freesoundApiKeyPlaceholder": "Vložte klíč pro zapnutí hledání zvuků",

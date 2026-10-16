@@ -563,6 +563,8 @@
   "soundLibraryDesc": "Sons gratuitos que vêm com o servidor, do Kenney (kenney.nl). Escolha os que este servidor deve ter.",
   "soundboardVolumeLabel": "Volume da mesa de sons",
   "soundboardVolumeDesc": "O volume em que os sons da mesa de sons tocam para você.",
+  "muteStreamAudioLabel": "Silenciar áudio de transmissões",
+  "muteStreamAudioDesc": "Compartilhamentos de tela com som começam silenciados para você. Ative o som de um pelo controle de volume.",
   "freesoundApiKeyLabel": "Chave de API do Freesound",
   "freesoundApiKeyDesc": "Ativa a busca de sons do Freesound para a mesa de sons. Consiga uma chave grátis em freesound.org/apiv2/apply. As buscas passam por este servidor, então a chave continua privada.",
   "freesoundApiKeyPlaceholder": "Cole uma chave para ativar a busca de sons",

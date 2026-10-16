@@ -47,7 +47,8 @@ const getDefaultDeviceSettings = (): TDeviceSettings => ({
   screenCodec: VideoCodec.AUTO,
   screenBitrate: DEFAULT_BITRATE,
   screenCursor: ScreenCursor.ALWAYS,
-  soundboardVolume: SOUND_MAX_VOLUME
+  soundboardVolume: SOUND_MAX_VOLUME,
+  muteStreamAudio: false
 });
 
 const resolveDeviceId = (

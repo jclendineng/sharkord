@@ -98,6 +98,10 @@ const Devices = memo(() => {
     ([value]: number[]) => onChange('soundboardVolume', value),
     [onChange]
   );
+  const onMuteStreamAudioChange = useCallback(
+    (checked: boolean) => onChange('muteStreamAudio', checked),
+    [onChange]
+  );
   const noiseGateWorkletAvailability = useSyncExternalStore(
     subscribeNoiseGateWorkletAvailability,
     getNoiseGateWorkletAvailabilitySnapshot,
@@ -329,6 +333,16 @@ const Devices = memo(() => {
                 {values.soundboardVolume ?? SOUND_MAX_VOLUME}%
               </span>
             }
+          />
+        </Group>
+
+        <Group
+          label={t('muteStreamAudioLabel')}
+          description={t('muteStreamAudioDesc')}
+        >
+          <Switch
+            checked={!!values.muteStreamAudio}
+            onCheckedChange={onMuteStreamAudioChange}
           />
         </Group>
         {hotkeysEnabled && (

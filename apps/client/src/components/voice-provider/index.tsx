@@ -78,6 +78,7 @@ import { useVoiceEvents } from './hooks/use-voice-events';
 import { useVoiceHotkeys } from './hooks/use-voice-hotkeys';
 import { SIMULCAST_WEBCAM_MAX_BITRATE } from './statics';
 import { VoiceStatsContext } from './stats-context';
+import { StreamAudioMuter } from './stream-audio-muter';
 import { VolumeControlProvider } from './volume-control-context';
 
 type AudioVideoRefs = {
@@ -1445,6 +1446,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     <VoiceProviderContext.Provider value={contextValue}>
       <VoiceStatsContext.Provider value={statsContextValue}>
         <VolumeControlProvider>
+          <StreamAudioMuter remoteUserStreams={remoteUserStreams} />
           <div className="relative">
             <FloatingPinnedCard
               remoteUserStreams={remoteUserStreams}

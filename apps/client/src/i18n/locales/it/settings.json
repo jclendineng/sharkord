@@ -561,6 +561,8 @@
   "soundLibraryDesc": "Suoni gratuiti inclusi nel server, di Kenney (kenney.nl). Scegli quelli che questo server deve avere.",
   "soundboardVolumeLabel": "Volume della soundboard",
   "soundboardVolumeDesc": "Quanto forte senti i suoni della soundboard.",
+  "muteStreamAudioLabel": "Silenzia audio delle dirette",
+  "muteStreamAudioDesc": "Le condivisioni dello schermo con audio partono silenziate per te. Riattivane una dal suo controllo del volume.",
   "freesoundApiKeyLabel": "Chiave API di Freesound",
   "freesoundApiKeyDesc": "Attiva la ricerca di suoni Freesound per la soundboard. Ottieni una chiave gratuita su freesound.org/apiv2/apply. Le ricerche passano da questo server, quindi la chiave resta privata.",
   "freesoundApiKeyPlaceholder": "Incolla una chiave per attivare la ricerca di suoni",

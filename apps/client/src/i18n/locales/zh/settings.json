@@ -561,6 +561,8 @@
   "soundLibraryDesc": "服务器自带的免费声音，来自 Kenney (kenney.nl)。选择此服务器要使用的声音。",
   "soundboardVolumeLabel": "音效板音量",
   "soundboardVolumeDesc": "音效板声音为你播放的音量。",
+  "muteStreamAudioLabel": "静音直播音频",
+  "muteStreamAudioDesc": "带声音的屏幕共享对你默认静音。可在其音量控制中取消静音。",
   "freesoundApiKeyLabel": "Freesound API 密钥",
   "freesoundApiKeyDesc": "开启在 Freesound 上搜索音效板声音。在 freesound.org/apiv2/apply 免费获取密钥。搜索经由此服务器进行，因此密钥保持私密。",
   "freesoundApiKeyPlaceholder": "粘贴密钥以开启声音搜索",

@@ -82,6 +82,7 @@ export type TDeviceSettings = {
   screenCursor: ScreenCursor;
   // a percentage, see SOUND_MAX_VOLUME
   soundboardVolume: number;
+  muteStreamAudio: boolean;
 };
 
 export type TRemoteUserStreamKinds =
