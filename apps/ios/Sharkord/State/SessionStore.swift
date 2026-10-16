@@ -833,6 +833,14 @@ final class SessionStore {
     }
 
     func joinVoice(_ channelId: Int) async {
+        #if DEBUG
+        // the playground has no server, joining only has to look done for the sheet's motion
+        if DebugLaunch.opensVoicePlayground {
+            currentVoiceChannelId = channelId
+            return
+        }
+        #endif
+
         guard let client, !isJoiningVoice, currentVoiceChannelId != channelId else {
             return
         }

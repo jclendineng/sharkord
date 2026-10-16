@@ -3,7 +3,7 @@ import SwiftUI
 
 // discord's voice channel sheet: who is in the channel, a mute toggle to join muted, and the
 // join button, with the voice settings under them once the sheet is pulled up. joining goes
-// straight on to the call screen
+// straight on to the call: on a phone the sheet itself grows into it, as discord's does
 struct VoiceChannelSheet: View {
     let channel: Channel
 
@@ -14,6 +14,14 @@ struct VoiceChannelSheet: View {
 
     @State private var isRoomPresented = false
     @State private var isSettingsPresented = false
+    @State private var isCallShown = false
+    @State private var hasCallArrived = false
+    // how far the call has faded in over the join box. the sheet's height cannot drive it: while
+    // the system raises the sheet its contents only learn the final height
+    @State private var callFade = 0.0
+    @State private var callStartsOpen = false
+    @State private var detent = GrowingSheet.resting
+    @State private var sheetController = SheetControllerBox()
 
     private var participants: [(user: PublicUser?, state: VoiceUserState)] {
         session.voiceParticipants(in: channel.id)
@@ -40,10 +48,13 @@ struct VoiceChannelSheet: View {
             }
         }
         .background(Theme.listBackground)
-        .modifier(VoiceSheetDetents(growsIntoSettings: growsIntoSettings))
+        .modifier(VoiceSheetDetents(growsIntoSettings: growsIntoSettings, isCallShown: isCallShown, hasCallArrived: hasCallArrived, detent: $detent))
         // the join box carries the grip there, as discord's does
         .presentationDragIndicator(growsIntoSettings ? .hidden : .visible)
         .presentationBackground(Theme.listBackground)
+        .background {
+            SheetControllerReader(box: sheetController)
+        }
         // handed over by hand: on a mac a sheet's background is worked out before it inherits
         // anything, so a sheet reading a store it was not given crashed on opening
         .sheet(isPresented: $isSettingsPresented) {
@@ -59,6 +70,12 @@ struct VoiceChannelSheet: View {
                 .environment(session)
                 .environment(servers)
                 .environment(\.closeVoiceRoom, close)
+        }
+        // left from the call shown here, by another device, a moderator or a lost connection
+        .onChange(of: session.currentVoiceChannelId) { previousId, currentId in
+            if isCallShown, previousId == channel.id, currentId != channel.id {
+                close()
+            }
         }
     }
 
@@ -84,28 +101,47 @@ struct VoiceChannelSheet: View {
 
     private var growingLayout: some View {
         GeometryReader { proxy in
-            let progress = GrowingSheet.progress(height: proxy.size.height)
+            let callProgress = isCallShown ? callFade : 0
+            // rising into the call the join box keeps the shape it had and fades under the call
+            let progress = isCallShown ? (callStartsOpen ? 1 : 0) : GrowingSheet.progress(height: proxy.size.height)
             let channelHeight = GrowingSheet.channelHeight * (1 - progress)
+            // from the short sheet the join bar stays at the bottom, where the call's controls come in
+            let keepsJoinBarLow = isCallShown && !callStartsOpen
 
-            VStack(spacing: 0) {
+            ZStack {
                 VStack(spacing: 0) {
-                    header
+                    VStack(spacing: 0) {
+                        header
 
-                    participantsArea
-                        .frame(maxHeight: .infinity)
+                        participantsArea
+                            .frame(maxHeight: .infinity)
+                    }
+                    .frame(height: GrowingSheet.channelHeight, alignment: .top)
+                    .frame(height: channelHeight, alignment: .bottom)
+                    .clipped()
+                    .opacity(1 - progress)
+
+                    if keepsJoinBarLow {
+                        Spacer(minLength: 0)
+                    }
+
+                    JoinBar(isConnectedHere: isConnectedHere, onJoin: join, onOpen: openRoom, showsGrip: true, boxOpacity: 1 - progress)
+
+                    if !keepsJoinBarLow {
+                        ScrollView {
+                            VoiceSheetSettings(onOpenSettings: showSettings)
+                        }
+                        .scrollBounceBehavior(.basedOnSize)
+                        .opacity(progress)
+                    }
                 }
-                .frame(height: GrowingSheet.channelHeight, alignment: .top)
-                .frame(height: channelHeight, alignment: .bottom)
-                .clipped()
-                .opacity(1 - progress)
+                .opacity(1 - callProgress)
 
-                JoinBar(isConnectedHere: isConnectedHere, onJoin: join, onOpen: openRoom, showsGrip: true, boxOpacity: 1 - progress)
-
-                ScrollView {
-                    VoiceSheetSettings(onOpenSettings: showSettings)
+                if isCallShown {
+                    VoiceRoomScreen(channelId: channel.id)
+                        .environment(\.closeVoiceRoom, close)
+                        .opacity(callProgress)
                 }
-                .scrollBounceBehavior(.basedOnSize)
-                .opacity(progress)
             }
         }
     }
@@ -154,17 +190,81 @@ struct VoiceChannelSheet: View {
     }
 
     private func join() {
+        // the sheet starts rising at the tap and the join runs under it, as discord's does
+        if growsIntoSettings {
+            showCall()
+        }
+
         Task {
             await session.joinVoice(channel.id)
 
-            if session.currentVoiceChannelId == channel.id {
+            let isJoined = session.currentVoiceChannelId == channel.id
+
+            if growsIntoSettings, !isJoined {
+                hideCall()
+            } else if !growsIntoSettings, isJoined {
                 isRoomPresented = true
             }
         }
     }
 
     private func openRoom() {
-        isRoomPresented = true
+        if growsIntoSettings {
+            showCall()
+        } else {
+            isRoomPresented = true
+        }
+    }
+
+    // the call's height joins the sheet's others first, then the sheet's own controller rises to
+    // it with the system's spring. once there it is the only height, so a swipe down puts it away
+    private func showCall() {
+        callStartsOpen = detent == GrowingSheet.open
+        isCallShown = true
+
+        Task { @MainActor in
+            let sheet = sheetController.controller?.sheetPresentationController
+            var callDetent: UISheetPresentationController.Detent?
+
+            // the new height reaches the controller on the next pass or so, and the rise should start
+            // on the frame after the tap as discord's does
+            for attempt in 0..<20 where callDetent == nil {
+                if attempt < 10 {
+                    await Task.yield()
+                } else {
+                    try? await Task.sleep(for: .milliseconds(16))
+                }
+
+                callDetent = sheet?.detents.first { $0.identifier.rawValue.hasSuffix(String(describing: CallDetent.self)) }
+            }
+
+            guard isCallShown else {
+                return
+            }
+
+            withAnimation(.easeOut(duration: 0.25)) {
+                callFade = 1
+            }
+
+            if let sheet, let callDetent {
+                sheet.animateChanges {
+                    sheet.selectedDetentIdentifier = callDetent.identifier
+                }
+            }
+
+            detent = GrowingSheet.call
+
+            try? await Task.sleep(for: .milliseconds(600))
+
+            hasCallArrived = isCallShown
+        }
+    }
+
+    private func hideCall() {
+        isCallShown = false
+        hasCallArrived = false
+        callFade = 0
+        detent = GrowingSheet.resting
     }
 
     private func showSettings() {
@@ -177,17 +277,32 @@ struct VoiceChannelSheet: View {
 }
 
 // open, a pull down only takes the sheet back to its short height, however hard the flick:
-// closing is for a swipe from there, as discord's is
+// closing is for a swipe from there, as discord's is. in the call the sheet has the one full
+// height, and a swipe down puts it away while the call goes on
 private struct VoiceSheetDetents: ViewModifier {
     let growsIntoSettings: Bool
+    let isCallShown: Bool
+    let hasCallArrived: Bool
 
-    @State private var detent = GrowingSheet.resting
+    @Binding var detent: PresentationDetent
+
+    private var detents: Set<PresentationDetent> {
+        if hasCallArrived {
+            return [GrowingSheet.call]
+        }
+
+        if isCallShown {
+            return [GrowingSheet.resting, GrowingSheet.open, GrowingSheet.call]
+        }
+
+        return [GrowingSheet.resting, GrowingSheet.open]
+    }
 
     func body(content: Content) -> some View {
         if growsIntoSettings {
             content
-                .presentationDetents([GrowingSheet.resting, GrowingSheet.open], selection: $detent)
-                .interactiveDismissDisabled(detent != GrowingSheet.resting)
+                .presentationDetents(detents, selection: $detent)
+                .interactiveDismissDisabled(!hasCallArrived && detent != GrowingSheet.resting)
         } else {
             content.sheetDetents([.medium, .large])
         }
@@ -204,6 +319,7 @@ private enum GrowingSheet {
 
     static let resting = PresentationDetent.height(restingHeight)
     static let open = PresentationDetent.custom(OpenDetent.self)
+    static let call = PresentationDetent.custom(CallDetent.self)
 
     static func progress(height: CGFloat) -> CGFloat {
         let openHeight = OpenDetent.height
@@ -227,6 +343,53 @@ private struct OpenDetent: CustomPresentationDetent {
         height = openHeight
 
         return openHeight
+    }
+}
+
+// the sheet's own controller, which rises to a height with the system's spring. a height picked
+// through swiftui is jumped to
+@MainActor
+private final class SheetControllerBox {
+    weak var controller: UIViewController?
+}
+
+private struct SheetControllerReader: UIViewRepresentable {
+    let box: SheetControllerBox
+
+    func makeUIView(context: Context) -> ReaderView {
+        let view = ReaderView()
+
+        view.box = box
+
+        return view
+    }
+
+    func updateUIView(_ view: ReaderView, context: Context) {}
+
+    final class ReaderView: UIView {
+        weak var box: SheetControllerBox?
+
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+
+            var responder: UIResponder? = self
+
+            while let next = responder?.next {
+                if let controller = next as? UIViewController, controller.presentingViewController != nil {
+                    box?.controller = controller
+                    return
+                }
+
+                responder = next
+            }
+        }
+    }
+}
+
+// the call, the whole height a sheet can have
+private struct CallDetent: CustomPresentationDetent {
+    static func height(in context: Context) -> CGFloat? {
+        context.maxDetentValue
     }
 }
 

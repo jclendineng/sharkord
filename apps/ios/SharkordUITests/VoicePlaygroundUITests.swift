@@ -52,4 +52,41 @@ final class VoicePlaygroundUITests: XCTestCase {
 
         sleep(2)
     }
+
+    // join grows the sheet into the call, a swipe down from the call's header puts it away
+    @MainActor
+    func testVoiceCallMotion() throws {
+        let app = XCUIApplication()
+
+        app.launchEnvironment["SHARKORD_DEV_VOICE_PLAYGROUND"] = "1"
+        app.launch()
+
+        let open = app.buttons["Open Voice Channel"]
+
+        XCTAssertTrue(open.waitForExistence(timeout: 10))
+        sleep(1)
+        open.tap()
+        sleep(2)
+
+        let join = app.buttons["Join Voice"].firstMatch
+
+        XCTAssertTrue(join.waitForExistence(timeout: 5))
+        join.tap()
+        sleep(3)
+
+        let window = app.windows.firstMatch
+        let top = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.12))
+
+        top.press(forDuration: 0.05, thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.95)), withVelocity: 1500, thenHoldForDuration: 0)
+        sleep(2)
+
+        open.tap()
+        sleep(2)
+
+        let openCall = app.buttons["Open Call"].firstMatch
+
+        XCTAssertTrue(openCall.waitForExistence(timeout: 5))
+        openCall.tap()
+        sleep(3)
+    }
 }
