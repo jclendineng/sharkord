@@ -58,7 +58,7 @@
   "repliesNotificationsDesc": "Invia una notifica quando qualcuno risponde a un tuo messaggio. Ignorato se e attivo 'Tutti i messaggi'.",
   "devicesTitle": "Dispositivi",
   "devicesDesc": "Gestisci i tuoi dispositivi periferici e le relative impostazioni.",
-  "voiceChannelActiveInfo": "Sei in un canale vocale: le modifiche avranno effetto solo dopo essere uscito e rientrato nel canale.",
+  "voiceChannelActiveInfo": "Le modifiche a microfono e fotocamera valgono subito nella chiamata quando salvi. Le impostazioni di condivisione schermo valgono dalla prossima condivisione.",
   "playbackLabel": "Riproduzione",
   "playbackPlaceholder": "Seleziona il dispositivo di uscita",
   "defaultOutput": "Uscita predefinita",

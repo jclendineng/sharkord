@@ -58,7 +58,7 @@
   "repliesNotificationsDesc": "Envoyer une notification quand quelqu'un répond à votre message. Ignoré si 'Tous les messages' est activé.",
   "devicesTitle": "Appareils",
   "devicesDesc": "Gérez vos appareils périphériques et leurs paramètres.",
-  "voiceChannelActiveInfo": "Vous êtes dans un salon vocal, les modifications ne prendront effet qu'après avoir quitté et rejoint le salon.",
+  "voiceChannelActiveInfo": "Les changements de micro et de caméra s'appliquent à l'appel dès que vous enregistrez. Les réglages du partage d'écran s'appliquent au prochain partage.",
   "playbackLabel": "Lecture",
   "playbackPlaceholder": "Sélectionnez l'appareil de sortie",
   "defaultOutput": "Sortie par défaut",

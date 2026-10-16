@@ -58,7 +58,7 @@
   "repliesNotificationsDesc": "Send a notification when someone replies to your message. Ignored if 'All Messages' is enabled.",
   "devicesTitle": "Devices",
   "devicesDesc": "Manage your peripheral devices and their settings.",
-  "voiceChannelActiveInfo": "You are in a voice channel, changes will only take effect after you leave and rejoin the channel.",
+  "voiceChannelActiveInfo": "Microphone and camera changes apply to your call as soon as you save. Screen share settings apply the next time you share.",
   "playbackLabel": "Playback",
   "playbackPlaceholder": "Select the output device",
   "defaultOutput": "Default Output",

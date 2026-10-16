@@ -133,6 +133,9 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - In a private channel the member list shows only who can see it, with a switch back to
   everyone, on the web and in the Mac app's member column
   ([#458](https://github.com/Sharkord/sharkord/issues/458)).
+- On the web, a new microphone or camera, or changed mic processing, applies to the call as
+  soon as Devices settings are saved, without leaving and joining again
+  ([#530](https://github.com/Sharkord/sharkord/issues/530)).
 - Mute Stream Audio in Devices settings: screen shares with sound start muted
   ([#749](https://github.com/Sharkord/sharkord/issues/749)).
 

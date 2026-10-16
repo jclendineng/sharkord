@@ -884,6 +884,96 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     setScreenShareProducer
   ]);
 
+  // devices saved mid call apply at once: the mic, and the camera when it is on, start again
+  // through the same path as joining, so the processing chain is rebuilt with the new settings.
+  // the others hear a short gap while the new producer takes over from the old one
+  const micSettingsKey = JSON.stringify([
+    devices.microphoneId,
+    devices.autoGainControl,
+    devices.echoCancellation,
+    devices.noiseSuppression,
+    devices.noiseGateEnabled,
+    devices.noiseGateThresholdDb
+  ]);
+  const webcamSettingsKey = JSON.stringify([
+    devices.webcamId,
+    devices.webcamResolution,
+    devices.webcamFramerate
+  ]);
+  const previousMicSettingsKeyRef = useRef(micSettingsKey);
+  const previousWebcamSettingsKeyRef = useRef(webcamSettingsKey);
+
+  useEffect(() => {
+    const previousKey = previousMicSettingsKeyRef.current;
+
+    previousMicSettingsKeyRef.current = micSettingsKey;
+
+    if (previousKey === micSettingsKey || !localAudioProducer.current) return;
+
+    const restartMic = async () => {
+      voiceLogger.info('mic: restarting with new device settings');
+
+      const trpc = getTRPCClient();
+
+      localAudioProducer.current?.close();
+      localAudioProducer.current = undefined;
+      cleanupMicProcessingResources();
+      setLocalAudioStream(undefined);
+
+      try {
+        // closed on the server before the new one is made, so the close cannot land after it
+        await trpc.voice.closeProducer.mutate({ kind: StreamKind.AUDIO });
+      } catch (error) {
+        voiceLogger.error('mic: closing the old producer failed', error);
+      }
+
+      await startMicStream();
+    };
+
+    restartMic();
+  }, [
+    micSettingsKey,
+    localAudioProducer,
+    cleanupMicProcessingResources,
+    setLocalAudioStream,
+    startMicStream
+  ]);
+
+  useEffect(() => {
+    const previousKey = previousWebcamSettingsKeyRef.current;
+
+    previousWebcamSettingsKeyRef.current = webcamSettingsKey;
+
+    if (previousKey === webcamSettingsKey || !localVideoStream) return;
+
+    const restartWebcam = async () => {
+      voiceLogger.info('webcam: restarting with new device settings');
+
+      const trpc = getTRPCClient();
+
+      stopWebcamStream();
+
+      try {
+        await trpc.voice.closeProducer.mutate({ kind: StreamKind.VIDEO });
+      } catch (error) {
+        voiceLogger.error('webcam: closing the old producer failed', error);
+      }
+
+      try {
+        await startWebcamStream();
+      } catch (error) {
+        voiceLogger.error('webcam: restart failed', error);
+      }
+    };
+
+    restartWebcam();
+  }, [
+    webcamSettingsKey,
+    localVideoStream,
+    stopWebcamStream,
+    startWebcamStream
+  ]);
+
   const incomingVideoOff = useIncomingVideoOff();
   const previousIncomingVideoOffRef = useRef(incomingVideoOff);
 

@@ -316,6 +316,10 @@ published in `/info` so a report can be sent without an account. Setting `report
 - **Member list per channel**: in a private channel the member list shows who can see it,
   from `channels.getMembers`, and a header switch shows everyone again. Public channels are
   open to all, so their list is unchanged ([#458](https://github.com/Sharkord/sharkord/issues/458)).
+- **Devices apply mid call** (web): saving a new microphone, camera or mic processing setting
+  during a call restarts the mic, or the camera when it is on, through the join path, so the
+  new device and processing chain take over with a short gap for the others. Screen share
+  settings still apply from the next share ([#530](https://github.com/Sharkord/sharkord/issues/530)).
 - **Unique names**: renaming to a name another member already uses, ignoring case, is
   refused. Names two people already shared before the upgrade stay, and a name from an SSO
   provider that is taken becomes a generated one
