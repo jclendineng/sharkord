@@ -167,5 +167,16 @@
   "failedSaveNote": "Impossibile salvare la nota",
   "soundboard": "Soundboard",
   "failedPlaySound": "Impossibile riprodurre il suono",
-  "noSoundsYet": "Ancora nessun suono."
+  "noSoundsYet": "Ancora nessun suono.",
+  "runCommand": "Esegui comando",
+  "commandStatusPending": "In attesa",
+  "commandStatusCompleted": "Completato",
+  "commandStatusFailed": "Non riuscito",
+  "commandResponse": "Risposta",
+  "commandArgRequired": "obbligatorio",
+  "commandArgOptional": "facoltativo",
+  "commandArgYes": "Sì",
+  "commandArgNo": "No",
+  "commandArgMissing": "/{{commandName}} richiede un valore per {{argName}}.",
+  "mutedByModerator": "Sei stato silenziato da un moderatore."
 }

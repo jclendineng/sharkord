@@ -169,5 +169,16 @@
   "failedSaveNote": "Could not save the note",
   "soundboard": "Soundboard",
   "failedPlaySound": "Couldn't play the sound",
-  "noSoundsYet": "No sounds yet."
+  "noSoundsYet": "No sounds yet.",
+  "runCommand": "Run command",
+  "commandStatusPending": "Pending",
+  "commandStatusCompleted": "Completed",
+  "commandStatusFailed": "Failed",
+  "commandResponse": "Response",
+  "commandArgRequired": "required",
+  "commandArgOptional": "optional",
+  "commandArgYes": "Yes",
+  "commandArgNo": "No",
+  "commandArgMissing": "/{{commandName}} needs a value for {{argName}}.",
+  "mutedByModerator": "You were muted by a moderator."
 }

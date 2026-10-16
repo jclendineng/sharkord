@@ -117,7 +117,10 @@ const createPollRoute = rateLimitedProcedure(protectedProcedure, {
       userId: ctx.userId,
       pluginId: null,
       content: '',
-      textContent: input.question
+      textContent: input.question,
+      parentMessageId: message.parentMessageId,
+      replyToMessageId: message.replyToMessageId,
+      fileIds: []
     });
 
     return message.id;

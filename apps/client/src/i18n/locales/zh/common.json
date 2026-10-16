@@ -167,5 +167,16 @@
   "failedSaveNote": "无法保存备注",
   "soundboard": "音效板",
   "failedPlaySound": "无法播放声音",
-  "noSoundsYet": "还没有声音。"
+  "noSoundsYet": "还没有声音。",
+  "runCommand": "运行命令",
+  "commandStatusPending": "等待中",
+  "commandStatusCompleted": "已完成",
+  "commandStatusFailed": "失败",
+  "commandResponse": "响应",
+  "commandArgRequired": "必填",
+  "commandArgOptional": "可选",
+  "commandArgYes": "是",
+  "commandArgNo": "否",
+  "commandArgMissing": "/{{commandName}} 需要为 {{argName}} 提供一个值。",
+  "mutedByModerator": "你已被管理员禁言。"
 }

@@ -14,6 +14,7 @@ import type {
   TJoinedSticker,
   TLogEntry,
   TPluginCapabilityAccessRule,
+  TPluginEphemeralResponse,
   TPluginMetadata,
   TPluginPushEvent,
   TPublicServerSettings,
@@ -124,6 +125,7 @@ type Events = {
   [ServerEvents.PLUGIN_COMPONENTS_CHANGE]: string[]; // list of plugin ids that have components enabled
   [ServerEvents.PLUGIN_CAPABILITY_ACCESS_CHANGE]: TPluginCapabilityAccessRule[];
   [ServerEvents.PLUGIN_PUSH]: TPluginPushEvent;
+  [ServerEvents.PLUGIN_EPHEMERAL_RESPONSE]: TPluginEphemeralResponse;
   [ServerEvents.PLUGIN_METADATA_CHANGE]: TPluginMetadata[];
 
   [ServerEvents.EMOJI_CREATE]: TJoinedEmoji;

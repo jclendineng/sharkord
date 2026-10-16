@@ -1,4 +1,8 @@
-import { Permission, REACTION_EMOJI_MAX_LENGTH } from '@sharkord/shared';
+import {
+  Permission,
+  REACTION_EMOJI_MAX_LENGTH,
+  type TBeforeReactionPayload
+} from '@sharkord/shared';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { config } from '../../config';
@@ -9,7 +13,9 @@ import { messageReactions } from '../../db/schema';
 import { loadMessageForWrite } from '../../helpers/load-message-for-write';
 import { grantOnboardingRole } from '../../helpers/onboarding';
 import { resolveKnownEmojiFileId } from '../../helpers/resolve-known-emoji-file-id';
+import { pluginManager } from '../../plugins';
 import { eventBus } from '../../plugins/event-bus';
+import { runHook } from '../../plugins/run-hook';
 import { protectedProcedure, rateLimitedProcedure } from '../../utils/trpc';
 
 const toggleMessageReactionRoute = rateLimitedProcedure(protectedProcedure, {
@@ -35,6 +41,16 @@ const toggleMessageReactionRoute = rateLimitedProcedure(protectedProcedure, {
     );
 
     if (!reaction) {
+      await runHook<TBeforeReactionPayload, never>({
+        entries: pluginManager.getHooks('beforeReaction'),
+        payload: {
+          messageId: input.messageId,
+          channelId: message.channelId,
+          userId: ctx.user.id,
+          emoji: input.emoji
+        }
+      });
+
       const emojiFileId = await resolveKnownEmojiFileId(input.emoji);
 
       await db.insert(messageReactions).values({

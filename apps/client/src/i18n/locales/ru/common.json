@@ -167,5 +167,16 @@
   "failedSaveNote": "Не удалось сохранить заметку",
   "soundboard": "Звуковая панель",
   "failedPlaySound": "Не удалось воспроизвести звук",
-  "noSoundsYet": "Звуков пока нет."
+  "noSoundsYet": "Звуков пока нет.",
+  "runCommand": "Выполнить команду",
+  "commandStatusPending": "Ожидание",
+  "commandStatusCompleted": "Выполнено",
+  "commandStatusFailed": "Ошибка",
+  "commandResponse": "Ответ",
+  "commandArgRequired": "обязательно",
+  "commandArgOptional": "необязательно",
+  "commandArgYes": "Да",
+  "commandArgNo": "Нет",
+  "commandArgMissing": "/{{commandName}}: укажите значение для {{argName}}.",
+  "mutedByModerator": "Модератор отключил вам микрофон."
 }

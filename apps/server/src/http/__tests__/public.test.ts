@@ -6,6 +6,7 @@ import path from 'path';
 import {
   initTest,
   login,
+  sendMessage,
   storedNamePattern,
   uploadFile
 } from '../../__tests__/helpers';
@@ -42,7 +43,7 @@ const uploadToMessage = async (
 
   const { caller } = await initTest();
 
-  const messageId = await caller.messages.send({
+  const messageId = await sendMessage(caller, {
     content: 'Message with file',
     channelId: 1,
     files: [tempFile.id]
@@ -131,7 +132,7 @@ describe('/public', () => {
     for (let i = 0; i < 2; i++) {
       const { caller } = await initTest();
 
-      const messageId = await caller.messages.send({
+      const messageId = await sendMessage(caller, {
         content: 'Message with file',
         channelId: 1,
         files: [filesToCreate[i]!.tempFile!.id]
@@ -400,7 +401,7 @@ describe('/public', () => {
       token
     );
 
-    const messageId = await caller.messages.send({
+    const messageId = await sendMessage(caller, {
       content: 'Message with private file',
       channelId,
       files: [tempFile.id]
@@ -445,7 +446,7 @@ describe('/public', () => {
       token
     );
 
-    const messageId = await caller.messages.send({
+    const messageId = await sendMessage(caller, {
       content: 'Message with public file',
       channelId,
       files: [tempFile.id]
@@ -1013,7 +1014,7 @@ describe('/public', () => {
       token
     );
 
-    const messageId = await caller.messages.send({
+    const messageId = await sendMessage(caller, {
       content: 'Message with file',
       channelId,
       files: [tempFile.id]

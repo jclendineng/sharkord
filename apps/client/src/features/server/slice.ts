@@ -18,6 +18,7 @@ import type {
   TJoinedSticker,
   TPluginCapabilityAccessRule,
   TPluginComponentsMap,
+  TPluginMessageComponentsByPlugin,
   TPluginMetadata,
   TPluginTab,
   TPluginTabsMap,
@@ -87,6 +88,7 @@ export interface IServerState {
   hideOwnScreenShare: boolean;
   alwaysShowVoiceControls: boolean;
   pluginComponents: TPluginComponentsMap;
+  pluginMessageComponents: TPluginMessageComponentsByPlugin;
   pluginTabs: TPluginTabsMap;
   pluginCapabilityAccess: TPluginCapabilityAccessRule[];
   activeFullscreenPluginId: string | undefined;
@@ -129,7 +131,8 @@ const initialState: IServerState = {
     micMuted: false,
     soundMuted: false,
     webcamEnabled: false,
-    sharingScreen: false
+    sharingScreen: false,
+    serverMuted: false
   },
   pinnedCard: undefined,
   channelPermissions: {},
@@ -149,6 +152,7 @@ const initialState: IServerState = {
     true
   ),
   pluginComponents: {},
+  pluginMessageComponents: {},
   pluginTabs: {},
   pluginCapabilityAccess: [],
   activeFullscreenPluginId: undefined,
@@ -985,6 +989,12 @@ export const serverSlice = createSlice({
       action: PayloadAction<TPluginComponentsMap>
     ) => {
       state.pluginComponents = action.payload;
+    },
+    setPluginMessageComponents: (
+      state,
+      action: PayloadAction<TPluginMessageComponentsByPlugin>
+    ) => {
+      state.pluginMessageComponents = action.payload;
     },
     setActiveFullscreenPluginId: (
       state,

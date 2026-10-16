@@ -421,6 +421,13 @@
       "when": 1792158364345,
       "tag": "0059_freesound",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "6",
+      "when": 1792162404295,
+      "tag": "0060_plugin_storage",
+      "breakpoints": true
     }
   ]
 }

@@ -11,6 +11,7 @@ import { pluginManager } from '../plugins';
 import { drainActivityLogQueue } from '../queues/activity-log';
 import { drainLoginsQueue } from '../queues/logins';
 import { drainPushNotificationsQueue } from '../queues/push-notifications';
+import { VoiceRuntime } from '../runtimes/voice';
 import { loadMediasoup } from '../utils/mediasoup';
 import { clearRateLimitersForTests } from '../utils/rate-limiters/rate-limiter';
 import { clearUserSocketsForTests } from '../utils/wss';
@@ -95,6 +96,7 @@ beforeEach(async () => {
 
   clearRateLimitersForTests();
   clearVoiceMoveGrantsForTests();
+  VoiceRuntime.clearServerMutesForTests();
   clearUserSocketsForTests();
 
   if (sqlite) {

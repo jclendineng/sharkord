@@ -1,7 +1,7 @@
 import { ServerEvents, type TTempFile } from '@sharkord/shared';
 import { describe, expect, spyOn, test } from 'bun:test';
 import { eq } from 'drizzle-orm';
-import { initTest, uploadFile } from '../../__tests__/helpers';
+import { initTest, sendMessage, uploadFile } from '../../__tests__/helpers';
 import { tdb } from '../../__tests__/setup';
 import { config } from '../../config';
 import { messages, stickers } from '../../db/schema';
@@ -178,7 +178,7 @@ describe('stickers.delete', () => {
   test('should remove the sticker and leave its messages showing it gone', async () => {
     const stickerId = await addSticker();
     const { caller } = await initTest(1);
-    const messageId = await caller.messages.send({
+    const messageId = await sendMessage(caller, {
       channelId: 1,
       content: '',
       stickerId
@@ -220,7 +220,7 @@ describe('sending a sticker', () => {
     const stickerId = await addSticker();
     const { caller } = await initTest(2);
 
-    const messageId = await caller.messages.send({
+    const messageId = await sendMessage(caller, {
       channelId: 1,
       content: '',
       stickerId

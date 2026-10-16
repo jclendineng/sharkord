@@ -1,4 +1,5 @@
 import {
+  getErrorMessage,
   ServerEvents,
   StreamKind,
   type TChannelState,
@@ -100,7 +101,8 @@ const defaultUserState: TVoiceUserState = {
   micMuted: false,
   soundMuted: false,
   webcamEnabled: false,
-  sharingScreen: false
+  sharingScreen: false,
+  serverMuted: false
 };
 
 type TTransportMap = {
@@ -150,6 +152,8 @@ class VoiceRuntime {
   private consumers: TConsumerMap = {};
   private producerQualityLayers: TProducerQualityLayerMap = {};
 
+  private static serverMutedUserIds = new Set<number>();
+
   private externalCounter = EXTERNAL_STREAM_ID_BASE;
   private externalStreamsInternal: {
     [streamId: number]: TExternalStreamInternal;
@@ -174,6 +178,21 @@ class VoiceRuntime {
     }
 
     return undefined;
+  };
+
+  public static isServerMuted = (userId: number): boolean =>
+    VoiceRuntime.serverMutedUserIds.has(userId);
+
+  public static setServerMuted = (userId: number, muted: boolean): void => {
+    if (muted) {
+      VoiceRuntime.serverMutedUserIds.add(userId);
+    } else {
+      VoiceRuntime.serverMutedUserIds.delete(userId);
+    }
+  };
+
+  public static clearServerMutesForTests = (): void => {
+    VoiceRuntime.serverMutedUserIds.clear();
   };
 
   public static getVoiceMap = (): TVoiceMap => {
@@ -409,7 +428,11 @@ class VoiceRuntime {
       userId,
       state: {
         ...defaultUserState,
-        ...state
+        ...state,
+        ...(VoiceRuntime.isServerMuted(userId) && {
+          micMuted: true,
+          serverMuted: true
+        })
       }
     });
 
@@ -488,6 +511,36 @@ class VoiceRuntime {
     if (!user) return;
 
     user.state = { ...user.state, ...newState };
+
+    eventBus.emit('voice:state_updated', {
+      channelId: this.id,
+      userId,
+      state: { ...user.state }
+    });
+  };
+
+  public syncServerMute = (userId: number) => {
+    const muted = VoiceRuntime.isServerMuted(userId);
+    const producer = this.audioProducers[userId];
+
+    if (muted) {
+      this.updateUserState(userId, { micMuted: true, serverMuted: true });
+    } else {
+      this.updateUserState(userId, { serverMuted: false });
+    }
+
+    if (producer) this.setProducerPaused(producer, muted);
+  };
+
+  private setProducerPaused = (producer: Producer, paused: boolean) => {
+    const change = paused ? producer.pause() : producer.resume();
+
+    change.catch((error) => {
+      logger.error(
+        `Failed to ${paused ? 'pause' : 'resume'} producer ${producer.id}: %s`,
+        getErrorMessage(error)
+      );
+    });
   };
 
   public getRouter = (): Router<AppData> => {
@@ -646,6 +699,10 @@ class VoiceRuntime {
       this.videoProducers[userId] = producer;
     } else if (type === StreamKind.AUDIO) {
       this.audioProducers[userId] = producer;
+
+      if (VoiceRuntime.isServerMuted(userId)) {
+        this.setProducerPaused(producer, true);
+      }
     } else if (type === StreamKind.SCREEN) {
       this.screenProducers[userId] = producer;
     } else if (type === StreamKind.SCREEN_AUDIO) {

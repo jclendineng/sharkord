@@ -16,6 +16,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 - Database migrations run by themselves at startup. This release adds tables for friends,
   group direct messages, private notes, the new member lounge, QR sign in and the soundboard.
+  Upstream's plugin storage migrations run as this fork's `0060_plugin_storage`, after the
+  fork's own, so a database that already ran `0059` still gets them.
 - The soundboard's permissions are granted on upgrade: Use Soundboard to every role that can
   join voice, Manage Soundboard to every role that manages emoji.
 - An iOS app from before the soundboard can't open the roles screen on an upgraded server,
@@ -113,6 +115,14 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - Group direct messages and friends.
 - GIF and sticker tabs in the picker, sticker settings and a Klipy key field.
 - Signed file links refresh while the page is open.
+
+#### From upstream
+
+- Hotkeys in the web client for mute, deafen, push to talk and more, set in a new Hotkeys
+  settings tab. Hotkeys that work while the browser is in the background need upstream's
+  bridge app.
+- A wider plugin SDK: plugins can store data, add buttons and other parts under their
+  messages, and take arguments in their commands.
 
 ### Changed
 

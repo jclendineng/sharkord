@@ -28,6 +28,12 @@ import { getRole, getRoles, userCan } from '../db/queries/roles';
 import { getPublicUserById, getPublicUsers } from '../db/queries/users';
 import { getPluginVoiceRuntime } from '../helpers/get-plugin-voice-runtime';
 import { PUBLIC_PATH } from '../helpers/paths';
+import {
+  disconnectVoiceUser,
+  loadVoiceMoveDestination,
+  moveVoiceUser,
+  setVoiceServerMute
+} from '../helpers/voice-moderation';
 import { VoiceRuntime } from '../runtimes/voice';
 import { pubsub } from '../utils/pubsub';
 import { consumeVoiceProducer } from './actions/consume-voice-producer';
@@ -40,6 +46,12 @@ import {
   unbanPluginUser
 } from './actions/moderate-plugin-user';
 import { setPluginMessagePinned } from './actions/pin-plugin-message';
+import {
+  deletePluginStorage,
+  getPluginStorage,
+  listPluginStorageEntries,
+  setPluginStorage
+} from './actions/plugin-storage';
 import {
   pushToAllPluginClients,
   pushToPluginClients,
@@ -54,6 +66,7 @@ import {
   type TListPluginMessagesOptions
 } from './actions/read-plugin-messages';
 import { sendPluginVoiceReaction } from './actions/send-plugin-voice-reaction';
+import { setPluginMessageComponents } from './actions/set-plugin-message-components';
 import {
   assignPluginUserRole,
   removePluginUserRole
@@ -67,9 +80,19 @@ import {
   getPluginChannel,
   listPluginCategories,
   listPluginChannels,
+  reorderPluginChannels,
   updatePluginCategory,
   updatePluginChannel
 } from './actions/write-plugin-channels';
+import {
+  createPluginEmoji,
+  deletePluginEmoji
+} from './actions/write-plugin-emojis';
+import { createPluginInvite } from './actions/write-plugin-invites';
+import {
+  createPluginRole,
+  updatePluginRole
+} from './actions/write-plugin-roles';
 import { eventBus } from './event-bus';
 import type { ScopedLogger } from './plugin-logger';
 
@@ -86,6 +109,9 @@ type TContextDependencies = {
   registerBeforeChannelCreate: PluginContext['hooks']['onBeforeChannelCreate'];
   registerBeforeVoiceJoin: PluginContext['hooks']['onBeforeVoiceJoin'];
   registerBeforeLogin: PluginContext['hooks']['onBeforeLogin'];
+  registerBeforeReaction: PluginContext['hooks']['onBeforeReaction'];
+  registerBeforeProfileUpdate: PluginContext['hooks']['onBeforeProfileUpdate'];
+  registerBeforeChannelDelete: PluginContext['hooks']['onBeforeChannelDelete'];
   registerHttpRoute: PluginContext['http']['register'];
   setUiEnabled: (
     enabled: boolean,
@@ -185,7 +211,20 @@ const createUnloadContext = ({
       getPluginVoiceRuntime(channelId).listProducers(),
     consume: (options) => consumeVoiceProducer(pluginId, scopedLogger, options),
     react: async (channelId, userId, emoji) =>
-      sendPluginVoiceReaction(channelId, userId, emoji)
+      sendPluginVoiceReaction(channelId, userId, emoji),
+    move: async (userId, channelId) => {
+      await loadVoiceMoveDestination(channelId);
+      await moveVoiceUser(userId, channelId);
+    },
+    disconnect: async (userId) => disconnectVoiceUser(userId),
+    setServerMute: async (userId, muted) => setVoiceServerMute(userId, muted)
+  },
+  storage: {
+    get: async <T = unknown>(key: string) =>
+      (await getPluginStorage(pluginId, key)) as T | undefined,
+    set: async (key, value) => setPluginStorage(pluginId, key, value),
+    delete: async (key) => deletePluginStorage(pluginId, key),
+    list: async (options) => listPluginStorageEntries(pluginId, options)
   },
   messages: {
     send: async (channelId, content, options) =>
@@ -196,7 +235,8 @@ const createUnloadContext = ({
         parentMessageId: options?.parentMessageId,
         replyToMessageId: options?.replyToMessageId,
         files: options?.files,
-        previews: options?.previews
+        previews: options?.previews,
+        components: options?.components
       }),
     edit: async (messageId, content, options) =>
       editPluginMessage({
@@ -205,6 +245,8 @@ const createUnloadContext = ({
         content,
         previews: options?.previews
       }),
+    setComponents: async (messageId, components) =>
+      setPluginMessageComponents(pluginId, messageId, components),
     delete: async (messageId) => deletePluginMessage({ pluginId, messageId }),
     get: async (messageId: number) => getMessage(messageId),
     list: async (options: TListPluginMessagesOptions) =>
@@ -262,7 +304,10 @@ const createContext = (deps: TContextDependencies): PluginContext => {
       onBeforeMessageSave: deps.registerBeforeMessageSave,
       onBeforeChannelCreate: deps.registerBeforeChannelCreate,
       onBeforeVoiceJoin: deps.registerBeforeVoiceJoin,
-      onBeforeLogin: deps.registerBeforeLogin
+      onBeforeLogin: deps.registerBeforeLogin,
+      onBeforeReaction: deps.registerBeforeReaction,
+      onBeforeProfileUpdate: deps.registerBeforeProfileUpdate,
+      onBeforeChannelDelete: deps.registerBeforeChannelDelete
     },
     http: {
       register: registerHttpRoute,
@@ -284,6 +329,8 @@ const createContext = (deps: TContextDependencies): PluginContext => {
     roles: {
       list: async () => getRoles(),
       get: async (roleId: number) => getRole(roleId),
+      create: async (input) => createPluginRole(input),
+      update: async (roleId, values) => updatePluginRole(roleId, values),
       assign: async (userId: number, roleId: number) =>
         assignPluginUserRole(userId, roleId),
       remove: async (userId: number, roleId: number) =>
@@ -319,7 +366,16 @@ const createContext = (deps: TContextDependencies): PluginContext => {
       create: async (input) => createPluginChannel(input),
       update: async (channelId, values) =>
         updatePluginChannel(channelId, values),
-      delete: async (channelId) => deletePluginChannel(channelId)
+      delete: async (channelId) => deletePluginChannel(channelId),
+      reorder: async (categoryId, channelIds) =>
+        reorderPluginChannels(categoryId, channelIds)
+    },
+    invites: {
+      create: async (input) => createPluginInvite(input)
+    },
+    emojis: {
+      create: async (input) => createPluginEmoji(pluginId, input),
+      delete: async (emojiId) => deletePluginEmoji(emojiId)
     },
     files: {
       getPath: async (fileId: number) => {
