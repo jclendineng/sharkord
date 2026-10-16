@@ -87,6 +87,8 @@ private struct AppSheet: ViewModifier {
                     }
                     .padding(.horizontal, 10)
                     .padding(.top, 10)
+                    // clear of the content below, which often starts with a background of its own
+                    .padding(.bottom, 8)
                 }
             }
     }

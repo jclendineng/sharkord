@@ -60,10 +60,15 @@ struct VoiceChannelSheet: View {
         .sheet(isPresented: $isSettingsPresented) {
             NavigationStack {
                 VoiceVideoSettingsScreen()
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Close", systemImage: "xmark", action: hideSettings)
+                        }
+                    }
             }
             .environment(session)
             .environment(servers)
-            .appSheet(addsClose: true)
+            .appSheet()
         }
         .fullScreenCover(isPresented: $isRoomPresented) {
             VoiceRoomScreen()
@@ -269,6 +274,10 @@ struct VoiceChannelSheet: View {
 
     private func showSettings() {
         isSettingsPresented = true
+    }
+
+    private func hideSettings() {
+        isSettingsPresented = false
     }
 
     private func close() {

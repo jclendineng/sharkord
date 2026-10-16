@@ -149,9 +149,14 @@ struct SoundboardScreen: View {
         .sheet(item: $editing) { sound in
             NavigationStack {
                 SoundEditor(sound: sound)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Close", systemImage: "xmark", action: closeEditor)
+                        }
+                    }
             }
             .environment(session)
-            .appSheet(addsClose: true)
+            .appSheet()
         }
     }
 
@@ -228,6 +233,10 @@ struct SoundboardScreen: View {
 
             addingFreesoundId = nil
         }
+    }
+
+    private func closeEditor() {
+        editing = nil
     }
 
     private func showImporter() {
