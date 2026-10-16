@@ -652,5 +652,12 @@
   "passwordResetLinkMsg": "Mandaglielo come preferisci. Funziona una volta, per 24 ore, e lo disconnette ovunque: {{link}}",
   "passwordResetLinkCopy": "Copia link",
   "passwordResetLinkCopied": "Link copiato",
-  "failedPasswordResetLink": "Impossibile creare il link"
+  "failedPasswordResetLink": "Impossibile creare il link",
+  "retentionLabel": "Elimina i messaggi vecchi",
+  "retentionDesc": "I messaggi più vecchi di così vengono eliminati ogni ora. I messaggi fissati e le discussioni ancora attive restano.",
+  "retentionForever": "Conserva per sempre",
+  "retentionDays_one": "Dopo {{count}} giorno",
+  "retentionDays_other": "Dopo {{count}} giorni",
+  "retentionPreview_one": "Ora verrebbe eliminato {{count}} messaggio.",
+  "retentionPreview_other": "Ora verrebbero eliminati {{count}} messaggi."
 }

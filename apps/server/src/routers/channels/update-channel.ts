@@ -1,4 +1,8 @@
-import { Permission } from '@sharkord/shared';
+import {
+  CHANNEL_RETENTION_MAX_DAYS,
+  CHANNEL_RETENTION_MIN_DAYS,
+  Permission
+} from '@sharkord/shared';
 import { z } from 'zod';
 import {
   updateChannel,
@@ -13,7 +17,14 @@ const updateChannelRoute = protectedProcedure
       channelId: z.number().min(1),
       name: zChannelName.min(2).optional(),
       topic: zChannelTopic.optional(),
-      private: z.boolean().optional()
+      private: z.boolean().optional(),
+      retentionDays: z
+        .number()
+        .int()
+        .min(CHANNEL_RETENTION_MIN_DAYS)
+        .max(CHANNEL_RETENTION_MAX_DAYS)
+        .nullable()
+        .optional()
     })
   )
   .mutation(async ({ ctx, input }) => {

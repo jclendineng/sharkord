@@ -1,5 +1,7 @@
 import {
   ActivityLogType,
+  CHANNEL_RETENTION_MAX_DAYS,
+  CHANNEL_RETENTION_MIN_DAYS,
   ChannelType,
   type TBeforeChannelCreatePayload,
   type TBeforeChannelCreateUpdate,
@@ -31,10 +33,18 @@ const zCreateChannel = z.object({
   private: z.boolean().optional()
 });
 
+const zRetentionDays = z
+  .number()
+  .int()
+  .min(CHANNEL_RETENTION_MIN_DAYS)
+  .max(CHANNEL_RETENTION_MAX_DAYS)
+  .nullable();
+
 const zUpdateChannel = z.object({
   name: zChannelName.min(2).optional(),
   topic: zChannelTopic.optional(),
-  private: z.boolean().optional()
+  private: z.boolean().optional(),
+  retentionDays: zRetentionDays.optional()
 });
 
 type TCreateChannel = z.infer<typeof zCreateChannel>;
@@ -171,7 +181,10 @@ const updateChannel = async (
   const values = {
     ...(parsed.name !== undefined && { name: parsed.name }),
     ...(parsed.topic !== undefined && { topic: parsed.topic }),
-    ...(parsed.private !== undefined && { private: parsed.private })
+    ...(parsed.private !== undefined && { private: parsed.private }),
+    ...(parsed.retentionDays !== undefined && {
+      retentionDays: parsed.retentionDays
+    })
   };
 
   invariant(Object.keys(values).length > 0, {

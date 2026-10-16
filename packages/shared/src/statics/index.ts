@@ -4,6 +4,7 @@ export * from './locales';
 export * from './metrics';
 export * from './permissions';
 export * from './polls';
+export * from './retention';
 export * from './soundboard';
 export * from './stickers';
 export * from './storage';

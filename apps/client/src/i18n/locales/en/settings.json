@@ -654,5 +654,12 @@
   "passwordResetLinkMsg": "Send this to them however you reach them. It works once, for 24 hours, and signs them out everywhere: {{link}}",
   "passwordResetLinkCopy": "Copy Link",
   "passwordResetLinkCopied": "Reset link copied",
-  "failedPasswordResetLink": "Couldn't make a reset link"
+  "failedPasswordResetLink": "Couldn't make a reset link",
+  "retentionLabel": "Delete Old Messages",
+  "retentionDesc": "Messages older than this are deleted every hour. Pinned messages and threads still going are kept.",
+  "retentionForever": "Keep forever",
+  "retentionDays_one": "After {{count}} day",
+  "retentionDays_other": "After {{count}} days",
+  "retentionPreview_one": "{{count}} message would be deleted now.",
+  "retentionPreview_other": "{{count}} messages would be deleted now."
 }

@@ -317,6 +317,17 @@ answer 404, posts are rate limited per address (`rateLimiters.webhook`), and del
 deletes its webhooks. Code `apps/server/src/http/webhook.ts`, `helpers/webhooks.ts`
 ([#293](https://github.com/Sharkord/sharkord/issues/293)).
 
+## Message retention
+
+Channel settings, General, Delete Old Messages (`channels.retentionDays`, 1 to 3650 days, off
+by default). Every hour `deleteExpiredMessages` (`helpers/message-retention.ts`) deletes the
+channel's messages older than that, in batches of 500 so the server is never held up. Pinned
+messages are kept, and so is the first message of a thread with a reply newer than the cutoff,
+since deleting it would take the replies with it. The files of deleted messages become orphans
+the 15 minute file sweep already removes. The dry run: while picking a period, the screen calls
+`channels.getRetentionPreview`, which counts what would go if it ran now. Direct messages have
+no retention ([#564](https://github.com/Sharkord/sharkord/issues/564)).
+
 ## Permissions and settings from upstream issues
 
 - **Pin messages in direct messages** (`PIN_DM_MESSAGES`): pinning in direct messages and

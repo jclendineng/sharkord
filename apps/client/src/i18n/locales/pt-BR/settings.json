@@ -654,5 +654,12 @@
   "passwordResetLinkMsg": "Envie como puder. Funciona uma vez, por 24 horas, e desconecta a pessoa de todos os lugares: {{link}}",
   "passwordResetLinkCopy": "Copiar link",
   "passwordResetLinkCopied": "Link copiado",
-  "failedPasswordResetLink": "Não foi possível criar o link"
+  "failedPasswordResetLink": "Não foi possível criar o link",
+  "retentionLabel": "Excluir mensagens antigas",
+  "retentionDesc": "Mensagens mais antigas que isso são excluídas a cada hora. Mensagens fixadas e conversas ainda ativas ficam.",
+  "retentionForever": "Guardar para sempre",
+  "retentionDays_one": "Depois de {{count}} dia",
+  "retentionDays_other": "Depois de {{count}} dias",
+  "retentionPreview_one": "{{count}} mensagem seria excluída agora.",
+  "retentionPreview_other": "{{count}} mensagens seriam excluídas agora."
 }

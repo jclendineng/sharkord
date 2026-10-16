@@ -663,5 +663,16 @@
   "passwordResetLinkMsg": "Передайте её любым способом. Работает один раз в течение 24 часов и выходит из всех сеансов: {{link}}",
   "passwordResetLinkCopy": "Копировать ссылку",
   "passwordResetLinkCopied": "Ссылка скопирована",
-  "failedPasswordResetLink": "Не удалось создать ссылку"
+  "failedPasswordResetLink": "Не удалось создать ссылку",
+  "retentionLabel": "Удалять старые сообщения",
+  "retentionDesc": "Сообщения старше этого удаляются каждый час. Закреплённые сообщения и активные ветки остаются.",
+  "retentionForever": "Хранить всегда",
+  "retentionDays_one": "Через {{count}} день",
+  "retentionDays_other": "Через {{count}} дней",
+  "retentionPreview_one": "Сейчас было бы удалено {{count}} сообщение.",
+  "retentionPreview_other": "Сейчас было бы удалено {{count}} сообщений.",
+  "retentionDays_few": "Через {{count}} дня",
+  "retentionDays_many": "Через {{count}} дней",
+  "retentionPreview_few": "Сейчас было бы удалено {{count}} сообщения.",
+  "retentionPreview_many": "Сейчас было бы удалено {{count}} сообщений."
 }

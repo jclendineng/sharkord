@@ -14,6 +14,7 @@ import { getActivityRoute } from './get-activity';
 import { getChannelRoute } from './get-channel';
 import { getMembersRoute } from './get-members';
 import { getPermissionsRoute } from './get-permissions';
+import { getRetentionPreviewRoute } from './get-retention-preview';
 import { markAsReadRoute } from './mark-as-read';
 import { markAsUnreadRoute } from './mark-as-unread';
 import { reorderChannelsRoute } from './reorder-channels';
@@ -29,6 +30,7 @@ export const channelsRouter = t.router({
   getMembers: getMembersRoute,
   updatePermissions: updatePermissionsRoute,
   getPermissions: getPermissionsRoute,
+  getRetentionPreview: getRetentionPreviewRoute,
   deletePermissions: deletePermissionsRoute,
   reorder: reorderChannelsRoute,
   markAsRead: markAsReadRoute,

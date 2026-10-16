@@ -1,0 +1,1 @@
+ALTER TABLE `channels` ADD `retention_days` integer;

@@ -652,5 +652,12 @@
   "passwordResetLinkMsg": "用你能联系到对方的方式发给他。链接只能使用一次，24 小时内有效，并会让他在所有设备上退出：{{link}}",
   "passwordResetLinkCopy": "复制链接",
   "passwordResetLinkCopied": "已复制重置链接",
-  "failedPasswordResetLink": "无法创建重置链接"
+  "failedPasswordResetLink": "无法创建重置链接",
+  "retentionLabel": "删除旧消息",
+  "retentionDesc": "早于此时长的消息每小时删除一次。置顶消息和仍在进行的帖子会保留。",
+  "retentionForever": "永久保留",
+  "retentionDays_one": "{{count}} 天后",
+  "retentionDays_other": "{{count}} 天后",
+  "retentionPreview_one": "现在会删除 {{count}} 条消息。",
+  "retentionPreview_other": "现在会删除 {{count}} 条消息。"
 }

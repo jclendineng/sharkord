@@ -1,10 +1,12 @@
 import { CronJob } from 'cron';
+import { deleteExpiredMessages } from '../helpers/message-retention';
 import { logger } from '../logger';
 import { cleanupFiles } from './cleanup-files';
 import { moveAfkUsers } from './move-afk-users';
 
 enum CRON_TIMES {
   EVERY_15_MINUTES = '*/15 * * * *',
+  EVERY_HOUR = '0 * * * *',
   EVERY_30_SECONDS = '*/30 * * * * *'
 }
 
@@ -19,6 +21,16 @@ const loadCrons = () => {
     'Europe/Lisbon',
     null,
     true
+  );
+
+  new CronJob(
+    CRON_TIMES.EVERY_HOUR,
+    deleteExpiredMessages,
+    null,
+    true,
+    'Europe/Lisbon',
+    null,
+    false
   );
 
   new CronJob(

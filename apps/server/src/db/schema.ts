@@ -183,6 +183,8 @@ const channels = sqliteTable(
     name: text('name').notNull(),
     topic: text('topic'),
     private: integer('private', { mode: 'boolean' }).notNull().default(false),
+    // messages older than this many days are deleted, pinned ones kept. null keeps everything
+    retentionDays: integer('retention_days'),
     isDm: integer('is_dm_channel', { mode: 'boolean' })
       .notNull()
       .default(false),

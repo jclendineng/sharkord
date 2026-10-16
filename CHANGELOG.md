@@ -18,6 +18,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   group direct messages, private notes, the new member lounge, QR sign in and the soundboard.
   Upstream's plugin storage migrations run as this fork's `0060_plugin_storage`, after the
   fork's own, so a database that already ran `0059` still gets them.
+- `0067_channel_retention` adds a retention period to channels, off on every channel until
+  set.
 - `0066_password_resets` adds the table of reset links.
 - `0065_webhooks` adds the webhooks table and the name a webhook posted under to messages.
 - `0064_ip_bans` adds the table of banned addresses.
@@ -163,6 +165,10 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   page on the web or in the app and sends it however they reach them. It works for 24 hours,
   sets a new password on a page of its own and signs the account out everywhere
   ([#331](https://github.com/Sharkord/sharkord/issues/331)).
+- Message retention per channel, in a channel's settings on the web: messages older than 1 day
+  to a year are deleted every hour, pinned messages and threads still going kept. Before
+  saving, the screen shows how many messages it would delete now. Their files go with the
+  orphaned file sweep ([#564](https://github.com/Sharkord/sharkord/issues/564)).
 - Mute Stream Audio in Devices settings: screen shares with sound start muted
   ([#749](https://github.com/Sharkord/sharkord/issues/749)).
 

@@ -654,5 +654,16 @@
   "passwordResetLinkMsg": "Pošli mu ho, jak se k němu dostaneš. Funguje jednou, 24 hodin, a odhlásí ho všude: {{link}}",
   "passwordResetLinkCopy": "Kopírovat odkaz",
   "passwordResetLinkCopied": "Odkaz zkopírován",
-  "failedPasswordResetLink": "Odkaz se nepodařilo vytvořit"
+  "failedPasswordResetLink": "Odkaz se nepodařilo vytvořit",
+  "retentionLabel": "Mazat staré zprávy",
+  "retentionDesc": "Zprávy starší než tohle se každou hodinu smažou. Připnuté zprávy a stále běžící vlákna zůstanou.",
+  "retentionForever": "Ponechat navždy",
+  "retentionDays_one": "Po {{count}} dni",
+  "retentionDays_other": "Po {{count}} dnech",
+  "retentionPreview_one": "Teď by se smazala {{count}} zpráva.",
+  "retentionPreview_other": "Teď by se smazalo {{count}} zpráv.",
+  "retentionDays_few": "Po {{count}} dnech",
+  "retentionDays_many": "Po {{count}} dnech",
+  "retentionPreview_few": "Teď by se smazaly {{count}} zprávy.",
+  "retentionPreview_many": "Teď by se smazalo {{count}} zpráv."
 }
