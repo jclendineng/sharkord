@@ -20,7 +20,7 @@ struct ChatScreen: View {
     // settled
     @State private var hasRoomForMembers = false
     // the member list grows with a wide mac window, in steps, see MembersColumn
-    @State private var membersScale: CGFloat = 1
+    @State private var membersScale = MembersColumn.minimumScale
     // the mac's thread panel, which takes the member list's place beside the conversation
     @State private var threadParent: Message?
     // discord's member list beside a server channel, on by default, the header's button hides it
@@ -99,7 +99,7 @@ struct ChatScreen: View {
                     .transition(.opacity)
             }
         }
-        .onGeometryChange(for: Bool.self, of: { $0.size.width >= 520 + MembersColumn.width }) { hasRoom in
+        .onGeometryChange(for: Bool.self, of: { $0.size.width >= 520 + MembersColumn.width * MembersColumn.minimumScale }) { hasRoom in
             hasRoomForMembers = hasRoom
         }
         .onGeometryChange(for: CGFloat.self, of: { MembersColumn.scale(forChatWidth: $0.size.width) }) { scale in

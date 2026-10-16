@@ -9,9 +9,12 @@ struct MembersColumn: View {
     // how much larger than its smallest it is drawn, growing with a wide mac window
     var scale: CGFloat = 1
 
-    // past a chat this wide the column grows with it, its rows and text too, up to a limit
+    // a mac's starts a third larger than its smallest and grows with the chat past that, its rows
+    // and text too, up to a limit, so a narrower window does not shrink it to nothing
+    static let minimumScale: CGFloat = 1.35
+
     static func scale(forChatWidth width: CGFloat) -> CGFloat {
-        let scale = min(max(width / 1400, 1), 1.75)
+        let scale = min(max(width / 1100, minimumScale), 1.9)
 
         // in steps, so a window being resized does not redraw the list at every point
         return (scale * 20).rounded() / 20

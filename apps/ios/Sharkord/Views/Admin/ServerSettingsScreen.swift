@@ -86,10 +86,6 @@ struct ServerSettingsScreen: View {
             NavigationStack {
                 if let selection {
                     selection.screen
-                        // discord's settings keep to a column, a toggle a whole window away from
-                        // its label is hard to pair with it
-                        .frame(maxWidth: 760)
-                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
             .id(selection)
