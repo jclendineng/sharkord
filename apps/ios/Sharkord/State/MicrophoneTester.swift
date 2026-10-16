@@ -30,6 +30,7 @@ final class MicrophoneTester {
             // echo, so hearing yourself needs the plain mode
             try session.setCategory(.playAndRecord, mode: playback ? .default : .voiceChat, options: [.defaultToSpeaker, .allowBluetoothHFP])
             try session.setActive(true)
+            AudioInputPreference.apply()
 
             engine = AVAudioEngine()
 

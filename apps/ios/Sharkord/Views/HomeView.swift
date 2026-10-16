@@ -428,7 +428,11 @@ struct HomeView: View {
             return 0
         }
 
-        return max(Self.cardGap + 12 - bottomSafeArea, 0)
+        // on a mac a little more, so the bar sits level with the message box and its plus beside
+        // it rather than hanging below them
+        let macLift: CGFloat = ProcessInfo.processInfo.isiOSAppOnMac ? 8 : 0
+
+        return max(Self.cardGap + 12 - bottomSafeArea, 0) + macLift
     }
 
     private var bottomBars: some View {
@@ -540,7 +544,10 @@ struct HomeView: View {
         }
 
         if isShowingDirectMessages {
-            detailChannelId = lastDirectMessageId.flatMap { session.channel($0) }?.id
+            // the newest conversation when none was opened since launch, as discord reopens one
+            let lastId = lastDirectMessageId ?? session.directMessages.first?.channelId
+
+            detailChannelId = lastId.flatMap { session.channel($0) }?.id
         } else {
             detailChannelId = session.defaultChannelId
         }

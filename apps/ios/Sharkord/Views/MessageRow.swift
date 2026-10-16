@@ -12,6 +12,7 @@ struct MessageRow: View {
 
     @Environment(SessionStore.self) private var session
     @Environment(\.isShowingMessageActions) private var isShowingMessageActions
+    @Environment(\.openThreadPanel) private var openThreadPanel
 
     @State private var isHovered = false
 
@@ -95,15 +96,11 @@ struct MessageRow: View {
                 }
 
                 if showsThreadLink, let replyCount = message.replyCount, replyCount > 0 {
-                    NavigationLink(value: ThreadRoute(parent: message)) {
-                        Label(replyCount == 1 ? "1 reply" : "\(replyCount) replies", systemImage: "arrow.turn.down.right")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Theme.blurple)
-                    }
-                    .buttonStyle(.plain)
-                    // a long press on the link opens the actions sheet, and the finger lifting
-                    // would otherwise also open the thread under it
-                    .disabled(isShowingMessageActions)
+                    threadLink(replyCount: replyCount)
+                        .buttonStyle(.plain)
+                        // a long press on the link opens the actions sheet, and the finger lifting
+                        // would otherwise also open the thread under it
+                        .disabled(isShowingMessageActions)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -126,6 +123,28 @@ struct MessageRow: View {
         // button for one. the sheet opening cancels that button's tap
         .simultaneousGesture(LongPressGesture(minimumDuration: 0.3).onEnded(longPressed))
         .onSecondaryClick(perform: onSecondaryClick)
+    }
+
+    // the mac's panel beside the chat, a page of its own everywhere else
+    @ViewBuilder
+    private func threadLink(replyCount: Int) -> some View {
+        let label = Label(replyCount == 1 ? "1 reply" : "\(replyCount) replies", systemImage: "arrow.turn.down.right")
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(Theme.blurple)
+
+        if openThreadPanel != nil {
+            Button(action: openThreadInPanel) {
+                label
+            }
+        } else {
+            NavigationLink(value: ThreadRoute(parent: message)) {
+                label
+            }
+        }
+    }
+
+    private func openThreadInPanel() {
+        openThreadPanel?(message)
     }
 
     private func setHovered(_ hovered: Bool) {

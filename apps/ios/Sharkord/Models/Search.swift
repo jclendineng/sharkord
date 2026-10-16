@@ -5,6 +5,16 @@ struct SearchResults: Decodable {
     let messages: [SearchMessage]
     let files: [SearchFile]
     let truncated: Bool
+
+    // a server's search leaves direct messages to the messages panel's own, as discord's does.
+    // done here rather than asked of the server, which an older one would refuse
+    func withoutDirectMessages(isServerChannel: (Int) -> Bool) -> SearchResults {
+        SearchResults(
+            messages: messages.filter { !$0.channelIsDm },
+            files: files.filter { isServerChannel($0.channelId) },
+            truncated: truncated
+        )
+    }
 }
 
 struct SearchMessage: Decodable, Identifiable {

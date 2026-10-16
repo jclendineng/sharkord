@@ -1,4 +1,5 @@
 import AVFoundation
+import AVKit
 import SwiftUI
 
 struct VoiceVideoSettingsScreen: View {
@@ -9,6 +10,9 @@ struct VoiceVideoSettingsScreen: View {
     @State private var hearYourself = false
     @State private var isCameraPreviewOn = false
     @State private var cameraPosition = AVCaptureDevice.Position.front
+    @State private var inputs: [AVAudioSessionPortDescription] = []
+
+    private let isOnMac = ProcessInfo.processInfo.isiOSAppOnMac
 
     private var isInCall: Bool {
         servers.voiceSession != nil
@@ -29,6 +33,34 @@ struct VoiceVideoSettingsScreen: View {
         @Bindable var settings = settings
 
         List {
+            // discord's input and output devices. a mac has no route picker of its own in the
+            // app, and many have no mic either, a headset's is used once one is plugged in
+            if isOnMac {
+                Section {
+                    Picker("Input Device", selection: $settings.inputDeviceId) {
+                        Text("Automatic").tag(String?.none)
+
+                        ForEach(inputs, id: \.uid) { input in
+                            Text(input.portName).tag(Optional(input.uid))
+                        }
+                    }
+
+                    HStack {
+                        Text("Output Device")
+                            .foregroundStyle(Theme.header)
+
+                        Spacer()
+
+                        OutputDevicePicker()
+                            .frame(width: 36, height: 36)
+                    }
+                } header: {
+                    Text("Devices")
+                } footer: {
+                    Text("Automatic uses a headset's mic whenever one is plugged in.")
+                }
+            }
+
             Section {
                 VStack(alignment: .leading, spacing: 12) {
                     MicLevelMeter(level: tester.level)
@@ -97,7 +129,10 @@ struct VoiceVideoSettingsScreen: View {
                 }
                 .padding(.vertical, 4)
 
-                Toggle("Use Speaker by Default", isOn: $settings.speakerByDefault)
+                // a phone's choice between its earpiece and speaker, a mac has neither
+                if !isOnMac {
+                    Toggle("Use Speaker by Default", isOn: $settings.speakerByDefault)
+                }
             }
 
             Section {
@@ -159,9 +194,35 @@ struct VoiceVideoSettingsScreen: View {
         .onChange(of: settings.streamQuality) { _, quality in
             servers.voiceSession?.setStreamQuality(quality)
         }
+        .onChange(of: settings.inputDeviceId) {
+            AudioInputPreference.apply()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.routeChangeNotification)) { _ in
+            loadInputs()
+        }
+        .task {
+            loadInputs()
+        }
         .onDisappear {
             tester.stop()
         }
+    }
+
+    // the session only lists its inputs once it is active for recording, which a call already is
+    private func loadInputs() {
+        guard isOnMac else {
+            return
+        }
+
+        let session = AVAudioSession.sharedInstance()
+
+        // mixing with others, so opening the screen does not stop music playing elsewhere
+        if session.category != .playAndRecord, !isInCall {
+            try? session.setCategory(.playAndRecord, mode: .default, options: [.allowBluetoothHFP, .mixWithOthers])
+            try? session.setActive(true)
+        }
+
+        inputs = session.availableInputs ?? []
     }
 
     private func toggleMicTest() {
@@ -288,4 +349,18 @@ private struct CameraPreview: UIViewRepresentable {
             layer as! AVCaptureVideoPreviewLayer
         }
     }
+}
+
+// the system's own output list, the one place an ios app on a mac can switch where sound plays
+private struct OutputDevicePicker: UIViewRepresentable {
+    func makeUIView(context: Context) -> AVRoutePickerView {
+        let picker = AVRoutePickerView()
+
+        picker.tintColor = UIColor(Theme.text)
+        picker.activeTintColor = UIColor(Theme.blurple)
+
+        return picker
+    }
+
+    func updateUIView(_ uiView: AVRoutePickerView, context: Context) {}
 }

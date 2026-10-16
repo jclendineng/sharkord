@@ -17,6 +17,7 @@ struct SharkordApp: App {
                 .environment(servers)
                 .task {
                     KeyboardMetrics.start()
+                    AudioInputPreference.start()
                     appDelegate.servers = servers
                     await servers.restore()
                 }

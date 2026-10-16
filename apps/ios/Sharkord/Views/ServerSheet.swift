@@ -3,18 +3,17 @@ import SwiftUI
 // discord's server sheet, opened from the server name above the channels
 struct ServerSheet: View {
     let onInvite: () -> Void
+    // the mac's dropdown hands what it opens to the channel list, so it closes first: a sheet
+    // shown from the dropdown left it open behind
+    var onOpen: ((ServerMenuSheet) -> Void)?
 
     @Environment(ServerListStore.self) private var servers
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
 
-    @State private var isInboxPresented = false
-    @State private var isNotificationsPresented = false
-    @State private var isEditProfilePresented = false
+    @State private var sheet: ServerMenuSheet?
     @State private var isAddressCopied = false
     @State private var isReportUnavailable = false
-    @State private var isEmojiManagerPresented = false
-    @State private var isSettingsPresented = false
 
     @Environment(\.openURL) private var openURL
 
@@ -109,42 +108,8 @@ struct ServerSheet: View {
         // contents scroll inside and a swipe down closes it
         .sheetDetents([.fraction(0.86)])
         .presentationContentInteraction(.scrolls)
-        .presentationDragIndicator(.visible)
         .presentationBackground(Theme.deepBackground)
-        // handed over by hand: on a mac the sheet's background is worked out before it inherits
-        // anything, and the inbox crashed on its first read
-        .sheet(isPresented: $isInboxPresented) {
-            InboxSheet()
-                .environment(servers)
-                .environment(session)
-                .appSheet()
-        }
-        .sheet(isPresented: $isNotificationsPresented) {
-            NavigationStack {
-                NotificationSettingsScreen()
-            }
-            .environment(session)
-            .environment(servers)
-            .appSheet(addsClose: true)
-        }
-        .sheet(isPresented: $isEditProfilePresented) {
-            EditProfileSheet()
-                .environment(session)
-                .environment(servers)
-                .appSheet()
-        }
-        .sheet(isPresented: $isEmojiManagerPresented) {
-            EmojiManagerScreen()
-                .environment(session)
-                .environment(servers)
-                .appSheet()
-        }
-        .sheet(isPresented: $isSettingsPresented) {
-            ServerSettingsScreen()
-                .environment(session)
-                .environment(servers)
-                .appSheet()
-        }
+        .serverMenuSheet($sheet)
         .alert("Reporting isn't set up", isPresented: $isReportUnavailable) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -165,24 +130,32 @@ struct ServerSheet: View {
         dismiss()
     }
 
+    private func open(_ sheet: ServerMenuSheet) {
+        if let onOpen {
+            onOpen(sheet)
+        } else {
+            self.sheet = sheet
+        }
+    }
+
     private func showInbox() {
-        isInboxPresented = true
+        open(.inbox)
     }
 
     private func manageEmoji() {
-        isEmojiManagerPresented = true
+        open(.emojiManager)
     }
 
     private func showNotifications() {
-        isNotificationsPresented = true
+        open(.notifications)
     }
 
     private func editProfile() {
-        isEditProfilePresented = true
+        open(.editProfile)
     }
 
     private func openSettings() {
-        isSettingsPresented = true
+        open(.settings)
     }
 
     // the report goes by email to the address the server's admins set
@@ -319,5 +292,85 @@ private struct ServerEmojiGrid: View {
             .padding(14)
             .background(Theme.listBackground, in: .rect(cornerRadius: 14))
         }
+    }
+}
+
+enum ServerMenuSheet: Identifiable {
+    case inbox
+    case notifications
+    case editProfile
+    case emojiManager
+    case settings
+
+    var id: Self {
+        self
+    }
+}
+
+extension View {
+    // server settings take the whole window on a mac, as discord's do, the rest are sheets
+    func serverMenuSheet(_ sheet: Binding<ServerMenuSheet?>) -> some View {
+        modifier(ServerMenuSheetPresentation(sheet: sheet))
+    }
+}
+
+private struct ServerMenuSheetPresentation: ViewModifier {
+    @Binding var sheet: ServerMenuSheet?
+
+    @Environment(ServerListStore.self) private var servers
+    @Environment(SessionStore.self) private var session
+
+    private var isFullWindow: Bool {
+        ProcessInfo.processInfo.isiOSAppOnMac && sheet == .settings
+    }
+
+    private var sheetBinding: Binding<ServerMenuSheet?> {
+        Binding(
+            get: { isFullWindow ? nil : sheet },
+            set: { sheet = $0 }
+        )
+    }
+
+    private var fullWindowBinding: Binding<ServerMenuSheet?> {
+        Binding(
+            get: { isFullWindow ? sheet : nil },
+            set: { sheet = $0 }
+        )
+    }
+
+    // handed over by hand: on a mac the sheet's background is worked out before it inherits
+    // anything, and the inbox crashed on its first read
+    func body(content: Content) -> some View {
+        content
+            .sheet(item: sheetBinding) { sheet in
+                screen(for: sheet)
+                    .appSheet(addsClose: sheet == .notifications)
+            }
+            .fullScreenCover(item: fullWindowBinding) { sheet in
+                screen(for: sheet)
+                    .appSheet()
+            }
+    }
+
+    @ViewBuilder
+    private func screen(for sheet: ServerMenuSheet) -> some View {
+        Group {
+            switch sheet {
+            case .inbox:
+                InboxSheet()
+            case .notifications:
+                NavigationStack {
+                    NotificationSettingsScreen()
+                }
+            case .editProfile:
+                EditProfileSheet()
+            case .emojiManager:
+                EmojiManagerScreen()
+            case .settings:
+                ServerSettingsScreen()
+            }
+        }
+        .environment(session)
+        .environment(servers)
     }
 }

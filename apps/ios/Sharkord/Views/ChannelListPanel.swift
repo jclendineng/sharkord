@@ -8,6 +8,25 @@ struct ChannelListPanel: View {
     @State private var isInvitePresented = false
     @State private var isServerSheetPresented = false
     @State private var isInviteQueued = false
+    // what the mac's server dropdown opened, shown here once it has closed
+    @State private var menuSheet: ServerMenuSheet?
+
+    private let isOnMac = ProcessInfo.processInfo.isiOSAppOnMac
+
+    // a sheet on a phone or ipad, discord's dropdown under the server name on a mac
+    private var isServerSheetShown: Binding<Bool> {
+        Binding(
+            get: { !isOnMac && isServerSheetPresented },
+            set: { isServerSheetPresented = $0 }
+        )
+    }
+
+    private var isServerMenuShown: Binding<Bool> {
+        Binding(
+            get: { isOnMac && isServerSheetPresented },
+            set: { isServerSheetPresented = $0 }
+        )
+    }
 
     var body: some View {
         ScrollView {
@@ -52,12 +71,13 @@ struct ChannelListPanel: View {
                 .environment(servers)
                 .appSheet()
         }
-        .sheet(isPresented: $isServerSheetPresented, onDismiss: showQueuedInvite) {
+        .sheet(isPresented: isServerSheetShown, onDismiss: showQueuedInvite) {
             ServerSheet(onInvite: queueInvite)
                 .environment(session)
                 .environment(servers)
                 .appSheet(addsClose: true)
         }
+        .serverMenuSheet($menuSheet)
         .onChange(of: servers.serverSheetRequest, initial: true) { _, request in
             guard request == ObjectIdentifier(session) else {
                 return
@@ -73,7 +93,7 @@ struct ChannelListPanel: View {
         VStack(alignment: .leading, spacing: 0) {
             Button(action: showServerSheet) {
                 PanelHeader(title: session.serverName) {
-                    Image(systemName: "chevron.right")
+                    Image(systemName: isOnMac ? "chevron.down" : "chevron.right")
                         .font(.caption.bold())
                         .foregroundStyle(Theme.muted)
                 }
@@ -81,6 +101,13 @@ struct ChannelListPanel: View {
                 .contentShape(.rect)
             }
             .buttonStyle(.plain)
+            .popover(isPresented: isServerMenuShown, arrowEdge: .top) {
+                ServerSheet(onInvite: queueInvite, onOpen: openFromMenu)
+                    .frame(width: 360, height: 600)
+                    .macPopover()
+                    .environment(session)
+                    .environment(servers)
+            }
 
             HStack(spacing: 8) {
                 SearchLink(route: SearchRoute()) {
@@ -112,9 +139,19 @@ struct ChannelListPanel: View {
         isServerSheetPresented = true
     }
 
-    // a sheet cannot open while another one is still closing
+    // a sheet cannot open while another one is still closing. the mac's dropdown is no sheet,
+    // and has no closing to wait for
     private func queueInvite() {
-        isInviteQueued = true
+        if isOnMac {
+            isInvitePresented = true
+        } else {
+            isInviteQueued = true
+        }
+    }
+
+    private func openFromMenu(_ sheet: ServerMenuSheet) {
+        isServerSheetPresented = false
+        menuSheet = sheet
     }
 
     private func showQueuedInvite() {

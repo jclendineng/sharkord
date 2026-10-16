@@ -102,6 +102,18 @@ under the pointer through the list's collection view. The server rail squares an
 shows a short pill instead, as Discord's does. A server menu and the search card close each
 other, since they are drawn in separate layers.
 
+Escape closes whatever is open: every sheet (`appSheet`), the menus, the composer's panels and
+the search panel, and goes back from a thread or a channel's info (`escapeGoesBack`). A menu
+item that opens a sheet hands it to the view that owns the menu, so the menu is gone before the
+sheet shows rather than left open behind it.
+
+Laid out the way Discord's Mac app is: the server's menu drops down under its name, server
+settings take the whole window with the pages down the side, a thread opens in a panel beside
+the chat in the member list's place, the plus by the message box is a short menu, and the emoji
+picker keeps to its own width under its button. The member list grows with a wide window.
+Voice & Video picks the input and output device; Automatic uses a headset's or USB mic whenever
+one is plugged in, kept to on every route change (`AudioInputPreference`).
+
 ## Sessions
 
 Each sign in is a row in the server's `sessions` table, and its id rides in the token. The

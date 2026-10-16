@@ -81,8 +81,10 @@ press option.
 ## Search
 
 Discord's filters: `from:`, `in:`, `mentions:`, `has:`, `before:`, `after:` and `during:`.
-`has:` takes `image`, `video`, `link`, `file`, `poll` or `sticker`. Direct messages are
-searched too. In the app, picking a filter puts its token in the search box with the choices
+`has:` takes `image`, `video`, `link`, `file`, `poll` or `sticker`. The server searches
+direct messages too; the app keeps them to the search in the messages panel, as Discord does,
+and its server search shows channels only (dropped in the app, so an older server still
+works). A message found by its picture shows the picture. In the app, picking a filter puts its token in the search box with the choices
 listed under it. Searching from a channel or a direct message starts with an `in:` filter
 for it, which can be removed to search everything; searching from the server's channel
 list covers the whole server. Route `messages.search`.

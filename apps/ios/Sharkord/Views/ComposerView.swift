@@ -273,7 +273,26 @@ struct ComposerView: View {
     // discord's row: attach, the field with emoji and the mic inside, send once there is text
     private var inputRow: some View {
         HStack(alignment: .bottom, spacing: 8) {
-            if canUpload && store.editing == nil {
+            if canUpload && store.editing == nil && ProcessInfo.processInfo.isiOSAppOnMac {
+                // discord's mac: a short menu by the plus, not the phone's panel of photos
+                Menu {
+                    Button("Upload a File", systemImage: "doc", action: openFileImporter)
+                    Button("Photos", systemImage: "photo.on.rectangle", action: openPhotoPicker)
+
+                    if let pollAction {
+                        Button("Create Poll", systemImage: "chart.bar.xaxis", action: pollAction)
+                    }
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(Theme.text)
+                        .frame(width: 38, height: 38)
+                        .background(Theme.inputBackground, in: .circle)
+                }
+                .menuStyle(.button)
+                .buttonStyle(.plain)
+                .accessibilityLabel("Attach")
+            } else if canUpload && store.editing == nil {
                 // one plus turned into an x, a swapped symbol animates apart from the row as
                 // it slides with the panel
                 Button(action: toggleAttachPanel) {

@@ -19,6 +19,10 @@ struct ChatScreen: View {
     // card sliding, and redrawing the chat each frame dropped the top bar's buttons until it
     // settled
     @State private var hasRoomForMembers = false
+    // the member list grows with a wide mac window, in steps, see MembersColumn
+    @State private var membersScale: CGFloat = 1
+    // the mac's thread panel, which takes the member list's place beside the conversation
+    @State private var threadParent: Message?
     // discord's member list beside a server channel, on by default, the header's button hides it
     @AppStorage("showsMemberList") private var showsMemberList = true
 
@@ -80,14 +84,26 @@ struct ChatScreen: View {
     var body: some View {
         HStack(spacing: 0) {
             conversation
+                .environment(\.openThreadPanel, canShowThreadPanel ? openThreadPanel : nil)
 
-            if canShowMembers && showsMemberList {
-                MembersColumn(channelId: channelId)
+            if let threadParent {
+                Theme.divider
+                    .frame(width: 1)
+
+                ThreadScreen(parent: threadParent, onClose: closeThreadPanel)
+                    .frame(width: 420)
+                    .id(threadParent.id)
+                    .transition(.opacity)
+            } else if canShowMembers && showsMemberList {
+                MembersColumn(channelId: channelId, scale: membersScale)
                     .transition(.opacity)
             }
         }
         .onGeometryChange(for: Bool.self, of: { $0.size.width >= 520 + MembersColumn.width }) { hasRoom in
             hasRoomForMembers = hasRoom
+        }
+        .onGeometryChange(for: CGFloat.self, of: { MembersColumn.scale(forChatWidth: $0.size.width) }) { scale in
+            membersScale = scale
         }
         .animation(.easeOut(duration: 0.12), value: showsMemberList)
         // discord's mac pins and search slide down from under the top bar at its right edge,
@@ -245,6 +261,19 @@ struct ChatScreen: View {
                 dismiss()
             }
         }
+    }
+
+    // a mac's channel, threads being a channel's
+    private var canShowThreadPanel: Bool {
+        ProcessInfo.processInfo.isiOSAppOnMac && channel?.isDm == false
+    }
+
+    private func openThreadPanel(_ parent: Message) {
+        threadParent = parent
+    }
+
+    private func closeThreadPanel() {
+        threadParent = nil
     }
 
     private func toggleMemberList() {

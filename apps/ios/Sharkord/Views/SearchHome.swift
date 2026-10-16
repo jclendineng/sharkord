@@ -80,7 +80,7 @@ final class SearchHomeModel {
                 }
 
                 if media == nil {
-                    media = try await mediaItems(client)
+                    media = try await mediaItems(client, session: session)
                 }
             case .members:
                 // the people you have conversations with
@@ -103,7 +103,7 @@ final class SearchHomeModel {
                 }
             case .media:
                 if media == nil {
-                    media = try await mediaItems(client)
+                    media = try await mediaItems(client, session: session)
                 }
             case .pins:
                 if let scope, pins == nil {
@@ -113,12 +113,12 @@ final class SearchHomeModel {
                 }
             case .links:
                 if links == nil {
-                    links = try await search(client, has: .link).messages
+                    links = try await search(client, session: session, has: .link).messages
                 }
             case .files:
                 if files == nil {
                     // every file, pictures and videos too, as discord's files tab lists them
-                    files = try await search(client, has: .file).files
+                    files = try await search(client, session: session, has: .file).files
                 }
             }
         } catch {
@@ -152,21 +152,29 @@ final class SearchHomeModel {
         return pins.sorted { $0.createdAt > $1.createdAt }
     }
 
-    private func search(_ client: TRPCClient, has: SearchFilters.Has) async throws -> SearchResults {
+    private func search(_ client: TRPCClient, session: SessionStore, has: SearchFilters.Has) async throws -> SearchResults {
         var filters = SearchFilters()
 
         filters.channel = scope
         filters.directMessagesOnly = inDirectMessages
         filters.has = has
 
-        return try await client.query("messages.search", input: SearchInput(query: nil, filters: filters))
+        let found: SearchResults = try await client.query("messages.search", input: SearchInput(query: nil, filters: filters))
+
+        guard !inDirectMessages, scope?.isDm != true else {
+            return found
+        }
+
+        // a closed conversation is not in the list at all, so only a channel known to be the
+        // server's counts as one
+        return found.withoutDirectMessages { session.channel($0)?.isDm == false }
     }
 
     // pictures and videos together, newest first
     // pictures, videos and the gifs shown from links, newest first
-    private func mediaItems(_ client: TRPCClient) async throws -> [MediaItem] {
-        async let images = search(client, has: .image)
-        async let videos = search(client, has: .video)
+    private func mediaItems(_ client: TRPCClient, session: SessionStore) async throws -> [MediaItem] {
+        async let images = search(client, session: session, has: .image)
+        async let videos = search(client, session: session, has: .video)
 
         let (imageResults, videoResults) = try await (images, videos)
         let files = (imageResults.files + videoResults.files).map(MediaItem.file)

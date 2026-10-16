@@ -6,6 +6,16 @@ struct MembersColumn: View {
     static let width: CGFloat = 240
 
     let channelId: Int
+    // how much larger than its smallest it is drawn, growing with a wide mac window
+    var scale: CGFloat = 1
+
+    // past a chat this wide the column grows with it, its rows and text too, up to a limit
+    static func scale(forChatWidth width: CGFloat) -> CGFloat {
+        let scale = min(max(width / 1400, 1), 1.75)
+
+        // in steps, so a window being resized does not redraw the list at every point
+        return (scale * 20).rounded() / 20
+    }
 
     @Environment(SessionStore.self) private var session
 
@@ -30,14 +40,14 @@ struct MembersColumn: View {
             LazyVStack(alignment: .leading, spacing: 2) {
                 ForEach(sections, id: \.title) { section in
                     Text("\(section.title.uppercased()) · \(section.users.count)")
-                        .font(.caption.weight(.semibold))
+                        .font(.system(size: 12 * scale, weight: .semibold))
                         .foregroundStyle(Theme.muted)
                         .padding(.horizontal, 10)
                         .padding(.top, 16)
                         .padding(.bottom, 4)
 
                     ForEach(section.users) { user in
-                        MemberColumnRow(user: user, channelId: channelId)
+                        MemberColumnRow(user: user, channelId: channelId, scale: scale)
                     }
                 }
             }
@@ -48,7 +58,7 @@ struct MembersColumn: View {
         .task(id: channelId) {
             await loadChannelMembers()
         }
-        .frame(width: Self.width)
+        .frame(width: Self.width * scale)
         .background(Theme.chatBackground)
         .overlay(alignment: .leading) {
             Rectangle()
@@ -75,6 +85,7 @@ extension MembersColumn {
 private struct MemberColumnRow: View {
     let user: PublicUser
     let channelId: Int
+    let scale: CGFloat
 
     @Environment(SessionStore.self) private var session
     @Environment(ServerListStore.self) private var servers
@@ -90,18 +101,18 @@ private struct MemberColumnRow: View {
 
     var body: some View {
         Button(action: showProfile) {
-            HStack(spacing: 10) {
-                AvatarView(user: user, size: 32, showsStatus: true)
+            HStack(spacing: 10 * scale) {
+                AvatarView(user: user, size: 32 * scale, showsStatus: true)
 
                 VStack(alignment: .leading, spacing: 1) {
                     Text(user.name)
-                        .font(.subheadline.weight(.medium))
+                        .font(.system(size: 15 * scale, weight: .medium))
                         .foregroundStyle(Color(hex: session.roleColor(for: user) ?? "#F2F3F5"))
                         .lineLimit(1)
 
                     if let customStatus = user.customStatus, !customStatus.isEmpty {
                         Text(customStatus)
-                            .font(.caption)
+                            .font(.system(size: 12 * scale))
                             .foregroundStyle(Theme.muted)
                             .lineLimit(1)
                     }
@@ -112,7 +123,7 @@ private struct MemberColumnRow: View {
             // discord dims who is away, the row stays readable
             .opacity(isOffline && !isHovered ? 0.45 : 1)
             .padding(.horizontal, 8)
-            .padding(.vertical, 5)
+            .padding(.vertical, 5 * scale)
             .background(isHovered || isMenuPresented ? Theme.hover : .clear, in: .rect(cornerRadius: 6))
             .contentShape(.rect)
         }
@@ -132,7 +143,7 @@ private struct MemberColumnRow: View {
         // and opened short, the note cut off under a scroll bar
         .popover(isPresented: $isProfilePresented, arrowEdge: .trailing) {
             MemberProfileSheet(user: user, onMessage: openDirectMessage)
-                .frame(width: 340, height: 600)
+                .frame(width: 340 * scale, height: 600 * scale)
                 .presentationCompactAdaptation(.popover)
                 .environment(session)
                 .environment(servers)

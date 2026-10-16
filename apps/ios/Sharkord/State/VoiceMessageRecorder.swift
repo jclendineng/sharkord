@@ -24,6 +24,7 @@ final class VoiceMessageRecorder {
 
         try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetoothHFP])
         try session.setActive(true)
+        AudioInputPreference.apply()
 
         let url = FileManager.default.temporaryDirectory.appending(path: "voice-message-\(UUID().uuidString).m4a")
         let recorder = try AVAudioRecorder(url: url, settings: [

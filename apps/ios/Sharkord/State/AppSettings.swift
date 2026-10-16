@@ -32,6 +32,7 @@ final class AppSettings {
         static let incomingVideoOff = "settings.incomingVideoOff"
         static let soundboardVolume = "settings.soundboardVolume"
         static let doubleTapReaction = "settings.doubleTapReaction"
+        static let inputDeviceId = "settings.inputDeviceId"
     }
 
     private let defaults = UserDefaults.standard
@@ -89,6 +90,11 @@ final class AppSettings {
         didSet { defaults.set(doubleTapReaction, forKey: Key.doubleTapReaction) }
     }
 
+    // the mic picked in voice settings, nil for automatic, see AudioInputPreference
+    var inputDeviceId: String? {
+        didSet { defaults.set(inputDeviceId, forKey: Key.inputDeviceId) }
+    }
+
     private init() {
         defaults.register(defaults: [
             Key.echoCancellation: true,
@@ -110,6 +116,7 @@ final class AppSettings {
         incomingVideoOff = defaults.bool(forKey: Key.incomingVideoOff)
         soundboardVolume = defaults.double(forKey: Key.soundboardVolume)
         doubleTapReaction = defaults.string(forKey: Key.doubleTapReaction) ?? "heart"
+        inputDeviceId = defaults.string(forKey: Key.inputDeviceId)
         streamQuality = defaults.string(forKey: Key.streamQuality).flatMap(StreamQuality.init(rawValue:)) ?? .standard
     }
 }

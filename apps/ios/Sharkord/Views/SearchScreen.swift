@@ -375,7 +375,7 @@ struct SearchScreen: View {
             let found: SearchResults = try await client.query("messages.search", input: input)
 
             if !Task.isCancelled {
-                results = found
+                results = keepsDirectMessages ? found : found.withoutDirectMessages(isServerChannel: isServerChannel)
             }
         } catch {
             if !Task.isCancelled {
@@ -383,6 +383,17 @@ struct SearchScreen: View {
                 errorMessage = error.localizedDescription
             }
         }
+    }
+
+    // the messages panel's search, or one narrowed to a conversation
+    private var keepsDirectMessages: Bool {
+        directMessages || filters.channel?.isDm == true
+    }
+
+    // a closed conversation is not in the list at all, so only a channel known to be the server's
+    // counts as one
+    private func isServerChannel(_ channelId: Int) -> Bool {
+        session.channel(channelId)?.isDm == false
     }
 
     private func openChannel(_ channelId: Int) {

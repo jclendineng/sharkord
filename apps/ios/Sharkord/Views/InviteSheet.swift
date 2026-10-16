@@ -1,7 +1,8 @@
 import SwiftUI
 
-// a fresh link each time, like discord's invite sheet, with its expire after and max uses.
-// invites.add needs MANAGE_INVITES, anyone without it sees the server's refusal
+// your last link while it still works, like discord's invite sheet, with its expire after and max
+// uses. a new one only when a setting changes or one is asked for. invites.add and getAll need
+// MANAGE_INVITES, anyone without it sees the server's refusal
 struct InviteSheet: View {
     private static let maxUsesChoices = [0, 1, 5, 10, 25, 50, 100]
 
@@ -11,6 +12,11 @@ struct InviteSheet: View {
     @State private var expiry = InviteExpiry.week
     @State private var maxUses = 0
     @State private var invite: Invite?
+    // when the shown link runs out, nil for never
+    @State private var expiresAt: Date?
+    // the settings the shown link was made with: the pickers set from a reused link must not
+    // count as asking for a new one
+    @State private var shownKey: String?
     @State private var inviteURL: URL?
     @State private var errorMessage: String?
     @State private var isCopied = false
@@ -20,7 +26,12 @@ struct InviteSheet: View {
     }
 
     private var summary: String {
-        let expires = expiry == .never ? "never expires" : "expires in \(expiry.rawValue)"
+        var expires = "never expires"
+
+        if let expiresAt {
+            expires = "expires \(RelativeDateTimeFormatter().localizedString(for: expiresAt, relativeTo: .now))"
+        }
+
         let uses = maxUses == 0 ? "" : ", good for \(maxUses) \(maxUses == 1 ? "use" : "uses")"
 
         return "Send a server invite link to a friend. It \(expires)\(uses)."
@@ -56,6 +67,10 @@ struct InviteSheet: View {
                         .buttonStyle(.bordered)
                     }
                     .controlSize(.large)
+
+                    Button("Generate New Link", systemImage: "arrow.clockwise", action: regenerate)
+                        .font(.subheadline)
+                        .tint(Theme.link)
                 } else if let errorMessage {
                     Text(errorMessage)
                         .foregroundStyle(Theme.red)
@@ -100,8 +115,13 @@ struct InviteSheet: View {
         }
         .sheetDetents([.medium, .large])
         .presentationBackground(Theme.listBackground)
-        .task(id: settingsKey) {
-            await createInvite()
+        .task {
+            await loadInvite()
+        }
+        .onChange(of: settingsKey) { _, key in
+            if shownKey != nil, key != shownKey {
+                regenerate()
+            }
         }
     }
 
@@ -120,8 +140,47 @@ struct InviteSheet: View {
         .frame(minHeight: 48)
     }
 
-    // a change of settings replaces the link, and the one it replaces is deleted so unused
-    // invites do not pile up in the server's list
+    // the newest of your own links that still works, a role's invite left to the admin list. none,
+    // and a link is made
+    private func loadInvite() async {
+        let all: [AdminInvite]? = try? await session.request("invites.getAll")
+        let usable = (all ?? []).filter { candidate in
+            let hasUsesLeft = (candidate.maxUses ?? 0) == 0 || candidate.uses < (candidate.maxUses ?? 0)
+
+            return candidate.creator?.id == session.ownUserId && candidate.role == nil && !candidate.isExpired && hasUsesLeft
+        }
+
+        guard let reused = usable.max(by: { $0.createdAt < $1.createdAt }), let address = session.address else {
+            await createInvite()
+            return
+        }
+
+        invite = Invite(id: reused.id, code: reused.code)
+        inviteURL = Self.link(for: reused.code, address: address)
+        expiresAt = reused.expiresAt.map { Date(timeIntervalSince1970: TimeInterval($0) / 1000) }
+        maxUses = Self.maxUsesChoices.contains(reused.maxUses ?? 0) ? reused.maxUses ?? 0 : 0
+        // the lifetime it was made with, which is one of the picker's
+        let lifetime = reused.expiresAt.map { TimeInterval($0 - reused.createdAt) / 1000 }
+
+        expiry = InviteExpiry.allCases.first { $0.interval.map { abs($0 - (lifetime ?? 0)) < 60 } ?? (lifetime == nil) } ?? .week
+        shownKey = settingsKey
+    }
+
+    private func regenerate() {
+        Task {
+            await createInvite()
+        }
+    }
+
+    // the web client's invite link, see table-invite.tsx
+    private static func link(for code: String, address: ServerAddress) -> URL? {
+        let encoded = code.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? code
+
+        return URL(string: "\(address.baseURL.absoluteString)/?invite=\(encoded)")
+    }
+
+    // a new link replaces the shown one, which is deleted so unused invites do not pile up in the
+    // server's list
     private func createInvite() async {
         guard let client = session.client, let address = session.address else {
             return
@@ -135,17 +194,17 @@ struct InviteSheet: View {
         let expiresAt = expiry.interval.map { Int(Date.now.addingTimeInterval($0).timeIntervalSince1970 * 1000) }
         let previous = invite
 
+        shownKey = settingsKey
         inviteURL = nil
         errorMessage = nil
         isCopied = false
 
         do {
             let created: Invite = try await client.mutation("invites.add", input: InviteInput(expiresAt: expiresAt, maxUses: maxUses))
-            let code = created.code.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? created.code
 
             invite = created
-            // the web client's invite link, see table-invite.tsx
-            inviteURL = URL(string: "\(address.baseURL.absoluteString)/?invite=\(code)")
+            inviteURL = Self.link(for: created.code, address: address)
+            self.expiresAt = expiresAt.map { Date(timeIntervalSince1970: TimeInterval($0) / 1000) }
 
             if let previous {
                 try? await client.mutation("invites.delete", input: ["inviteId": previous.id])

@@ -194,6 +194,15 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 ### Changed
 
+- On a Mac the app is laid out like Discord's: the server's menu drops down under its name,
+  server settings fill the window with their pages down the side, a thread opens in a panel
+  beside the chat, the plus by the message box opens a short menu, the emoji picker keeps to
+  its own width, and the member list grows with the window. Voice & Video picks the mic and
+  speakers, using a headset's mic whenever one is plugged in. Escape closes sheets, menus and
+  panels and goes back from a thread.
+- In the app, the server's search leaves direct messages to the messages panel's own search.
+- In the app, the invite sheet reuses your last link while it works, until you generate a new
+  one or delete it, instead of making a fresh one every time.
 - In the app on a phone, joining a voice channel, or Open Call, grows the voice sheet into the
   call in one motion, starting at the tap, as Discord's does. Before, a second screen slid up
   over the sheet after the join. A swipe down puts the call away and it goes on.
@@ -216,6 +225,10 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 ### Fixed
 
+- On a Mac, the search box keeps focus while typing, the chat keeps its top bar and channel name
+  while searching, search results open when clicked, and a message found by a GIF shows it.
+- On a Mac, a menu closes before the sheet it opens instead of staying open behind it, the
+  profile card closes when settings open, and the member profile opens tall enough for the note.
 - In the app, a call is heard both ways: whoever joined after the app, or started talking or
   sharing a camera after it joined, was never heard or seen, since the app listened for new
   streams before it was in the call.

@@ -17,6 +17,7 @@ struct MessageListView<Header: View>: View {
     @State private var deletingMessage: Message?
     @State private var menuSheet: MessageMenuSheet?
     @State private var openedThread: Message?
+    @Environment(\.openThreadPanel) private var openThreadPanel
     // opened once the actions sheet has finished going, pushed under it the two moved at once
     @State private var threadAfterActions: Message?
 
@@ -432,7 +433,12 @@ struct MessageListView<Header: View>: View {
         }
 
         threadAfterActions = nil
-        openedThread = message
+
+        if let openThreadPanel {
+            openThreadPanel(message)
+        } else {
+            openedThread = message
+        }
     }
 
     private func startsNewDay(at index: Int) -> Bool {
