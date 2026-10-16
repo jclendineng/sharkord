@@ -31,8 +31,14 @@ video, notifications), the full server settings, polls, voice messages, and Disc
 attachment and expression panels (emoji, GIFs, stickers), typing indicators, pinning messages
 and a channel's pinned list, a channel screen from its name (members, media, pins, links, files),
 search in the expression panel at full height, a double tap reaction you pick, friends and friend requests, group direct messages, direct message menus (close, pin, mute for a while), profile banners, voice reactions, the soundboard (playing in calls, your own soundboard volume, and managing sounds with uploads and the server's library), moving people between voice
-channels, a member's activity for moderators, and posting locked where a private channel does
-not allow it. Not in the app: plugin slash commands, actions and plugin panels, which are web
+channels, a member's activity for moderators, posting locked where a private channel does
+not allow it, Discord style Markdown in the composer (`HTMLText.messageHTML(fromMarkdown:)`,
+turned back with `markdown(from:)` when editing) with lists, quotes, strikethrough and
+underline drawn in messages, two-factor sign in (a code field after the password, and setup with
+a QR code in Account settings), deleting your own account, turning off incoming video in the
+voice sheet, a private channel's member column showing only who can see it, generated avatars,
+webhook messages under their name, and for moderators an optional IP ban, password reset links
+shared from a member's page, and the AFK channel in General settings. Not in the app: plugin slash commands, actions and plugin panels, which are web
 only. See
 [docs/features.md](../../docs/features.md) for what the server side of each needs.
 
@@ -75,6 +81,12 @@ Each sign in is a row in the server's `sessions` table, and its id rides in the 
 Devices screen lists them and can sign one or all others out. The app renews its token on
 every connect (`sessions.refreshToken`), so a device in regular use is never signed out by
 the token's one week expiry.
+
+## Servers under a subpath
+
+A server behind a proxy at a path, `https://example.com/sharkord`, is entered with that path.
+`ServerAddress` keeps it in `baseURL`, so every route, the socket and file links go under it,
+and emoji stored as `/public/...` are appended to it rather than resolved against the host.
 
 ## OIDC sign in
 
