@@ -209,6 +209,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 ### Fixed
 
+- On a Mac, the inbox under the bell has an X in its top left and closes with Escape. It
+  opens as a sheet there, which a click outside never closed.
 - The web client joins its call again after a dropped connection comes back, instead of
   showing a call the server had already ended, as the app already did
   ([#849](https://github.com/Sharkord/sharkord/issues/849)).

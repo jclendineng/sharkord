@@ -36,7 +36,14 @@ struct InboxSheet: View {
             .navigationTitle("Inbox")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                if !ProcessInfo.processInfo.isiOSAppOnMac {
+                // on a mac the bell's popover opens as a sheet that a click outside does not
+                // close, so it gets the x the other sheets have, and escape closes it too
+                if ProcessInfo.processInfo.isiOSAppOnMac {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Close", systemImage: "xmark", action: close)
+                            .keyboardShortcut(.cancelAction)
+                    }
+                } else {
                     ToolbarItem(placement: .confirmationAction) {
                         Button("Done", action: close)
                     }
