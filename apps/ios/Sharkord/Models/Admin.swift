@@ -7,6 +7,7 @@ enum Permission: String, CaseIterable, Codable {
     case sendMessages = "SEND_MESSAGES"
     case reactToMessages = "REACT_TO_MESSAGES"
     case pinMessages = "PIN_MESSAGES"
+    case pinDmMessages = "PIN_DM_MESSAGES"
     case uploadFiles = "UPLOAD_FILES"
     case joinVoiceChannels = "JOIN_VOICE_CHANNELS"
     case shareScreen = "SHARE_SCREEN"
@@ -51,8 +52,42 @@ struct AdminRole: Codable, Identifiable, Hashable {
     let isPersistent: Bool
     let isDefault: Bool
     var permissions: [Permission]
+    // permissions from a newer server than this app, kept so saving the role does not drop them
+    let unknownPermissions: [String]
     let storageQuotaOverrideEnabled: Bool
     let storageSpaceQuota: Int
+
+    private enum CodingKeys: String, CodingKey {
+        case id, name, color, isPersistent, isDefault, permissions, storageQuotaOverrideEnabled, storageSpaceQuota
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let rawPermissions = try container.decode([String].self, forKey: .permissions)
+
+        id = try container.decode(Int.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        color = try container.decode(String.self, forKey: .color)
+        isPersistent = try container.decode(Bool.self, forKey: .isPersistent)
+        isDefault = try container.decode(Bool.self, forKey: .isDefault)
+        permissions = rawPermissions.compactMap(Permission.init(rawValue:))
+        unknownPermissions = rawPermissions.filter { Permission(rawValue: $0) == nil }
+        storageQuotaOverrideEnabled = try container.decode(Bool.self, forKey: .storageQuotaOverrideEnabled)
+        storageSpaceQuota = try container.decode(Int.self, forKey: .storageSpaceQuota)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        try container.encode(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encode(color, forKey: .color)
+        try container.encode(isPersistent, forKey: .isPersistent)
+        try container.encode(isDefault, forKey: .isDefault)
+        try container.encode(permissions.map(\.rawValue) + unknownPermissions, forKey: .permissions)
+        try container.encode(storageQuotaOverrideEnabled, forKey: .storageQuotaOverrideEnabled)
+        try container.encode(storageSpaceQuota, forKey: .storageSpaceQuota)
+    }
 }
 
 // others.getSettings, the general part of it

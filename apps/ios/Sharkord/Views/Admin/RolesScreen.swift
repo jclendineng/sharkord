@@ -211,7 +211,7 @@ private struct RoleEditor: View {
             let roleId: Int
             let name: String
             let color: String
-            let permissions: [Permission]
+            let permissions: [String]
             let storageQuotaOverrideEnabled: Bool
             let storageSpaceQuota: Int
         }
@@ -220,7 +220,7 @@ private struct RoleEditor: View {
             roleId: role.id,
             name: name.trimmingCharacters(in: .whitespaces),
             color: color.hexString,
-            permissions: Permission.allCases.filter(permissions.contains),
+            permissions: Permission.allCases.filter(permissions.contains).map(\.rawValue) + role.unknownPermissions,
             storageQuotaOverrideEnabled: role.storageQuotaOverrideEnabled,
             storageSpaceQuota: role.storageSpaceQuota
         )

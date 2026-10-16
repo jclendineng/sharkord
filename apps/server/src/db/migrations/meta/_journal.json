@@ -428,6 +428,13 @@
       "when": 1792162404295,
       "tag": "0060_plugin_storage",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "6",
+      "when": 1792164044821,
+      "tag": "0061_grant_pin_dm_messages",
+      "breakpoints": true
     }
   ]
 }

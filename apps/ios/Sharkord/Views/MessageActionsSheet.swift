@@ -102,7 +102,7 @@ struct MessageActionsSheet: View {
                         ActionRow(title: "Mark Unread", systemImage: "envelope.badge", action: markUnread)
                     }
 
-                    if session.can(.pinMessages) {
+                    if session.canPin(in: message.channelId) {
                         ActionRow(
                             title: message.pinned == true ? "Unpin Message" : "Pin Message",
                             systemImage: message.pinned == true ? "pin.slash" : "pin",

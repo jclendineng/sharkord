@@ -10,6 +10,7 @@ import {
 import { openThreadSidebar } from '@/features/app/actions';
 import { useIsShiftHeld } from '@/features/app/hooks';
 import { requestConfirmation } from '@/features/dialogs/actions';
+import { useChannelById } from '@/features/server/channels/hooks';
 import { useCustomEmojis } from '@/features/server/emojis/hooks';
 import { getTRPCClient } from '@/lib/trpc';
 import { Permission, PluginSlot } from '@sharkord/shared';
@@ -100,6 +101,10 @@ const MessageActions = memo(
     }, [recentEmojis, customEmojis]);
 
     const isShiftHeld = useIsShiftHeld();
+    const channel = useChannelById(channelId);
+    const pinPermission = channel?.isDm
+      ? Permission.PIN_DM_MESSAGES
+      : Permission.PIN_MESSAGES;
 
     const pluginProps = useMemo(
       () => ({ messageId, channelId }),
@@ -205,7 +210,7 @@ const MessageActions = memo(
           </>
         )}
         {!disablePin && (
-          <Protect permission={Permission.PIN_MESSAGES}>
+          <Protect permission={pinPermission}>
             <IconButton
               size="sm"
               variant="ghost"

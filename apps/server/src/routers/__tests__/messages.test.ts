@@ -118,6 +118,51 @@ describe('messages router', () => {
     expect(unpinned?.pinnedBy).toBeNull();
   });
 
+  // seeded message 2 sits in the dm between users 3 and 4, who only hold the default role
+  test('should refuse pinning in a direct message without PIN_DM_MESSAGES', async () => {
+    const { caller } = await initTest(3);
+
+    await expect(caller.messages.togglePin({ messageId: 2 })).rejects.toThrow(
+      'Insufficient permissions'
+    );
+  });
+
+  test('should pin in a direct message with PIN_DM_MESSAGES but not in a channel', async () => {
+    const { caller: owner } = await initTest(1);
+    const defaultRole = await tdb
+      .select({ id: roles.id })
+      .from(roles)
+      .where(eq(roles.isDefault, true))
+      .get();
+
+    await tdb.insert(rolePermissions).values({
+      roleId: defaultRole!.id,
+      permission: Permission.PIN_DM_MESSAGES,
+      createdAt: Date.now()
+    });
+
+    const { caller } = await initTest(3);
+
+    await caller.messages.togglePin({ messageId: 2 });
+
+    const dmMessage = await tdb
+      .select({ pinned: messages.pinned })
+      .from(messages)
+      .where(eq(messages.id, 2))
+      .get();
+
+    expect(dmMessage?.pinned).toBe(true);
+
+    const channelMessageId = await sendMessage(owner, {
+      channelId: 1,
+      content: 'not for user 3 to pin'
+    });
+
+    await expect(
+      caller.messages.togglePin({ messageId: channelMessageId })
+    ).rejects.toThrow('Insufficient permissions');
+  });
+
   test('should throw when user lacks permissions (togglePin)', async () => {
     const { caller: caller1 } = await initTest(1);
     const { caller: caller2 } = await initTest(2);
@@ -2431,10 +2476,10 @@ describe('messages router', () => {
   test('should throw when pinning a DM message with DMs disabled', async () => {
     const { caller } = await initTest(3);
 
-    // give user 3 PIN_MESSAGES permission via their default role
+    // give user 3 PIN_DM_MESSAGES permission via their default role
     await tdb.insert(rolePermissions).values({
       roleId: 2,
-      permission: Permission.PIN_MESSAGES,
+      permission: Permission.PIN_DM_MESSAGES,
       createdAt: Date.now()
     });
 

@@ -178,6 +178,11 @@ final class SessionStore {
         isOwner || ownPermissions.contains(permission.rawValue)
     }
 
+    // direct messages have their own pin permission, so pinning there can be allowed alone
+    func canPin(in channelId: Int) -> Bool {
+        can(isDirectMessage(channelId) ? .pinDmMessages : .pinMessages)
+    }
+
     // useChannelCan on the web: public channels and direct messages are not bound by channel
     // permissions, in a private one view has to hold before anything else counts
     func can(_ permission: String, inChannel channelId: Int) -> Bool {

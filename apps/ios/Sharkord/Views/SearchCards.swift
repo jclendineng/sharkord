@@ -199,7 +199,7 @@ struct PinCardTile: View {
                 Button("Copy Text", systemImage: "doc.on.doc", action: copyText)
             }
 
-            if session.can(.pinMessages) {
+            if session.canPin(in: message.channelId) {
                 Button("Unpin Message", systemImage: "pin.slash", role: .destructive, action: unpin)
             }
         }
