@@ -48,18 +48,19 @@ const loadMediasoup = async () => {
 
   if (IS_PRODUCTION) {
     const announcedAddress = config.webRtc.announcedAddress || SERVER_PUBLIC_IP;
+    const { listenIp } = config.webRtc;
 
     webRtcServer = await mediaSoupWorker.createWebRtcServer({
       listenInfos: [
-        { protocol: 'udp', ip: '0.0.0.0', announcedAddress, port },
-        { protocol: 'tcp', ip: '0.0.0.0', announcedAddress, port }
+        { protocol: 'udp', ip: listenIp, announcedAddress, port },
+        { protocol: 'tcp', ip: listenIp, announcedAddress, port }
       ]
     });
 
-    webRtcServerListenInfo = { ip: '0.0.0.0', announcedAddress };
+    webRtcServerListenInfo = { ip: listenIp, announcedAddress };
 
     logger.debug(
-      `WebRtcServer created on port ${port} with announcedAddress ${announcedAddress}`
+      `WebRtcServer created on ${listenIp}:${port} with announcedAddress ${announcedAddress}`
     );
   } else {
     webRtcServer = await mediaSoupWorker.createWebRtcServer({

@@ -1,6 +1,7 @@
 import { getErrorMessage } from '@sharkord/shared';
 import fs from 'fs/promises';
 import { parse, stringify } from 'ini';
+import { isIP } from 'net';
 import z from 'zod';
 import { applyEnvOverrides } from './helpers/apply-env-overrides';
 import { ensureServerDirs } from './helpers/ensure-server-dirs';
@@ -76,6 +77,9 @@ const zConfig = z.object({
   gifs: z.record(z.string(), z.unknown()).default({}),
   webRtc: z.object({
     port: z.coerce.number().int().positive(),
+    // :: listens on ipv6 as well as ipv4 where the host allows it, opt in since a container
+    // without ipv6 would fail to bind it and lose voice entirely
+    listenIp: z.string().refine((ip) => isIP(ip) !== 0, 'Invalid listen ip'),
     announcedAddress: z.string(),
     maxBitrate: z.coerce.number().int().positive()
   }),
@@ -151,6 +155,7 @@ const defaultConfig: TConfig = {
   gifs: {},
   webRtc: {
     port: 40000,
+    listenIp: '0.0.0.0',
     announcedAddress: '',
     maxBitrate: 30_000_000 // 30 Mbps
   },
@@ -328,6 +333,7 @@ const envOverridesMap: Record<string, string> = {
   'push.apnsKeyPath': 'SHARKORD_PUSH_APNS_KEY_PATH',
   'push.apnsBundleId': 'SHARKORD_PUSH_APNS_BUNDLE_ID',
   'webRtc.port': 'SHARKORD_WEBRTC_PORT',
+  'webRtc.listenIp': 'SHARKORD_WEBRTC_LISTEN_IP',
   'webRtc.announcedAddress': 'SHARKORD_WEBRTC_ANNOUNCED_ADDRESS',
   'webRtc.maxBitrate': 'SHARKORD_WEBRTC_MAX_BITRATE'
 };
