@@ -418,6 +418,9 @@ private struct ChatDropdownPanel: View {
                     .strokeBorder(Theme.panelEdge, lineWidth: 1)
             }
             .shadow(color: .black.opacity(0.4), radius: 20, y: 8)
+            // one layer with its shadow: faded on its own, the shadow showed through the half clear
+            // card as a dark box
+            .compositingGroup()
             .padding(.top, 8)
             .padding(.horizontal, 12)
             .padding(.bottom, 12)

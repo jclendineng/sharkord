@@ -84,6 +84,7 @@ struct ExpressionPicker: View {
                 .strokeBorder(Theme.panelEdge, lineWidth: 1)
         }
         .shadow(color: .black.opacity(0.45), radius: 20, y: 8)
+        .compositingGroup()
         .environment(model)
     }
 }

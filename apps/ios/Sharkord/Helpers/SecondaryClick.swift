@@ -364,6 +364,7 @@ struct PointerMenuLayer: View {
                     .strokeBorder(Theme.panelEdge, lineWidth: 1)
             }
             .shadow(color: .black.opacity(0.4), radius: 16, y: 6)
+            .compositingGroup()
     }
 
     // at the pointer, moved back in where it would run off the right, and up as far as it has

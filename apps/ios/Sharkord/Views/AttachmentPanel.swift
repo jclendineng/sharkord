@@ -77,6 +77,7 @@ struct AttachmentPanel: View {
                 .strokeBorder(.white.opacity(0.06), lineWidth: 1)
         }
         .shadow(color: .black.opacity(0.45), radius: 24, y: 10)
+        .compositingGroup()
         .padding(.horizontal, 28)
         .padding(.bottom, 6)
         .background(alignment: .bottom) {

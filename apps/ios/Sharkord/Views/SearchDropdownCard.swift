@@ -32,6 +32,7 @@ struct SearchDropdownCard: View {
                         .strokeBorder(Theme.panelEdge, lineWidth: 1)
                 }
                 .shadow(color: .black.opacity(0.4), radius: 20, y: 8)
+                .compositingGroup()
                 .offset(x: max(12, left), y: top)
             }
         }
