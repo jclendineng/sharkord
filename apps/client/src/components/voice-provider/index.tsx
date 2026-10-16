@@ -1,7 +1,10 @@
 import { useCurrentVoiceChannelId } from '@/features/server/channels/hooks';
 import { useWebRtcSimulcastEnabled } from '@/features/server/hooks';
 import { SoundType } from '@/features/server/types';
-import { useOwnVoiceState } from '@/features/server/voice/hooks';
+import {
+  useIncomingVideoOff,
+  useOwnVoiceState
+} from '@/features/server/voice/hooks';
 import {
   clampMicrophoneDecibels,
   MICROPHONE_GATE_CLOSE_HOLD_MS,
@@ -396,6 +399,8 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     createConsumerTransport,
     consume,
     consumeExistingProducers,
+    stopConsumingVideo,
+    consumeVideoProducers,
     cleanupTransports,
     getConsumerCodec
   } = useTransports({
@@ -878,6 +883,29 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     localScreenShareAudioProducer,
     setScreenShareProducer
   ]);
+
+  const incomingVideoOff = useIncomingVideoOff();
+  const previousIncomingVideoOffRef = useRef(incomingVideoOff);
+
+  // only a change of the setting acts, the first render matches what init already consumed
+  useEffect(() => {
+    const wasOff = previousIncomingVideoOffRef.current;
+
+    previousIncomingVideoOffRef.current = incomingVideoOff;
+
+    if (wasOff === incomingVideoOff) return;
+
+    if (incomingVideoOff) {
+      stopConsumingVideo();
+      return;
+    }
+
+    const rtpCapabilities = deviceRtpCapabilities.current;
+
+    if (rtpCapabilities) {
+      consumeVideoProducers(rtpCapabilities);
+    }
+  }, [incomingVideoOff, stopConsumingVideo, consumeVideoProducers]);
 
   // the server turns the webcam or screen share off when its permission is taken away mid call
   useEffect(() => {

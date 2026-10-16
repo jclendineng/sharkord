@@ -2,12 +2,14 @@ import {
   setAlwaysShowVoiceControls,
   setHideNonVideoParticipants,
   setHideOwnScreenShare,
+  setIncomingVideoOff,
   setShowUserBannersInVoice
 } from '@/features/server/voice/actions';
 import {
   useAlwaysShowVoiceControls,
   useHideNonVideoParticipants,
   useHideOwnScreenShare,
+  useIncomingVideoOff,
   useShowUserBannersInVoice
 } from '@/features/server/voice/hooks';
 import {
@@ -28,10 +30,19 @@ const VoiceOptionsController = memo(() => {
   const showUserBanners = useShowUserBannersInVoice();
   const hideOwnScreenShare = useHideOwnScreenShare();
   const alwaysShowVoiceControls = useAlwaysShowVoiceControls();
+  const incomingVideoOff = useIncomingVideoOff();
 
   const handleToggleHideNonVideo = useCallback((checked: boolean) => {
     setHideNonVideoParticipants(checked);
   }, []);
+
+  const handleToggleIncomingVideoOff = useCallback((checked: boolean) => {
+    setIncomingVideoOff(checked);
+  }, []);
+
+  const handleIncomingVideoOffLabelClick = useCallback(() => {
+    setIncomingVideoOff(!incomingVideoOff);
+  }, [incomingVideoOff]);
 
   const handleToggleShowUserBanners = useCallback((checked: boolean) => {
     setShowUserBannersInVoice(checked);
@@ -80,6 +91,20 @@ const VoiceOptionsController = memo(() => {
               id="hide-non-video"
               checked={hideNonVideoParticipants}
               onCheckedChange={handleToggleHideNonVideo}
+            />
+          </div>
+
+          <div className="flex items-center justify-between space-x-3">
+            <span
+              onClick={handleIncomingVideoOffLabelClick}
+              className="text-sm text-foreground cursor-pointer select-none flex-1"
+            >
+              {t('incomingVideoOff')}
+            </span>
+            <Switch
+              id="incoming-video-off"
+              checked={incomingVideoOff}
+              onCheckedChange={handleToggleIncomingVideoOff}
             />
           </div>
 

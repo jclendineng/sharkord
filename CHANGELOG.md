@@ -123,6 +123,13 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - GIF and sticker tabs in the picker, sticker settings and a Klipy key field.
 - Signed file links refresh while the page is open.
 
+- Members without a picture get an avatar drawn in colors from their id, the same on the
+  web and in the app, instead of a gray circle
+  ([#867](https://github.com/Sharkord/sharkord/issues/867)).
+- Turn off incoming video, in the voice options on the web and the voice sheet in the app:
+  cameras and screen shares stop reaching you at all, to save a weak connection
+  ([#123](https://github.com/Sharkord/sharkord/issues/123),
+  [#657](https://github.com/Sharkord/sharkord/issues/657)).
 - Mute Stream Audio in Devices settings: screen shares with sound start muted
   ([#749](https://github.com/Sharkord/sharkord/issues/749)).
 

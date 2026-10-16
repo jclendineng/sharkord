@@ -1061,6 +1061,48 @@ describe('voice producer subscriptions', () => {
     }
   });
 
+  // a consumer needs a real mediasoup transport, so only the cases around it are covered here
+  describe('closeConsumer', () => {
+    test('should refuse someone who is not in a voice channel', async () => {
+      const { caller } = await initTest(1);
+
+      await expect(
+        caller.voice.closeConsumer({ remoteId: 2, kind: StreamKind.VIDEO })
+      ).rejects.toThrow('User is not in a voice channel');
+    });
+
+    test('should accept closing a stream that is not being received', async () => {
+      const { runtime, caller } = await joinVoiceChannelTwo(1);
+
+      try {
+        await caller.voice.closeConsumer({
+          remoteId: 2,
+          kind: StreamKind.SCREEN
+        });
+
+        expect(runtime.getConsumer(1, 2, StreamKind.SCREEN)).toBeUndefined();
+      } finally {
+        await runtime.destroy();
+      }
+    });
+
+    test('should refuse a kind that is not video', async () => {
+      const { runtime, caller } = await joinVoiceChannelTwo(1);
+
+      try {
+        await expect(
+          caller.voice.closeConsumer({
+            remoteId: 2,
+            // @ts-expect-error audio is deliberately not accepted
+            kind: StreamKind.AUDIO
+          })
+        ).rejects.toThrow();
+      } finally {
+        await runtime.destroy();
+      }
+    });
+  });
+
   // closing the mediasoup producers themselves needs a real transport, so these assert the
   // voice state and its broadcast, which is what tells every client the stream is gone
   describe('losing a stream permission mid call', () => {

@@ -62,3 +62,9 @@ struct VoiceProducerEvent: Decodable {
     let remoteId: Int
     let kind: String
 }
+
+// voice.closeConsumer
+struct ClosedConsumer: Encodable {
+    let remoteId: Int
+    let kind: String
+}

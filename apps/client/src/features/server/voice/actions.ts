@@ -413,6 +413,16 @@ export const setHideNonVideoParticipants = (value: boolean): void => {
   }
 };
 
+export const setIncomingVideoOff = (value: boolean): void => {
+  store.dispatch(serverSliceActions.setIncomingVideoOff(value));
+
+  try {
+    setLocalStorageItemBool(LocalStorageKey.INCOMING_VIDEO_OFF, value);
+  } catch (error) {
+    console.error('Failed to save voice options:', error);
+  }
+};
+
 export const setShowUserBannersInVoice = (value: boolean): void => {
   store.dispatch(serverSliceActions.setShowUserBannersInVoice(value));
 

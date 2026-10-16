@@ -49,6 +49,9 @@ export const voiceReactionsSelector = (state: IRootState, userId: number) =>
 export const hideNonVideoParticipantsSelector = (state: IRootState) =>
   state.server.hideNonVideoParticipants;
 
+export const incomingVideoOffSelector = (state: IRootState) =>
+  state.server.incomingVideoOff;
+
 export const showUserBannersInVoiceSelector = (state: IRootState) =>
   state.server.showUserBannersInVoice;
 

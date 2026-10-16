@@ -400,6 +400,20 @@ private struct VoiceSheetSettings: View {
                 Theme.divider.frame(height: 1).padding(.leading, 52)
 
                 SettingToggle(
+                    title: "Turn Off Incoming Video",
+                    subtitle: "Stops cameras and screen shares, saves data",
+                    systemImage: "video.slash",
+                    isOn: $settings.incomingVideoOff
+                )
+                .onChange(of: settings.incomingVideoOff) { _, off in
+                    Task {
+                        await session.setIncomingVideoOff(off)
+                    }
+                }
+
+                Theme.divider.frame(height: 1).padding(.leading, 52)
+
+                SettingToggle(
                     title: "Noise Suppression",
                     subtitle: "Cuts background noise from your mic",
                     systemImage: "waveform",

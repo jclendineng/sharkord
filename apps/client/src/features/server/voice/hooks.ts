@@ -9,6 +9,7 @@ import {
   alwaysShowVoiceControlsSelector,
   hideNonVideoParticipantsSelector,
   hideOwnScreenShareSelector,
+  incomingVideoOffSelector,
   ownVoiceStateSelector,
   pinnedCardSelector,
   showUserBannersInVoiceSelector,
@@ -52,6 +53,8 @@ export const useVoiceReactions = (userId: number) =>
 
 export const useHideNonVideoParticipants = () =>
   useSelector(hideNonVideoParticipantsSelector);
+
+export const useIncomingVideoOff = () => useSelector(incomingVideoOffSelector);
 
 export const useShowUserBannersInVoice = () =>
   useSelector(showUserBannersInVoiceSelector);

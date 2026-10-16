@@ -84,6 +84,7 @@ export interface IServerState {
   pluginsMetadata: TPluginMetadata[];
   pluginCommands: TCommandsMapByPlugin;
   hideNonVideoParticipants: boolean;
+  incomingVideoOff: boolean;
   showUserBannersInVoice: boolean;
   hideOwnScreenShare: boolean;
   alwaysShowVoiceControls: boolean;
@@ -141,6 +142,10 @@ const initialState: IServerState = {
   pluginCommands: {},
   hideNonVideoParticipants: getLocalStorageItemBool(
     LocalStorageKey.HIDE_NON_VIDEO_PARTICIPANTS,
+    false
+  ),
+  incomingVideoOff: getLocalStorageItemBool(
+    LocalStorageKey.INCOMING_VIDEO_OFF,
     false
   ),
   showUserBannersInVoice: getLocalStorageItemBool(
@@ -909,6 +914,9 @@ export const serverSlice = createSlice({
     },
     setHideNonVideoParticipants: (state, action: PayloadAction<boolean>) => {
       state.hideNonVideoParticipants = action.payload;
+    },
+    setIncomingVideoOff: (state, action: PayloadAction<boolean>) => {
+      state.incomingVideoOff = action.payload;
     },
     setShowUserBannersInVoice: (state, action: PayloadAction<boolean>) => {
       state.showUserBannersInVoice = action.payload;

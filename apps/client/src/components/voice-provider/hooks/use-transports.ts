@@ -1,3 +1,5 @@
+import { incomingVideoOffSelector } from '@/features/server/voice/selectors';
+import { store } from '@/features/store';
 import { voiceLogger } from '@/helpers/browser-logger';
 import { getTRPCClient } from '@/lib/trpc';
 import type { TRemoteUserStreamKinds } from '@/types';
@@ -18,6 +20,14 @@ import {
 } from 'mediasoup-client/types';
 import { useCallback, useRef } from 'react';
 import { getStoredStreamQuality } from '../helpers';
+
+// the streams a viewer can turn off to save their connection, cameras and screen shares
+const VIEWER_VIDEO_KINDS = [StreamKind.VIDEO, StreamKind.SCREEN] as const;
+
+type TViewerVideoKind = (typeof VIEWER_VIDEO_KINDS)[number];
+
+const isViewerVideoKind = (kind: StreamKind): kind is TViewerVideoKind =>
+  (VIEWER_VIDEO_KINDS as readonly StreamKind[]).includes(kind);
 
 type TUseTransportParams = {
   addRemoteUserStream: (
@@ -277,6 +287,17 @@ const useTransports = ({
         return;
       }
 
+      if (
+        isViewerVideoKind(kind) &&
+        incomingVideoOffSelector(store.getState())
+      ) {
+        voiceLogger.info('consumer: skipped, incoming video is off', {
+          remoteId,
+          kind
+        });
+        return;
+      }
+
       const operationKey = `${remoteId}-${kind}`;
 
       if (consumeOperationsInProgress.current.has(operationKey)) {
@@ -508,6 +529,59 @@ const useTransports = ({
     [consume]
   );
 
+  // closing here and on the server stops the stream reaching this viewer at all, the cleanup
+  // events on each consumer then take its card back to the avatar
+  const stopConsumingVideo = useCallback(async () => {
+    const trpc = getTRPCClient();
+    const closing: Promise<void>[] = [];
+
+    Object.entries(consumers.current).forEach(
+      ([remoteIdKey, userConsumers]) => {
+        const remoteId = Number(remoteIdKey);
+
+        VIEWER_VIDEO_KINDS.forEach((kind) => {
+          const consumer = userConsumers[kind];
+
+          if (!consumer || consumer.closed) return;
+
+          consumer.close();
+          delete userConsumers[kind];
+          removeRemoteUserStream(remoteId, kind);
+
+          closing.push(trpc.voice.closeConsumer.mutate({ remoteId, kind }));
+        });
+      }
+    );
+
+    try {
+      await Promise.all(closing);
+    } catch (error) {
+      voiceLogger.error('consumer: stopping incoming video failed', error);
+    }
+  }, [removeRemoteUserStream]);
+
+  const consumeVideoProducers = useCallback(
+    async (rtpCapabilities: RtpCapabilities) => {
+      const trpc = getTRPCClient();
+
+      try {
+        const { remoteVideoIds, remoteScreenIds } =
+          await trpc.voice.getProducers.query();
+
+        remoteVideoIds.forEach((remoteId) => {
+          consume(remoteId, StreamKind.VIDEO, rtpCapabilities);
+        });
+
+        remoteScreenIds.forEach((remoteId) => {
+          consume(remoteId, StreamKind.SCREEN, rtpCapabilities);
+        });
+      } catch (error) {
+        voiceLogger.error('consumer: resuming incoming video failed', error);
+      }
+    },
+    [consume]
+  );
+
   const getConsumerCodec = useCallback(
     (remoteId: number, kind: StreamKind): string | undefined => {
       return consumerCodecs.current.get(`${remoteId}-${kind}`);
@@ -556,6 +630,8 @@ const useTransports = ({
     createConsumerTransport,
     consume,
     consumeExistingProducers,
+    stopConsumingVideo,
+    consumeVideoProducers,
     cleanupTransports,
     getConsumerCodec
   };

@@ -14,6 +14,7 @@ export enum LocalStorageKey {
   DEBUG = 'sharkord-debug',
   DRAFT_MESSAGES = 'sharkord-draft-messages',
   HIDE_NON_VIDEO_PARTICIPANTS = 'sharkord-hide-non-video-participants',
+  INCOMING_VIDEO_OFF = 'sharkord-incoming-video-off',
   THREAD_SIDEBAR_WIDTH = 'sharkord-thread-sidebar-width',
   LEFT_SIDEBAR_WIDTH = 'sharkord-left-sidebar-width',
   RIGHT_SIDEBAR_WIDTH = 'sharkord-right-sidebar-width',

@@ -305,6 +305,14 @@ published in `/info` so a report can be sent without an account. Setting `report
   sign up does. The web client passes the page's `?invite=` along, and the app sends the
   invite link pasted or opened on the sign up screen
   ([#840](https://github.com/Sharkord/sharkord/issues/840)).
+- **Generated avatars**: a member with no picture and no profile color of their own gets a
+  two tone gradient whose hue comes from their id, `getAvatarGradient` in `packages/shared`,
+  mirrored in the app's `AvatarView` ([#867](https://github.com/Sharkord/sharkord/issues/867)).
+- **Turn off incoming video**: a viewer's switch (voice options on the web, the voice sheet in
+  the app) that skips consuming cameras and screen shares and closes the ones already received
+  through `voice.closeConsumer`, so they stop using the connection. Turning it back on consumes
+  what is running then ([#123](https://github.com/Sharkord/sharkord/issues/123),
+  [#657](https://github.com/Sharkord/sharkord/issues/657)).
 - **Unique names**: renaming to a name another member already uses, ignoring case, is
   refused. Names two people already shared before the upgrade stay, and a name from an SSO
   provider that is taken becomes a generated one

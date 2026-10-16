@@ -6,6 +6,7 @@
   "searchContent": "Поиск по содержимому...",
   "voiceOptions": "Опции голосового управления",
   "hideNonVideoParticipants": "Скрыть участников без видео",
+  "incomingVideoOff": "Отключить входящее видео",
   "displayUserBanners": "Показывать баннеры пользователей",
   "alwaysShowVoiceControls": "Всегда показывать управление голосом",
   "audioControls": "Управление аудио",

@@ -6,6 +6,7 @@
   "searchContent": "Search for content...",
   "voiceOptions": "Voice Options",
   "hideNonVideoParticipants": "Hide non-video participants",
+  "incomingVideoOff": "Turn off incoming video",
   "displayUserBanners": "Display user banners",
   "alwaysShowVoiceControls": "Always show voice controls",
   "hideOwnScreenShare": "Hide own screen share",

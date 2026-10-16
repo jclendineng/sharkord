@@ -912,7 +912,7 @@ final class SessionStore {
             // the only voice procedure that is a query, so it cannot go through the signal
             let producers: RemoteProducers = try await client.query("voice.getProducers")
 
-            for key in producers.keys {
+            for key in producers.keys where wantsStream(key) {
                 await connection.consume(key)
             }
         } catch {
@@ -1643,6 +1643,35 @@ final class SessionStore {
         mixingDevice != nil
     }
 
+    private func wantsStream(_ key: VoiceStreamKey) -> Bool {
+        !key.kind.isVideo || !AppSettings.shared.incomingVideoOff
+    }
+
+    // turning incoming video off closes each camera and screen share on the server too, so they
+    // stop using the connection. turning it back on takes in the ones running now
+    func setIncomingVideoOff(_ off: Bool) async {
+        guard let voice, let client else {
+            return
+        }
+
+        if off {
+            for key in await voice.consumedVideoKeys() {
+                voice.closeConsumer(key)
+                try? await perform("voice.closeConsumer", ClosedConsumer(remoteId: key.remoteId, kind: key.kind.rawValue))
+            }
+
+            return
+        }
+
+        guard let producers: RemoteProducers = try? await client.query("voice.getProducers") else {
+            return
+        }
+
+        for key in producers.keys where key.kind.isVideo {
+            await voice.consume(key)
+        }
+    }
+
     func setHearsYourself(_ hears: Bool) {
         mixingDevice?.isMonitoring = hears
     }
@@ -1924,7 +1953,13 @@ final class SessionStore {
                 return
             }
 
-            Task { await self.voice?.consume(VoiceStreamKey(kind: kind, remoteId: event.remoteId)) }
+            let key = VoiceStreamKey(kind: kind, remoteId: event.remoteId)
+
+            guard self.wantsStream(key) else {
+                return
+            }
+
+            Task { await self.voice?.consume(key) }
         }
 
         client.subscribe("voice.onProducerClosed") { [weak self] (event: VoiceProducerEvent) in

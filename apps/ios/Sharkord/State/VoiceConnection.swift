@@ -130,6 +130,10 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
         }
     }
 
+    func consumedVideoKeys() async -> [VoiceStreamKey] {
+        await onQueueValue { self.consumers.keys.filter(\.kind.isVideo) }
+    }
+
     func closeConsumer(_ key: VoiceStreamKey) {
         queue.async {
             self.consumers.removeValue(forKey: key)?.close()

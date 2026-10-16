@@ -6,6 +6,7 @@
   "searchContent": "Recherche de contenu...",
   "voiceOptions": "Options vocales",
   "hideNonVideoParticipants": "Masquer les participants non-vidéo",
+  "incomingVideoOff": "Désactiver la vidéo entrante",
   "displayUserBanners": "Afficher les bannières des utilisateurs",
   "alwaysShowVoiceControls": "Toujours afficher les contrôles vocaux",
   "hideOwnScreenShare": "Masquer son propre partage d'écran",
