@@ -58,6 +58,8 @@ struct ServerSettingsScreen: View {
 
     private var splitView: some View {
         NavigationSplitView {
+            // discord's settings sidebar: plain rows with a soft rounded highlight, no cards or
+            // lines between them
             List(selection: $selection) {
                 ForEach(sections, id: \.pages) { section in
                     Section {
@@ -67,12 +69,17 @@ struct ServerSettingsScreen: View {
                         }
                     } header: {
                         if let title = section.title {
-                            Text(title)
+                            Text(title.uppercased())
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(Theme.muted)
                         }
                     }
+                    .listSectionSeparator(.hidden)
                 }
             }
-            .settingsListStyle()
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .background(Theme.listBackground)
             .navigationTitle("Server Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -107,26 +114,32 @@ struct ServerSettingsScreen: View {
 }
 
 // a page in the mac's sidebar, lit under the pointer as the other menus' rows are. the list's
-// own hover probe does not reach a split view's column, so the row tints itself
+// own hover probe does not reach a split view's column, so the row tints itself, and draws the
+// selection too, its own background covering the list's
 private struct SidebarRow: View {
     let page: ServerSettingsPage
-    // drawn here too, a row background of its own covers the list's selection
     let isSelected: Bool
 
     @State private var isHovered = false
 
-    private var background: Color {
+    private var fill: Color {
         if isSelected {
-            return Theme.blurple
+            return Theme.hover
         }
 
-        return isHovered ? Theme.hover : Theme.listBackground
+        return isHovered ? Theme.hover.opacity(0.55) : .clear
     }
 
     var body: some View {
-        SettingsRow(title: page.title, systemImage: page.systemImage)
+        SettingsRow(title: page.title, systemImage: page.systemImage, tint: isSelected || isHovered ? Theme.header : Theme.muted)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(fill, in: .rect(cornerRadius: 6, style: .continuous))
+            .contentShape(.rect)
             .onHover(perform: setHovered)
-            .listRowBackground(background)
+            .listRowInsets(EdgeInsets(top: 1, leading: 8, bottom: 1, trailing: 8))
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
     }
 
     private func setHovered(_ hovered: Bool) {
