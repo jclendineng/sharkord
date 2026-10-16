@@ -115,13 +115,18 @@ extension View {
         listStyle(.insetGrouped)
             .scrollContentBackground(.hidden)
             .background(Theme.deepBackground)
-            .background {
-                if ProcessInfo.processInfo.isiOSAppOnMac {
-                    ListHoverHighlighter()
-                }
-            }
+            .listHoverHighlight()
             .listRowBackground(Theme.listBackground)
             .tint(Theme.blurple)
+    }
+
+    // a list styled some other way still lights the row under a mac pointer
+    func listHoverHighlight() -> some View {
+        background {
+            if ProcessInfo.processInfo.isiOSAppOnMac {
+                ListHoverHighlighter()
+            }
+        }
     }
 }
 

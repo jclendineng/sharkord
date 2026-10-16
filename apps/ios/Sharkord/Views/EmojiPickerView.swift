@@ -107,6 +107,7 @@ struct EmojiPickerView: View {
         Button(action: { pick(value) }) {
             EmojiView(value: value, file: file, size: 32)
                 .frame(width: 44, height: 44)
+                .hoverHighlight(cornerRadius: 8)
         }
         .buttonStyle(.plain)
     }

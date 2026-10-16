@@ -52,6 +52,7 @@ struct ReactionsView: View {
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(Theme.listBackground, in: .rect(cornerRadius: 8))
+                    .hoverBrighten(cornerRadius: 8)
                     .buttonStyle(.plain)
             }
         }
@@ -116,6 +117,7 @@ private struct ReactionPill: View {
                 RoundedRectangle(cornerRadius: 8)
                     .stroke(isMine ? Theme.blurple : .clear)
             }
+            .hoverBrighten(cornerRadius: 8)
         }
         .buttonStyle(.plain)
     }

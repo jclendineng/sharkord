@@ -340,6 +340,7 @@ private struct SearchCard<Preview: View, Details: View>: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(Theme.divider, lineWidth: 1)
         }
+        .hoverBrighten(cornerRadius: 16)
         .contentShape(.rect)
     }
 

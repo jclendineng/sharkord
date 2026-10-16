@@ -24,7 +24,15 @@ final class ServerListStore {
     }
 
     // a server icon held down, HomeView draws the menu beside it
-    var railMenu: RailMenu?
+    var railMenu: RailMenu? {
+        // the two are drawn in separate layers, a menu opened while the search was out sat
+        // hidden under it. one open closes the other, as discord's popouts do
+        didSet {
+            if railMenu != nil {
+                searchDropdown = nil
+            }
+        }
+    }
 
     // the mac's search card under the box above the channel list, drawn over the window rather
     // than as a popover, whose window a right click menu inside it could not reach
@@ -33,7 +41,13 @@ final class ServerListStore {
         let anchor: CGRect
     }
 
-    var searchDropdown: SearchDropdown?
+    var searchDropdown: SearchDropdown? {
+        didSet {
+            if searchDropdown != nil {
+                railMenu = nil
+            }
+        }
+    }
 
     @ObservationIgnored private var backgroundTask: UIBackgroundTaskIdentifier = .invalid
 

@@ -55,7 +55,7 @@ private struct SoundTile: View {
             .padding(.horizontal, 12)
             .frame(height: 48)
             .background(Theme.deepBackground, in: .rect(cornerRadius: 12))
-            .contentShape(.rect(cornerRadius: 12))
+            .hoverBrighten(cornerRadius: 12)
         }
         .buttonStyle(.plain)
         .contextMenu {

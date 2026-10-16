@@ -46,6 +46,7 @@ struct RulesSetupSheet: View {
                 }
             }
             .scrollContentBackground(.hidden)
+            .listHoverHighlight()
             .background(Theme.deepBackground)
             .navigationTitle("Rules Message")
             .navigationBarTitleDisplayMode(.inline)

@@ -53,7 +53,9 @@ struct UserBar: View {
 
                     Spacer(minLength: 0)
                 }
-                .contentShape(.rect)
+                .padding(4)
+                .hoverHighlight(cornerRadius: 10)
+                .padding(-4)
             }
             .buttonStyle(.plain)
 
@@ -62,6 +64,7 @@ struct UserBar: View {
                 .font(isCompact ? .body : .title3)
                 .foregroundStyle(Theme.muted)
                 .frame(width: isCompact ? 36 : 44, height: isCompact ? 36 : 44)
+                .hoverHighlight(cornerRadius: 10)
                 .overlay(alignment: .topTrailing) {
                     if hasUnread {
                         Circle()

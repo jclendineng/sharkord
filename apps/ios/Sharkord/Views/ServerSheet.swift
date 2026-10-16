@@ -250,6 +250,7 @@ private struct SheetAction: View {
                     .foregroundStyle(Theme.header)
                     .frame(width: 60, height: 60)
                     .background(Theme.listBackground, in: .rect(cornerRadius: 18))
+                    .hoverBrighten(cornerRadius: 18)
 
                 Text(title)
                     .font(.caption)

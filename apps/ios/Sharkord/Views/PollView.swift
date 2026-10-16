@@ -256,7 +256,7 @@ private struct PollAnswerRow: View {
                 RoundedRectangle(cornerRadius: 8)
                     .stroke(isPicked ? Theme.blurple : .clear, lineWidth: 1.5)
             }
-            .contentShape(.rect)
+            .hoverBrighten(cornerRadius: 8)
         }
         .buttonStyle(.plain)
     }

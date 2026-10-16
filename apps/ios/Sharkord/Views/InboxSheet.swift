@@ -95,6 +95,7 @@ private struct MentionsList: View {
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
+        .listHoverHighlight()
         .overlay {
             if isLoading {
                 ProgressView()
@@ -211,6 +212,7 @@ private struct UnreadsList: View {
         }
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
+        .listHoverHighlight()
         .overlay {
             if !hasUnread {
                 ContentUnavailableView(

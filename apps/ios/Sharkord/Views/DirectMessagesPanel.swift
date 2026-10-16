@@ -153,6 +153,7 @@ private struct FriendsRow: View {
                                 RoundedRectangle(cornerRadius: 18, style: .continuous)
                                     .stroke(Theme.divider, lineWidth: 1)
                             }
+                            .hoverBrighten(cornerRadius: 18)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(friend.name)
@@ -192,6 +193,7 @@ private struct ConversationRow: View {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .stroke(Theme.divider, lineWidth: 1)
             }
+            .hoverBrighten(cornerRadius: 16)
             .contentShape(.rect(cornerRadius: 16))
             .scaleEffect(isPressed ? 0.97 : 1)
             .animation(.snappy(duration: 0.2), value: isPressed)
@@ -605,6 +607,7 @@ private struct NewDirectMessageSheet: View {
                 }
             }
             .scrollContentBackground(.hidden)
+            .listHoverHighlight()
             .background(Theme.deepBackground)
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "To: Search people")
             .navigationTitle("New Message")

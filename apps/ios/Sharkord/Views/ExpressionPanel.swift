@@ -77,6 +77,7 @@ private struct TabButton: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(isSelected ? Theme.header : Theme.muted)
                 .frame(maxWidth: .infinity, minHeight: 34)
+                .hoverHighlight(cornerRadius: 10)
                 .background {
                     if isSelected {
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -257,7 +258,7 @@ private struct EmojiTab: View {
         } label: {
             EmojiView(value: value, file: file, size: 30)
                 .frame(maxWidth: .infinity, minHeight: 44)
-                .contentShape(.rect)
+                .hoverHighlight(cornerRadius: 8)
         }
         .buttonStyle(.plain)
     }
@@ -277,7 +278,7 @@ private struct EmojiTab: View {
                                 .font(.system(size: 17))
                                 .foregroundStyle(Theme.muted)
                                 .frame(width: 40, height: 40)
-                                .contentShape(.rect)
+                                .hoverHighlight(cornerRadius: 8)
                         }
                         .buttonStyle(.plain)
                     }
@@ -451,6 +452,7 @@ private struct GifTab: View {
                                 .aspectRatio(gif.width / max(gif.height, 1), contentMode: .fit)
                                 .background(Theme.inputBackground)
                                 .clipShape(.rect(cornerRadius: 8, style: .continuous))
+                                .hoverBrighten(cornerRadius: 8)
                         }
                         .buttonStyle(.plain)
                         .onAppear {
@@ -565,6 +567,7 @@ private struct CategoryTile: View {
             .frame(height: 92)
             .background(Theme.inputBackground)
             .clipShape(.rect(cornerRadius: 8, style: .continuous))
+            .hoverBrighten(cornerRadius: 8)
         }
         .buttonStyle(.plain)
     }
@@ -654,7 +657,7 @@ private struct StickerCell: View {
         Button(action: action) {
             AnimatedImage(url: session.address?.fileURL(sticker.file), maxPointSize: 100, contentMode: .scaleAspectFit)
                 .aspectRatio(1, contentMode: .fit)
-                .contentShape(.rect)
+                .hoverHighlight(cornerRadius: 8)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(sticker.name)

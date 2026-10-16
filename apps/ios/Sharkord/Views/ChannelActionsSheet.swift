@@ -389,6 +389,8 @@ struct ActionGroup<Content: View>: View {
             }
         }
         .background(Theme.listBackground, in: .rect(cornerRadius: 14))
+        // a row lit under the pointer keeps the group's corners
+        .clipShape(.rect(cornerRadius: 14))
     }
 }
 
@@ -465,6 +467,7 @@ struct ActionRow: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
+        .hoverHighlight(cornerRadius: 0)
     }
 
     private func setHovered(_ hovered: Bool) {

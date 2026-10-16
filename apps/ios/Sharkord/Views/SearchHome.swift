@@ -283,9 +283,15 @@ private struct SearchTabBar: View {
                     select(tab)
                 } label: {
                     VStack(spacing: 10) {
+                        // the fill reaches past the title without moving it, the strip still fits
                         Text(tab.title(inDirectMessages: inDirectMessages))
                             .font(.system(size: 17, weight: .medium))
                             .foregroundStyle(selection == tab ? Theme.blurple : Theme.muted)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .hoverHighlight()
+                            .padding(.horizontal, -8)
+                            .padding(.vertical, -4)
 
                         ZStack {
                             Capsule()
@@ -452,6 +458,11 @@ private struct SectionTitle: View {
                 Button(actionTitle, action: action)
                     .font(.system(size: 17, weight: .medium))
                     .foregroundStyle(Theme.link)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .hoverHighlight()
+                    .padding(.horizontal, -6)
+                    .padding(.vertical, -2)
             }
         }
         .padding(.horizontal, 18)
@@ -539,11 +550,13 @@ private struct ChannelRow: View {
 
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, 18)
+            .padding(.horizontal, 12)
             .padding(.vertical, 10)
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
+        .hoverHighlight()
+        .padding(.horizontal, 6)
     }
 }
 
@@ -786,6 +799,7 @@ private struct MediaGrid: View {
                     open(item)
                 } label: {
                     MediaTile(item: item)
+                        .hoverBrighten(cornerRadius: 6)
                         .matchedTransitionSource(id: item.id, in: zoom)
                 }
                 .buttonStyle(.plain)
@@ -981,11 +995,13 @@ struct PinnedMessageRow: View {
 
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, 18)
+            .padding(.horizontal, 12)
             .padding(.vertical, 10)
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
+        .hoverHighlight()
+        .padding(.horizontal, 6)
         // a long press, as on the files and links cards, a tap still jumps to it
         .contextMenu {
             Button("Jump to Message", systemImage: "arrow.uturn.left.circle", action: onOpen)

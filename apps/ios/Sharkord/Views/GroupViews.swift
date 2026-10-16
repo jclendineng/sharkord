@@ -115,6 +115,7 @@ struct GroupFriendPicker: View {
             }
         }
         .scrollContentBackground(.hidden)
+        .listHoverHighlight()
         .background(Theme.deepBackground)
         .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search")
         .navigationBarTitleDisplayMode(.inline)

@@ -217,6 +217,7 @@ struct SearchScreen: View {
         }
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
+        .listHoverHighlight()
         .scrollDismissesKeyboard(.interactively)
         .overlay {
             if isSearching {

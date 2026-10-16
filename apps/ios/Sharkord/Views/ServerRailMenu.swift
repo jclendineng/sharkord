@@ -56,21 +56,26 @@ struct ServerRailMenu: View {
 
             Theme.divider.frame(height: 1)
 
-            MenuRow(title: "Mark As Read", systemImage: "envelope.fill", action: markAsRead)
+            // each group keeps a margin, so a lit row sits whole inside the card's corners
+            VStack(spacing: 0) {
+                MenuRow(title: "Mark As Read", systemImage: "envelope.fill", action: markAsRead)
 
-            if server.serverInfo?.pushEnabled == true {
-                MenuRow(
-                    title: server.isPushEnabled ? "Mute Notifications" : "Unmute Notifications",
-                    systemImage: server.isPushEnabled ? "bell.slash.fill" : "bell.fill",
-                    action: togglePush
-                )
+                if server.serverInfo?.pushEnabled == true {
+                    MenuRow(
+                        title: server.isPushEnabled ? "Mute Notifications" : "Unmute Notifications",
+                        systemImage: server.isPushEnabled ? "bell.slash.fill" : "bell.fill",
+                        action: togglePush
+                    )
+                }
+
+                MenuRow(title: "More Options", systemImage: "gearshape.fill", action: moreOptions)
             }
-
-            MenuRow(title: "More Options", systemImage: "gearshape.fill", action: moreOptions)
+            .padding(.vertical, 6)
 
             Theme.divider.frame(height: 1)
 
             MenuRow(title: "Log Out", systemImage: "rectangle.portrait.and.arrow.right", tint: Theme.red, action: logOut)
+                .padding(.vertical, 6)
         }
         .frame(width: Self.width)
         .background(Theme.listBackground, in: .rect(cornerRadius: 16))

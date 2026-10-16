@@ -46,6 +46,7 @@ struct MessageActionsSheet: View {
                                 EmojiView(value: shortcode, size: isPointerMenu ? 20 : 28)
                                     .frame(maxWidth: .infinity, minHeight: isPointerMenu ? 34 : 52)
                                     .background(Theme.listBackground, in: .rect(cornerRadius: isPointerMenu ? 17 : 14))
+                                    .hoverBrighten(cornerRadius: isPointerMenu ? 17 : 14)
                             }
                             .buttonStyle(.plain)
                             .pointerTooltip(":\(shortcode):")
@@ -57,6 +58,7 @@ struct MessageActionsSheet: View {
                             .foregroundStyle(Theme.text)
                             .frame(maxWidth: .infinity, minHeight: isPointerMenu ? 34 : 52)
                             .background(Theme.listBackground, in: .rect(cornerRadius: isPointerMenu ? 17 : 14))
+                            .hoverBrighten(cornerRadius: isPointerMenu ? 17 : 14)
                     }
 
                     // a mac has no double tap

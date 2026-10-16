@@ -24,6 +24,7 @@ struct MuteDurationSheet: View {
                 .listRowBackground(Theme.listBackground)
             }
             .scrollContentBackground(.hidden)
+            .listHoverHighlight()
             .background(Theme.deepBackground)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

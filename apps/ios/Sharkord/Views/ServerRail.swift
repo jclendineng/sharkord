@@ -143,9 +143,16 @@ private struct RailItem<Content: View>: View {
     let action: () -> Void
     @ViewBuilder let content: Content
 
+    // discord's under a mac pointer: the circle squares off and a short pill shows
+    @State private var isHovered = false
+
     private var pillHeight: CGFloat? {
         if isSelected {
             return 40
+        }
+
+        if isHovered {
+            return 20
         }
 
         return hasUnread ? 8 : nil
@@ -155,7 +162,7 @@ private struct RailItem<Content: View>: View {
         Button(action: action) {
             content
                 .frame(width: 48, height: 48)
-                .clipShape(.rect(cornerRadius: isSelected ? 16 : 24))
+                .clipShape(.rect(cornerRadius: isSelected || isHovered ? 16 : 24))
                 .overlay(alignment: .bottomTrailing) {
                     if badge > 0 {
                         Text(badge > 99 ? "99+" : "\(badge)")
@@ -181,6 +188,12 @@ private struct RailItem<Content: View>: View {
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
+        .onHover(perform: setHovered)
         .animation(.snappy, value: isSelected)
+        .animation(.snappy(duration: 0.2), value: isHovered)
+    }
+
+    private func setHovered(_ hovered: Bool) {
+        isHovered = hovered
     }
 }

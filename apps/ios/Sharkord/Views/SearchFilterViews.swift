@@ -70,6 +70,7 @@ struct FilterMenu: View {
                 .font(.system(size: 18, weight: .medium))
                 .foregroundStyle(isFiltering ? Theme.blurple : Theme.text)
                 .frame(width: 40, height: 40)
+                .hoverHighlight(cornerRadius: 10)
         }
     }
 }
@@ -198,11 +199,13 @@ struct FilterSuggestions: View {
 
                                 Spacer()
                             }
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, 10)
                             .padding(.vertical, 8)
                             .contentShape(.rect)
                         }
                         .buttonStyle(.plain)
+                        .hoverHighlight()
+                        .padding(.horizontal, 6)
                     }
                 case .channel:
                     ForEach(textChannels) { channel in
@@ -221,11 +224,13 @@ struct FilterSuggestions: View {
 
                                 Spacer()
                             }
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, 10)
                             .padding(.vertical, 12)
                             .contentShape(.rect)
                         }
                         .buttonStyle(.plain)
+                        .hoverHighlight()
+                        .padding(.horizontal, 6)
                     }
                 case .has:
                     ForEach(kinds, id: \.self) { kind in
@@ -244,11 +249,13 @@ struct FilterSuggestions: View {
 
                                 Spacer()
                             }
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, 10)
                             .padding(.vertical, 12)
                             .contentShape(.rect)
                         }
                         .buttonStyle(.plain)
+                        .hoverHighlight()
+                        .padding(.horizontal, 6)
                     }
                 case .on, .before, .after:
                     EmptyView()

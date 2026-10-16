@@ -116,6 +116,7 @@ struct AddFriendsScreen: View {
             }
         }
         .scrollContentBackground(.hidden)
+        .listHoverHighlight()
         .background(Theme.deepBackground)
         .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search people")
         .navigationTitle("Add Friends")
