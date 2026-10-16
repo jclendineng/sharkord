@@ -9,7 +9,11 @@ struct ChatScreen: View {
     @Environment(\.showChannelList) private var showChannelList
 
     @State private var isPinsPresented = false
-    @State private var width: CGFloat = 0
+    @State private var dropdown: ChatDropdown?
+    // a yes or no rather than the width itself: the width changes every frame of the ipad's
+    // card sliding, and redrawing the chat each frame dropped the top bar's buttons until it
+    // settled
+    @State private var hasRoomForMembers = false
     // discord's member list beside a server channel, on by default, the header's button hides it
     @AppStorage("showsMemberList") private var showsMemberList = true
 
@@ -45,7 +49,7 @@ struct ChatScreen: View {
     private var canShowMembers: Bool {
         ProcessInfo.processInfo.isiOSAppOnMac
             && channel?.isDm == false
-            && width >= 520 + MembersColumn.width
+            && hasRoomForMembers
     }
 
     private var conversation: some View {
@@ -74,17 +78,36 @@ struct ChatScreen: View {
 
             if canShowMembers && showsMemberList {
                 MembersColumn()
-                    .transition(.move(edge: .trailing))
+                    .transition(.opacity)
             }
         }
-        .onGeometryChange(for: CGFloat.self, of: \.size.width) { newWidth in
-            width = newWidth
+        .onGeometryChange(for: Bool.self, of: { $0.size.width >= 520 + MembersColumn.width }) { hasRoom in
+            hasRoomForMembers = hasRoom
         }
-        .animation(.snappy(duration: 0.25), value: showsMemberList)
+        .animation(.easeOut(duration: 0.12), value: showsMemberList)
+        // discord's mac pins and search slide down from under the top bar at its right edge,
+        // a click anywhere else in the chat puts them away
+        .overlay(alignment: .topTrailing) {
+            ZStack(alignment: .topTrailing) {
+                if let dropdown {
+                    Color.clear
+                        .contentShape(.rect)
+                        .onTapGesture(perform: closeDropdown)
+
+                    ChatDropdownPanel(dropdown: dropdown, channelId: channelId, onClose: closeDropdown)
+                        .transition(.move(edge: .top))
+                }
+            }
+            .clipped()
+            .animation(.easeOut(duration: 0.2), value: dropdown)
+        }
+        .onChange(of: session.requestedChannelId) { _, requestedChannelId in
+            if requestedChannelId != nil {
+                closeDropdown()
+            }
+        }
         .safeAreaInset(edge: .top, spacing: 0) {
-            if session.showsReconnectingBanner {
-                ReconnectingBanner()
-            }
+            SessionBanners()
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(Theme.chatBackground, for: .navigationBar)
@@ -121,14 +144,21 @@ struct ChatScreen: View {
                 }
             }
 
+            if ProcessInfo.processInfo.isiOSAppOnMac && channel?.isDm == false {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NotificationBell(channelId: channelId)
+                }
+            }
+
             ToolbarItem(placement: .topBarTrailing) {
                 Button(action: showPins) {
                     Image(systemName: "pin")
                         .foregroundStyle(Theme.text)
                 }
                 .accessibilityLabel("Pinned Messages")
-                // discord's pins hang off the button on a wide screen, a phone gets a sheet.
-                // handed the stores by hand: a popover from the toolbar does not inherit them
+                // pins hang off the button on an ipad, a phone gets a sheet and a mac the
+                // dropdown. handed the stores by hand: a popover from the toolbar does not
+                // inherit them
                 .popover(isPresented: $isPinsPresented) {
                     PinnedMessagesSheet(channelId: channelId)
                         .frame(idealWidth: 420, idealHeight: 560)
@@ -138,12 +168,20 @@ struct ChatScreen: View {
             }
 
             ToolbarItem(placement: .topBarTrailing) {
-                SearchLink(route: SearchRoute(channelId: channelId)) {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundStyle(Theme.text)
+                if ProcessInfo.processInfo.isiOSAppOnMac {
+                    Button(action: toggleSearch) {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundStyle(Theme.text)
+                    }
+                    .accessibilityLabel("Search")
+                } else {
+                    SearchLink(route: SearchRoute(channelId: channelId)) {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundStyle(Theme.text)
+                    }
+                    .simultaneousGesture(TapGesture().onEnded(dismissKeyboard))
+                    .accessibilityLabel("Search")
                 }
-                .simultaneousGesture(TapGesture().onEnded(dismissKeyboard))
-                .accessibilityLabel("Search")
             }
         }
         .task {
@@ -174,13 +212,138 @@ struct ChatScreen: View {
 
     private func showPins() {
         dismissKeyboard()
-        isPinsPresented = true
+
+        if ProcessInfo.processInfo.isiOSAppOnMac {
+            toggleDropdown(.pins)
+        } else {
+            isPinsPresented = true
+        }
+    }
+
+    private func toggleSearch() {
+        dismissKeyboard()
+        toggleDropdown(.search)
+    }
+
+    private func toggleDropdown(_ shown: ChatDropdown) {
+        dropdown = dropdown == shown ? nil : shown
+    }
+
+    private func closeDropdown() {
+        dropdown = nil
     }
 
     // before another screen goes over the chat: swiftui gives a field its focus back when the
     // chat shows again, so a keyboard still up on leaving would come back unasked
     private func dismissKeyboard() {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+}
+
+private enum ChatDropdown {
+    case pins
+    case search
+}
+
+// the mac's pins or search below the top bar, as tall as the window allows
+private struct ChatDropdownPanel: View {
+    let dropdown: ChatDropdown
+    let channelId: Int
+    let onClose: () -> Void
+
+    var body: some View {
+        switch dropdown {
+        case .pins:
+            panel(width: 420, maxHeight: 560) {
+                PinnedMessagesSheet(channelId: channelId, onClose: onClose)
+            }
+        case .search:
+            // wide enough for every tab of the strip without it scrolling
+            panel(width: 500, maxHeight: 640) {
+                NavigationStack {
+                    SearchScreen(channelId: channelId, directMessages: false)
+                }
+            }
+        }
+    }
+
+    private func panel(width: CGFloat, maxHeight: CGFloat, @ViewBuilder content: () -> some View) -> some View {
+        content()
+            .frame(width: width)
+            .frame(maxHeight: maxHeight)
+            .background(Theme.deepBackground)
+            .clipShape(.rect(cornerRadius: 12, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(Theme.panelEdge, lineWidth: 1)
+            }
+            .shadow(color: .black.opacity(0.4), radius: 20, y: 8)
+            .padding(.top, 8)
+            .padding(.trailing, 12)
+            .padding(.bottom, 12)
+    }
+}
+
+// discord's bell in a server channel's top bar: mute for a while, or which messages notify
+private struct NotificationBell: View {
+    let channelId: Int
+
+    @Environment(SessionStore.self) private var session
+
+    private var isMuted: Bool {
+        session.isMuted(channelId)
+    }
+
+    private var level: Binding<ChannelNotificationLevel> {
+        Binding(
+            get: { session.notificationLevel(for: channelId) },
+            set: setLevel
+        )
+    }
+
+    var body: some View {
+        Menu {
+            if isMuted {
+                Button("Unmute Channel", action: unmute)
+            } else {
+                Menu("Mute Channel") {
+                    ForEach(MuteDuration.allCases) { duration in
+                        Button(duration.title) {
+                            mute(for: duration)
+                        }
+                    }
+                }
+            }
+
+            Divider()
+
+            Picker("Notifications", selection: level) {
+                Text("All Messages").tag(ChannelNotificationLevel.all)
+                Text("Only @mentions").tag(ChannelNotificationLevel.mentions)
+                Text("Nothing").tag(ChannelNotificationLevel.none)
+            }
+            .pickerStyle(.inline)
+        } label: {
+            Image(systemName: isMuted ? "bell.slash.fill" : "bell.fill")
+                .foregroundStyle(Theme.text)
+        }
+        .accessibilityLabel("Notification Settings")
+    }
+
+    private func setLevel(_ newLevel: ChannelNotificationLevel) {
+        Task {
+            await session.setNotificationLevel(newLevel, for: channelId)
+        }
+    }
+
+    private func mute(for duration: MuteDuration) {
+        Task {
+            await session.setNotificationLevel(.none, for: channelId, muteForMinutes: duration.minutes)
+        }
+    }
+
+    private func unmute() {
+        setLevel(.mentions)
     }
 }
 

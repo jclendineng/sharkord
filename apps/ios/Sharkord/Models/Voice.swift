@@ -21,6 +21,8 @@ struct VoiceJoinEvent: Decodable {
 struct VoiceLeaveEvent: Decodable {
     let channelId: Int
     let userId: Int
+    // this account joined from another device, which took the seat over
+    let takenOver: Bool?
 }
 
 // voice.onReaction

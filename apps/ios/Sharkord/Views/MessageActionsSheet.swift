@@ -17,7 +17,9 @@ struct MessageActionsSheet: View {
     @Environment(SessionStore.self) private var session
     @Environment(ServerListStore.self) private var servers
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.closePointerMenu) private var closePointerMenu
     @Environment(\.openURL) private var openURL
+    @Environment(\.isPointerMenu) private var isPointerMenu
 
     @State private var isPickerPresented = false
     @State private var isDoubleTapPickerPresented = false
@@ -36,40 +38,47 @@ struct MessageActionsSheet: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 16) {
+            VStack(spacing: isPointerMenu ? 0 : 16) {
                 VStack(spacing: 10) {
-                    HStack(spacing: 10) {
-                        ForEach(Self.quickReactions, id: \.self) { shortcode in
+                    HStack(spacing: isPointerMenu ? 6 : 10) {
+                        ForEach(rowReactions, id: \.self) { shortcode in
                             Button(action: { react(shortcode) }) {
-                                EmojiView(value: shortcode, size: 28)
-                                    .frame(maxWidth: .infinity, minHeight: 52)
-                                    .background(Theme.listBackground, in: .rect(cornerRadius: 14))
+                                EmojiView(value: shortcode, size: isPointerMenu ? 20 : 28)
+                                    .frame(maxWidth: .infinity, minHeight: isPointerMenu ? 34 : 52)
+                                    .background(Theme.listBackground, in: .rect(cornerRadius: isPointerMenu ? 17 : 14))
                             }
                             .buttonStyle(.plain)
+                            .pointerTooltip(":\(shortcode):")
                         }
 
                         Button("Add Reaction", systemImage: "face.smiling", action: openPicker)
                             .labelStyle(.iconOnly)
-                            .font(.title2)
+                            .font(isPointerMenu ? .body : .title2)
                             .foregroundStyle(Theme.text)
-                            .frame(maxWidth: .infinity, minHeight: 52)
-                            .background(Theme.listBackground, in: .rect(cornerRadius: 14))
+                            .frame(maxWidth: .infinity, minHeight: isPointerMenu ? 34 : 52)
+                            .background(Theme.listBackground, in: .rect(cornerRadius: isPointerMenu ? 17 : 14))
                     }
 
-                    HStack(spacing: 4) {
-                        Text("Double tap a message to")
-
-                        EmojiView(value: AppSettings.shared.doubleTapReaction, size: 16)
-
-                        Button("Edit", action: openDoubleTapPicker)
-                            .foregroundStyle(Theme.link)
+                    // a mac has no double tap
+                    if !isPointerMenu {
+                        doubleTapHint
                     }
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.muted)
                 }
-                .padding(.top, 20)
+                .padding(.top, isPointerMenu ? 6 : 20)
 
                 ActionGroup {
+                    if isPointerMenu {
+                        SubmenuRow(title: "Add Reaction") {
+                            ForEach(FrequentExpressions.emoji.prefix(10), id: \.self) { shortcode in
+                                EmojiChoiceRow(shortcode: shortcode) {
+                                    react(shortcode)
+                                }
+                            }
+
+                            ActionRow(title: "View More", systemImage: "face.smiling", action: openPicker)
+                        }
+                    }
+
                     if isOwn && message.content?.isEmpty == false {
                         ActionRow(title: "Edit Message", systemImage: "pencil", action: edit)
                     }
@@ -124,7 +133,7 @@ struct MessageActionsSheet: View {
                     }
                 }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, isPointerMenu ? 6 : 16)
             .fittedSheet()
         }
         .scrollBounceBehavior(.basedOnSize)
@@ -170,6 +179,25 @@ struct MessageActionsSheet: View {
         }
     }
 
+    // the mac's menu leads with what you react with most, like discord's. the phone's sheet keeps
+    // its set, which the double tap hint below it goes with
+    private var rowReactions: [String] {
+        isPointerMenu ? Array(FrequentExpressions.emoji.prefix(4)) : Self.quickReactions
+    }
+
+    private var doubleTapHint: some View {
+        HStack(spacing: 4) {
+            Text("Double tap a message to")
+
+            EmojiView(value: AppSettings.shared.doubleTapReaction, size: 16)
+
+            Button("Edit", action: openDoubleTapPicker)
+                .foregroundStyle(Theme.link)
+        }
+        .font(.subheadline)
+        .foregroundStyle(Theme.muted)
+    }
+
     private func openPicker() {
         isPickerPresented = true
     }
@@ -185,7 +213,7 @@ struct MessageActionsSheet: View {
     private func react(_ emoji: String) {
         let messageId = message.id
 
-        dismiss()
+        closeMenu()
 
         Task {
             do {
@@ -199,13 +227,13 @@ struct MessageActionsSheet: View {
     private func edit() {
         store.replyingTo = nil
         store.editing = message
-        dismiss()
+        closeMenu()
     }
 
     private func reply() {
         store.editing = nil
         store.replyingTo = message
-        dismiss()
+        closeMenu()
     }
 
     private func forward() {
@@ -214,13 +242,13 @@ struct MessageActionsSheet: View {
 
     private func copy() {
         UIPasteboard.general.string = HTMLText.plainText(from: message.content ?? "")
-        dismiss()
+        closeMenu()
     }
 
     private func markUnread() {
         let message = message
 
-        dismiss()
+        closeMenu()
 
         Task {
             do {
@@ -261,7 +289,7 @@ struct MessageActionsSheet: View {
             }
         }
 
-        dismiss()
+        closeMenu()
 
         Task {
             do {
@@ -275,7 +303,7 @@ struct MessageActionsSheet: View {
     private func togglePin() {
         let messageId = message.id
 
-        dismiss()
+        closeMenu()
 
         Task {
             do {
@@ -291,11 +319,11 @@ struct MessageActionsSheet: View {
             store.pendingInsert = "@\(name) "
         }
 
-        dismiss()
+        closeMenu()
     }
 
     private func delete() {
-        dismiss()
+        closeMenu()
         onDelete(message)
     }
 
@@ -325,6 +353,48 @@ struct MessageActionsSheet: View {
     }
 
     private func close() {
-        dismiss()
+        closeMenu()
+    }
+
+    // a sheet on a touch screen, the pointer menu on a mac, where dismiss has nothing to close
+    private func closeMenu() {
+        if let closePointerMenu {
+            closePointerMenu()
+        } else {
+            dismiss()
+        }
+    }
+}
+
+// a reaction in the mac menu's add reaction list: the emoji and its name, as discord lists them
+private struct EmojiChoiceRow: View {
+    let shortcode: String
+    let action: () -> Void
+
+    @State private var isHovered = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                EmojiView(value: shortcode, size: 16)
+                    .frame(width: 18)
+
+                Text(":\(shortcode):")
+                    .font(.subheadline.weight(.medium))
+
+                Spacer(minLength: 0)
+            }
+            .foregroundStyle(Theme.header)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 7)
+            .background(isHovered ? Theme.hover : .clear, in: .rect(cornerRadius: 4))
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .onHover(perform: setHovered)
+    }
+
+    private func setHovered(_ hovered: Bool) {
+        isHovered = hovered
     }
 }

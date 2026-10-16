@@ -7,8 +7,12 @@ struct MessageRow: View {
     let onLongPress: () -> Void
     let onDoubleTap: () -> Void
     var onSecondaryClick: (SecondaryClick) -> Void = { _ in }
+    // the mac's bar over a hovered message, left off where the row has nowhere to send them
+    var hoverActions: MessageHoverActions?
 
     @Environment(SessionStore.self) private var session
+
+    @State private var isHovered = false
 
     private var author: PublicUser? {
         message.userId.flatMap { session.usersById[$0] }
@@ -102,12 +106,30 @@ struct MessageRow: View {
         }
         .padding(.horizontal, 16)
         .padding(.top, showsHeader ? 16 : 2)
+        .background(isHovered ? Color.black.opacity(0.08) : .clear)
+        // over the row's top right, discord's quick reactions, reply and the menu
+        .overlay(alignment: .topTrailing) {
+            if isHovered, let hoverActions {
+                MessageHoverBar(actions: hoverActions)
+                    .padding(.trailing, 16)
+                    .offset(y: showsHeader ? -2 : -16)
+            }
+        }
+        .onHover(perform: setHovered)
         .contentShape(.rect)
         .onTapGesture(count: 2, perform: onDoubleTap)
         // simultaneous so it also works over an attachment's own button, a voice message's play
         // button for one. the sheet opening cancels that button's tap
-        .simultaneousGesture(LongPressGesture(minimumDuration: 0.4).onEnded(longPressed))
+        .simultaneousGesture(LongPressGesture(minimumDuration: 0.3).onEnded(longPressed))
         .onSecondaryClick(perform: onSecondaryClick)
+    }
+
+    private func setHovered(_ hovered: Bool) {
+        guard hoverActions != nil, ProcessInfo.processInfo.isiOSAppOnMac else {
+            return
+        }
+
+        isHovered = hovered
     }
 
     private func longPressed(_: Bool) {
@@ -201,3 +223,72 @@ private struct ReplyLine: View {
     }
 }
 
+
+struct MessageHoverActions {
+    let onReact: (String) -> Void
+    let onReply: () -> Void
+    // where the menu should open, under the bar's more button
+    let onMore: (SecondaryClick) -> Void
+}
+
+private struct MessageHoverBar: View {
+    let actions: MessageHoverActions
+
+    @State private var moreFrame = CGRect.zero
+
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(FrequentExpressions.emoji.prefix(3), id: \.self) { shortcode in
+                Button {
+                    actions.onReact(shortcode)
+                } label: {
+                    EmojiView(value: shortcode, size: 18)
+                        .frame(width: 30, height: 30)
+                        .contentShape(.rect)
+                }
+                .accessibilityLabel("React with \(shortcode)")
+                .pointerTooltip(":\(shortcode):")
+            }
+
+            Theme.divider
+                .frame(width: 1, height: 18)
+                .padding(.horizontal, 2)
+
+            Button(action: actions.onReply) {
+                barIcon("arrowshape.turn.up.left")
+            }
+            .accessibilityLabel("Reply")
+            .pointerTooltip("Reply")
+
+            Button(action: showMore) {
+                barIcon("ellipsis")
+            }
+            .accessibilityLabel("More")
+            .pointerTooltip("More")
+            .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }) { frame in
+                moreFrame = frame
+            }
+        }
+        .buttonStyle(.plain)
+        .padding(3)
+        .background(Theme.listBackground, in: .rect(cornerRadius: 8))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(Theme.panelEdge, lineWidth: 1)
+        }
+        .shadow(color: .black.opacity(0.3), radius: 6, y: 2)
+    }
+
+    private func barIcon(_ systemImage: String) -> some View {
+        Image(systemName: systemImage)
+            .font(.system(size: 15, weight: .medium))
+            .foregroundStyle(Theme.text)
+            .frame(width: 30, height: 30)
+            .contentShape(.rect)
+    }
+
+    // discord opens the menu to the left of the button, level with its top
+    private func showMore() {
+        actions.onMore(SecondaryClick(anchor: .topLeading, windowPoint: CGPoint(x: moreFrame.minX - 224, y: moreFrame.minY)))
+    }
+}

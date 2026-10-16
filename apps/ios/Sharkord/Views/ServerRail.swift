@@ -48,6 +48,9 @@ struct ServerRail: View {
             .padding(.vertical, 8)
         }
         .scrollIndicators(.hidden)
+        // the rail runs up under a mac's title bar, where the fade a scroll view draws below a
+        // top bar showed as a grey block over the dark rail
+        .scrollEdgeEffectHidden(true, for: .top)
         .frame(width: Self.width)
     }
 

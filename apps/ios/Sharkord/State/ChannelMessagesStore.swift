@@ -334,7 +334,7 @@ final class ChannelMessagesStore {
     }
 
     private func fetchPage(cursor: MessagesCursor?, targetMessageId: Int? = nil) async -> MessagesPage? {
-        guard let client = session.client, !isLoading else {
+        guard !isLoading else {
             return nil
         }
 
@@ -342,6 +342,9 @@ final class ChannelMessagesStore {
         defer { isLoading = false }
 
         do {
+            // a launch draws the chat from the last join before the sign in is through, the
+            // first page waits for it rather than being turned away as unauthenticated
+            let client = try await session.readyClient()
             let page: MessagesPage
 
             switch scope {

@@ -362,6 +362,9 @@ private struct DirectMessageActionsSheet: View {
     @Environment(SessionStore.self) private var session
     @Environment(ServerListStore.self) private var servers
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.closePointerMenu) private var closePointerMenu
+
+    @Environment(\.isPointerMenu) private var isPointerMenu
 
     @State private var isProfilePresented = false
 
@@ -375,20 +378,21 @@ private struct DirectMessageActionsSheet: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: isPointerMenu ? 0 : 16) {
+                HStack(spacing: isPointerMenu ? 8 : 12) {
                     if conversation.group != nil {
-                        GroupAvatar(size: 48)
+                        GroupAvatar(size: isPointerMenu ? 22 : 48)
                     } else {
-                        AvatarView(user: user, size: 48)
+                        AvatarView(user: user, size: isPointerMenu ? 22 : 48)
                     }
 
                     Text(conversation.group == nil ? "@\(user?.name ?? "Unknown")" : session.conversationTitle(for: channelId))
-                        .font(.title3.bold())
+                        .font(isPointerMenu ? .subheadline.weight(.semibold) : .title3.bold())
                         .foregroundStyle(Theme.header)
                         .lineLimit(1)
                 }
-                .padding(.top, 20)
+                .padding(.horizontal, isPointerMenu ? 8 : 0)
+                .padding(.top, isPointerMenu ? 8 : 20)
 
                 ActionGroup {
                     if user != nil, conversation.group == nil {
@@ -412,14 +416,21 @@ private struct DirectMessageActionsSheet: View {
 
                 ActionGroup {
                     ActionRow(title: "Mark As Read", systemImage: "eye", action: markAsRead)
-                    ActionRow(
-                        title: isMuted ? "Unmute Conversation" : "Mute Conversation",
-                        systemImage: isMuted ? "bell.fill" : "bell.slash.fill",
-                        action: toggleMuted
-                    )
+
+                    if isPointerMenu && !isMuted {
+                        SubmenuRow(title: "Mute Conversation") {
+                            MuteChoices(onPick: mute)
+                        }
+                    } else {
+                        ActionRow(
+                            title: isMuted ? "Unmute Conversation" : "Mute Conversation",
+                            systemImage: isMuted ? "bell.fill" : "bell.slash.fill",
+                            action: toggleMuted
+                        )
+                    }
                 }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, isPointerMenu ? 6 : 16)
             .fittedSheet()
         }
         .scrollBounceBehavior(.basedOnSize)
@@ -441,12 +452,12 @@ private struct DirectMessageActionsSheet: View {
     }
 
     private func openConversation() {
-        dismiss()
+        closeMenu()
         servers.open(channelId: channelId, in: session)
     }
 
     private func close() {
-        dismiss()
+        closeMenu()
 
         Task {
             do {
@@ -460,11 +471,11 @@ private struct DirectMessageActionsSheet: View {
 
     private func togglePinned() {
         session.togglePinned(channelId)
-        dismiss()
+        closeMenu()
     }
 
     private func leaveGroup() {
-        dismiss()
+        closeMenu()
 
         Task {
             await session.leaveGroup(channelId)
@@ -476,7 +487,7 @@ private struct DirectMessageActionsSheet: View {
             await session.markAsRead(channelId)
         }
 
-        dismiss()
+        closeMenu()
     }
 
     // muting asks for how long first, unmuting goes straight back to the default
@@ -490,7 +501,24 @@ private struct DirectMessageActionsSheet: View {
             await session.setNotificationLevel(.mentions, for: channelId)
         }
 
-        dismiss()
+        closeMenu()
+    }
+
+    private func mute(for duration: MuteDuration) {
+        Task {
+            await session.setNotificationLevel(.none, for: channelId, muteForMinutes: duration.minutes)
+        }
+
+        closeMenu()
+    }
+
+    // a sheet on a touch screen, the pointer menu on a mac, where dismiss has nothing to close
+    private func closeMenu() {
+        if let closePointerMenu {
+            closePointerMenu()
+        } else {
+            dismiss()
+        }
     }
 }
 

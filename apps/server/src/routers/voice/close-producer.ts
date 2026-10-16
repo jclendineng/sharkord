@@ -14,7 +14,10 @@ const closeProducerRoute = protectedProcedure
   .mutation(async ({ ctx, input }) => {
     await ctx.needsPermission(Permission.JOIN_VOICE_CHANNELS);
 
-    if (!ctx.currentVoiceChannelId) {
+    const ownSocket = ctx.getOwnWs();
+
+    // a socket whose seat another device took over would close that device's stream
+    if (!ctx.currentVoiceChannelId || (ownSocket && !ownSocket.inVoice)) {
       logger.debug(
         'Ignoring closeProducer for %s/%s: user already left voice',
         ctx.user.name,

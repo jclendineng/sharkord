@@ -71,6 +71,8 @@ type Events = {
   [ServerEvents.USER_LEAVE_VOICE]: {
     channelId: number;
     userId: number;
+    // the user joined from another device or connection, which took the seat over
+    takenOver?: boolean;
   };
   [ServerEvents.USER_VOICE_STATE_UPDATE]: {
     channelId: number;

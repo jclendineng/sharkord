@@ -75,6 +75,7 @@ struct UserBar: View {
                 .popover(isPresented: $isUnreadsPresented) {
                     InboxSheet()
                         .frame(idealWidth: 420, idealHeight: 560)
+                        .macPopover()
                         .environment(servers)
                         .environment(session)
                 }
@@ -89,13 +90,11 @@ struct UserBar: View {
         .shadow(color: .black.opacity(0.4), radius: 20, y: 8)
         // handed over by hand: on a mac a sheet's background is worked out before it inherits
         // anything, so a sheet reading a store it was not given crashed on opening
-        .sheet(isPresented: $isProfilePresented) {
+        .modifier(ProfilePresentation(isPresented: $isProfilePresented) {
             ProfileScreen()
-                .presentationSizing(TallerFormSizing())
                 .environment(session)
                 .environment(servers)
-                .appSheet()
-        }
+        })
     }
 
     private func showProfile() {
@@ -104,6 +103,30 @@ struct UserBar: View {
 
     private func showUnreads() {
         isUnreadsPresented = true
+    }
+}
+
+// discord's mac opens your profile above the user bar, a phone or ipad gets the sheet
+private struct ProfilePresentation<Profile: View>: ViewModifier {
+    @Binding var isPresented: Bool
+    @ViewBuilder let profile: () -> Profile
+
+    func body(content: Content) -> some View {
+        if ProcessInfo.processInfo.isiOSAppOnMac {
+            content
+                .popover(isPresented: $isPresented, arrowEdge: .bottom) {
+                    profile()
+                        .frame(idealWidth: 380, idealHeight: 640)
+                        .macPopover()
+                }
+        } else {
+            content
+                .sheet(isPresented: $isPresented) {
+                    profile()
+                        .presentationSizing(TallerFormSizing())
+                        .appSheet()
+                }
+        }
     }
 }
 

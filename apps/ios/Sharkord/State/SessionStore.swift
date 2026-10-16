@@ -82,6 +82,9 @@ final class SessionStore {
     private(set) var voiceReactions: [Int: [VoiceReaction]] = [:]
     @ObservationIgnored private var nextVoiceReactionId = 0
     private(set) var isJoiningVoice = false
+    // the channel this device was in until the account joined voice from another one, for
+    // discord's banner offering to take it back
+    var voiceTakenOverChannelId: Int?
     private(set) var micMuted = false
     private(set) var soundMuted = false
     private(set) var cameraEnabled = false
@@ -780,6 +783,7 @@ final class SessionStore {
         }
 
         isJoiningVoice = true
+        voiceTakenOverChannelId = nil
 
         defer {
             isJoiningVoice = false
@@ -1067,6 +1071,9 @@ final class SessionStore {
         }
 
         try await client.mutation("messages.toggleReaction", input: ReactionInput(messageId: messageId, emoji: emoji))
+
+        // what the mac's menus offer first, discord's frequently used
+        FrequentExpressions.use(emoji: emoji)
     }
 
     // a server from before friends simply has none
@@ -1738,6 +1745,10 @@ final class SessionStore {
             // removed by the server, from another device or by a moderator
             if event.userId == self.ownUserId, event.channelId == self.currentVoiceChannelId, !self.isJoiningVoice {
                 self.stopVoice()
+
+                if event.takenOver == true {
+                    self.voiceTakenOverChannelId = event.channelId
+                }
             }
         }
 

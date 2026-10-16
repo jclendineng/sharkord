@@ -14,6 +14,12 @@ extension View {
     func sheetDetents(_ detents: Set<PresentationDetent>) -> some View {
         modifier(SheetDetents(detents: detents))
     }
+
+    // a narrow mac window counts as compact and turns a popover into a sheet rising from the
+    // bottom. discord's hang off their button at any width, a phone still gets the sheet
+    func macPopover() -> some View {
+        presentationCompactAdaptation(ProcessInfo.processInfo.isiOSAppOnMac ? .popover : .automatic)
+    }
 }
 
 private struct SheetDetents: ViewModifier {

@@ -72,6 +72,11 @@ const clearLocalVoiceSession = (): void => {
   setPinnedCard(undefined);
 };
 
+// joining while this account sits in voice elsewhere takes that seat over, and the server
+// announces the old seat's leave before the join returns. that leave is ours, but it is not
+// for the call being started
+let isJoiningVoice = false;
+
 export const removeUserFromVoiceChannel = (
   userId: number,
   channelId: number
@@ -85,6 +90,8 @@ export const removeUserFromVoiceChannel = (
   );
 
   if (channelId !== currentChannelId) return;
+
+  if (userId === ownUserId && isJoiningVoice) return;
 
   // the server took us out of this call rather than the other way round: the channel was
   // deleted, its category was, or the runtime was destroyed. without this the call ends but
@@ -211,6 +218,8 @@ export const joinVoice = async (
 
   logVoice('session: join requested', { channelId, micMuted, soundMuted });
 
+  isJoiningVoice = true;
+
   try {
     const client = getTRPCClient();
 
@@ -227,6 +236,8 @@ export const joinVoice = async (
     clearLocalVoiceSession();
 
     toast.error(getTrpcError(error, i18n.t('common:failedJoinVoiceChannel')));
+  } finally {
+    isJoiningVoice = false;
   }
 
   return undefined;

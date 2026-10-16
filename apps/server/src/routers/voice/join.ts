@@ -10,6 +10,7 @@ import { z } from 'zod';
 import { config } from '../../config';
 import { db } from '../../db';
 import { channels } from '../../db/schema';
+import { takeOverVoiceSeat } from '../../helpers/take-over-voice-seat';
 import {
   consumeVoiceMoveGrant,
   hasVoiceMoveGrant
@@ -70,6 +71,8 @@ const joinVoiceRoute = rateLimitedProcedure(protectedProcedure, {
       message: 'Cannot join a direct message channel as a voice channel'
     });
 
+    takeOverVoiceSeat(ctx);
+
     const userAlreadyInVoiceChannel = VoiceRuntime.findRuntimeByUserId(
       ctx.user.id
     );
@@ -102,6 +105,11 @@ const joinVoiceRoute = rateLimitedProcedure(protectedProcedure, {
     const state = runtime.getUserState(ctx.user.id);
 
     ctx.currentVoiceChannelId = channel.id;
+
+    const ws = ctx.getOwnWs();
+
+    if (ws) ws.inVoice = true;
+
     ctx.pubsub.publish(ServerEvents.USER_JOIN_VOICE, {
       channelId: input.channelId,
       userId: ctx.user.id,

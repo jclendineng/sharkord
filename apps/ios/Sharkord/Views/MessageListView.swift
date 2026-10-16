@@ -104,7 +104,12 @@ struct MessageListView<Header: View>: View {
                         showsThreadLink: store.scope == .channel,
                         onLongPress: { showActions(for: message) },
                         onDoubleTap: { react(to: message) },
-                        onSecondaryClick: { click in showActions(for: message, at: click) }
+                        onSecondaryClick: { click in showActions(for: message, at: click) },
+                        hoverActions: MessageHoverActions(
+                            onReact: { emoji in quickReact(emoji, to: message) },
+                            onReply: { reply(to: message) },
+                            onMore: { click in showActions(for: message, at: click) }
+                        )
                     )
                     .background {
                         if highlightedMessageId == message.id {
@@ -331,6 +336,21 @@ struct MessageListView<Header: View>: View {
                 session.showError(error)
             }
         }
+    }
+
+    private func quickReact(_ emoji: String, to message: Message) {
+        Task {
+            do {
+                try await session.toggleReaction(messageId: message.id, emoji: emoji)
+            } catch {
+                session.showError(error)
+            }
+        }
+    }
+
+    private func reply(to message: Message) {
+        store.editing = nil
+        store.replyingTo = message
     }
 
     private func confirmDelete(_ message: Message) {

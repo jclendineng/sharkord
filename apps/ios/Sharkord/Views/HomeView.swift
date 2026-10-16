@@ -22,9 +22,6 @@ struct HomeView: View {
     @State private var isChatExpanded = false
     // the handle's drag in progress, the card following the finger until it is let go
     @State private var chatSlide = ChatSlide()
-    // laid out at the full width while it moves, so the messages wrap once rather than on
-    // every frame, and narrowed only once it has come to rest beside the list
-    @State private var isChatCardWide = false
     @State private var detailChannelId: Int?
     // the conversation beside the list when messages were last picked in the rail
     @State private var lastDirectMessageId: Int?
@@ -199,13 +196,19 @@ struct HomeView: View {
                 // a card of its own beside the list's, rounded all round with the rail showing
                 // between them, rather than a hard line down the screen. slid over the list it
                 // keeps its rounding and its gap from the screen's edges
-                SlidingCard(slide: chatSlide, resting: isChatExpanded ? 0 : listWidth, farthest: listWidth) {
+                SlidingCard(
+                    slide: chatSlide,
+                    resting: isChatExpanded ? 0 : listWidth,
+                    farthest: listWidth,
+                    fullWidth: proxy.size.width
+                ) {
                     NavigationStack(path: $path) {
                         detail
                             .chatDestinations()
                     }
-                    // the message bar clear of the card's rounded bottom, as discord's sits
-                    .padding(.bottom, 8)
+                    // the message bar clear of the card's rounded bottom and level with the user
+                    // bar beside it, which is lifted the same way
+                    .padding(.bottom, 16)
                     .background(Theme.chatBackground)
                     // a swipe in from the card's edge goes back. the system's own loses it to a
                     // screen that pages sideways, channel info's tabs among them
@@ -232,7 +235,6 @@ struct HomeView: View {
                                 .offset(x: Self.cardGap - ChatHandle.width / 2)
                         }
                     }
-                    .frame(width: chatCardWidth(in: proxy.size.width))
                 }
             }
             .frame(width: proxy.size.width, height: proxy.size.height, alignment: .leading)
@@ -290,12 +292,6 @@ struct HomeView: View {
         }
     }
 
-    private func chatCardWidth(in splitWidth: CGFloat) -> CGFloat {
-        let width = isChatCardWide ? splitWidth : splitWidth - listWidth
-
-        return max(width, 0)
-    }
-
     // only the slide changes as the finger moves, so only the card is redrawn, not the list
     private func dragChat(_ translation: CGFloat) {
         // a pull the way the card cannot go, right while it is beside the list or left while
@@ -305,10 +301,6 @@ struct HomeView: View {
         guard isTowardList else {
             chatSlide.drag = 0
             return
-        }
-
-        if !isChatCardWide {
-            isChatCardWide = true
         }
 
         chatSlide.drag = translation
@@ -349,19 +341,12 @@ struct HomeView: View {
 
         // let go where it started beside the list, there is nothing to animate
         if !expanded && !isChatExpanded && chatSlide.drag == 0 {
-            isChatCardWide = false
             return
         }
-
-        isChatCardWide = true
 
         withAnimation(.interactiveSpring(response: 0.35, dampingFraction: 0.86)) {
             isChatExpanded = expanded
             chatSlide.drag = 0
-        } completion: {
-            if !isChatExpanded && chatSlide.drag == 0 {
-                isChatCardWide = false
-            }
         }
     }
 
@@ -668,11 +653,42 @@ private struct SlidingCard<Content: View>: View {
     let slide: ChatSlide
     let resting: CGFloat
     let farthest: CGFloat
+    let fullWidth: CGFloat
     @ViewBuilder let content: Content
+
+    private var position: CGFloat {
+        min(max(resting + slide.drag, 0), farthest)
+    }
 
     var body: some View {
         content
-            .offset(x: min(max(resting + slide.drag, 0), farthest))
+            .modifier(CardPosition(position: position, fullWidth: fullWidth))
+    }
+}
+
+// the right edge stays on the screen's edge the whole way, narrowing as it moves right. a card
+// kept at full width and only moved ran its top bar's buttons off the screen until it settled.
+// worked out on every frame of a tap's animation as a drag's are. the frames themselves carry no
+// animation inward: under the slide's spring the top bar animated toward each new width on its
+// own and trailed behind, running its buttons off the edge until the slide ended
+private struct CardPosition: ViewModifier, Animatable {
+    var position: CGFloat
+    let fullWidth: CGFloat
+
+    var animatableData: CGFloat {
+        get { position }
+        set { position = newValue }
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .transaction(disableAnimation)
+            .frame(width: max(fullWidth - position, 0))
+            .offset(x: position)
+    }
+
+    private func disableAnimation(_ transaction: inout Transaction) {
+        transaction.animation = nil
     }
 }
 

@@ -262,7 +262,7 @@ nonisolated final class ScreenCapture: NSObject, @unchecked Sendable {
     }
 }
 
-extension ScreenCapture: SCContentSharingPickerObserver {
+nonisolated extension ScreenCapture: SCContentSharingPickerObserver {
     func contentSharingPicker(_ picker: SCContentSharingPicker, didUpdateWith filter: SCContentFilter, for stream: SCStream?) {
         state.withLockUnchecked { $0.filter = filter }
         onPicked()
@@ -273,7 +273,7 @@ extension ScreenCapture: SCContentSharingPickerObserver {
     func contentSharingPickerStartDidFailWithError(_ error: any Error) {}
 }
 
-extension ScreenCapture: SCStreamDelegate, SCStreamOutput {
+nonisolated extension ScreenCapture: SCStreamDelegate, SCStreamOutput {
     // stopped from the system, the control centre's stop button or the screen locking
     func stream(_ stream: SCStream, didStopWithError error: any Error) {
         onStopped()

@@ -36,7 +36,12 @@ struct MembersColumn: View {
         }
         .scrollIndicators(.hidden)
         .frame(width: Self.width)
-        .background(Theme.listBackground)
+        .background(Theme.chatBackground)
+        .overlay(alignment: .leading) {
+            Rectangle()
+                .fill(Theme.panelEdge)
+                .frame(width: 1)
+        }
     }
 }
 
@@ -87,6 +92,7 @@ private struct MemberColumnRow: View {
         .popover(isPresented: $isProfilePresented, arrowEdge: .leading) {
             MemberProfileSheet(user: user, onMessage: openDirectMessage)
                 .frame(idealWidth: 340, idealHeight: 560)
+                .presentationCompactAdaptation(.popover)
                 .environment(session)
                 .environment(servers)
         }

@@ -114,6 +114,15 @@ const disconnectSessions = (
 
 const getOnlineUserIds = (): number[] => Array.from(userSockets.keys());
 
+// the user's socket that joined voice, if any is still open
+const findVoiceSocket = (userId: number): WebSocket | undefined => {
+  const sockets = userSockets.get(userId);
+
+  if (!sockets) return undefined;
+
+  return Array.from(sockets).find((socket) => socket.inVoice);
+};
+
 const getUserWsCount = (userId: number): number =>
   userSockets.get(userId)?.size ?? 0;
 
@@ -257,6 +266,21 @@ const handleSocketClose = async (ws: WebSocket) => {
 
     untrackUserSocket(userId, ws);
 
+    // voice belongs to the socket that joined it. a device that dies while another stays
+    // connected would otherwise keep the user in the channel with no way back in or out
+    if (ws.inVoice) {
+      const voiceRuntime = VoiceRuntime.findRuntimeByUserId(userId);
+
+      if (voiceRuntime) {
+        voiceRuntime.removeUser(userId);
+
+        pubsub.publish(ServerEvents.USER_LEAVE_VOICE, {
+          channelId: voiceRuntime.id,
+          userId
+        });
+      }
+    }
+
     // only mark as offline when there are no other active sessions
     if (userSockets.has(userId)) {
       return;
@@ -265,17 +289,6 @@ const handleSocketClose = async (ws: WebSocket) => {
     const user = await getUserById(userId);
 
     if (!user) return;
-
-    const voiceRuntime = VoiceRuntime.findRuntimeByUserId(user.id);
-
-    if (voiceRuntime) {
-      voiceRuntime.removeUser(user.id);
-
-      pubsub.publish(ServerEvents.USER_LEAVE_VOICE, {
-        channelId: voiceRuntime.id,
-        userId: user.id
-      });
-    }
 
     usersIpMap.delete(user.id);
     userPresence.delete(user.id);
@@ -348,6 +361,7 @@ export {
   createWsServer,
   disconnectSessions,
   disconnectUser,
+  findVoiceSocket,
   getOnlineUserIds,
   getUserIp,
   getUserStatus,

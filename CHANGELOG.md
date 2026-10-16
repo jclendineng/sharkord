@@ -143,3 +143,27 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   and a result opens in the window as the dropdown closes.
 - On a Mac, a server channel shows the member list down the right, online then offline, with a
   header button to hide it. A member opens their profile beside the list.
+- Starting a screen share on the phone no longer crashes the app once something is picked to
+  share.
+- Joining voice from another device takes the seat over, as in Discord, instead of failing with
+  "User already in a voice channel". The device that had it ends its call, and the iOS app
+  shows a bar offering to reconnect there. A phone coming back from the background rejoins
+  instead of being locked out, and a device that crashes or loses its connection leaves voice
+  even when the account is still connected elsewhere.
+- Long presses on channels and messages open their menu after the same 0.3 seconds as servers
+  and conversations.
+- The iOS app's messages load at launch instead of showing "You must be authenticated" until
+  another channel was opened.
+- On an iPad, the message bar sits level with the user bar beside it, and the top bar's pins
+  and search stay in place while the chat slides over the list and back.
+- On a Mac, the right click menus are Discord's: compact rows with an icon, opened at the pointer
+  and moved there by the next right click, closed by a click anywhere else. Rows with more
+  choices (Mute Channel, Notification Settings, Add Reaction) open them beside the menu as the
+  pointer reaches them. Add Reaction and the reactions along the top lead with the emoji you
+  use most, named as the pointer passes over them.
+- On a Mac, hovering a message shows Discord's bar of quick reactions, Reply and More, and a
+  channel lights up under the pointer.
+- On a Mac, a server channel's top bar has a bell to mute the channel or pick which messages
+  notify. Pins and search slide down from under the top bar instead of rising from the bottom,
+  your profile opens above the user bar, and the member list shares the chat's background.
+- On a Mac, the dark rail no longer shows a grey block under the title bar.

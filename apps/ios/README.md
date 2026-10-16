@@ -55,6 +55,16 @@ shows the system picker, and once the screen is picked the app captures it itsel
 app audio on, the stream also captures the other apps' sound, converted to 48khz mono for
 `MixingAudioDevice`. There is no broadcast extension any more.
 
+## On a Mac
+
+The app runs on the Mac as the iPad app. A Mac hands it a right click only as a context menu
+request, never as a touch, so each row with a menu carries a view that answers that request
+(`Helpers/SecondaryClick.swift`) and the window has one more for right clicks on nothing. The
+menus themselves are the long press sheets drawn compact (`isPointerMenu`) in one layer over the
+window (`PointerMenuLayer`), not system popovers: a popover's backdrop swallowed the next right
+click and was slow to close. That layer also draws the submenus beside a menu and the hover
+tooltips.
+
 ## Sessions
 
 Each sign in is a row in the server's `sessions` table, and its id rides in the token. The

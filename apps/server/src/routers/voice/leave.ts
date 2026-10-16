@@ -49,6 +49,10 @@ const leaveVoiceRoute = protectedProcedure.mutation(async ({ ctx }) => {
 
   ctx.currentVoiceChannelId = undefined;
 
+  const ws = ctx.getOwnWs();
+
+  if (ws) ws.inVoice = false;
+
   logger.info('%s left voice channel %s', ctx.user.name, channel.name);
 });
 

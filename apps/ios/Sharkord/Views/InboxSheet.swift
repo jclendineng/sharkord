@@ -36,8 +36,10 @@ struct InboxSheet: View {
             .navigationTitle("Inbox")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done", action: close)
+                if !ProcessInfo.processInfo.isiOSAppOnMac {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done", action: close)
+                    }
                 }
             }
         }

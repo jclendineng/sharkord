@@ -9,6 +9,10 @@ struct SharkordApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
+                // the mac's right click menus, drawn over everything else in the window
+                .overlay {
+                    PointerMenuLayer()
+                }
                 .guardsLeavingLinks(servers: servers)
                 .environment(servers)
                 .task {

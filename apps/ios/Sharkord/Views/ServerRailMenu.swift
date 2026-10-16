@@ -11,6 +11,7 @@ struct ServerRailMenu: View {
 
     @State private var height: CGFloat = 0
     @State private var isShown = false
+    @State private var menuId = UUID()
 
     private var server: SessionStore {
         menu.server
@@ -31,10 +32,14 @@ struct ServerRailMenu: View {
         }
         .transition(.opacity)
         .onAppear(perform: show)
+        .onDisappear(perform: hidden)
     }
 
-    // grows out of the icon like discord's, quick enough to feel attached to the finger
+    // grows out of the icon like discord's, quick enough to feel attached to the finger. a right
+    // click elsewhere on a mac moves to that menu or closes this one, as the others do
     private func show() {
+        PointerMenus.opened(menuId, close: close)
+
         withAnimation(.spring(response: 0.22, dampingFraction: 0.82)) {
             isShown = true
         }
@@ -89,6 +94,10 @@ struct ServerRailMenu: View {
 
     private func close() {
         servers.railMenu = nil
+    }
+
+    private func hidden() {
+        PointerMenus.closed(menuId)
     }
 
     private func markAsRead() {

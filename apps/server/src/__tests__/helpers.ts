@@ -51,9 +51,15 @@ const getCaller = async (
 };
 
 // a caller whose token belongs to a session, the way a real login is. getCaller's token
-// predates sessions and carries none
-const getSessionCaller = async (userId: number, socket?: WebSocket) => {
-  const token = await createSessionToken(userId, 0, undefined);
+// predates sessions and carries none. passing an earlier caller's token connects that same
+// login again, as a device reconnecting does
+const getSessionCaller = async (
+  userId: number,
+  socket?: WebSocket,
+  existingToken?: string
+) => {
+  const token =
+    existingToken ?? (await createSessionToken(userId, 0, undefined));
   const caller = appRouter.createCaller(
     await createMockContext({ customToken: token, socket })
   );

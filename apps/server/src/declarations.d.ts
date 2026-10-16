@@ -6,6 +6,8 @@ declare module 'ws' {
     token: string;
     // the login this socket belongs to, closed when that session is signed out
     sessionId?: string;
+    // the socket that joined voice, which leaves it when it closes even if other tabs stay
+    inVoice?: boolean;
   }
 }
 

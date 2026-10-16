@@ -42,9 +42,7 @@ struct ChannelListPanel: View {
         }
         .scrollIndicators(.hidden)
         .safeAreaInset(edge: .top, spacing: 0) {
-            if session.showsReconnectingBanner {
-                ReconnectingBanner()
-            }
+            SessionBanners()
         }
         // handed over by hand: on a mac a sheet's background is worked out before it inherits
         // anything, so a sheet reading a store it was not given crashed on opening
@@ -189,6 +187,7 @@ private struct ChannelRow: View {
     @State private var wantsMute = false
     @State private var isMutePresented = false
     @State private var isPressed = false
+    @State private var isHovered = false
 
     let channel: Channel
     let unreadCount: Int
@@ -219,9 +218,10 @@ private struct ChannelRow: View {
         // plain gestures rather than a link or button: a recognised long press cancels the
         // tap, where a button still fires when the finger lifts after one
         label
-            .background(isPressed ? Theme.panelSelected : .clear, in: .rect(cornerRadius: 6))
+            .background(isHighlighted ? Theme.panelSelected : .clear, in: .rect(cornerRadius: 6))
+            .onHover(perform: setHovered)
             .onTapGesture(perform: open)
-            .onLongPressGesture(minimumDuration: 0.35, perform: showActions, onPressingChanged: setPressed)
+            .onLongPressGesture(minimumDuration: 0.3, perform: showActions, onPressingChanged: setPressed)
             .onSecondaryClick(perform: showActionsAtPointer)
             .accessibilityAddTraits(.isButton)
             .accessibilityAction(named: "More Options", showActions)
@@ -253,8 +253,17 @@ private struct ChannelRow: View {
         }
     }
 
+    // pressed, under the pointer, or showing its menu, as discord lights a channel up
+    private var isHighlighted: Bool {
+        isPressed || (!isSelected && (isHovered || isActionsSheetPresented))
+    }
+
     private func setPressed(_ pressed: Bool) {
         isPressed = pressed
+    }
+
+    private func setHovered(_ hovered: Bool) {
+        isHovered = hovered
     }
 
     private func requestMute() {

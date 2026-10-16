@@ -1,10 +1,16 @@
 import SwiftUI
 
-// where a right click landed: within the view it was on, and within the window, for a popover
+// where a right click landed: within the view it was on, and within the window, for a menu
 // held by a view further up than the row that was clicked
 struct SecondaryClick {
     let anchor: UnitPoint
     let windowPoint: CGPoint
+}
+
+extension EnvironmentValues {
+    // closes the mac's pointer menu a long press sheet is shown in, where dismiss has nothing
+    // to dismiss
+    @Entry var closePointerMenu: (() -> Void)?
 }
 
 extension View {
@@ -15,6 +21,11 @@ extension View {
                 SecondaryClickView(action: action)
             }
         }
+    }
+
+    // a name over the view while the pointer is on it, as discord's are, on a mac
+    func pointerTooltip(_ text: String) -> some View {
+        modifier(PointerTooltip(text: text))
     }
 
     // a long press sheet on a touch screen. on a mac, discord's menu beside the pointer instead,
@@ -45,25 +56,33 @@ private struct ActionsPresentation<Menu: View>: ViewModifier {
     let onDismiss: (() -> Void)?
     @ViewBuilder let menu: () -> Menu
 
+    @State private var menuId = UUID()
+    @State private var frame = CGRect.zero
+
     func body(content: Content) -> some View {
         if isOnMac {
             content
-                .popover(isPresented: $isPresented, attachmentAnchor: .point(anchor)) {
-                    menu()
-                        .popoverMenu()
+                .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }) { newFrame in
+                    frame = newFrame
                 }
-                .onChange(of: isPresented, closed)
+                .onChange(of: isPresented, presentedChanged)
         } else {
             content
                 .sheet(isPresented: $isPresented, onDismiss: onDismiss, content: menu)
         }
     }
 
-    private func closed(_: Bool, _ presented: Bool) {
-        if !presented {
+    private func presentedChanged(_: Bool, _ presented: Bool) {
+        if presented {
+            PointerMenus.show(menuId, at: point(of: anchor, in: frame), content: AnyView(menu()), close: close)
+        } else {
+            PointerMenus.closed(menuId)
             onDismiss?()
-            SecondaryClickReplay.replay()
         }
+    }
+
+    private func close() {
+        isPresented = false
     }
 }
 
@@ -72,77 +91,327 @@ private struct ItemActionsPresentation<Item: Identifiable, Menu: View>: ViewModi
     let anchor: UnitPoint
     @ViewBuilder let menu: (Item) -> Menu
 
+    @State private var menuId = UUID()
+    @State private var frame = CGRect.zero
+
     func body(content: Content) -> some View {
         if isOnMac {
             content
-                .popover(item: $item, attachmentAnchor: .point(anchor)) { item in
-                    menu(item)
-                        .popoverMenu()
+                .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }) { newFrame in
+                    frame = newFrame
                 }
-                .onChange(of: item == nil, closed)
+                .onChange(of: item.map { AnyHashable($0.id) }, itemChanged)
         } else {
             content
                 .sheet(item: $item, content: menu)
         }
     }
 
-    private func closed(_: Bool, _ isClosed: Bool) {
-        if isClosed {
-            SecondaryClickReplay.replay()
+    private func itemChanged(_: AnyHashable?, _: AnyHashable?) {
+        if let item {
+            PointerMenus.show(menuId, at: point(of: anchor, in: frame), content: AnyView(menu(item)), close: close)
+        } else {
+            PointerMenus.closed(menuId)
         }
     }
-}
 
-extension View {
-    // as tall as its rows, the long press sheet's scroll view otherwise asking for the whole
-    // screen
-    fileprivate func popoverMenu() -> some View {
-        frame(width: 320)
-            .fixedSize(horizontal: false, vertical: true)
-            .presentationCompactAdaptation(.popover)
+    private func close() {
+        item = nil
     }
 }
 
-// a right click while a menu is open only closes it, the click landing on the popover's
-// backdrop rather than the row under it. discord opens that row's menu instead, so the click is
-// noted on its way in and played again on the row once the menu has gone
-private enum SecondaryClickReplay {
-    static let views = NSHashTable<RightClickOnlyView>.weakObjects()
-    static var lastClick: (point: CGPoint, time: Date)?
+private struct PointerTooltip: ViewModifier {
+    let text: String
 
-    static func record(_ point: CGPoint) {
-        lastClick = (point, Date())
+    @State private var frame = CGRect.zero
+
+    func body(content: Content) -> some View {
+        content
+            .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }) { newFrame in
+                frame = newFrame
+            }
+            .onHover(perform: hovered)
+            // a view going while the pointer is on it, a hover bar as its row loses the pointer,
+            // never hears it leave
+            .onDisappear(perform: disappeared)
     }
 
-    static func replay() {
-        guard let click = lastClick, Date().timeIntervalSince(click.time) < 0.5 else {
+    private func disappeared() {
+        PointerMenus.hideTooltip(text)
+    }
+
+    private func hovered(_ isHovered: Bool) {
+        guard isOnMac else {
             return
         }
 
-        lastClick = nil
-
-        // a popover cannot open while the last one is still on its way out
-        Task {
-            try? await Task.sleep(for: .milliseconds(300))
-
-            let target = views.allObjects.last { view in
-                view.window != nil && view.bounds.contains(view.convert(click.point, from: nil))
-            }
-
-            target?.open(at: click.point)
+        if isHovered {
+            PointerMenus.showTooltip(text, over: frame)
+        } else {
+            PointerMenus.hideTooltip(text)
         }
     }
 }
 
-// sees every right click in the window, the ones on a popover's backdrop too, and steps aside
-// at once so no other gesture waits on it
-private final class SecondaryClickWatcher: UIGestureRecognizer {
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
-        if event.buttonMask.contains(.secondary), let touch = touches.first {
-            SecondaryClickReplay.record(touch.location(in: nil))
+private func point(of anchor: UnitPoint, in frame: CGRect) -> CGPoint {
+    CGPoint(x: frame.minX + anchor.x * frame.width, y: frame.minY + anchor.y * frame.height)
+}
+
+struct ShownPointerMenu {
+    let id: UUID
+    // in the window
+    let point: CGPoint
+    let content: AnyView
+}
+
+struct ShownTooltip {
+    let text: String
+    // the view it names, in the window
+    let anchor: CGRect
+}
+
+struct ShownSubmenu {
+    let id: UUID
+    // the row it opened from, in the window
+    let anchor: CGRect
+    let content: AnyView
+}
+
+@Observable
+final class PointerMenuState {
+    static let shared = PointerMenuState()
+
+    fileprivate(set) var shown: ShownPointerMenu?
+    fileprivate(set) var submenu: ShownSubmenu?
+    fileprivate(set) var tooltip: ShownTooltip?
+    // where the menu and its submenu are drawn, in the window, so a right click on them leaves
+    // them be
+    var menuFrame = CGRect.zero
+    var submenuFrame = CGRect.zero
+}
+
+// discord's right click works over and over: one on something with a menu moves the open menu
+// there, one anywhere else closes it, and a click outside closes it at once. a mac hands an
+// ipad app a right click only as a context menu request, never as a touch, and a system
+// popover's backdrop swallowed those and was slow to go, so the menus are drawn in the app's
+// own layer over the window instead (PointerMenuLayer)
+enum PointerMenus {
+    fileprivate static let views = NSHashTable<RightClickOnlyView>.weakObjects()
+    private static var openMenu: (id: UUID, close: () -> Void)?
+
+    private static var state: PointerMenuState {
+        PointerMenuState.shared
+    }
+
+    // a menu drawn by its owner, the server rail's, that a right click elsewhere should close
+    static func opened(_ id: UUID, close: @escaping () -> Void) {
+        openMenu = (id, close)
+    }
+
+    // a menu already replaced by the next one closing late leaves that one in place
+    static func closed(_ id: UUID) {
+        if openMenu?.id == id {
+            openMenu = nil
         }
 
-        state = .failed
+        if state.shown?.id == id {
+            state.shown = nil
+        }
+    }
+
+    fileprivate static func show(_ id: UUID, at point: CGPoint, content: AnyView, close: @escaping () -> Void) {
+        opened(id, close: close)
+        state.submenu = nil
+        state.shown = ShownPointerMenu(id: id, point: point, content: content)
+    }
+
+    static func showSubmenu(_ id: UUID, beside anchor: CGRect, content: AnyView) {
+        state.submenu = ShownSubmenu(id: id, anchor: anchor, content: content)
+    }
+
+    static func showTooltip(_ text: String, over anchor: CGRect) {
+        state.tooltip = ShownTooltip(text: text, anchor: anchor)
+    }
+
+    // only its own, the pointer reaching the next one may already have replaced it
+    static func hideTooltip(_ text: String) {
+        if state.tooltip?.text == text {
+            state.tooltip = nil
+        }
+    }
+
+    static func hideSubmenu() {
+        if state.submenu != nil {
+            state.submenu = nil
+        }
+    }
+
+    static func closeCurrent() {
+        let menu = openMenu
+
+        openMenu = nil
+        state.tooltip = nil
+        state.submenu = nil
+        state.shown = nil
+        menu?.close()
+    }
+
+    // from a row's own context menu request, or the window's when no row was under the pointer
+    fileprivate static func rightClick(at point: CGPoint, on row: RightClickOnlyView?) {
+        let isOnSubmenu = state.submenu != nil && state.submenuFrame.contains(point)
+        let isOnMenu = state.shown != nil && (state.menuFrame.contains(point) || isOnSubmenu)
+
+        if isOnMenu {
+            return
+        }
+
+        let target = row ?? views.allObjects.last { view in
+            view.window != nil && view.bounds.contains(view.convert(point, from: nil))
+        }
+        let hadMenu = openMenu != nil
+
+        closeCurrent()
+
+        guard let target else {
+            return
+        }
+
+        guard hadMenu else {
+            target.open(at: point)
+            return
+        }
+
+        // the closing has to reach the view before the same row can open again, or the two
+        // changes cancel out
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.03) {
+            target.open(at: point)
+        }
+    }
+}
+
+// the open menu by the pointer, over the whole window, and a submenu beside it. a click anywhere
+// else closes them
+struct PointerMenuLayer: View {
+    private static let width: CGFloat = 220
+    private static let submenuWidth: CGFloat = 200
+
+    private let state = PointerMenuState.shared
+
+    @State private var layerFrame = CGRect.zero
+    @State private var menuSize = CGSize.zero
+    @State private var submenuSize = CGSize.zero
+    @State private var tooltipSize = CGSize.zero
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            if let shown = state.shown {
+                Color.clear
+                    .contentShape(.rect)
+                    .onTapGesture(perform: PointerMenus.closeCurrent)
+
+                card(shown.content, width: Self.width)
+                    .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }, action: menuMoved)
+                    .offset(offset(for: shown.point))
+                    .id(shown.id)
+
+                if let submenu = state.submenu {
+                    card(submenu.content.environment(\.isInSubmenu, true), width: Self.submenuWidth)
+                        .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }, action: submenuMoved)
+                        .offset(submenuOffset(beside: submenu.anchor))
+                        .id(submenu.id)
+                }
+            }
+
+            if let tooltip = state.tooltip {
+                Text(tooltip.text)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Theme.header)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background(Color.black, in: .rect(cornerRadius: 6))
+                    .fixedSize()
+                    .onGeometryChange(for: CGSize.self, of: \.size) { size in
+                        tooltipSize = size
+                    }
+                    .offset(tooltipOffset(over: tooltip.anchor))
+                    .allowsHitTesting(false)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }) { frame in
+            layerFrame = frame
+        }
+    }
+
+    private func card(_ content: some View, width: CGFloat) -> some View {
+        content
+            .environment(\.isPointerMenu, true)
+            .environment(\.closePointerMenu, PointerMenus.closeCurrent)
+            .frame(width: width)
+            .fixedSize(horizontal: false, vertical: true)
+            .background(Theme.deepBackground)
+            .clipShape(.rect(cornerRadius: 8, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(Theme.panelEdge, lineWidth: 1)
+            }
+            .shadow(color: .black.opacity(0.4), radius: 16, y: 6)
+    }
+
+    // at the pointer, moved back in where it would run off the right, and up as far as it has
+    // to where it would run off the bottom, as discord's are
+    private func offset(for point: CGPoint) -> CGSize {
+        let x = point.x - layerFrame.minX
+        let y = point.y - layerFrame.minY
+        let maxX = layerFrame.width - Self.width - 8
+        let maxY = layerFrame.height - menuSize.height - 8
+
+        return CGSize(
+            width: max(min(x, maxX), 8),
+            height: max(min(y, maxY), 8)
+        )
+    }
+
+    // level with its row, to the right of the menu or to its left where the window ends
+    private func submenuOffset(beside anchor: CGRect) -> CGSize {
+        let right = state.menuFrame.maxX + 4 - layerFrame.minX
+        let left = state.menuFrame.minX - Self.submenuWidth - 4 - layerFrame.minX
+        let fitsRight = right + Self.submenuWidth + 8 <= layerFrame.width
+        let top = anchor.minY - 6 - layerFrame.minY
+
+        return CGSize(
+            width: fitsRight ? right : max(left, 8),
+            height: max(min(top, layerFrame.height - submenuSize.height - 8), 8)
+        )
+    }
+
+    // centred over the view it names, a little above it
+    private func tooltipOffset(over anchor: CGRect) -> CGSize {
+        CGSize(
+            width: max(anchor.midX - layerFrame.minX - tooltipSize.width / 2, 4),
+            height: max(anchor.minY - layerFrame.minY - tooltipSize.height - 6, 4)
+        )
+    }
+
+    private func menuMoved(_ frame: CGRect) {
+        menuSize = frame.size
+        state.menuFrame = frame
+    }
+
+    private func submenuMoved(_ frame: CGRect) {
+        submenuSize = frame.size
+        state.submenuFrame = frame
+    }
+}
+
+// the window's own catcher for a right click on nothing that has a menu, found after every row
+private final class WindowRightClick: NSObject, UIContextMenuInteractionDelegate {
+    static let shared = WindowRightClick()
+
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
+        PointerMenus.rightClick(at: interaction.location(in: nil), on: nil)
+
+        return nil
     }
 }
 
@@ -168,22 +437,18 @@ private final class RightClickOnlyView: UIView {
             return
         }
 
-        SecondaryClickReplay.views.add(self)
+        PointerMenus.views.add(self)
 
-        let recognizers = window.gestureRecognizers ?? []
+        let hasCatcher = window.interactions.contains { interaction in
+            (interaction as? UIContextMenuInteraction)?.delegate === WindowRightClick.shared
+        }
 
-        if !recognizers.contains(where: { $0 is SecondaryClickWatcher }) {
-            let watcher = SecondaryClickWatcher()
-
-            watcher.cancelsTouchesInView = false
-            watcher.delaysTouchesEnded = false
-            window.addGestureRecognizer(watcher)
+        if !hasCatcher {
+            window.addInteraction(UIContextMenuInteraction(delegate: WindowRightClick.shared))
         }
     }
 
     func open(at windowPoint: CGPoint) {
-        SecondaryClickReplay.lastClick = nil
-
         let location = convert(windowPoint, from: nil)
         let anchor = UnitPoint(
             x: bounds.width > 0 ? location.x / bounds.width : 0.5,
@@ -218,9 +483,7 @@ private struct SecondaryClickView: UIViewRepresentable {
 
     final class Coordinator: NSObject, UIContextMenuInteractionDelegate {
         func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
-            let view = interaction.view as? RightClickOnlyView
-
-            view?.open(at: interaction.location(in: nil))
+            PointerMenus.rightClick(at: interaction.location(in: nil), on: interaction.view as? RightClickOnlyView)
 
             return nil
         }

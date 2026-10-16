@@ -51,6 +51,7 @@ struct SearchLink<Label: View>: View {
                     SearchScreen(channelId: route.channelId, directMessages: route.directMessages)
                 }
                 .frame(idealWidth: 460, idealHeight: 640)
+                .presentationCompactAdaptation(.popover)
                 .environment(session)
                 .environment(servers)
             }

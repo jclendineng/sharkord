@@ -4,11 +4,13 @@ import SwiftUI
 // or drag to. a fixed half height cut the bottom row off on an ipad. put on the sheet's content,
 // inside its scroll view, so the height measured is the rows' own
 private struct FittedSheet: ViewModifier {
+    @Environment(\.isPointerMenu) private var isPointerMenu
+
     @State private var height: CGFloat?
 
     func body(content: Content) -> some View {
         content
-            .padding(.bottom, 16)
+            .padding(.bottom, isPointerMenu ? 6 : 16)
             .onGeometryChange(for: CGFloat.self, of: \.size.height, action: fit)
             .sheetDetents([height.map { .height($0) } ?? .medium])
     }
