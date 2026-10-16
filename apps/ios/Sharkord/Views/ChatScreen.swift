@@ -216,7 +216,7 @@ struct ChatScreen: View {
             // discord's mac keeps the inbox at the top right rather than in the user bar
             if ProcessInfo.processInfo.isiOSAppOnMac {
                 ToolbarItem(placement: .topBarTrailing) {
-                    InboxButton()
+                    InboxButton(action: showInbox)
                 }
             }
 
@@ -303,6 +303,10 @@ struct ChatScreen: View {
         toggleDropdown(.threads)
     }
 
+    private func showInbox() {
+        toggleDropdown(.inbox)
+    }
+
     private func closeThreadPanel() {
         threadParent = nil
     }
@@ -369,6 +373,7 @@ private enum ChatDropdown {
     case pins
     case search
     case threads
+    case inbox
 }
 
 // the mac's pins or search below the top bar, as tall as the window allows
@@ -384,6 +389,10 @@ private struct ChatDropdownPanel: View {
         case .pins:
             panel(width: 420, maxHeight: 560) {
                 PinnedMessagesSheet(channelId: channelId, onClose: onClose)
+            }
+        case .inbox:
+            panel(width: 420, maxHeight: 560) {
+                InboxSheet(onClose: onClose)
             }
         case .threads:
             panel(width: 420, maxHeight: 560) {
@@ -643,18 +652,18 @@ private struct ReadOnlyComposer: View {
     }
 }
 
+// drops down under the top bar as pins and threads do
 private struct InboxButton: View {
-    @Environment(SessionStore.self) private var session
-    @Environment(ServerListStore.self) private var servers
+    let action: () -> Void
 
-    @State private var isPresented = false
+    @Environment(ServerListStore.self) private var servers
 
     private var hasUnread: Bool {
         servers.sessions.contains { !$0.unreadChannels.isEmpty }
     }
 
     var body: some View {
-        Button(action: show) {
+        Button(action: action) {
             Image(systemName: "tray.fill")
                 .foregroundStyle(Theme.text)
                 .hoverPop()
@@ -668,18 +677,5 @@ private struct InboxButton: View {
                 }
         }
         .accessibilityLabel("Inbox")
-        // handed the stores by hand: a popover from the toolbar does not inherit them
-        // a popover even in a narrow window, which counts as compact and slid it up as a sheet
-        .popover(isPresented: $isPresented) {
-            InboxSheet()
-                .frame(width: 420, height: 560)
-                .macPopover()
-                .environment(servers)
-                .environment(session)
-        }
-    }
-
-    private func show() {
-        isPresented = true
     }
 }

@@ -8,58 +8,79 @@ struct InboxSheet: View {
         case unreads = "Unreads"
     }
 
+    // set when it is the mac's dropdown under the chat's top bar rather than a presentation,
+    // which dismiss would not close
+    var onClose: (() -> Void)?
+
     @Environment(ServerListStore.self) private var servers
     @Environment(\.dismiss) private var dismiss
 
     @State private var tab = Tab.mentions
 
     var body: some View {
-        NavigationStack {
+        if onClose != nil {
+            // the mac's dropdown names itself, as pins does: a navigation title there would go
+            // up into the chat's own bar
             VStack(spacing: 0) {
-                Picker("Inbox", selection: $tab) {
-                    ForEach(Tab.allCases, id: \.self) { tab in
-                        Text(tab.rawValue)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
+                Text("Inbox")
+                    .font(.headline)
+                    .foregroundStyle(Theme.header)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
 
-                switch tab {
-                case .mentions:
-                    MentionsList(onOpen: open)
-                case .unreads:
-                    UnreadsList(onOpen: open)
+                Theme.divider
+                    .frame(height: 1)
+
+                content
+            }
+        } else {
+            NavigationStack {
+                content
+                    .navigationTitle("Inbox")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done", action: close)
+                        }
+                    }
+            }
+            .presentationBackground(Theme.deepBackground)
+        }
+    }
+
+    private var content: some View {
+        VStack(spacing: 0) {
+            Picker("Inbox", selection: $tab) {
+                ForEach(Tab.allCases, id: \.self) { tab in
+                    Text(tab.rawValue)
                 }
             }
-            .background(Theme.deepBackground)
-            .navigationTitle("Inbox")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                // on a mac the bell's popover opens as a sheet that a click outside does not
-                // close, so it gets the x the other sheets have, and escape closes it too
-                if ProcessInfo.processInfo.isiOSAppOnMac {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Close", systemImage: "xmark", action: close)
-                            .keyboardShortcut(.cancelAction)
-                    }
-                } else {
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Done", action: close)
-                    }
-                }
+            .pickerStyle(.segmented)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+
+            switch tab {
+            case .mentions:
+                MentionsList(onOpen: open)
+            case .unreads:
+                UnreadsList(onOpen: open)
             }
         }
-        .presentationBackground(Theme.deepBackground)
+        .background(Theme.deepBackground)
     }
 
     private func open(_ channelId: Int, in server: SessionStore) {
-        dismiss()
+        close()
         servers.open(channelId: channelId, in: server)
     }
 
     private func close() {
-        dismiss()
+        if let onClose {
+            onClose()
+        } else {
+            dismiss()
+        }
     }
 }
 
