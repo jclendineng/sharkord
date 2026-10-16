@@ -62,7 +62,7 @@ struct ServerSettingsScreen: View {
                 ForEach(sections, id: \.pages) { section in
                     Section {
                         ForEach(section.pages, id: \.self) { page in
-                            SettingsRow(title: page.title, systemImage: page.systemImage)
+                            SidebarRow(page: page, isSelected: selection == page)
                                 .tag(page)
                         }
                     } header: {
@@ -103,6 +103,34 @@ struct ServerSettingsScreen: View {
 
     private func close() {
         dismiss()
+    }
+}
+
+// a page in the mac's sidebar, lit under the pointer as the other menus' rows are. the list's
+// own hover probe does not reach a split view's column, so the row tints itself
+private struct SidebarRow: View {
+    let page: ServerSettingsPage
+    // drawn here too, a row background of its own covers the list's selection
+    let isSelected: Bool
+
+    @State private var isHovered = false
+
+    private var background: Color {
+        if isSelected {
+            return Theme.blurple
+        }
+
+        return isHovered ? Theme.hover : Theme.listBackground
+    }
+
+    var body: some View {
+        SettingsRow(title: page.title, systemImage: page.systemImage)
+            .onHover(perform: setHovered)
+            .listRowBackground(background)
+    }
+
+    private func setHovered(_ hovered: Bool) {
+        isHovered = hovered
     }
 }
 
