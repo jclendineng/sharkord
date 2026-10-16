@@ -193,15 +193,15 @@ struct HTMLTextTests {
     }
 
     @Test func bareDomainsBecomeHttpsLinks() {
-        #expect(HTMLText.paragraphs(from: "see chat.example.com") == "<p>see <a href=\"https://chat.example.com\">chat.example.com</a></p>")
+        #expect(HTMLText.messageHTML(fromMarkdown: "see chat.example.com") == "<p>see <a href=\"https://chat.example.com\">chat.example.com</a></p>")
     }
 
     @Test func writtenSchemesAreKept() {
-        #expect(HTMLText.paragraphs(from: "http://old.example.com") == "<p><a href=\"http://old.example.com\">http://old.example.com</a></p>")
+        #expect(HTMLText.messageHTML(fromMarkdown: "http://old.example.com") == "<p><a href=\"http://old.example.com\">http://old.example.com</a></p>")
     }
 
     @Test func textAroundLinksIsEscaped() {
-        #expect(HTMLText.paragraphs(from: "<b> https://example.com") == "<p>&lt;b&gt; <a href=\"https://example.com\">https://example.com</a></p>")
+        #expect(HTMLText.messageHTML(fromMarkdown: "<b> https://example.com") == "<p>&lt;b&gt; <a href=\"https://example.com\">https://example.com</a></p>")
     }
 }
 
