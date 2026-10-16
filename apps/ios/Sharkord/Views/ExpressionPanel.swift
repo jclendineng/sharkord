@@ -18,17 +18,17 @@ struct ExpressionPanel: View {
     let onGif: (Gif) -> Void
     let onSticker: (Sticker) -> Void
 
-    @State private var tab = Tab.emoji
-
     var body: some View {
+        @Bindable var model = model
+
         ComposerPanel(model: model) {
             VStack(spacing: 0) {
-                TabPicker(selection: $tab)
+                TabPicker(selection: $model.expressionTab)
                     .padding(.horizontal, 10)
                     .padding(.top, 30)
                     .padding(.bottom, 8)
 
-                switch tab {
+                switch model.expressionTab {
                 case .emoji:
                     EmojiTab(onPick: onEmoji, onBackspace: onBackspace)
                 case .gifs:

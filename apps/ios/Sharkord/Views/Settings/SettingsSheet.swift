@@ -1,53 +1,46 @@
 import SwiftUI
 
-// discord's user settings: account things for the selected server, then this device's own
+// discord's user settings: account things for the selected server, then this device's own. a
+// list of pages on a phone or ipad, the whole window with the pages down the side on a mac
 struct SettingsSheet: View {
     @Environment(ServerListStore.self) private var servers
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
 
+    @State private var selection: UserSettingsPage? = .account
+    @State private var query = ""
+
+    // discord's sidebar search, narrowing the pages by name
+    private var sections: [(title: String, pages: [UserSettingsPage])] {
+        let text = query.trimmingCharacters(in: .whitespaces)
+
+        return UserSettingsPage.sections.compactMap { section in
+            let pages = section.pages.filter { text.isEmpty || $0.title.localizedCaseInsensitiveContains(text) }
+
+            return pages.isEmpty ? nil : (section.title, pages)
+        }
+    }
+
     var body: some View {
+        if ProcessInfo.processInfo.isiOSAppOnMac {
+            splitView
+        } else {
+            stackView
+        }
+    }
+
+    private var stackView: some View {
         NavigationStack {
             List {
-                Section("Account Settings") {
-                    NavigationLink {
-                        AccountSettingsScreen()
-                    } label: {
-                        SettingsRow(title: "Account", systemImage: "person.crop.circle.fill")
-                    }
-
-                    NavigationLink {
-                        DevicesScreen()
-                    } label: {
-                        SettingsRow(title: "Devices", systemImage: "laptopcomputer.and.iphone")
-                    }
-
-                    NavigationLink {
-                        SignInDeviceScreen()
-                    } label: {
-                        SettingsRow(title: "Sign In Another Device", systemImage: "qrcode")
-                    }
-                }
-
-                Section("App Settings") {
-                    NavigationLink {
-                        VoiceVideoSettingsScreen()
-                    } label: {
-                        SettingsRow(title: "Voice & Video", systemImage: "mic.fill")
-                    }
-
-                    NavigationLink {
-                        NotificationSettingsScreen()
-                    } label: {
-                        SettingsRow(title: "Notifications", systemImage: "bell.fill")
-                    }
-                }
-
-                Section("Support") {
-                    NavigationLink {
-                        AboutScreen()
-                    } label: {
-                        SettingsRow(title: "About", systemImage: "info.circle.fill", value: AppInfo.version)
+                ForEach(UserSettingsPage.sections, id: \.title) { section in
+                    Section(section.title) {
+                        ForEach(section.pages, id: \.self) { page in
+                            NavigationLink {
+                                page.screen
+                            } label: {
+                                SettingsRow(title: page.title, systemImage: page.systemImage, value: page.value)
+                            }
+                        }
                     }
                 }
 
@@ -71,6 +64,57 @@ struct SettingsSheet: View {
         // a page on ipad, as wide as discord's settings, rather than a narrow card in the middle
         .presentationSizing(.page)
         .presentationBackground(Theme.deepBackground)
+    }
+
+    private var splitView: some View {
+        NavigationSplitView {
+            List(selection: $selection) {
+                ForEach(sections, id: \.title) { section in
+                    Section {
+                        ForEach(section.pages, id: \.self) { page in
+                            SettingsSidebarRow(title: page.title, systemImage: page.systemImage, isSelected: selection == page)
+                                .tag(page)
+                        }
+                    } header: {
+                        Text(section.title.uppercased())
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Theme.muted)
+                    }
+                    .listSectionSeparator(.hidden)
+                }
+
+                Section {
+                    Button(action: logOut) {
+                        SettingsSidebarRow(title: "Log Out", systemImage: "rectangle.portrait.and.arrow.right", isSelected: false, tint: Theme.red)
+                    }
+                    .buttonStyle(.plain)
+                    .listRowInsets(EdgeInsets(top: 1, leading: 8, bottom: 1, trailing: 8))
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                }
+                .listSectionSeparator(.hidden)
+            }
+            .settingsSidebarStyle()
+            .searchable(text: $query, placement: .sidebar, prompt: "Search")
+            .navigationTitle("Settings")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close", systemImage: "xmark", action: close)
+                }
+            }
+        } detail: {
+            // a stack of its own per page, so a page's own links push inside it and picking
+            // another page starts over
+            NavigationStack {
+                if let selection {
+                    selection.screen
+                }
+            }
+            .id(selection)
+        }
+        .navigationSplitViewStyle(.balanced)
+        .background(Theme.deepBackground)
     }
 
     private func close() {
@@ -249,5 +293,76 @@ private extension UIColor {
             blue: blue + (overlayBlue - blue) * overlayAlpha,
             alpha: alpha
         )
+    }
+}
+
+enum UserSettingsPage: Hashable {
+    case account
+    case devices
+    case signInDevice
+    case voiceVideo
+    case notifications
+    case about
+
+    static let sections: [(title: String, pages: [UserSettingsPage])] = [
+        ("Account Settings", [.account, .devices, .signInDevice]),
+        ("App Settings", [.voiceVideo, .notifications]),
+        ("Support", [.about])
+    ]
+
+    var title: String {
+        switch self {
+        case .account:
+            "Account"
+        case .devices:
+            "Devices"
+        case .signInDevice:
+            "Sign In Another Device"
+        case .voiceVideo:
+            "Voice & Video"
+        case .notifications:
+            "Notifications"
+        case .about:
+            "About"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .account:
+            "person.crop.circle.fill"
+        case .devices:
+            "laptopcomputer.and.iphone"
+        case .signInDevice:
+            "qrcode"
+        case .voiceVideo:
+            "mic.fill"
+        case .notifications:
+            "bell.fill"
+        case .about:
+            "info.circle.fill"
+        }
+    }
+
+    var value: String? {
+        self == .about ? AppInfo.version : nil
+    }
+
+    @ViewBuilder
+    var screen: some View {
+        switch self {
+        case .account:
+            AccountSettingsScreen()
+        case .devices:
+            DevicesScreen()
+        case .signInDevice:
+            SignInDeviceScreen()
+        case .voiceVideo:
+            VoiceVideoSettingsScreen()
+        case .notifications:
+            NotificationSettingsScreen()
+        case .about:
+            AboutScreen()
+        }
     }
 }

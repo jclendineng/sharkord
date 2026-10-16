@@ -11,6 +11,8 @@ struct VoiceVideoSettingsScreen: View {
     @State private var isCameraPreviewOn = false
     @State private var cameraPosition = AVCaptureDevice.Position.front
     @State private var inputs: [AVAudioSessionPortDescription] = []
+    // whether the input device lets its gain be set, most built in and usb mics on a mac do not
+    @State private var canSetInputGain = false
 
     private let isOnMac = ProcessInfo.processInfo.isiOSAppOnMac
 
@@ -54,10 +56,46 @@ struct VoiceVideoSettingsScreen: View {
                         OutputDevicePicker()
                             .frame(width: 36, height: 36)
                     }
+                    if canSetInputGain {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Input Volume")
+                                .foregroundStyle(Theme.header)
+
+                            HStack(spacing: 12) {
+                                Image(systemName: "mic.slash.fill")
+                                    .foregroundStyle(Theme.muted)
+
+                                Slider(value: $settings.inputGain, in: 0...1)
+
+                                Image(systemName: "mic.fill")
+                                    .foregroundStyle(Theme.muted)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
                 } header: {
                     Text("Devices")
                 } footer: {
                     Text("Automatic uses a headset's mic whenever one is plugged in.")
+                }
+
+                Section {
+                    Picker("Input Mode", selection: $settings.pushToTalk) {
+                        Text("Voice Activity").tag(false)
+                        Text("Push to Talk").tag(true)
+                    }
+
+                    if settings.pushToTalk {
+                        Picker("Talk Key", selection: $settings.pushToTalkKey) {
+                            ForEach(PushToTalkKey.allCases) { key in
+                                Text(key.title).tag(key)
+                            }
+                        }
+                    }
+                } footer: {
+                    Text(settings.pushToTalk
+                        ? "In a call your mic stays closed until you hold the key, while Sharkord is the app in front."
+                        : "Your mic is open in a call whenever it is not muted.")
                 }
             }
 
@@ -197,6 +235,12 @@ struct VoiceVideoSettingsScreen: View {
         .onChange(of: settings.inputDeviceId) {
             AudioInputPreference.apply()
         }
+        .onChange(of: settings.inputGain) {
+            AudioInputPreference.apply()
+        }
+        .onChange(of: settings.pushToTalk) {
+            servers.voiceSession?.applyPushToTalk()
+        }
         .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.routeChangeNotification)) { _ in
             loadInputs()
         }
@@ -223,6 +267,7 @@ struct VoiceVideoSettingsScreen: View {
         }
 
         inputs = session.availableInputs ?? []
+        canSetInputGain = session.isInputGainSettable
     }
 
     private func toggleMicTest() {

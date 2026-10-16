@@ -214,27 +214,54 @@ private struct ProfileSheetPresentation: ViewModifier {
     @Environment(ServerListStore.self) private var servers
     @Environment(SessionStore.self) private var session
 
+    // settings take the whole window on a mac, as discord's do, the rest are sheets
+    private var isFullWindow: Bool {
+        ProcessInfo.processInfo.isiOSAppOnMac && sheet == .settings
+    }
+
+    private var sheetBinding: Binding<ProfileSheet?> {
+        Binding(
+            get: { isFullWindow ? nil : sheet },
+            set: { sheet = $0 }
+        )
+    }
+
+    private var fullWindowBinding: Binding<ProfileSheet?> {
+        Binding(
+            get: { isFullWindow ? sheet : nil },
+            set: { sheet = $0 }
+        )
+    }
+
     // handed over by hand: on a mac a sheet's background is worked out before it inherits
     // anything, so a sheet reading a store it was not given crashed on opening
     func body(content: Content) -> some View {
         content
-            .sheet(item: $sheet) { sheet in
-                Group {
-                    switch sheet {
-                    case .edit:
-                        EditProfileSheet()
-                    case .settings:
-                        SettingsSheet()
-                    case .status:
-                        SetStatusSheet()
-                    case .friends:
-                        AddFriendsSheet()
-                    }
-                }
-                .environment(session)
-                .environment(servers)
-                .appSheet()
+            .sheet(item: sheetBinding) { sheet in
+                screen(for: sheet)
+                    .appSheet()
             }
+            .fullScreenCover(item: fullWindowBinding) { sheet in
+                screen(for: sheet)
+                    .appSheet()
+            }
+    }
+
+    private func screen(for sheet: ProfileSheet) -> some View {
+        Group {
+            switch sheet {
+            case .edit:
+                EditProfileSheet()
+            case .settings:
+                SettingsSheet()
+            case .status:
+                SetStatusSheet()
+            case .friends:
+                AddFriendsSheet()
+            }
+        }
+        .environment(session)
+        .environment(servers)
     }
 }
 

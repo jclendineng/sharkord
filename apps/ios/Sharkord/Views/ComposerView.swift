@@ -288,6 +288,7 @@ struct ComposerView: View {
                         .foregroundStyle(Theme.text)
                         .frame(width: 38, height: 38)
                         .background(Theme.inputBackground, in: .circle)
+                        .hoverPop()
                 }
                 .menuStyle(.button)
                 .buttonStyle(.plain)
@@ -314,16 +315,40 @@ struct ComposerView: View {
                     .foregroundStyle(Theme.text)
                     .padding(.vertical, 9)
 
-                // discord's emoji button turns into a keyboard one while the panel is up
-                Button(
-                    showsKeyboardButton ? "Keyboard" : "Emoji",
-                    systemImage: showsKeyboardButton ? "keyboard" : "face.smiling.inverse",
-                    action: toggleExpressions
-                )
-                    .labelStyle(.iconOnly)
-                    .font(.title3)
-                    .foregroundStyle(Theme.muted)
-                    .padding(.bottom, 7)
+                if ProcessInfo.processInfo.isiOSAppOnMac {
+                    // discord's mac: gifs, stickers and emoji each a button in the box
+                    HStack(spacing: 12) {
+                        ExpressionButton(title: "GIFs", action: openGifs) {
+                            Text("GIF")
+                                .font(.system(size: 10, weight: .heavy))
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 2)
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .strokeBorder(lineWidth: 1.6)
+                                }
+                        }
+
+                        ExpressionButton(title: "Stickers", action: openStickers) {
+                            Image(systemName: "note.text")
+                                .font(.system(size: 18, weight: .semibold))
+                        }
+
+                        FunEmojiButton(action: openEmoji)
+                    }
+                    .padding(.bottom, 8)
+                } else {
+                    // discord's emoji button turns into a keyboard one while the panel is up
+                    Button(
+                        showsKeyboardButton ? "Keyboard" : "Emoji",
+                        systemImage: showsKeyboardButton ? "keyboard" : "face.smiling.inverse",
+                        action: toggleExpressions
+                    )
+                        .labelStyle(.iconOnly)
+                        .font(.title3)
+                        .foregroundStyle(Theme.muted)
+                        .padding(.bottom, 7)
+                }
 
                 if canRecord {
                     Button("Voice Message", systemImage: "mic.fill", action: startRecording)
@@ -392,6 +417,34 @@ struct ComposerView: View {
 
     private func closePanel() {
         store.attachPanel.close()
+    }
+
+    private func openGifs() {
+        openExpressions(on: .gifs)
+    }
+
+    private func openStickers() {
+        openExpressions(on: .stickers)
+    }
+
+    private func openEmoji() {
+        openExpressions(on: .emoji)
+    }
+
+    // the mac's buttons: one opens the panel on its own tab, again on the same tab closes it
+    private func openExpressions(on tab: ExpressionPanel.Tab) {
+        let panel = store.attachPanel
+
+        if areExpressionsOpen && panel.expressionTab == tab {
+            panel.close()
+            return
+        }
+
+        panel.expressionTab = tab
+
+        if !areExpressionsOpen {
+            panel.open(.expressions)
+        }
     }
 
     private func unfocusField() {
@@ -950,5 +1003,67 @@ private struct TypingDots: View {
             }
         }
         .frame(height: 10)
+    }
+}
+
+// an icon in the mac's message box, brightening and bouncing up a little under the pointer
+private struct ExpressionButton<Label: View>: View {
+    let title: String
+    let action: () -> Void
+    @ViewBuilder let label: Label
+
+    @State private var isHovered = false
+
+    var body: some View {
+        Button(action: action) {
+            label
+                .foregroundStyle(isHovered ? Theme.header : Theme.muted)
+                .frame(width: 26, height: 24)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .hoverPop(scale: 1.18)
+        .onHover(perform: setHovered)
+        .accessibilityLabel(title)
+    }
+
+    private func setHovered(_ hovered: Bool) {
+        isHovered = hovered
+    }
+}
+
+// discord's emoji button: a grey face that turns to colour, grows and tips under the pointer, a
+// different face each time it is pointed at
+private struct FunEmojiButton: View {
+    private static let faces = ["😀", "😃", "😄", "😁", "😆", "😅", "🤣", "😂", "🙂", "😉", "😊", "😇", "🥰", "😍", "🤩", "😋", "😛", "😜", "🤪", "🤗", "🤭", "🤔", "😎", "🥳", "😏", "😺"]
+
+    let action: () -> Void
+
+    @State private var isHovered = false
+    @State private var face = "😀"
+
+    var body: some View {
+        Button(action: action) {
+            Text(face)
+                .font(.system(size: 19))
+                .grayscale(isHovered ? 0 : 1)
+                .opacity(isHovered ? 1 : 0.55)
+                .scaleEffect(isHovered ? 1.22 : 1)
+                .rotationEffect(.degrees(isHovered ? -10 : 0))
+                .frame(width: 26, height: 24)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .animation(.spring(response: 0.3, dampingFraction: 0.5), value: isHovered)
+        .onHover(perform: setHovered)
+        .accessibilityLabel("Emoji")
+    }
+
+    private func setHovered(_ hovered: Bool) {
+        if hovered {
+            face = Self.faces.randomElement() ?? face
+        }
+
+        isHovered = hovered
     }
 }

@@ -115,7 +115,7 @@ struct ChatScreen: View {
                         .contentShape(.rect)
                         .onTapGesture(perform: closeDropdown)
 
-                    ChatDropdownPanel(dropdown: dropdown, channelId: channelId, searchModel: searchModel, onClose: closeDropdown)
+                    ChatDropdownPanel(dropdown: dropdown, channelId: channelId, searchModel: searchModel, onClose: closeDropdown, onOpenThread: openThreadFromList)
                         .transition(.move(edge: .top))
 
                     // escape puts it away, as it does the server's search card
@@ -171,8 +171,20 @@ struct ChatScreen: View {
                     Button(action: toggleMemberList) {
                         Image(systemName: showsMemberList ? "person.2.fill" : "person.2")
                             .foregroundStyle(showsMemberList ? Theme.header : Theme.text)
+                            .hoverPop()
                     }
                     .accessibilityLabel(showsMemberList ? "Hide Member List" : "Show Member List")
+                }
+            }
+
+            if canShowThreadPanel {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(action: showThreads) {
+                        Image(systemName: "bubble.left.and.text.bubble.right")
+                            .foregroundStyle(Theme.text)
+                            .hoverPop()
+                    }
+                    .accessibilityLabel("Threads")
                 }
             }
 
@@ -186,6 +198,7 @@ struct ChatScreen: View {
                 Button(action: showPins) {
                     Image(systemName: "pin")
                         .foregroundStyle(Theme.text)
+                        .hoverPop()
                 }
                 .accessibilityLabel("Pinned Messages")
                 // pins hang off the button on an ipad, a phone gets a sheet and a mac the
@@ -196,6 +209,13 @@ struct ChatScreen: View {
                         .frame(idealWidth: 420, idealHeight: 560)
                         .environment(session)
                         .environment(servers)
+                }
+            }
+
+            // discord's mac keeps the inbox at the top right rather than in the user bar
+            if ProcessInfo.processInfo.isiOSAppOnMac {
+                ToolbarItem(placement: .topBarTrailing) {
+                    InboxButton()
                 }
             }
 
@@ -242,6 +262,7 @@ struct ChatScreen: View {
         }
         .task {
             searchModel.applyOpening(channel: channel, directMessages: false)
+            servers.recordVisit(to: channelId, in: session)
             session.rememberChannel(channelId)
             session.shownChannelId = channelId
             store.isVisible = true
@@ -270,6 +291,15 @@ struct ChatScreen: View {
 
     private func openThreadPanel(_ parent: Message) {
         threadParent = parent
+    }
+
+    private func openThreadFromList(_ parent: Message) {
+        closeDropdown()
+        threadParent = parent
+    }
+
+    private func showThreads() {
+        toggleDropdown(.threads)
     }
 
     private func closeThreadPanel() {
@@ -324,6 +354,7 @@ struct ChatScreen: View {
 private enum ChatDropdown {
     case pins
     case search
+    case threads
 }
 
 // the mac's pins or search below the top bar, as tall as the window allows
@@ -332,12 +363,17 @@ private struct ChatDropdownPanel: View {
     let channelId: Int
     let searchModel: SearchQueryModel
     let onClose: () -> Void
+    let onOpenThread: (Message) -> Void
 
     var body: some View {
         switch dropdown {
         case .pins:
             panel(width: 420, maxHeight: 560) {
                 PinnedMessagesSheet(channelId: channelId, onClose: onClose)
+            }
+        case .threads:
+            panel(width: 420, maxHeight: 560) {
+                ThreadsListPanel(channelId: channelId, onOpen: onOpenThread)
             }
         case .search:
             // wide enough for every tab of the strip without it scrolling
@@ -406,6 +442,7 @@ private struct NotificationBell: View {
         } label: {
             Image(systemName: isMuted ? "bell.slash.fill" : "bell.fill")
                 .foregroundStyle(Theme.text)
+                .hoverPop()
         }
         .accessibilityLabel("Notification Settings")
     }
@@ -589,5 +626,44 @@ private struct ReadOnlyComposer: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(Theme.chatBackground.ignoresSafeArea())
+    }
+}
+
+private struct InboxButton: View {
+    @Environment(SessionStore.self) private var session
+    @Environment(ServerListStore.self) private var servers
+
+    @State private var isPresented = false
+
+    private var hasUnread: Bool {
+        servers.sessions.contains { !$0.unreadChannels.isEmpty }
+    }
+
+    var body: some View {
+        Button(action: show) {
+            Image(systemName: "tray.fill")
+                .foregroundStyle(Theme.text)
+                .hoverPop()
+                .overlay(alignment: .topTrailing) {
+                    if hasUnread {
+                        Circle()
+                            .fill(Theme.red)
+                            .frame(width: 8, height: 8)
+                            .offset(x: 4, y: -3)
+                    }
+                }
+        }
+        .accessibilityLabel("Inbox")
+        // handed the stores by hand: a popover from the toolbar does not inherit them
+        .popover(isPresented: $isPresented) {
+            InboxSheet()
+                .frame(width: 420, height: 560)
+                .environment(servers)
+                .environment(session)
+        }
+    }
+
+    private func show() {
+        isPresented = true
     }
 }

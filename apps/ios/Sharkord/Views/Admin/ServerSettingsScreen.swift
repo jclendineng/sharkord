@@ -64,7 +64,7 @@ struct ServerSettingsScreen: View {
                 ForEach(sections, id: \.pages) { section in
                     Section {
                         ForEach(section.pages, id: \.self) { page in
-                            SidebarRow(page: page, isSelected: selection == page)
+                            SettingsSidebarRow(title: page.title, systemImage: page.systemImage, isSelected: selection == page)
                                 .tag(page)
                         }
                     } header: {
@@ -77,9 +77,7 @@ struct ServerSettingsScreen: View {
                     .listSectionSeparator(.hidden)
                 }
             }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
-            .background(Theme.listBackground)
+            .settingsSidebarStyle()
             .navigationTitle("Server Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -110,40 +108,6 @@ struct ServerSettingsScreen: View {
 
     private func close() {
         dismiss()
-    }
-}
-
-// a page in the mac's sidebar, lit under the pointer as the other menus' rows are. the list's
-// own hover probe does not reach a split view's column, so the row tints itself, and draws the
-// selection too, its own background covering the list's
-private struct SidebarRow: View {
-    let page: ServerSettingsPage
-    let isSelected: Bool
-
-    @State private var isHovered = false
-
-    private var fill: Color {
-        if isSelected {
-            return Theme.hover
-        }
-
-        return isHovered ? Theme.hover.opacity(0.55) : .clear
-    }
-
-    var body: some View {
-        SettingsRow(title: page.title, systemImage: page.systemImage, tint: isSelected || isHovered ? Theme.header : Theme.muted)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 7)
-            .background(fill, in: .rect(cornerRadius: 6, style: .continuous))
-            .contentShape(.rect)
-            .onHover(perform: setHovered)
-            .listRowInsets(EdgeInsets(top: 1, leading: 8, bottom: 1, trailing: 8))
-            .listRowSeparator(.hidden)
-            .listRowBackground(Color.clear)
-    }
-
-    private func setHovered(_ hovered: Bool) {
-        isHovered = hovered
     }
 }
 

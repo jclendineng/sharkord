@@ -578,6 +578,8 @@ final class AttachPanelModel {
 
     private(set) var isOpen = false
     private(set) var kind = Kind.attachments
+    // the expression panel's tab, kept here so the mac's gif and sticker buttons open on theirs
+    var expressionTab = ExpressionPanel.Tab.emoji
     private(set) var settledHeight = restingHeight
     private(set) var dragOffset: CGFloat = 0
     // while the keyboard and the panel trade places the conversation stops making room for the

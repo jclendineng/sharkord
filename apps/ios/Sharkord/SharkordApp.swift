@@ -18,6 +18,7 @@ struct SharkordApp: App {
                 .task {
                     KeyboardMetrics.start()
                     AudioInputPreference.start()
+                    PushToTalk.start(servers: servers)
                     appDelegate.servers = servers
                     await servers.restore()
                 }

@@ -33,6 +33,9 @@ final class AppSettings {
         static let soundboardVolume = "settings.soundboardVolume"
         static let doubleTapReaction = "settings.doubleTapReaction"
         static let inputDeviceId = "settings.inputDeviceId"
+        static let pushToTalk = "settings.pushToTalk"
+        static let pushToTalkKey = "settings.pushToTalkKey"
+        static let inputGain = "settings.inputGain"
     }
 
     private let defaults = UserDefaults.standard
@@ -95,6 +98,20 @@ final class AppSettings {
         didSet { defaults.set(inputDeviceId, forKey: Key.inputDeviceId) }
     }
 
+    // the mic stays closed in a call until a key is held, see PushToTalk
+    var pushToTalk: Bool {
+        didSet { defaults.set(pushToTalk, forKey: Key.pushToTalk) }
+    }
+
+    var pushToTalkKey: PushToTalkKey {
+        didSet { defaults.set(pushToTalkKey.rawValue, forKey: Key.pushToTalkKey) }
+    }
+
+    // 0 to 1, the input device's own gain where it lets it be set, see AudioInputPreference
+    var inputGain: Double {
+        didSet { defaults.set(inputGain, forKey: Key.inputGain) }
+    }
+
     private init() {
         defaults.register(defaults: [
             Key.echoCancellation: true,
@@ -103,7 +120,8 @@ final class AppSettings {
             Key.speakerByDefault: true,
             Key.outputVolume: 1.0,
             Key.soundboardVolume: 1.0,
-            Key.doubleTapReaction: "heart"
+            Key.doubleTapReaction: "heart",
+            Key.inputGain: 1.0
         ])
 
         echoCancellation = defaults.bool(forKey: Key.echoCancellation)
@@ -117,6 +135,9 @@ final class AppSettings {
         soundboardVolume = defaults.double(forKey: Key.soundboardVolume)
         doubleTapReaction = defaults.string(forKey: Key.doubleTapReaction) ?? "heart"
         inputDeviceId = defaults.string(forKey: Key.inputDeviceId)
+        pushToTalk = defaults.bool(forKey: Key.pushToTalk)
+        pushToTalkKey = defaults.string(forKey: Key.pushToTalkKey).flatMap(PushToTalkKey.init(rawValue:)) ?? .rightOption
+        inputGain = defaults.double(forKey: Key.inputGain)
         streamQuality = defaults.string(forKey: Key.streamQuality).flatMap(StreamQuality.init(rawValue:)) ?? .standard
     }
 }

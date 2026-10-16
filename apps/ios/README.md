@@ -111,7 +111,12 @@ Laid out the way Discord's Mac app is: the server's menu drops down under its na
 settings take the whole window with the pages down the side, a thread opens in a panel beside
 the chat in the member list's place, the plus by the message box is a short menu, and the emoji
 picker keeps to its own width under its button. The member list grows with a wide window.
-Voice & Video picks the input and output device; Automatic uses a headset's or USB mic whenever
+The user bar carries mute, deafen and settings, user settings fill the window like server
+settings, and the message box has GIF, sticker and emoji buttons. Back and forward step through
+the channels shown (`ServerListStore.visits`, ⌘[ and ⌘]). A channel's threads list drops down
+from the top bar (`messages.getThreads`). Push to talk reads its key through the GameController
+framework (`PushToTalk`), which sees a modifier held on its own even while typing. Voice & Video
+picks the input and output device; Automatic uses a headset's or USB mic whenever
 one is plugged in, kept to on every route change (`AudioInputPreference`).
 
 ## Sessions

@@ -27,6 +27,11 @@ enum AudioInputPreference {
             return
         }
 
+        // a device that takes a gain gets the one picked in voice settings
+        if session.isInputGainSettable {
+            try? session.setInputGain(Float(AppSettings.shared.inputGain))
+        }
+
         let pickedId = AppSettings.shared.inputDeviceId
         let picked = inputs.first { $0.uid == pickedId }
 

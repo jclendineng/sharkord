@@ -543,17 +543,19 @@ final class SessionStore {
 
     // discord style: a name takes the color of the first colored role the user has
     func roleColor(for user: PublicUser?) -> String? {
+        displayRole(for: user)?.color
+    }
+
+    // the role someone shows as, their first with a colour of its own: it colours their name and
+    // heads their group in the member list
+    func displayRole(for user: PublicUser?) -> Role? {
         guard let user else {
             return nil
         }
 
-        for roleId in user.roleIds {
-            if let role = rolesById[roleId], role.color.lowercased() != "#ffffff" {
-                return role.color
-            }
-        }
-
-        return nil
+        return user.roleIds
+            .compactMap { rolesById[$0] }
+            .first { $0.color.lowercased() != "#ffffff" }
     }
 
     func customEmoji(named name: String) -> CustomEmoji? {
@@ -923,7 +925,8 @@ final class SessionStore {
 
             try await connection.start(
                 routerRtpCapabilities: routerRtpCapabilities,
-                micMuted: micMuted,
+                // push to talk opens the mic only while its key is held
+                micMuted: micMuted || AppSettings.shared.pushToTalk,
                 soundMuted: soundMuted,
                 canSpeak: canSpeak
             )
@@ -954,7 +957,7 @@ final class SessionStore {
 
     func toggleMicMuted() async {
         micMuted.toggle()
-        voice?.setMicMuted(micMuted)
+        voice?.setMicMuted(micMuted || AppSettings.shared.pushToTalk)
 
         await updateVoiceState(["micMuted": micMuted])
     }
@@ -1066,6 +1069,21 @@ final class SessionStore {
 
     func flipCamera() {
         voice?.flipCamera()
+    }
+
+    // push to talk's key held or let go. a mic muted by hand stays muted, and only this device's
+    // track opens, the server's state is left as it is so the button does not flicker for others
+    func setPushToTalkHeld(_ held: Bool) {
+        guard AppSettings.shared.pushToTalk, !micMuted else {
+            return
+        }
+
+        voice?.setMicMuted(!held)
+    }
+
+    // push to talk switched on or off in a call closes the mic or opens it to the mute button's
+    func applyPushToTalk() {
+        voice?.setMicMuted(micMuted || AppSettings.shared.pushToTalk)
     }
 
     func toggleSoundMuted() async {

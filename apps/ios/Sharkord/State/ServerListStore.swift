@@ -10,6 +10,12 @@ final class ServerListStore {
     private(set) var selectedSession: SessionStore?
     // the server rail's direct messages button, it shows the selected server's conversations
     var isShowingDirectMessages = false
+
+    // the channels shown, oldest first, for the mac's back and forward, as discord's window has
+    private(set) var visits: [Visit] = []
+    private(set) var visitIndex = -1
+    // a channel opened by going back or forward, which is no new visit
+    private var travellingTo: Visit?
     // the sign in screen, for a new server or one whose session ended
     private(set) var signingInSession: SessionStore?
 
@@ -292,6 +298,64 @@ final class ServerListStore {
         select(session)
         isShowingDirectMessages = session.channel(channelId)?.isDm == true
         session.requestedChannelId = channelId
+    }
+
+    struct Visit: Equatable {
+        let sessionId: ObjectIdentifier
+        let channelId: Int
+    }
+
+    private static let visitLimit = 50
+
+    var canGoBack: Bool {
+        visitIndex > 0
+    }
+
+    var canGoForward: Bool {
+        visitIndex < visits.count - 1
+    }
+
+    // a visit after going back drops what was ahead of it, as a browser's history does
+    func recordVisit(to channelId: Int, in session: SessionStore) {
+        let visit = Visit(sessionId: ObjectIdentifier(session), channelId: channelId)
+
+        if travellingTo == visit {
+            travellingTo = nil
+            return
+        }
+
+        if visits.indices.contains(visitIndex), visits[visitIndex] == visit {
+            return
+        }
+
+        visits = Array(visits.prefix(visitIndex + 1).suffix(Self.visitLimit - 1)) + [visit]
+        visitIndex = visits.count - 1
+    }
+
+    func goBack() {
+        travel(to: visitIndex - 1)
+    }
+
+    func goForward() {
+        travel(to: visitIndex + 1)
+    }
+
+    // a server signed out of since is passed over
+    private func travel(to index: Int) {
+        guard visits.indices.contains(index) else {
+            return
+        }
+
+        let visit = visits[index]
+
+        visitIndex = index
+
+        guard let session = sessions.first(where: { ObjectIdentifier($0) == visit.sessionId }) else {
+            return
+        }
+
+        travellingTo = visit
+        open(channelId: visit.channelId, in: session)
     }
 
     func showDevices(for session: SessionStore) {

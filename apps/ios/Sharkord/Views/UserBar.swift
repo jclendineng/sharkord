@@ -61,29 +61,26 @@ struct UserBar: View {
             }
             .buttonStyle(.plain)
 
-            Button("Unreads", systemImage: "bell.fill", action: showUnreads)
-                .labelStyle(.iconOnly)
-                .font(isCompact ? .body : .title3)
-                .foregroundStyle(Theme.muted)
-                .frame(width: isCompact ? 36 : 44, height: isCompact ? 36 : 44)
-                .hoverHighlight(cornerRadius: 10)
-                .overlay(alignment: .topTrailing) {
-                    if hasUnread {
-                        Circle()
-                            .fill(Theme.red)
-                            .frame(width: 10, height: 10)
-                            .offset(x: -8, y: 8)
-                    }
-                }
-                // hangs off the bell on a wide screen, a phone gets a sheet. handed the stores
-                // by hand: on a mac a presentation is worked out before it inherits anything
-                .popover(isPresented: $isUnreadsPresented) {
-                    InboxSheet()
-                        .frame(idealWidth: 420, idealHeight: 560)
-                        .macPopover()
-                        .environment(servers)
-                        .environment(session)
-                }
+            if ProcessInfo.processInfo.isiOSAppOnMac {
+                // discord's mac: mute, deafen and settings at hand, the inbox up in the top bar
+                UserBarButton(
+                    title: session.micMuted ? "Unmute" : "Mute",
+                    systemImage: session.micMuted ? "mic.slash.fill" : "mic.fill",
+                    isOff: session.micMuted,
+                    action: toggleMic
+                )
+
+                UserBarButton(
+                    title: session.soundMuted ? "Undeafen" : "Deafen",
+                    systemImage: session.soundMuted ? "headphones.slash" : "headphones",
+                    isOff: session.soundMuted,
+                    action: toggleSound
+                )
+
+                UserBarButton(title: "User Settings", systemImage: "gearshape.fill", isOff: false, action: openSettings)
+            } else {
+                unreadsButton
+            }
         }
         .padding(.horizontal, isCompact ? 10 : 12)
         .padding(.vertical, isCompact ? 7 : 10)
@@ -101,6 +98,44 @@ struct UserBar: View {
                 .environment(servers)
         })
         .profileSheet($profileSheet)
+    }
+
+    private var unreadsButton: some View {
+        Button("Unreads", systemImage: "bell.fill", action: showUnreads)
+            .labelStyle(.iconOnly)
+            .font(isCompact ? .body : .title3)
+            .foregroundStyle(Theme.muted)
+            .frame(width: isCompact ? 36 : 44, height: isCompact ? 36 : 44)
+            .hoverHighlight(cornerRadius: 10)
+            .overlay(alignment: .topTrailing) {
+                if hasUnread {
+                    Circle()
+                        .fill(Theme.red)
+                        .frame(width: 10, height: 10)
+                        .offset(x: -8, y: 8)
+                }
+            }
+            // hangs off the bell on a wide screen, a phone gets a sheet. handed the stores
+            // by hand: on a mac a presentation is worked out before it inherits anything
+            .popover(isPresented: $isUnreadsPresented) {
+                InboxSheet()
+                    .frame(idealWidth: 420, idealHeight: 560)
+                    .macPopover()
+                    .environment(servers)
+                    .environment(session)
+            }
+    }
+
+    private func toggleMic() {
+        Task { await session.toggleMicMuted() }
+    }
+
+    private func toggleSound() {
+        Task { await session.toggleSoundMuted() }
+    }
+
+    private func openSettings() {
+        profileSheet = .settings
     }
 
     // only the mac's popover hands them over, a phone or ipad's profile sheet shows its own
@@ -123,6 +158,27 @@ struct UserBar: View {
 
     private func showUnreads() {
         isUnreadsPresented = true
+    }
+}
+
+// a round icon button in the mac's user bar, red with a slash while it is off, lit and lifted a
+// little under the pointer
+private struct UserBarButton: View {
+    let title: String
+    let systemImage: String
+    let isOff: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(title, systemImage: systemImage, action: action)
+            .labelStyle(.iconOnly)
+            .font(.system(size: 17, weight: .semibold))
+            .foregroundStyle(isOff ? Theme.red : Theme.muted)
+            .contentTransition(.symbolEffect(.replace))
+            .frame(width: 36, height: 36)
+            .hoverHighlight(cornerRadius: 10)
+            .hoverPop()
+            .buttonStyle(.plain)
     }
 }
 

@@ -12,6 +12,10 @@ struct ServerRail: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 8) {
+                if ProcessInfo.processInfo.isiOSAppOnMac {
+                    HistoryButtons()
+                }
+
                 RailItem(
                     isSelected: servers.isShowingDirectMessages,
                     hasUnread: false,
@@ -195,5 +199,47 @@ private struct RailItem<Content: View>: View {
 
     private func setHovered(_ hovered: Bool) {
         isHovered = hovered
+    }
+}
+
+// discord's back and forward at the window's top left, through the channels shown, with the
+// mac's own shortcuts for them
+private struct HistoryButtons: View {
+    @Environment(ServerListStore.self) private var servers
+
+    var body: some View {
+        HStack(spacing: 2) {
+            Button("Back", systemImage: "chevron.left", action: goBack)
+                .keyboardShortcut("[", modifiers: .command)
+                .disabled(!servers.canGoBack)
+
+            Button("Forward", systemImage: "chevron.right", action: goForward)
+                .keyboardShortcut("]", modifiers: .command)
+                .disabled(!servers.canGoForward)
+        }
+        .labelStyle(.iconOnly)
+        .font(.system(size: 13, weight: .bold))
+        .foregroundStyle(Theme.muted)
+        .buttonStyle(HistoryButtonStyle())
+    }
+
+    private func goBack() {
+        servers.goBack()
+    }
+
+    private func goForward() {
+        servers.goForward()
+    }
+}
+
+private struct HistoryButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .frame(width: 28, height: 24)
+            .opacity(isEnabled ? 1 : 0.35)
+            .hoverHighlight(cornerRadius: 6)
+            .scaleEffect(configuration.isPressed ? 0.9 : 1)
     }
 }

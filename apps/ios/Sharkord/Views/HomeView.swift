@@ -237,7 +237,8 @@ struct HomeView: View {
                         }
                     }
                     .environment(\.showChannelList, isChatExpanded ? collapseChat : nil)
-                    .environment(\.expandChat, isChatExpanded ? nil : expandForTyping)
+                    // a mac's keyboard is a real one and wants no room, the list stays beside the chat
+                    .environment(\.expandChat, isChatExpanded || ProcessInfo.processInfo.isiOSAppOnMac ? nil : expandForTyping)
                     .clipShape(.rect(cornerRadius: Self.cardRadius, style: .continuous))
                     .overlay {
                         RoundedRectangle(cornerRadius: Self.cardRadius, style: .continuous)

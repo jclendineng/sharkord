@@ -29,13 +29,23 @@ struct MembersColumn: View {
         session.channel(channelId)?.private == true
     }
 
+    // discord's: who is online under the role they show as, then everyone else online, then
+    // whoever is offline in one group
     private var sections: [(title: String, users: [PublicUser])] {
         let visible = session.members.filter { channelMemberIds?.contains($0.id) ?? true }
         let sorted = visible.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
         let online = sorted.filter { $0.status != .offline }
         let offline = sorted.filter { $0.status == .offline }
+        let byRole = Dictionary(grouping: online) { session.displayRole(for: $0) }
 
-        return [("Online", online), ("Offline", offline)].filter { !$0.users.isEmpty }
+        let roleSections = byRole.keys
+            .compactMap { $0 }
+            .sorted { $0.id < $1.id }
+            .map { role in (title: role.name, users: byRole[role] ?? []) }
+
+        let plain = byRole[nil] ?? []
+
+        return (roleSections + [("Online", plain), ("Offline", offline)]).filter { !$0.users.isEmpty }
     }
 
     var body: some View {

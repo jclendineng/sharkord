@@ -12,6 +12,29 @@ extension View {
     func hoverBrighten(cornerRadius: CGFloat = 8) -> some View {
         modifier(HoverHighlight(cornerRadius: cornerRadius, style: .brighten))
     }
+
+    // an icon button grows a touch on a spring under the pointer, the small bounce discord's
+    // buttons have
+    func hoverPop(scale: CGFloat = 1.12) -> some View {
+        modifier(HoverPop(scale: scale))
+    }
+}
+
+private struct HoverPop: ViewModifier {
+    let scale: CGFloat
+
+    @State private var isHovered = false
+
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(isHovered ? scale : 1)
+            .animation(.spring(response: 0.25, dampingFraction: 0.55), value: isHovered)
+            .onHover(perform: setHovered)
+    }
+
+    private func setHovered(_ hovered: Bool) {
+        isHovered = hovered
+    }
 }
 
 private struct HoverHighlight: ViewModifier {
