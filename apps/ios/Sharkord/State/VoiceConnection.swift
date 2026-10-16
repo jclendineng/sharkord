@@ -466,6 +466,43 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
         }
     }
 
+    // how loud everyone is right now, 0 to 1, from webrtc's own measure of what each stream
+    // carried: the people heard, and the microphone, nil when it sends nothing
+    func audioLevels() async -> (own: Double?, remote: [Int: Double]) {
+        await onQueueValue {
+            var remote: [Int: Double] = [:]
+
+            for (key, consumer) in self.consumers where key.kind == .audio {
+                if let level = Self.audioLevel(in: consumer.stats, type: "inbound-rtp") {
+                    remote[key.remoteId] = level
+                }
+            }
+
+            let own = self.producer.flatMap { Self.audioLevel(in: $0.stats, type: "media-source") }
+
+            return (own, remote)
+        }
+    }
+
+    // a stats report as webrtc serialises it, a list of entries or a map of them by id
+    private static func audioLevel(in stats: String, type: String) -> Double? {
+        guard let json = try? JSONSerialization.jsonObject(with: Data(stats.utf8)) else {
+            return nil
+        }
+
+        var entries: [[String: Any]] = []
+
+        if let list = json as? [[String: Any]] {
+            entries = list
+        } else if let map = json as? [String: Any] {
+            entries = map.values.compactMap { $0 as? [String: Any] }
+        }
+
+        let entry = entries.first { $0["type"] as? String == type && $0["audioLevel"] != nil }
+
+        return entry?["audioLevel"] as? Double
+    }
+
     private func onQueueResult<T: Sendable>(_ work: @escaping @Sendable () throws -> T) async throws -> T {
         try await withCheckedThrowingContinuation { continuation in
             queue.async {

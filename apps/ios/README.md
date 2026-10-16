@@ -105,6 +105,15 @@ mentions and replies, the same set the web client notifies for.
 [mediasoup-client-swift](https://github.com/VLprojects/mediasoup-client-swift). One send
 transport for the microphone, one receive transport for everyone else.
 
+Who is talking comes from webrtc's own stats: four times a second `audioLevels()` reads the
+`audioLevel` of each audio consumer's `inbound-rtp` entry and of the microphone producer's
+`media-source`, and `SessionStore.speakingUserIds` lights anyone above a speech threshold for a
+moment after they stop. The app mixes everyone into one playback device, so it cannot measure
+each person's sound the way the web client's analysers do.
+
+A lowered call on a phone or an iPad is `FloatingCallTile`, dragged by offset and let go into
+the nearest corner. The Mac keeps `VoiceBar` above the user bar instead.
+
 ## Debug launch
 
 In debug builds, `Helpers/DebugLaunch.swift` reads `SHARKORD_DEV_*` environment variables

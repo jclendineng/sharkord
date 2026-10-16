@@ -82,6 +82,10 @@ final class SessionStore {
     private(set) var voiceReactions: [Int: [VoiceReaction]] = [:]
     @ObservationIgnored private var nextVoiceReactionId = 0
     private(set) var isJoiningVoice = false
+    // who in this device's call is talking, for discord's green ring
+    private(set) var speakingUserIds: Set<Int> = []
+    private var lastSpokeAt: [Int: Date] = [:]
+    private var speakingTask: Task<Void, Never>?
     // the channel this device was in until the account joined voice from another one, for
     // discord's banner offering to take it back
     var voiceTakenOverChannelId: Int?
@@ -843,6 +847,7 @@ final class SessionStore {
             )
 
             voice = connection
+            watchSpeaking()
 
             let routerRtpCapabilities = String(
                 decoding: try JSONSerialization.data(withJSONObject: capabilities),
@@ -1532,10 +1537,56 @@ final class SessionStore {
         isSharingScreen = false
         voice?.close()
         voice = nil
+        speakingTask?.cancel()
+        speakingTask = nil
+        speakingUserIds = []
+        lastSpokeAt = [:]
         mixingDevice = nil
         currentVoiceChannelId = nil
         cameraEnabled = false
         videoTracks = [:]
+    }
+
+    // four times a second, as discord's ring reacts. speech sits well above a room's quiet, and
+    // a speaker stays lit for a moment after they stop so the ring does not flicker between words
+    private func watchSpeaking() {
+        speakingTask?.cancel()
+        speakingTask = Task { [weak self] in
+            while !Task.isCancelled {
+                do {
+                    try await Task.sleep(for: .milliseconds(250))
+                } catch {
+                    return
+                }
+
+                guard let voice = self?.voice else {
+                    return
+                }
+
+                let levels = await voice.audioLevels()
+
+                self?.updateSpeaking(own: levels.own, remote: levels.remote)
+            }
+        }
+    }
+
+    private func updateSpeaking(own: Double?, remote: [Int: Double]) {
+        let threshold = 0.015
+        let now = Date()
+
+        for (userId, level) in remote where level > threshold {
+            lastSpokeAt[userId] = now
+        }
+
+        if let ownUserId, let own, own > threshold, !micMuted {
+            lastSpokeAt[ownUserId] = now
+        }
+
+        let speaking = Set(lastSpokeAt.filter { now.timeIntervalSince($0.value) < 0.4 }.keys)
+
+        if speaking != speakingUserIds {
+            speakingUserIds = speaking
+        }
     }
 
     private func voiceConnectionFailed() {

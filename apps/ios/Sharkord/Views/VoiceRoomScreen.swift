@@ -154,6 +154,13 @@ private struct ParticipantTile: View {
         .aspectRatio(3 / 4, contentMode: .fit)
         .clipShape(.rect(cornerRadius: 14))
         .overlay {
+            if let user, session.speakingUserIds.contains(user.id) {
+                RoundedRectangle(cornerRadius: 14)
+                    .strokeBorder(Theme.green, lineWidth: 3)
+            }
+        }
+        .animation(.easeOut(duration: 0.15), value: user.map { session.speakingUserIds.contains($0.id) })
+        .overlay {
             if let user {
                 FloatingReactions(reactions: session.voiceReactions[user.id] ?? [])
             }

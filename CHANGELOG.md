@@ -152,6 +152,11 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   even when the account is still connected elsewhere.
 - Long presses on channels and messages open their menu after the same 0.3 seconds as servers
   and conversations.
+- On the phone and iPad a lowered call is Discord's floating tile, dragged anywhere and let go
+  into the nearest corner, and tapped to open the call again. It replaces the voice bar above
+  the user bar, which stays on the Mac.
+- Whoever is talking gets Discord's green ring, on the call screen, on the floating tile and
+  under the voice channel in the channel list.
 - Lowering the call screen goes straight back to the channel list in one slide, instead of the
   voice channel sheet showing again on the way down.
 - Jumping to a message from search or pins highlights it again, rather than only scrolling to

@@ -346,6 +346,13 @@ private struct VoiceParticipants: View {
         ForEach(session.voiceParticipants(in: channelId), id: \.user?.id) { participant in
             HStack(spacing: 8) {
                 AvatarView(user: participant.user, size: 22)
+                    .overlay {
+                        if participant.user.map({ session.speakingUserIds.contains($0.id) }) == true {
+                            Circle()
+                                .strokeBorder(Theme.green, lineWidth: 2)
+                                .padding(-2)
+                        }
+                    }
 
                 Text(participant.user?.name ?? "Unknown")
                     .font(.subheadline)
