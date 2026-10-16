@@ -101,6 +101,11 @@ struct ChatScreen: View {
 
                     ChatDropdownPanel(dropdown: dropdown, channelId: channelId, searchModel: searchModel, onClose: closeDropdown)
                         .transition(.move(edge: .top))
+
+                    // escape puts it away, as it does the server's search card
+                    Button("Close", action: closeDropdown)
+                        .keyboardShortcut(.cancelAction)
+                        .hidden()
                 }
             }
             .clipped()
@@ -127,16 +132,22 @@ struct ChatScreen: View {
             }
 
             PlainToolbarItem(placement: .topBarLeading) {
-                NavigationLink(value: ChannelInfoRoute(channelId: channelId)) {
-                    ChatTitle(
-                        title: title,
-                        partner: partner,
-                        isDirectMessage: channel?.isDm == true,
-                        group: session.group(for: channelId)
-                    )
+                ChatTitle(
+                    title: title,
+                    partner: partner,
+                    isDirectMessage: channel?.isDm == true,
+                    group: session.group(for: channelId)
+                )
+                // the link laid over the title rather than around it: an item that is only a link
+                // is drawn by the mac's bar as a button showing nothing but its first icon
+                .overlay {
+                    NavigationLink(value: ChannelInfoRoute(channelId: channelId)) {
+                        Color.clear
+                            .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .simultaneousGesture(TapGesture().onEnded(dismissKeyboard))
                 }
-                .buttonStyle(.plain)
-                .simultaneousGesture(TapGesture().onEnded(dismissKeyboard))
             }
 
             if canShowMembers {
@@ -302,9 +313,7 @@ private struct ChatDropdownPanel: View {
         case .search:
             // wide enough for every tab of the strip without it scrolling
             panel(width: 500, maxHeight: 640) {
-                NavigationStack {
-                    SearchScreen(channelId: channelId, directMessages: false, model: searchModel, showsSearchBox: false)
-                }
+                SearchScreen(channelId: channelId, directMessages: false, model: searchModel, showsSearchBox: false)
             }
         }
     }

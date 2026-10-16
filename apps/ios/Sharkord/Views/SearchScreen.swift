@@ -96,7 +96,41 @@ struct SearchScreen: View {
     }
 
     var body: some View {
-        Group {
+        if showsSearchBox {
+            screen
+                // the search box sits in the navigation bar between its back button and the
+                // filters, the bar staying keeps the swipe back
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbarBackground(Theme.deepBackground, for: .navigationBar)
+                .toolbarBackgroundVisibility(.visible, for: .navigationBar)
+                .toolbar {
+                    ToolbarItem(placement: .principal) {
+                        SearchBox(model: state, prompt: prompt, isFocused: $isFieldFocused)
+                    }
+
+                    ToolbarItem(placement: .topBarTrailing) {
+                        FilterMenu(isFiltering: !filters.isEmpty, onChoose: choose)
+                    }
+                }
+                // the field sits in the navigation bar, where focus state alone does not bring up
+                // the keyboard, so once the screen has slid in the field is made first responder
+                // directly. the mac's dropdown does not slide, so typing works there almost at once
+                .task {
+                    try? await Task.sleep(for: .milliseconds(ProcessInfo.processInfo.isiOSAppOnMac ? 50 : 450))
+                    isFieldFocused = true
+                    focusNavigationBarField()
+                }
+        } else {
+            // the mac chat's panel types into the top bar's box and sits inside the chat's own
+            // navigation, so it leaves the bar alone: hiding a bar of its own hid the chat's
+            screen
+        }
+    }
+
+    // a stack rather than a group: a group hands its modifiers to each branch, so the first
+    // letter typed swapped the tabs for the results and rebuilt the bar's field, dropping focus
+    private var screen: some View {
+        VStack(spacing: 0) {
             if let token {
                 FilterSuggestions(
                     picker: token,
@@ -116,22 +150,6 @@ struct SearchScreen: View {
         .simultaneousGesture(TapGesture().onEnded(unfocusField))
         // under the keyboard too, or its rounded top corners show the window's black behind them
         .background(Theme.deepBackground.ignoresSafeArea())
-        // the search box sits in the navigation bar between its back button and the filters,
-        // the bar staying keeps the swipe back
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(Theme.deepBackground, for: .navigationBar)
-        .toolbarBackgroundVisibility(.visible, for: .navigationBar)
-        .toolbar {
-            if showsSearchBox {
-                ToolbarItem(placement: .principal) {
-                    SearchBox(model: state, prompt: prompt, isFocused: $isFieldFocused)
-                }
-
-                ToolbarItem(placement: .topBarTrailing) {
-                    FilterMenu(isFiltering: !filters.isEmpty, onChoose: choose)
-                }
-            }
-        }
         // handed over by hand: on a mac a sheet's background is worked out before it inherits
         // anything, so a sheet reading a store it was not given crashed on opening
         .sheet(item: $datePicker) { picker in
@@ -153,20 +171,6 @@ struct SearchScreen: View {
         }
         .onAppear {
             state.applyOpening(channel: channelId.flatMap { session.channel($0) }, directMessages: directMessages)
-        }
-        // the field sits in the navigation bar, where focus state alone does not bring up the
-        // keyboard, so once the screen has slid in the field is made first responder directly.
-        // the mac's dropdown does not slide, so typing works there almost at once
-        // a box outside the screen leaves no bar of its own, a page pushed from here keeps its
-        .toolbarVisibility(showsSearchBox ? .automatic : .hidden, for: .navigationBar)
-        .task {
-            guard showsSearchBox else {
-                return
-            }
-
-            try? await Task.sleep(for: .milliseconds(ProcessInfo.processInfo.isiOSAppOnMac ? 50 : 450))
-            isFieldFocused = true
-            focusNavigationBarField()
         }
     }
 

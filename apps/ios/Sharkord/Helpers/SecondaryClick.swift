@@ -312,6 +312,11 @@ struct PointerMenuLayer: View {
                     .contentShape(.rect)
                     .onTapGesture(perform: PointerMenus.closeCurrent)
 
+                // escape closes it, as it does a mac menu
+                Button("Close Menu", action: PointerMenus.closeCurrent)
+                    .keyboardShortcut(.cancelAction)
+                    .hidden()
+
                 card(shown.content, width: Self.width)
                     .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }, action: menuMoved)
                     .offset(offset(for: shown.point))
