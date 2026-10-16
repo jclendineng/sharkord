@@ -107,10 +107,20 @@ const Header = memo(() => {
       return;
     }
 
+    // asked each time, a shared household or office would lose access with it
+    const banIps = await requestConfirmation({
+      title: t('banIpsTitle'),
+      message: t('banIpsMsg'),
+      confirmLabel: t('banIpsConfirm'),
+      cancelLabel: t('banIpsCancel'),
+      variant: 'danger'
+    });
+
     try {
       await trpc.users.ban.mutate({
         userId: user.id,
-        reason
+        reason,
+        banIps
       });
       toast.success(t('bannedSuccess'));
     } catch (error) {

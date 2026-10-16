@@ -1,4 +1,9 @@
-import { ActivityLogType, ServerEvents, zLocale } from '@sharkord/shared';
+import {
+  ActivityLogType,
+  IP_BANNED_MESSAGE,
+  ServerEvents,
+  zLocale
+} from '@sharkord/shared';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { config } from '../../config';
@@ -9,6 +14,7 @@ import {
   getChannelsReadStatesForUser
 } from '../../db/queries/channels';
 import { getEmojis } from '../../db/queries/emojis';
+import { isIpBanned } from '../../db/queries/ip-bans';
 import { hasUserJoinedBefore } from '../../db/queries/logins';
 import { getRoles } from '../../db/queries/roles';
 import { getPublicSettings, getSettings } from '../../db/queries/server';
@@ -48,7 +54,16 @@ const joinServerRoute = rateLimitedProcedure(publicProcedure, {
     });
 
     const connectionInfo = ctx.getConnectionInfo();
-    const settings = await getSettings();
+    const [settings, isBannedNetwork] = await Promise.all([
+      getSettings(),
+      isIpBanned(connectionInfo?.ip)
+    ]);
+
+    // an account signed in elsewhere still cannot use the server from a banned network
+    invariant(!isBannedNetwork, {
+      code: 'FORBIDDEN',
+      message: IP_BANNED_MESSAGE
+    });
 
     const shouldAskForPassword = await shouldAskServerPassword(ctx.user.id, {
       password: settings.password,

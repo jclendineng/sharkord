@@ -38,6 +38,9 @@ export enum DisconnectCode {
 
 export const MAX_USER_NAME_LENGTH = 24;
 
+// what someone on a network a moderator banned is told, at sign in and when joining
+export const IP_BANNED_MESSAGE = 'This network is banned from the server.';
+
 export const DELETED_USER_IDENTITY_AND_NAME = '__deleted_user__'; // this will be used as identity AND name, but in the interface we render as "Deleted"
 
 export const DEFAULT_BITRATE = 6000; // kbps,

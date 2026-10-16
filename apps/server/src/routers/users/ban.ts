@@ -9,7 +9,9 @@ const banRoute = protectedProcedure
   .input(
     z.object({
       userId: z.number(),
-      reason: z.string().optional()
+      reason: z.string().optional(),
+      // a choice per ban: a shared household or office would lose access with it
+      banIps: z.boolean().default(false)
     })
   )
   .mutation(async ({ ctx, input }) => {
@@ -26,7 +28,8 @@ const banRoute = protectedProcedure
       input.userId,
       input.reason,
       ctx.userId,
-      ctxUserSessions(ctx, input.userId)
+      ctxUserSessions(ctx, input.userId),
+      { banIps: input.banIps }
     );
   });
 

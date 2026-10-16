@@ -128,6 +128,7 @@ private struct MemberDetail: View {
     @State private var pending: Action?
     @State private var reason = ""
     @State private var wipe = false
+    @State private var banIps = false
     @State private var errorMessage: String?
     @State private var isWorking = false
     @State private var info: AdminUserInfo?
@@ -213,7 +214,7 @@ private struct MemberDetail: View {
         // handed over by hand: on a mac a sheet's background is worked out before it inherits
         // anything, so a sheet reading a store it was not given crashed on opening
         .sheet(item: $pending) { action in
-            ConfirmModeration(action: action, name: user.name, reason: $reason, wipe: $wipe) {
+            ConfirmModeration(action: action, name: user.name, reason: $reason, wipe: $wipe, banIps: $banIps) {
                 perform(action)
             }
                 .environment(session)
@@ -274,6 +275,12 @@ private struct MemberDetail: View {
             let wipe: Bool
         }
 
+        struct BanInput: Encodable {
+            let userId: Int
+            let reason: String?
+            let banIps: Bool
+        }
+
         let trimmed = reason.trimmingCharacters(in: .whitespacesAndNewlines)
         let input = ReasonInput(userId: user.id, reason: trimmed.isEmpty ? nil : trimmed)
 
@@ -282,7 +289,7 @@ private struct MemberDetail: View {
             case .kick:
                 try await session.perform("users.kick", input)
             case .ban:
-                try await session.perform("users.ban", input)
+                try await session.perform("users.ban", BanInput(userId: user.id, reason: input.reason, banIps: banIps))
             case .delete:
                 try await session.perform("users.delete", DeleteInput(userId: user.id, wipe: wipe))
             }
@@ -315,6 +322,7 @@ private struct ConfirmModeration: View {
     let name: String
     @Binding var reason: String
     @Binding var wipe: Bool
+    @Binding var banIps: Bool
     let onConfirm: () -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -343,6 +351,14 @@ private struct ConfirmModeration: View {
                     Section("Reason (optional)") {
                         TextField("Why?", text: $reason, axis: .vertical)
                             .lineLimit(2...4)
+                    }
+                }
+
+                if action == .ban {
+                    Section {
+                        Toggle("Also Ban Their IP Addresses", isOn: $banIps)
+                    } footer: {
+                        Text("Blocks the public addresses they signed in from, so a new account from there is refused. Anyone else on those networks, like a household, is locked out too. Unbanning lifts it.")
                     }
                 }
 

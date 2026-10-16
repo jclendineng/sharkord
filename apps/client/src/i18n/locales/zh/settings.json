@@ -625,5 +625,9 @@
   "afkChannelNone": "不设挂机频道",
   "afkTimeoutLabel": "挂机超时",
   "afkTimeoutMinutes_one": "{{count}} 分钟",
-  "afkTimeoutMinutes_other": "{{count}} 分钟"
+  "afkTimeoutMinutes_other": "{{count}} 分钟",
+  "banIpsTitle": "同时封禁其 IP 地址？",
+  "banIpsMsg": "同时封禁其登录过的公网地址，从那里注册的新账户也会被拒绝。同一网络中的其他人（例如家人）也会被挡在外面。解封时一并解除。",
+  "banIpsConfirm": "同时封禁地址",
+  "banIpsCancel": "仅封禁账户"
 }

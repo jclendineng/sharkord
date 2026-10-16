@@ -636,5 +636,9 @@
   "afkTimeoutMinutes_one": "{{count}} минута",
   "afkTimeoutMinutes_other": "{{count}} минут",
   "afkTimeoutMinutes_few": "{{count}} минуты",
-  "afkTimeoutMinutes_many": "{{count}} минут"
+  "afkTimeoutMinutes_many": "{{count}} минут",
+  "banIpsTitle": "Забанить и его IP-адреса?",
+  "banIpsMsg": "Также блокирует публичные адреса, с которых он входил, поэтому новый аккаунт оттуда будет отклонён. Все остальные в этих сетях, например семья, тоже не смогут войти. Разбан снимает это.",
+  "banIpsConfirm": "Забанить и адреса",
+  "banIpsCancel": "Только аккаунт"
 }

@@ -266,6 +266,20 @@ const userRoles = sqliteTable(
   ]
 );
 
+// addresses a moderator banned along with an account. the ban outlives the account, so a
+// deleted user's addresses stay banned, and unbanning the account lifts them
+const ipBans = sqliteTable(
+  'ip_bans',
+  {
+    ip: text('ip').primaryKey(),
+    userId: integer('user_id').references(() => users.id, {
+      onDelete: 'set null'
+    }),
+    createdAt: integer('created_at').notNull()
+  },
+  (t) => [index('ip_bans_user_idx').on(t.userId)]
+);
+
 const logins = sqliteTable(
   'logins',
   {
@@ -1001,6 +1015,7 @@ export {
   groupDmMembers,
   groupDms,
   invites,
+  ipBans,
   loginLinks,
   loginRequests,
   logins,

@@ -625,5 +625,9 @@
   "afkChannelNone": "Nessun canale AFK",
   "afkTimeoutLabel": "Timeout AFK",
   "afkTimeoutMinutes_one": "{{count}} minuto",
-  "afkTimeoutMinutes_other": "{{count}} minuti"
+  "afkTimeoutMinutes_other": "{{count}} minuti",
+  "banIpsTitle": "Bannare anche i suoi indirizzi IP?",
+  "banIpsMsg": "Blocca anche gli indirizzi pubblici da cui ha effettuato l'accesso, così un nuovo account da lì viene rifiutato. Chiunque altro su quelle reti, come una famiglia, resta fuori. Revocare il ban lo rimuove.",
+  "banIpsConfirm": "Banna anche gli indirizzi",
+  "banIpsCancel": "Solo l'account"
 }

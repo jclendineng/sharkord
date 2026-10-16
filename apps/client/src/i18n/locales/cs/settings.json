@@ -627,5 +627,9 @@
   "afkTimeoutMinutes_one": "{{count}} minuta",
   "afkTimeoutMinutes_other": "{{count}} minut",
   "afkTimeoutMinutes_few": "{{count}} minuty",
-  "afkTimeoutMinutes_many": "{{count}} minut"
+  "afkTimeoutMinutes_many": "{{count}} minut",
+  "banIpsTitle": "Zabanovat i jeho IP adresy?",
+  "banIpsMsg": "Zablokuje i veřejné adresy, ze kterých se přihlašoval, takže nový účet odtud bude odmítnut. Kdokoli další v těch sítích, třeba domácnost, se také nedostane dovnitř. Odbanování to zruší.",
+  "banIpsConfirm": "Zabanovat i adresy",
+  "banIpsCancel": "Jen účet"
 }

@@ -1,6 +1,7 @@
 import {
   DELETED_USER_IDENTITY_AND_NAME,
   DisconnectCode,
+  IP_BANNED_MESSAGE,
   OWNER_ROLE_ID,
   Permission,
   ServerEvents,
@@ -23,6 +24,7 @@ import {
   channels,
   emojis,
   files,
+  ipBans,
   logins,
   messageReactions,
   messages,
@@ -1059,6 +1061,74 @@ describe('users router', () => {
 
     // the token stays cryptographically valid, the ban has to be what stops it
     await expect(getCaller(2)).rejects.toThrow('Invalid authentication token');
+  });
+
+  describe('ip bans', () => {
+    const PUBLIC_IP = '203.0.113.10';
+    const PRIVATE_IP = '192.168.1.20';
+
+    const addLogins = (userId: number, ips: string[]) =>
+      tdb
+        .insert(logins)
+        .values(ips.map((ip) => ({ userId, ip, createdAt: Date.now() })));
+
+    test('should ban the public addresses the user signed in from when asked', async () => {
+      const { caller } = await initTest();
+
+      await addLogins(2, [PUBLIC_IP, PRIVATE_IP]);
+      await caller.users.ban({ userId: 2, banIps: true });
+
+      const bans = await tdb.select().from(ipBans);
+
+      expect(bans.map(({ ip, userId }) => ({ ip, userId }))).toEqual([
+        { ip: PUBLIC_IP, userId: 2 }
+      ]);
+    });
+
+    test('should leave addresses alone without banIps', async () => {
+      const { caller } = await initTest();
+
+      await addLogins(2, [PUBLIC_IP]);
+      await caller.users.ban({ userId: 2 });
+
+      expect(await tdb.select().from(ipBans)).toEqual([]);
+    });
+
+    test('should never ban the address of the moderator doing it', async () => {
+      const { caller } = await initTest(1, { remoteAddress: PUBLIC_IP });
+      const { handshakeHash } = await caller.others.handshake();
+
+      await caller.others.joinServer({ handshakeHash });
+      await addLogins(2, [PUBLIC_IP]);
+      await caller.users.ban({ userId: 2, banIps: true });
+
+      expect(await tdb.select().from(ipBans)).toEqual([]);
+    });
+
+    test('should lift the address bans with the unban', async () => {
+      const { caller } = await initTest();
+
+      await addLogins(2, [PUBLIC_IP]);
+      await caller.users.ban({ userId: 2, banIps: true });
+      await caller.users.unban({ userId: 2 });
+
+      expect(await tdb.select().from(ipBans)).toEqual([]);
+    });
+
+    // the http login reads the address from the real socket, always loopback here, so the
+    // join, which every session goes through, is what is tested
+    test('should refuse joining from a banned address', async () => {
+      await tdb
+        .insert(ipBans)
+        .values({ ip: PUBLIC_IP, userId: null, createdAt: Date.now() });
+
+      const { caller } = await initTest(3, { remoteAddress: PUBLIC_IP });
+      const { handshakeHash } = await caller.others.handshake();
+
+      await expect(caller.others.joinServer({ handshakeHash })).rejects.toThrow(
+        IP_BANNED_MESSAGE
+      );
+    });
   });
 
   test('should ban user without reason', async () => {

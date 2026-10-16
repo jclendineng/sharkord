@@ -335,6 +335,13 @@ a deleted or no longer voice channel turns AFK off. Muting counts as silence, as
   uploads, otherwise they move to the Deleted User placeholder, the same steps as an admin's
   delete in `helpers/delete-user-account.ts`. The account's connections close just after the
   reply ([#49](https://github.com/Sharkord/sharkord/issues/49)).
+- **IP bans** (`users.ban` with `banIps`): a choice on every ban. Every public address the
+  account signed in from (the `logins` table) and the one it is connected from go into
+  `ip_bans`. Private and loopback addresses are never banned, since behind a proxy that does
+  not pass the real address on that address is everyone's, and neither is the moderator's own.
+  A banned address is refused at `/login` (so no new account either), at the SSO callback and
+  at `others.joinServer`. Unbanning the account removes its addresses; deleting the account
+  keeps them banned ([#371](https://github.com/Sharkord/sharkord/issues/371)).
 - **Unique names**: renaming to a name another member already uses, ignoring case, is
   refused. Names two people already shared before the upgrade stay, and a name from an SSO
   provider that is taken becomes a generated one

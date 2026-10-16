@@ -3,12 +3,14 @@ import { eq } from 'drizzle-orm';
 import { db } from '../db';
 import { invalidateUserSessions } from '../db/mutations/users';
 import { publishUser } from '../db/publishers';
-import { users } from '../db/schema';
+import { getLoginIpsForUser } from '../db/queries/ip-bans';
+import { ipBans, users } from '../db/schema';
 import { eventBus } from '../plugins/event-bus';
 import { enqueueActivityLog } from '../queues/activity-log';
 import { invariant } from '../utils/invariant';
 import type { Context } from '../utils/trpc';
-import { disconnectUser, getUserWsCount } from '../utils/wss';
+import { disconnectUser, getUserIp, getUserWsCount } from '../utils/wss';
+import { isPrivateIP } from './network';
 
 type TUserSessions = {
   count: () => number;
@@ -40,25 +42,52 @@ const assertUserExists = async (userId: number) => {
   });
 };
 
+// the addresses an ip ban takes: every one the account signed in from and the one it is on now.
+// a private or loopback address is never banned, behind a proxy that does not pass the real
+// address on it is everyone's, and neither is the moderator's own
+const getIpsToBan = async (userId: number, actorUserId: number | null) => {
+  const loginIps = await getLoginIpsForUser(userId);
+  const currentIp = getUserIp(userId);
+  const actorIp = actorUserId === null ? undefined : getUserIp(actorUserId);
+  const ips = new Set(currentIp ? [...loginIps, currentIp] : loginIps);
+
+  return [...ips].filter((ip) => !isPrivateIP(ip) && ip !== actorIp);
+};
+
 const banUser = async (
   userId: number,
   reason: string | undefined,
   actorUserId: number | null,
-  sessions: TUserSessions
+  sessions: TUserSessions,
+  { banIps = false }: { banIps?: boolean } = {}
 ) => {
   await assertUserExists(userId);
+
+  // read before the sessions close, which forgets the address they are on
+  const ipsToBan = banIps ? await getIpsToBan(userId, actorUserId) : [];
 
   // closed before the row changes, so a banned session cannot act in the gap
   sessions.close(DisconnectCode.BANNED, reason);
 
-  await db
-    .update(users)
-    .set({
-      banned: true,
-      banReason: reason ?? null,
-      bannedAt: Date.now()
-    })
-    .where(eq(users.id, userId));
+  const now = Date.now();
+
+  db.transaction((tx) => {
+    tx.update(users)
+      .set({
+        banned: true,
+        banReason: reason ?? null,
+        bannedAt: now
+      })
+      .where(eq(users.id, userId))
+      .run();
+
+    if (ipsToBan.length > 0) {
+      tx.insert(ipBans)
+        .values(ipsToBan.map((ip) => ({ ip, userId, createdAt: now })))
+        .onConflictDoNothing()
+        .run();
+    }
+  });
 
   publishUser(userId, 'update');
 
@@ -78,10 +107,14 @@ const banUser = async (
 const unbanUser = async (userId: number, actorUserId: number | null) => {
   await assertUserExists(userId);
 
-  await db
-    .update(users)
-    .set({ banned: false, banReason: null, bannedAt: null })
-    .where(eq(users.id, userId));
+  db.transaction((tx) => {
+    tx.update(users)
+      .set({ banned: false, banReason: null, bannedAt: null })
+      .where(eq(users.id, userId))
+      .run();
+
+    tx.delete(ipBans).where(eq(ipBans.userId, userId)).run();
+  });
 
   publishUser(userId, 'update');
 

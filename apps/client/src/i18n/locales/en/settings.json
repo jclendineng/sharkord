@@ -627,5 +627,9 @@
   "afkChannelNone": "No AFK channel",
   "afkTimeoutLabel": "AFK Timeout",
   "afkTimeoutMinutes_one": "{{count}} minute",
-  "afkTimeoutMinutes_other": "{{count}} minutes"
+  "afkTimeoutMinutes_other": "{{count}} minutes",
+  "banIpsTitle": "Ban Their IP Addresses Too?",
+  "banIpsMsg": "Also blocks the public addresses they signed in from, so a new account from there is refused. Anyone else on those networks, like a household, is locked out too. Unbanning lifts it.",
+  "banIpsConfirm": "Ban Addresses Too",
+  "banIpsCancel": "Only the Account"
 }

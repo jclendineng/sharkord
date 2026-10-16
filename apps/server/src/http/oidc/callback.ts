@@ -1,6 +1,7 @@
 import { getErrorMessage, OidcError } from '@sharkord/shared';
 import type http from 'http';
 import * as client from 'openid-client';
+import { isIpBanned } from '../../db/queries/ip-bans';
 import type { getWsInfo } from '../../helpers/get-ws-info';
 import { OidcCallbackError } from '../../helpers/oidc/error';
 import { oidcManager } from '../../helpers/oidc/manager';
@@ -108,6 +109,14 @@ const completeOidcCallback = async (
   });
 
   const { claims, userInfoFailed } = await collectClaims(oidcConfig, tokens);
+
+  if (await isIpBanned(info?.ip)) {
+    throw new OidcCallbackError(
+      OidcError.ACCESS_DENIED,
+      `A banned network attempted to sign in through OIDC (IP: ${info?.ip})`
+    );
+  }
+
   const { user } = await resolveOidcUser(claims, {
     userInfoFailed,
     ip: info?.ip,

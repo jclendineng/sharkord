@@ -625,5 +625,9 @@
   "afkChannelNone": "Pas de salon AFK",
   "afkTimeoutLabel": "Délai AFK",
   "afkTimeoutMinutes_one": "{{count}} minute",
-  "afkTimeoutMinutes_other": "{{count}} minutes"
+  "afkTimeoutMinutes_other": "{{count}} minutes",
+  "banIpsTitle": "Bannir aussi ses adresses IP ?",
+  "banIpsMsg": "Bloque aussi les adresses publiques depuis lesquelles il s'est connecté, un nouveau compte depuis là est refusé. Toute autre personne sur ces réseaux, comme un foyer, est aussi bloquée. Le débannissement le lève.",
+  "banIpsConfirm": "Bannir aussi les adresses",
+  "banIpsCancel": "Seulement le compte"
 }

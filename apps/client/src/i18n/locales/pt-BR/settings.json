@@ -627,5 +627,9 @@
   "afkChannelNone": "Sem canal AFK",
   "afkTimeoutLabel": "Tempo para AFK",
   "afkTimeoutMinutes_one": "{{count}} minuto",
-  "afkTimeoutMinutes_other": "{{count}} minutos"
+  "afkTimeoutMinutes_other": "{{count}} minutos",
+  "banIpsTitle": "Banir os endereços IP também?",
+  "banIpsMsg": "Também bloqueia os endereços públicos de onde entrou, então uma nova conta de lá é recusada. Qualquer outra pessoa nessas redes, como uma família, também fica de fora. Desbanir remove isso.",
+  "banIpsConfirm": "Banir endereços também",
+  "banIpsCancel": "Só a conta"
 }

@@ -1,6 +1,7 @@
 import {
   ActivityLogType,
   DELETED_USER_IDENTITY_AND_NAME,
+  IP_BANNED_MESSAGE,
   sha256,
   type TBeforeLoginPayload
 } from '@sharkord/shared';
@@ -14,6 +15,7 @@ import { db } from '../db';
 import { createUser } from '../db/mutations/users';
 import { publishUser } from '../db/publishers';
 import { isInviteValid } from '../db/queries/invites';
+import { isIpBanned } from '../db/queries/ip-bans';
 import { getSettings } from '../db/queries/server';
 import { getUserByIdentity } from '../db/queries/users';
 import { users } from '../db/schema';
@@ -106,6 +108,11 @@ const loginRouteHandler = async (
   );
 
   if (!allowed) return;
+
+  // before an account is found or made, so a banned network cannot sign up a new one either
+  if (await isIpBanned(connectionInfo?.ip)) {
+    throw new HttpValidationError('identity', IP_BANNED_MESSAGE);
+  }
 
   if (!existingUser) {
     let inviteRoleId: number | null = null;
