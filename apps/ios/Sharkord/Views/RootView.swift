@@ -5,25 +5,28 @@ struct RootView: View {
 
     var body: some View {
         Group {
-            if isVoicePlayground {
+            #if DEBUG
+            if DebugLaunch.opensVoicePlayground {
                 VoicePlayground()
-            } else if let session = servers.signingInSession {
-                ConnectView(canCancel: !servers.sessions.isEmpty)
-                    .environment(session)
-            } else if let session = servers.selectedSession {
-                HomeView(session: session)
+            } else {
+                app
             }
+            #else
+            app
+            #endif
         }
         .tint(Theme.blurple)
         .preferredColorScheme(.dark)
     }
 
-    private var isVoicePlayground: Bool {
-        #if DEBUG
-        DebugLaunch.opensVoicePlayground
-        #else
-        false
-        #endif
+    @ViewBuilder
+    private var app: some View {
+        if let session = servers.signingInSession {
+            ConnectView(canCancel: !servers.sessions.isEmpty)
+                .environment(session)
+        } else if let session = servers.selectedSession {
+            HomeView(session: session)
+        }
     }
 }
 
