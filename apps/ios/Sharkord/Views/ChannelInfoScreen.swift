@@ -45,6 +45,7 @@ struct ChannelInfoScreen: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(Theme.deepBackground, for: .navigationBar)
         .toolbarBackgroundVisibility(.visible, for: .navigationBar)
+        .escapeGoesBack()
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 SearchLink(route: SearchRoute(channelId: channelId)) {

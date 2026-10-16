@@ -20,9 +20,16 @@ struct ServerRailMenu: View {
     var body: some View {
         GeometryReader { proxy in
             ZStack(alignment: .topLeading) {
-                Color.black.opacity(0.55)
+                // the phone's long press dims what is behind, a mac's menus never do
+                Color.black.opacity(ProcessInfo.processInfo.isiOSAppOnMac ? 0 : 0.55)
                     .ignoresSafeArea()
+                    .contentShape(.rect)
                     .onTapGesture(perform: close)
+
+                // escape closes it, as it does the other menus
+                Button("Close Menu", action: close)
+                    .keyboardShortcut(.cancelAction)
+                    .hidden()
 
                 card
                     .scaleEffect(isShown ? 1 : 0.85, anchor: .topLeading)

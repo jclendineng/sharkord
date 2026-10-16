@@ -181,6 +181,8 @@ private struct ConversationRow: View {
     // at once brought the menu back for a moment
     @State private var wantsMute = false
     @State private var isMutePresented = false
+    @State private var wantsProfile = false
+    @State private var isProfilePresented = false
 
     var body: some View {
         // plain gestures, as the channel rows: a recognised long press cancels the tap, where a
@@ -202,8 +204,8 @@ private struct ConversationRow: View {
             .onSecondaryClick(perform: showActionsAtPointer)
             .accessibilityAddTraits(.isButton)
             .accessibilityAction(named: "More Options", showActions)
-            .actionsPresentation(isPresented: $isActionsPresented, anchor: menuAnchor, onDismiss: showMuteIfWanted) {
-                DirectMessageActionsSheet(conversation: conversation, user: user, onMute: requestMute)
+            .actionsPresentation(isPresented: $isActionsPresented, anchor: menuAnchor, onDismiss: showWantedSheet) {
+                DirectMessageActionsSheet(conversation: conversation, user: user, onMute: requestMute, onProfile: requestProfile)
                     .environment(session)
                     .environment(servers)
             }
@@ -217,6 +219,14 @@ private struct ConversationRow: View {
                     .environment(servers)
                     .appSheet()
             }
+            .sheet(isPresented: $isProfilePresented) {
+                if let user {
+                    MemberProfileSheet(user: user, onMessage: openFromProfile)
+                        .environment(session)
+                        .environment(servers)
+                        .appSheet(addsClose: true)
+                }
+            }
     }
 
     private func setPressed(_ pressed: Bool) {
@@ -228,11 +238,26 @@ private struct ConversationRow: View {
         isActionsPresented = false
     }
 
-    private func showMuteIfWanted() {
+    private func requestProfile() {
+        wantsProfile = true
+        isActionsPresented = false
+    }
+
+    private func showWantedSheet() {
         if wantsMute {
             wantsMute = false
             isMutePresented = true
         }
+
+        if wantsProfile {
+            wantsProfile = false
+            isProfilePresented = true
+        }
+    }
+
+    private func openFromProfile() {
+        isProfilePresented = false
+        onOpen()
     }
 
     private func showActions() {
@@ -360,6 +385,8 @@ private struct DirectMessageActionsSheet: View {
     let user: PublicUser?
     // the row opens the mute lengths once this sheet has gone
     let onMute: () -> Void
+    // the mac's menu hands the profile to its row, a sheet shown from the menu left it open behind
+    var onProfile: (() -> Void)?
 
     @Environment(SessionStore.self) private var session
     @Environment(ServerListStore.self) private var servers
@@ -450,7 +477,11 @@ private struct DirectMessageActionsSheet: View {
     }
 
     private func showProfile() {
-        isProfilePresented = true
+        if isPointerMenu, let onProfile {
+            onProfile()
+        } else {
+            isProfilePresented = true
+        }
     }
 
     private func openConversation() {

@@ -70,6 +70,12 @@ struct ComposerView: View {
                 openPanel
                     .frame(height: AttachPanelModel.restingHeight, alignment: .bottom)
                     .transition(.move(edge: .bottom))
+                    // escape puts it away on a mac, as it does a menu
+                    .background {
+                        Button("Close Panel", action: closePanel)
+                            .keyboardShortcut(.cancelAction)
+                            .hidden()
+                    }
             }
         }
         .modifier(PanelSlide(model: store.attachPanel))
@@ -197,6 +203,10 @@ struct ComposerView: View {
                 onGif: sendGif,
                 onSticker: sendSticker
             )
+            // discord's picker width under the emoji button on a mac: across a whole window the
+            // phone's grids spread out, eight emoji over a thousand points
+            .frame(maxWidth: ProcessInfo.processInfo.isiOSAppOnMac ? 460 : .infinity)
+            .frame(maxWidth: .infinity, alignment: .trailing)
         }
     }
 
@@ -359,6 +369,10 @@ struct ComposerView: View {
         } else {
             store.attachPanel.open(.expressions)
         }
+    }
+
+    private func closePanel() {
+        store.attachPanel.close()
     }
 
     private func unfocusField() {

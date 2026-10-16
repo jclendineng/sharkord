@@ -33,6 +33,7 @@ struct ThreadScreen: View {
         .toolbarBackground(Theme.chatBackground, for: .navigationBar)
         .toolbarBackgroundVisibility(.visible, for: .navigationBar)
         .toolbarVisibility(.hidden, for: .tabBar)
+        .escapeGoesBack()
         .task {
             store.isVisible = true
             await store.loadIfNeeded()

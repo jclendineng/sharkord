@@ -15,10 +15,34 @@ extension View {
         modifier(SheetDetents(detents: detents))
     }
 
+    // a page pushed over the chat goes back on escape on a mac, the way its sheets close
+    func escapeGoesBack() -> some View {
+        modifier(EscapeGoesBack())
+    }
+
     // a narrow mac window counts as compact and turns a popover into a sheet rising from the
     // bottom. discord's hang off their button at any width, a phone still gets the sheet
     func macPopover() -> some View {
         presentationCompactAdaptation(ProcessInfo.processInfo.isiOSAppOnMac ? .popover : .automatic)
+    }
+}
+
+private struct EscapeGoesBack: ViewModifier {
+    @Environment(\.dismiss) private var dismiss
+
+    func body(content: Content) -> some View {
+        content
+            .background {
+                if ProcessInfo.processInfo.isiOSAppOnMac {
+                    Button("Back", action: goBack)
+                        .keyboardShortcut(.cancelAction)
+                        .hidden()
+                }
+            }
+    }
+
+    private func goBack() {
+        dismiss()
     }
 }
 
