@@ -10,6 +10,15 @@ struct AccountSettingsScreen: View {
     @State private var confirmPassword = ""
     @State private var errorMessage: String?
     @State private var isSaving = false
+    @State private var deletePassword = ""
+    @State private var wipesMessages = false
+    @State private var isConfirmingDelete = false
+    @State private var deleteError: String?
+    @State private var isDeleting = false
+
+    private var canDelete: Bool {
+        !isDeleting && (!session.ownUserHasPassword || !deletePassword.isEmpty)
+    }
 
     private var canChangePassword: Bool {
         currentPassword.count >= 4 && newPassword.count >= 4 && newPassword == confirmPassword && !isSaving
@@ -66,6 +75,40 @@ struct AccountSettingsScreen: View {
             } footer: {
                 Text("Changing your password logs you out on every device, this one included.")
             }
+
+            Section {
+                if session.ownUserHasPassword {
+                    SecureField("Password", text: $deletePassword)
+                        .textContentType(.password)
+                }
+
+                Toggle("Delete my messages too", isOn: $wipesMessages)
+
+                if let deleteError {
+                    Text(deleteError)
+                        .foregroundStyle(Theme.red)
+                }
+
+                Button(role: .destructive, action: askToDelete) {
+                    if isDeleting {
+                        ProgressView()
+                    } else {
+                        Text("Delete Account")
+                    }
+                }
+                .disabled(!canDelete)
+            } header: {
+                Text("Delete Account")
+            } footer: {
+                Text(wipesMessages
+                    ? "Your account, messages, reactions and uploads are removed from this server. This can't be undone."
+                    : "Your account is removed from this server and your messages stay as Deleted User. This can't be undone.")
+            }
+        }
+        .confirmationDialog("Delete your account on this server?", isPresented: $isConfirmingDelete, titleVisibility: .visible) {
+            Button("Delete Account", role: .destructive, action: deleteAccount)
+        } message: {
+            Text("This can't be undone.")
         }
         .settingsListStyle()
         .navigationTitle("Account")
@@ -82,6 +125,25 @@ struct AccountSettingsScreen: View {
 
     private func editProfile() {
         isEditPresented = true
+    }
+
+    private func askToDelete() {
+        isConfirmingDelete = true
+    }
+
+    private func deleteAccount() {
+        isDeleting = true
+        deleteError = nil
+
+        Task {
+            do {
+                try await session.deleteOwnAccount(password: session.ownUserHasPassword ? deletePassword : nil, wipe: wipesMessages)
+            } catch {
+                deleteError = error.localizedDescription
+            }
+
+            isDeleting = false
+        }
     }
 
     private func changePassword() {

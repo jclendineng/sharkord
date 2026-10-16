@@ -136,6 +136,10 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - On the web, a new microphone or camera, or changed mic processing, applies to the call as
   soon as Devices settings are saved, without leaving and joining again
   ([#530](https://github.com/Sharkord/sharkord/issues/530)).
+- Delete your own account, in user settings on the web and Account settings in the app. An
+  account with a password confirms with it, and you choose whether your messages stay as
+  Deleted User or go too. The server owner can't delete theirs
+  ([#49](https://github.com/Sharkord/sharkord/issues/49)).
 - Mute Stream Audio in Devices settings: screen shares with sound start muted
   ([#749](https://github.com/Sharkord/sharkord/issues/749)).
 

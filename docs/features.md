@@ -320,6 +320,11 @@ published in `/info` so a report can be sent without an account. Setting `report
   during a call restarts the mic, or the camera when it is on, through the join path, so the
   new device and processing chain take over with a short gap for the others. Screen share
   settings still apply from the next share ([#530](https://github.com/Sharkord/sharkord/issues/530)).
+- **Delete your own account** (`users.deleteOwn`): confirmed with the password when the
+  account has one, refused for the server owner. `wipe` removes messages, reactions and
+  uploads, otherwise they move to the Deleted User placeholder, the same steps as an admin's
+  delete in `helpers/delete-user-account.ts`. The account's connections close just after the
+  reply ([#49](https://github.com/Sharkord/sharkord/issues/49)).
 - **Unique names**: renaming to a name another member already uses, ignoring case, is
   refused. Names two people already shared before the upgrade stay, and a name from an SSO
   provider that is taken becomes a generated one

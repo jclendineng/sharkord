@@ -59,6 +59,7 @@ final class SessionStore {
     private(set) var ownPresence = Presence.online
     private(set) var ownCustomStatus: String?
     private(set) var ownUserId: Int?
+    private(set) var ownUserHasPassword = true
     private(set) var categories: [ChannelCategory] = []
     private(set) var channels: [Channel] = []
     private(set) var usersById: [Int: PublicUser] = [:]
@@ -1373,6 +1374,7 @@ final class SessionStore {
         pinnedChannelIds = address.map(CredentialStore.pinnedChannelIds(for:)) ?? []
         hidesMutedChannels = address.map(CredentialStore.hidesMutedChannels(for:)) ?? false
         ownUserId = result.ownUserId
+        ownUserHasPassword = result.ownUserPasswordSet ?? true
         categories = result.categories
         channels = result.channels
         usersById = Dictionary(uniqueKeysWithValues: result.users.map { ($0.id, $0) })
@@ -1485,6 +1487,22 @@ final class SessionStore {
             "users.updatePassword",
             input: PasswordInput(currentPassword: current, newPassword: new, confirmNewPassword: new)
         )
+    }
+
+    // the server closes this account's sockets as it deletes it, so this device signs out after
+    func deleteOwnAccount(password: String?, wipe: Bool) async throws {
+        guard let client else {
+            return
+        }
+
+        struct DeleteInput: Encodable {
+            let password: String?
+            let wipe: Bool
+        }
+
+        try await client.mutation("users.deleteOwn", input: DeleteInput(password: password, wipe: wipe))
+
+        signOut(message: "Your account has been deleted.")
     }
 
     var isPushEnabled: Bool {
