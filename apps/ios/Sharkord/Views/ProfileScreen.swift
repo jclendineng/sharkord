@@ -6,10 +6,11 @@ struct ProfileScreen: View {
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
 
-    @State private var isEditPresented = false
-    @State private var isSettingsPresented = false
-    @State private var isStatusPresented = false
-    @State private var isFriendsPresented = false
+    // the mac's profile is a popover over the user bar, which takes what it opens so the popover
+    // can close first: a sheet shown from the popover left it open behind
+    var onOpen: ((ProfileSheet) -> Void)?
+
+    @State private var sheet: ProfileSheet?
 
     private var user: PublicUser? {
         session.ownUser
@@ -152,49 +153,32 @@ struct ProfileScreen: View {
             BannerButton(title: "Settings", systemImage: "gearshape.fill", weight: .semibold, size: 17, action: showSettings)
                 .padding(10)
         }
-        // handed over by hand: on a mac a sheet's background is worked out before it inherits
-        // anything, so a sheet reading a store it was not given crashed on opening
-        .sheet(isPresented: $isSettingsPresented) {
-            SettingsSheet()
-                .environment(session)
-                .environment(servers)
-                .appSheet()
-        }
-        .sheet(isPresented: $isFriendsPresented) {
-            AddFriendsSheet()
-                .environment(session)
-                .environment(servers)
-                .appSheet()
-        }
-        .sheet(isPresented: $isStatusPresented) {
-            SetStatusSheet()
-                .environment(session)
-                .environment(servers)
-                .appSheet()
-        }
         .presentationDragIndicator(.visible)
-        .sheet(isPresented: $isEditPresented) {
-            EditProfileSheet()
-                .environment(session)
-                .environment(servers)
-                .appSheet()
+        .profileSheet($sheet)
+    }
+
+    private func open(_ sheet: ProfileSheet) {
+        if let onOpen {
+            onOpen(sheet)
+        } else {
+            self.sheet = sheet
         }
     }
 
     private func showFriends() {
-        isFriendsPresented = true
+        open(.friends)
     }
 
     private func setStatus() {
-        isStatusPresented = true
+        open(.status)
     }
 
     private func showSettings() {
-        isSettingsPresented = true
+        open(.settings)
     }
 
     private func edit() {
-        isEditPresented = true
+        open(.edit)
     }
 
     private func close() {
@@ -204,6 +188,53 @@ struct ProfileScreen: View {
     private func signOut() {
         dismiss()
         servers.remove(session)
+    }
+}
+
+enum ProfileSheet: Identifiable {
+    case edit
+    case settings
+    case status
+    case friends
+
+    var id: Self {
+        self
+    }
+}
+
+extension View {
+    func profileSheet(_ sheet: Binding<ProfileSheet?>) -> some View {
+        modifier(ProfileSheetPresentation(sheet: sheet))
+    }
+}
+
+private struct ProfileSheetPresentation: ViewModifier {
+    @Binding var sheet: ProfileSheet?
+
+    @Environment(ServerListStore.self) private var servers
+    @Environment(SessionStore.self) private var session
+
+    // handed over by hand: on a mac a sheet's background is worked out before it inherits
+    // anything, so a sheet reading a store it was not given crashed on opening
+    func body(content: Content) -> some View {
+        content
+            .sheet(item: $sheet) { sheet in
+                Group {
+                    switch sheet {
+                    case .edit:
+                        EditProfileSheet()
+                    case .settings:
+                        SettingsSheet()
+                    case .status:
+                        SetStatusSheet()
+                    case .friends:
+                        AddFriendsSheet()
+                    }
+                }
+                .environment(session)
+                .environment(servers)
+                .appSheet()
+            }
     }
 }
 

@@ -9,6 +9,8 @@ struct UserBar: View {
 
     @State private var isProfilePresented = false
     @State private var isUnreadsPresented = false
+    // what the mac's profile popover opened, shown here once the popover has closed
+    @State private var profileSheet: ProfileSheet?
 
     // the message when there is one, like discord, otherwise what was picked
     private var statusText: String {
@@ -94,10 +96,25 @@ struct UserBar: View {
         // handed over by hand: on a mac a sheet's background is worked out before it inherits
         // anything, so a sheet reading a store it was not given crashed on opening
         .modifier(ProfilePresentation(isPresented: $isProfilePresented) {
-            ProfileScreen()
+            ProfileScreen(onOpen: profileOpener)
                 .environment(session)
                 .environment(servers)
         })
+        .profileSheet($profileSheet)
+    }
+
+    // only the mac's popover hands them over, a phone or ipad's profile sheet shows its own
+    private var profileOpener: ((ProfileSheet) -> Void)? {
+        guard ProcessInfo.processInfo.isiOSAppOnMac else {
+            return nil
+        }
+
+        return openFromProfile
+    }
+
+    private func openFromProfile(_ sheet: ProfileSheet) {
+        isProfilePresented = false
+        profileSheet = sheet
     }
 
     private func showProfile() {
