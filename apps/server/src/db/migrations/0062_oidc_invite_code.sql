@@ -1,0 +1,1 @@
+ALTER TABLE `oidc_transactions` ADD `invite_code` text;

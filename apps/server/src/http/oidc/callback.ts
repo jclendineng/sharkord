@@ -110,7 +110,8 @@ const completeOidcCallback = async (
   const { claims, userInfoFailed } = await collectClaims(oidcConfig, tokens);
   const { user } = await resolveOidcUser(claims, {
     userInfoFailed,
-    ip: info?.ip
+    ip: info?.ip,
+    inviteCode: transaction.inviteCode ?? undefined
   });
 
   if (user.banned) {

@@ -319,7 +319,7 @@ struct ConnectView: View {
 
         ServerBadge(info: serverInfo, address: ServerAddress(userInput: serverURL))
 
-        if serverInfo?.allowNewUsers != true && serverInfo?.oidcDisableLocalLogin != true {
+        if serverInfo?.allowNewUsers != true {
             AuthField(label: "Invite Link") {
                 TextField("", text: $invite, prompt: Text("Paste the invite link you were sent").foregroundStyle(Theme.muted))
                     .keyboardType(.URL)
@@ -339,7 +339,7 @@ struct ConnectView: View {
             errorText
 
             AuthButton(title: "Create Account", isEnabled: canSubmit, isWorking: isConnecting, action: signIn)
-        } else if serverInfo?.allowNewUsers != true {
+        } else if serverInfo?.allowNewUsers != true && inviteCode == nil {
             Text("\(serverInfo?.name ?? "This server") only takes new members with an invite. Paste the link you were sent above, or log in if you already have an account.")
                 .font(.subheadline)
                 .foregroundStyle(Theme.text)
@@ -605,7 +605,7 @@ struct ConnectView: View {
 
     private func signInWithOIDC() {
         Task {
-            await session.signInWithOIDC(serverURL: serverURL) { url in
+            await session.signInWithOIDC(serverURL: serverURL, invite: inviteCode) { url in
                 try await webAuthenticationSession.authenticate(
                     using: url,
                     callback: .customScheme(OIDCLogin.callbackScheme),

@@ -12,15 +12,16 @@ import { eventBus } from '../plugins/event-bus';
 import { enqueueActivityLog } from '../queues/activity-log';
 import { invariant } from '../utils/invariant';
 
+const zInviteCode = z
+  .string()
+  .min(4)
+  .max(64)
+  .regex(INVITE_CODE_REGEX, 'Invalid invite code');
+
 const zCreateInvite = z.object({
   maxUses: z.number().int().min(0).max(100).optional().default(0),
   expiresAt: z.number().int().optional().nullable().default(null),
-  code: z
-    .string()
-    .min(4)
-    .max(64)
-    .regex(INVITE_CODE_REGEX, 'Invalid invite code')
-    .optional(),
+  code: zInviteCode.optional(),
   roleId: z.number().optional()
 });
 
@@ -92,5 +93,5 @@ const createInvite = async (
   return invite;
 };
 
-export { createInvite, zCreateInvite };
+export { createInvite, zCreateInvite, zInviteCode };
 export type { TCreateInvite };

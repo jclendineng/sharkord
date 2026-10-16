@@ -613,13 +613,13 @@ final class SessionStore {
 
     // authenticate shows the provider in a browser sheet and returns the url it redirected
     // back to, it lives in the view since that is where SwiftUI hands out the session
-    func signInWithOIDC(serverURL: String, authenticate: (URL) async throws -> URL) async {
+    func signInWithOIDC(serverURL: String, invite: String?, authenticate: (URL) async throws -> URL) async {
         guard let address = ServerAddress(userInput: serverURL) else {
             errorMessage = "Enter a valid server address."
             return
         }
 
-        let login = OIDCLogin(address: address)
+        let login = OIDCLogin(address: address, invite: invite)
 
         await signIn(address) {
             let callbackURL = try await authenticate(login.startURL)

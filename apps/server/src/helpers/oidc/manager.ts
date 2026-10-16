@@ -120,6 +120,7 @@ class OidcManager {
       codeVerifier: string;
       redirectUri: string;
       appChallenge: string | null;
+      inviteCode: string | null;
     }
   ) =>
     createOidcTransaction({

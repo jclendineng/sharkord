@@ -28,11 +28,13 @@ import {
   activityLog,
   channelReadStates,
   files,
+  invites,
   oidcTransactions,
   settings,
   userRoles,
   users
 } from '../../../db/schema';
+import { createInvite } from '../../../helpers/invites';
 import { oidcManager } from '../../../helpers/oidc/manager';
 import { appRouter } from '../../../routers';
 
@@ -66,12 +68,16 @@ const getHandoffCode = (target: URL) =>
 // walks the redirects a browser would follow: our login route, the provider's authorization
 // endpoint, then back into our callback carrying the state cookie
 const runOidcFlow = async (
-  options: { cookie?: string; appChallenge?: string } = {}
+  options: { cookie?: string; appChallenge?: string; invite?: string } = {}
 ) => {
   const loginUrl = new URL(`${testsBaseUrl}/oidc/login`);
 
   if (options.appChallenge) {
     loginUrl.searchParams.set('app_challenge', options.appChallenge);
+  }
+
+  if (options.invite) {
+    loginUrl.searchParams.set('invite', options.invite);
   }
 
   const loginResponse = await fetch(loginUrl, { redirect: 'manual' });
@@ -1078,6 +1084,98 @@ describe('registrations through the provider', () => {
 
     expect(error).toBe(OidcError.REGISTRATION_CLOSED);
     expect(created).toBeUndefined();
+  });
+
+  test('should register through a valid invite while new users are disabled', async () => {
+    await tdb.update(settings).set({ allowNewUsers: false });
+    await createInvite({ code: 'sso-invite', maxUses: 1, roleId: 3 }, 1, 1);
+
+    const { error } = await runOidcFlow({ invite: 'sso-invite' });
+
+    const created = await tdb
+      .select()
+      .from(users)
+      .where(eq(users.oidcSub, 'oidc-subject-1'))
+      .get();
+    const invite = await tdb
+      .select({ uses: invites.uses })
+      .from(invites)
+      .where(eq(invites.code, 'sso-invite'))
+      .get();
+    const roles = await tdb
+      .select({ roleId: userRoles.roleId })
+      .from(userRoles)
+      .where(eq(userRoles.userId, created!.id))
+      .all();
+    const usedLogs = await tdb
+      .select()
+      .from(activityLog)
+      .where(eq(activityLog.type, ActivityLogType.USED_INVITE))
+      .all();
+
+    expect(error).toBeNull();
+    expect(invite?.uses).toBe(1);
+    expect(roles.map(({ roleId }) => roleId)).toContain(3);
+    expect(usedLogs.map(({ userId }) => userId)).toContain(created!.id);
+  });
+
+  test('should refuse an invite that is used up while new users are disabled', async () => {
+    await tdb.update(settings).set({ allowNewUsers: false });
+    await createInvite({ code: 'sso-invite', maxUses: 1 }, 1, 1);
+
+    await runOidcFlow({ invite: 'sso-invite' });
+
+    provider.setClaims({
+      ...DEFAULT_CLAIMS,
+      sub: 'oidc-subject-2',
+      email: 'second@example.com'
+    });
+
+    const { error } = await runOidcFlow({ invite: 'sso-invite' });
+
+    const second = await tdb
+      .select()
+      .from(users)
+      .where(eq(users.oidcSub, 'oidc-subject-2'))
+      .get();
+
+    expect(error).toBe(OidcError.REGISTRATION_CLOSED);
+    expect(second).toBeUndefined();
+  });
+
+  test('should refuse an unknown or malformed invite while new users are disabled', async () => {
+    await tdb.update(settings).set({ allowNewUsers: false });
+
+    const unknown = await runOidcFlow({ invite: 'no-such-invite' });
+    const malformed = await runOidcFlow({ invite: 'not a code!' });
+
+    expect(unknown.error).toBe(OidcError.REGISTRATION_CLOSED);
+    expect(malformed.error).toBe(OidcError.REGISTRATION_CLOSED);
+  });
+
+  test('should still use an invite and its role while new users are allowed', async () => {
+    await createInvite({ code: 'sso-invite', roleId: 3 }, 1, 1);
+
+    await runOidcFlow({ invite: 'sso-invite' });
+
+    const created = await tdb
+      .select()
+      .from(users)
+      .where(eq(users.oidcSub, 'oidc-subject-1'))
+      .get();
+    const roles = await tdb
+      .select({ roleId: userRoles.roleId })
+      .from(userRoles)
+      .where(eq(userRoles.userId, created!.id))
+      .all();
+    const invite = await tdb
+      .select({ uses: invites.uses })
+      .from(invites)
+      .where(eq(invites.code, 'sso-invite'))
+      .get();
+
+    expect(roles.map(({ roleId }) => roleId)).toContain(3);
+    expect(invite?.uses).toBe(1);
   });
 
   // the gate is on registering, an account that already exists still signs in

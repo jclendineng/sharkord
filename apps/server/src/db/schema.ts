@@ -819,6 +819,7 @@ const oidcTransactions = sqliteTable(
     codeVerifier: text('code_verifier').notNull(),
     redirectUri: text('redirect_uri').notNull(),
     appChallenge: text('app_challenge'),
+    inviteCode: text('invite_code'),
     expiresAt: integer('expires_at').notNull()
   },
   (t) => [index('oidc_transactions_expires_idx').on(t.expiresAt)]

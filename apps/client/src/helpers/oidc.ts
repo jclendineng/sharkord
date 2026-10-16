@@ -14,10 +14,18 @@ const suppressOidcAutoRedirect = () =>
 const getOidcHandoffCode = () =>
   new URLSearchParams(window.location.hash.slice(1)).get('oidc');
 
+// an invite link's code goes along, so sso can make an account on a server closed to new users
 const startOidcLogin = () => {
   suppressOidcAutoRedirect();
 
-  window.location.href = `${getUrlFromServer()}/oidc/login`;
+  const loginUrl = new URL(`${getUrlFromServer()}/oidc/login`);
+  const invite = new URLSearchParams(window.location.search).get('invite');
+
+  if (invite) {
+    loginUrl.searchParams.set('invite', invite);
+  }
+
+  window.location.href = loginUrl.toString();
 };
 
 export {

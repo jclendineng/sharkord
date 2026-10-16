@@ -299,6 +299,12 @@ published in `/info` so a report can be sent without an account. Setting `report
 - **Mute Stream Audio** (web, Settings, Devices): screen shares with sound start muted for
   you, each one unmuted from its own volume control. Kept in the browser's device settings
   ([#749](https://github.com/Sharkord/sharkord/issues/749)).
+- **Invites with SSO**: `/oidc/login?invite=<code>` carries the code through the provider
+  (stored with the login in `oidc_transactions.invite_code`). A new account made through SSO
+  then gets in on a closed server, takes the invite's role and counts a use, as a password
+  sign up does. The web client passes the page's `?invite=` along, and the app sends the
+  invite link pasted or opened on the sign up screen
+  ([#840](https://github.com/Sharkord/sharkord/issues/840)).
 - **Unique names**: renaming to a name another member already uses, ignoring case, is
   refused. Names two people already shared before the upgrade stay, and a name from an SSO
   provider that is taken becomes a generated one

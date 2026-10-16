@@ -435,6 +435,13 @@
       "when": 1792164044821,
       "tag": "0061_grant_pin_dm_messages",
       "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "6",
+      "when": 1792164287639,
+      "tag": "0062_oidc_invite_code",
+      "breakpoints": true
     }
   ]
 }

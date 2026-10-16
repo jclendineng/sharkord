@@ -8,6 +8,7 @@ type TOidcTransaction = {
   codeVerifier: string;
   redirectUri: string;
   appChallenge: string | null;
+  inviteCode: string | null;
   expiresAt: number;
 };
 

@@ -18,6 +18,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   group direct messages, private notes, the new member lounge, QR sign in and the soundboard.
   Upstream's plugin storage migrations run as this fork's `0060_plugin_storage`, after the
   fork's own, so a database that already ran `0059` still gets them.
+- `0062_oidc_invite_code` adds a column to SSO sign ins in flight, for the invite they carry.
 - `0061_grant_pin_dm_messages` gives the new Pin Messages in Direct Messages permission to
   every role that has Pin Messages. An iOS app from before it shows the roles screen without
   that permission; this release's app keeps permissions it does not know when saving a role.
@@ -147,6 +148,9 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 ### Fixed
 
+- An invite now works for SSO sign ups on a server closed to new users, as it does for
+  password sign ups, on the web and in the app. Its role is given and its use counted
+  ([#840](https://github.com/Sharkord/sharkord/issues/840)).
 - Turning off Upload Files for a role no longer stops its members from setting an avatar or
   banner. Upload Files now only covers attaching files to messages
   ([#830](https://github.com/Sharkord/sharkord/issues/830)).

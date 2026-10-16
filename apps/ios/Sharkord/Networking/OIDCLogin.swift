@@ -8,21 +8,28 @@ struct OIDCLogin {
 
     let address: ServerAddress
     let verifier: String
+    // lets sso make an account on a server closed to new members, as an invite does for a password
+    let invite: String?
 
-    init(address: ServerAddress) {
+    init(address: ServerAddress, invite: String? = nil) {
         var bytes = [UInt8](repeating: 0, count: 32)
         _ = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
 
         self.address = address
         self.verifier = Self.base64URL(Data(bytes))
+        self.invite = invite
     }
 
     var startURL: URL {
         let challenge = Self.base64URL(Data(SHA256.hash(data: Data(verifier.utf8))))
 
-        return address.url(path: "oidc/login").appending(queryItems: [
-            URLQueryItem(name: "app_challenge", value: challenge)
-        ])
+        var queryItems = [URLQueryItem(name: "app_challenge", value: challenge)]
+
+        if let invite {
+            queryItems.append(URLQueryItem(name: "invite", value: invite))
+        }
+
+        return address.url(path: "oidc/login").appending(queryItems: queryItems)
     }
 
     func handoffCode(from callbackURL: URL) throws -> String {

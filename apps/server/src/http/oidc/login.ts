@@ -2,6 +2,7 @@ import { getErrorMessage, OidcError } from '@sharkord/shared';
 import type http from 'http';
 import * as client from 'openid-client';
 import type { getWsInfo } from '../../helpers/get-ws-info';
+import { zInviteCode } from '../../helpers/invites';
 import {
   oidcManager,
   TRANSACTION_TTL_SECONDS
@@ -35,6 +36,11 @@ const oidcLoginRouteHandler = async (
     return;
   }
 
+  // an invite lets a new account in through sso the way it does for a password sign up. one
+  // that is malformed is dropped, the sign in then goes on as if it had none
+  const parsedInvite = zInviteCode.safeParse(url.searchParams.get('invite'));
+  const inviteCode = parsedInvite.success ? parsedInvite.data : null;
+
   try {
     const oidcConfig = await oidcManager.getConfiguration();
 
@@ -48,7 +54,8 @@ const oidcLoginRouteHandler = async (
       nonce,
       codeVerifier,
       redirectUri,
-      appChallenge
+      appChallenge,
+      inviteCode
     });
 
     const authorizationUrl = client.buildAuthorizationUrl(oidcConfig, {
