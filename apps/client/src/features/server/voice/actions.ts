@@ -1,5 +1,9 @@
 import type { TPinnedCard } from '@/components/channel-view/voice/hooks/use-pin-card-controller';
-import { pushToTalkSelectedSelector } from '@/features/app/selectors';
+import { openVoiceChatSidebar } from '@/features/app/actions';
+import {
+  pushToTalkSelectedSelector,
+  voiceChatSidebarDataSelector
+} from '@/features/app/selectors';
 import { store } from '@/features/store';
 import { voiceLogger } from '@/helpers/browser-logger';
 import { playSound } from '@/helpers/sounds';
@@ -266,12 +270,24 @@ export const joinVoice = async (
     return undefined;
   }
 
+  const voiceChatSidebar = voiceChatSidebarDataSelector(state);
+  const isFollowingVoiceChat =
+    voiceChatSidebar.isOpen &&
+    voiceChatSidebar.channelId !== undefined &&
+    voiceChatSidebar.channelId === currentChannelId;
+
   if (currentChannelId) {
     // is already in a voice channel, leave it first
     await leaveVoice({ reason: 'switch_channel' });
   }
 
   setCurrentVoiceChannelId(channelId);
+
+  // an open chat of the call being left moves to the new call's chat. it is never opened on
+  // its own, joining a call leaves a closed chat closed
+  if (isFollowingVoiceChat) {
+    openVoiceChatSidebar(channelId);
+  }
 
   const { micMuted: storedMicMuted, soundMuted } = ownVoiceStateSelector(state);
   const pushToTalkSelected = pushToTalkSelectedSelector(state);
