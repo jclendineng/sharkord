@@ -21,6 +21,28 @@ struct MessageContentView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 case .code(let code):
                     CodeBlockView(code: code)
+                case .listItem(let marker, let depth, let inlines):
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text(marker)
+                            .foregroundStyle(Theme.muted)
+                            .frame(minWidth: 14, alignment: .trailing)
+
+                        paragraph(inlines, isJumbo: false)
+                            .foregroundStyle(Theme.text)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(.leading, CGFloat(depth) * 16)
+                case .quote(let inlines):
+                    HStack(alignment: .top, spacing: 10) {
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(Theme.muted.opacity(0.5))
+                            .frame(width: 4)
+
+                        paragraph(inlines, isJumbo: false)
+                            .foregroundStyle(Theme.text)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .fixedSize(horizontal: false, vertical: true)
                 }
             }
         }
@@ -103,6 +125,9 @@ struct MessageContentView: View {
         }
 
         attributed.inlinePresentationIntent = intent
+
+        if style.contains(.strikethrough) { attributed.strikethroughStyle = .single }
+        if style.contains(.underline) { attributed.underlineStyle = .single }
 
         return attributed
     }

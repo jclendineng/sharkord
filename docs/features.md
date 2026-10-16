@@ -360,6 +360,12 @@ deletes its webhooks. Code `apps/server/src/http/webhook.ts`, `helpers/webhooks.
   A banned address is refused at `/login` (so no new account either), at the SSO callback and
   at `others.joinServer`. Unbanning the account removes its addresses; deleting the account
   keeps them banned ([#371](https://github.com/Sharkord/sharkord/issues/371)).
+- **Basic Markdown**: the server keeps `s`, `u`, `ul`, `ol`, `li` and `blockquote`, which it
+  used to flatten, so what the web editor's Markdown shortcuts make stays formatted. The app
+  converts Discord style Markdown to the same HTML when sending (`HTMLText.messageHTML(fromMarkdown:)`),
+  back to Markdown when editing, and draws lists and quotes. A single `*` or `_` against a
+  word character stays as typed, so `snake_case` and `2*3*4` are not italics
+  ([#401](https://github.com/Sharkord/sharkord/issues/401)).
 - **Unique names**: renaming to a name another member already uses, ignoring case, is
   refused. Names two people already shared before the upgrade stay, and a name from an SSO
   provider that is taken becomes a generated one

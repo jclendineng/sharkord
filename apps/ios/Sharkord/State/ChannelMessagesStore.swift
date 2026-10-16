@@ -195,7 +195,7 @@ final class ChannelMessagesStore {
             "messages.send",
             input: SendInput(
                 channelId: channelId,
-                content: trimmed.isEmpty ? "" : customEmojiSpans(in: HTMLText.paragraphs(from: trimmed)),
+                content: trimmed.isEmpty ? "" : customEmojiSpans(in: HTMLText.messageHTML(fromMarkdown: trimmed)),
                 files: files.map(\.id),
                 parentMessageId: parentMessageId,
                 replyToMessageId: replyingTo?.id
@@ -272,7 +272,7 @@ final class ChannelMessagesStore {
 
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        try await client.mutation("messages.edit", input: EditInput(messageId: message.id, content: HTMLText.paragraphs(from: trimmed)))
+        try await client.mutation("messages.edit", input: EditInput(messageId: message.id, content: HTMLText.messageHTML(fromMarkdown: trimmed)))
         editing = nil
     }
 

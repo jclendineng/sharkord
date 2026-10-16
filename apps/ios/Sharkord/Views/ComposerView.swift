@@ -140,7 +140,7 @@ struct ComposerView: View {
         }
         .onChange(of: store.editing) { _, message in
             if let message {
-                text = HTMLText.plainText(from: message.content ?? "")
+                text = HTMLText.markdown(from: message.content ?? "")
             }
         }
         .onChange(of: store.pendingInsert) { _, insert in

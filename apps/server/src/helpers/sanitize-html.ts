@@ -41,8 +41,15 @@ const sanitizeMessageHtml = (html: string): string => {
       // inline formatting
       'strong',
       'em',
+      's',
+      'u',
       'code',
       'pre',
+      // lists and quotes, the editor's markdown shortcuts
+      'ul',
+      'ol',
+      'li',
+      'blockquote',
       // links
       'a',
       // emoji (span wrapper + img fallback)
@@ -78,10 +85,9 @@ const sanitizeMessageHtml = (html: string): string => {
     allowedSchemes: ['http', 'https', 'mailto'],
     // disallow any script or event handler attributes globally
     disallowedTagsMode: 'discard',
-    // headings and list items contain inline content only, so replace with <p>
-    // to preserve their text as a block rather than collapsing it to bare text
-    // block containers (div, blockquote, section etc) may wrap <p> children, so
-    // just discard the wrapper -- the inner <p> tags are already correct structure
+    // headings contain inline content only, so replace with <p> to preserve their text as a
+    // block rather than collapsing it to bare text. block containers (div, section etc) may wrap
+    // <p> children, so just discard the wrapper -- the inner <p> tags are already correct
     transformTags: {
       h1: 'p',
       h2: 'p',
@@ -89,7 +95,6 @@ const sanitizeMessageHtml = (html: string): string => {
       h4: 'p',
       h5: 'p',
       h6: 'p',
-      li: 'p',
       // an anchor opened in a new tab hands the destination window.opener
       a: (tagName, attribs) => ({
         tagName,

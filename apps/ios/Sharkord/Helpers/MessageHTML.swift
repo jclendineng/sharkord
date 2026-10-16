@@ -6,6 +6,8 @@ struct InlineStyle: OptionSet, Hashable {
     static let bold = InlineStyle(rawValue: 1 << 0)
     static let italic = InlineStyle(rawValue: 1 << 1)
     static let code = InlineStyle(rawValue: 1 << 2)
+    static let strikethrough = InlineStyle(rawValue: 1 << 3)
+    static let underline = InlineStyle(rawValue: 1 << 4)
 }
 
 enum MessageInline: Hashable {
@@ -21,10 +23,14 @@ enum MessageInline: Hashable {
 enum MessageBlock: Hashable {
     case paragraph([MessageInline])
     case code(String)
+    // marker is the bullet or number, empty for a list item's later paragraphs
+    case listItem(marker: String, depth: Int, [MessageInline])
+    case quote([MessageInline])
 }
 
-// parses the HTML that survives sanitizeMessageHtml on the server: p, br, strong, em, code,
-// pre, a, the mention/channel/emoji spans and emoji images. anything else keeps its text
+// parses the HTML that survives sanitizeMessageHtml on the server: p, br, strong, em, s, u,
+// code, pre, ul, ol, li, blockquote, a, the mention/channel/emoji spans and emoji images.
+// anything else keeps its text
 enum MessageHTML {
     private final class Box {
         let blocks: [MessageBlock]
@@ -86,6 +92,12 @@ private struct Parser {
     private var boldDepth = 0
     private var italicDepth = 0
     private var codeDepth = 0
+    private var strikeDepth = 0
+    private var underlineDepth = 0
+    // each open list, and the number its next item gets when it is ordered
+    private var lists: [(ordered: Bool, next: Int)] = []
+    private var pendingMarker: String?
+    private var quoteDepth = 0
     private var links: [URL?] = []
     private var preText: String?
     // mention spans carry a display name we replace with live data, so their text is skipped
@@ -99,6 +111,8 @@ private struct Parser {
         if boldDepth > 0 { style.insert(.bold) }
         if italicDepth > 0 { style.insert(.italic) }
         if codeDepth > 0 { style.insert(.code) }
+        if strikeDepth > 0 { style.insert(.strikethrough) }
+        if underlineDepth > 0 { style.insert(.underline) }
 
         return style
     }
@@ -160,6 +174,23 @@ private struct Parser {
         case "pre":
             flushParagraph()
             preText = ""
+        case "s", "del", "strike":
+            strikeDepth += 1
+        case "u":
+            underlineDepth += 1
+        case "ul", "ol":
+            flushParagraph()
+            lists.append((ordered: name == "ol", next: 1))
+        case "li":
+            flushParagraph()
+
+            if let list = lists.last {
+                pendingMarker = list.ordered ? "\(list.next)." : "•"
+                lists[lists.count - 1].next += 1
+            }
+        case "blockquote":
+            flushParagraph()
+            quoteDepth += 1
         case "a":
             links.append(attributes["href"].flatMap(URL.init(string:)))
         case "img":
@@ -240,6 +271,18 @@ private struct Parser {
             }
 
             preText = nil
+        case "s", "del", "strike":
+            strikeDepth = max(0, strikeDepth - 1)
+        case "u":
+            underlineDepth = max(0, underlineDepth - 1)
+        case "li":
+            flushParagraph()
+        case "ul", "ol":
+            flushParagraph()
+            _ = lists.popLast()
+        case "blockquote":
+            flushParagraph()
+            quoteDepth = max(0, quoteDepth - 1)
         case "a":
             _ = links.popLast()
         default:
@@ -267,7 +310,14 @@ private struct Parser {
 
     private mutating func flushParagraph(keepEmpty: Bool = false) {
         if !current.isEmpty || keepEmpty {
-            blocks.append(.paragraph(current))
+            if !lists.isEmpty {
+                blocks.append(.listItem(marker: pendingMarker ?? "", depth: lists.count - 1, current))
+                pendingMarker = nil
+            } else if quoteDepth > 0 {
+                blocks.append(.quote(current))
+            } else {
+                blocks.append(.paragraph(current))
+            }
         }
 
         current = []

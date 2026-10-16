@@ -153,6 +153,11 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - Incoming webhooks: a channel's settings on the web make a URL other services post plain
   text to, shown under the webhook's name on the web and in the app
   ([#293](https://github.com/Sharkord/sharkord/issues/293)).
+- Basic Markdown: strikethrough, underline, lists and quotes now survive sending instead of
+  becoming plain lines. The app turns Discord style Markdown (`**bold**`, `*italic*`,
+  `__underline__`, `~~strike~~`, `` `code` ``, code blocks, `- ` lists, `> ` quotes) into
+  formatting when sending, shows all of it, and keeps it when editing
+  ([#401](https://github.com/Sharkord/sharkord/issues/401)).
 - Mute Stream Audio in Devices settings: screen shares with sound start muted
   ([#749](https://github.com/Sharkord/sharkord/issues/749)).
 

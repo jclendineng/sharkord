@@ -23,6 +23,28 @@ describe('sanitize-html', () => {
     );
   });
 
+  test('should preserve strikethrough and underline', () => {
+    expect(sanitizeMessageHtml('<p><s>gone</s> <u>stressed</u></p>')).toBe(
+      '<p><s>gone</s> <u>stressed</u></p>'
+    );
+  });
+
+  test('should preserve lists and quotes the editor writes', () => {
+    const list = '<ul><li><p>one</p></li><li><p>two</p></li></ul>';
+    const ordered = '<ol><li><p>first</p></li></ol>';
+    const quote = '<blockquote><p>said</p></blockquote>';
+
+    expect(sanitizeMessageHtml(list)).toBe(list);
+    expect(sanitizeMessageHtml(ordered)).toBe(ordered);
+    expect(sanitizeMessageHtml(quote)).toBe(quote);
+  });
+
+  test('should strip attributes from list and quote tags', () => {
+    expect(
+      sanitizeMessageHtml('<ol start="5" style="color:red"><li>x</li></ol>')
+    ).toBe('<ol><li>x</li></ol>');
+  });
+
   test('should preserve <a> tags with allowed attributes', () => {
     const input =
       '<a href="https://example.com" target="_blank" rel="noopener noreferrer">link</a>';
