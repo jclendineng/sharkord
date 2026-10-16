@@ -560,5 +560,15 @@
   "soundLibraryTitle": "Knihovna zvuků",
   "soundLibraryDesc": "Volné zvuky dodávané se serverem od Kenneyho (kenney.nl). Vyberte, které má tento server mít.",
   "soundboardVolumeLabel": "Hlasitost zvukové desky",
-  "soundboardVolumeDesc": "Jak hlasitě se vám přehrávají zvuky ze zvukové desky."
+  "soundboardVolumeDesc": "Jak hlasitě se vám přehrávají zvuky ze zvukové desky.",
+  "freesoundApiKeyLabel": "API klíč Freesound",
+  "freesoundApiKeyDesc": "Zapne hledání zvuků pro zvukovou desku na Freesound. Klíč zdarma získáte na freesound.org/apiv2/apply. Hledání probíhá přes tento server, takže klíč zůstane soukromý.",
+  "freesoundApiKeyPlaceholder": "Vložte klíč pro zapnutí hledání zvuků",
+  "freesoundTitle": "Freesound",
+  "freesoundDesc": "Hledejte další zvuky na freesound.org. Zobrazí se jen zvuky volné k dalšímu použití a zvuk, který žádá uvedení autora, si ho ponechá.",
+  "freesoundSearchPlaceholder": "Hledat zvuk",
+  "freesoundCredit": "od {{username}} · {{license}} · {{seconds}} s",
+  "soundAddedBtn": "Přidáno",
+  "failedSearchSounds": "Zvuky se nepodařilo vyhledat",
+  "loadMoreSoundsBtn": "Načíst další"
 }

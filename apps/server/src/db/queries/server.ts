@@ -55,7 +55,8 @@ const getPublicSettings: () => Promise<TPublicServerSettings> = async () => {
     showWelcomeDialog: settings.showWelcomeDialog,
     // the rules message, which members react to for access, so apps can say so on it
     onboardingMessageId: settings.onboardingMessageId,
-    gifsEnabled: !!settings.klipyApiKey
+    gifsEnabled: !!settings.klipyApiKey,
+    soundSearchEnabled: !!settings.freesoundApiKey
   };
 
   return publicSettings;

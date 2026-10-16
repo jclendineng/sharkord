@@ -93,6 +93,8 @@ const settings = sqliteTable(
     reportEmail: text('report_email'),
     // the klipy api key the server searches gifs with, never sent to members
     klipyApiKey: text('klipy_api_key'),
+    // the freesound api key managers search sounds with, never sent to members
+    freesoundApiKey: text('freesound_api_key'),
     pushShowMessageContent: integer('push_show_message_content', {
       mode: 'boolean'
     })
@@ -465,7 +467,10 @@ const soundboardSounds = sqliteTable(
     emoji: text('emoji'),
     // a percentage, see SOUND_MAX_VOLUME
     volume: integer('volume').notNull().default(100),
+    // where it came from: a library key, or freesound:<id> for one added from a search
     libraryKey: text('library_key'),
+    // who made it and under what license, shown wherever the sound is managed
+    attribution: text('attribution'),
     fileId: integer('file_id')
       .notNull()
       .references(() => files.id, { onDelete: 'cascade' }),

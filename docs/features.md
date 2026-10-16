@@ -245,15 +245,26 @@ Members with Manage Soundboard add sounds in Server Settings, Soundboard, two wa
   [Kenney](https://kenney.nl), embedded in the binary. Picking one copies it into storage, and
   from then on it is a sound like any other. Each library sound can be added once.
 
+- **Freesound search:** with a [Freesound](https://freesound.org) API key, managers search
+  freesound.org from the same screen. Get a free key at
+  [freesound.org/apiv2/apply](https://freesound.org/apiv2/apply) (the client secret is the
+  key) and paste it into Server Settings, Overview, Freesound API Key, or into
+  `freesoundApiKey` under `[sounds]` in `config.ini`. Only CC0 and CC BY sounds of 10 seconds
+  or less are shown. Adding one looks it up again by id, downloads its MP3 preview from
+  freesound into storage, and keeps a credit (title, maker, license) on the sound. Searches go
+  through the server, so the key never reaches members and stays out of the activity log.
+
 Each sound has a name of 2 to 32 characters, an optional emoji and a volume from 0 to 100.
 The migration grants Use Soundboard to every role that can join voice, and Manage Soundboard
 to every role that manages emoji.
 
 Routes `soundboard.add`, `soundboard.addFromLibrary`, `soundboard.update`,
-`soundboard.delete`, `soundboard.getAll`, `soundboard.getLibrary`, the `onCreate`, `onUpdate`,
+`soundboard.delete`, `soundboard.getAll`, `soundboard.getLibrary`, `soundboard.searchFreesound`,
+`soundboard.addFromFreesound`, the `onCreate`, `onUpdate`,
 `onDelete` subscriptions, `voice.playSound` (rate limited by `rateLimiters.soundboardPlay`)
 and `voice.onSound`. HTTP `GET /soundboard-library/<key>.m4a` serves a library sound to
-preview without signing in. Table `soundboard_sounds`. Bounds and the library list in
+preview without signing in. Table `soundboard_sounds`, column `settings.freesound_api_key`,
+config `sounds.freesoundApiKey`, public flag `soundSearchEnabled`. Bounds and the library list in
 `packages/shared/src/statics/soundboard.ts`, audio in `apps/server/src/soundboard-library`.
 
 ## GIFs
@@ -291,7 +302,7 @@ channel does not allow posting. Plugin commands, actions and panels stay web onl
 
 ## Settings in config.ini
 
-Three settings live both in the settings screens and in `config.ini`, and either side changes
+Four settings live both in the settings screens and in `config.ini`, and either side changes
 the other:
 
 ```ini
@@ -303,6 +314,9 @@ previewPrivateNetwork=false
 
 [gifs]
 klipyApiKey=your-key
+
+[sounds]
+freesoundApiKey=your-key
 ```
 
 Saving the settings screens writes these into the file. Editing the file is picked up at

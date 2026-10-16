@@ -560,5 +560,15 @@
   "soundLibraryTitle": "Bibliothèque de sons",
   "soundLibraryDesc": "Des sons gratuits fournis avec le serveur, par Kenney (kenney.nl). Choisissez ceux que ce serveur doit avoir.",
   "soundboardVolumeLabel": "Volume de la table de sons",
-  "soundboardVolumeDesc": "Le volume auquel les sons de la table de sons sont joués pour vous."
+  "soundboardVolumeDesc": "Le volume auquel les sons de la table de sons sont joués pour vous.",
+  "freesoundApiKeyLabel": "Clé API Freesound",
+  "freesoundApiKeyDesc": "Active la recherche de sons Freesound pour la table de sons. Obtenez une clé gratuite sur freesound.org/apiv2/apply. Les recherches passent par ce serveur, la clé reste donc privée.",
+  "freesoundApiKeyPlaceholder": "Collez une clé pour activer la recherche de sons",
+  "freesoundTitle": "Freesound",
+  "freesoundDesc": "Cherchez d'autres sons sur freesound.org. Seuls les sons libres de réutilisation sont affichés, et un son qui demande un crédit le conserve.",
+  "freesoundSearchPlaceholder": "Rechercher un son",
+  "freesoundCredit": "par {{username}} · {{license}} · {{seconds}} s",
+  "soundAddedBtn": "Ajouté",
+  "failedSearchSounds": "Impossible de rechercher des sons",
+  "loadMoreSoundsBtn": "Charger plus"
 }

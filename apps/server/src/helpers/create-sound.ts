@@ -12,6 +12,7 @@ type TCreateSound = {
   emoji: string | null;
   volume: number;
   libraryKey: string | null;
+  attribution?: string | null;
 };
 
 // an upload and a sound picked from the library end the same way: the file saved, the row,
@@ -22,7 +23,8 @@ const createSound = async ({
   name,
   emoji,
   volume,
-  libraryKey
+  libraryKey,
+  attribution = null
 }: TCreateSound) => {
   const file = await fileManager.saveFile(
     tempFileId,
@@ -37,6 +39,7 @@ const createSound = async ({
       emoji,
       volume,
       libraryKey,
+      attribution,
       fileId: file.id,
       userId,
       createdAt: Date.now()

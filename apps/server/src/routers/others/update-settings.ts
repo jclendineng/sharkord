@@ -60,12 +60,14 @@ const zGeneralSettings = z.object({
     .max(254)
     .nullable()
     .optional(),
-  klipyApiKey: z.string().trim().min(1).max(200).nullable().optional()
+  klipyApiKey: z.string().trim().min(1).max(200).nullable().optional(),
+  freesoundApiKey: z.string().trim().min(1).max(200).nullable().optional()
 });
 
 const CONFIG_FILE_SETTING_KEYS = [
   'allowNewUsers',
   'klipyApiKey',
+  'freesoundApiKey',
   'linkPreviewsPrivateNetwork'
 ];
 
@@ -124,7 +126,7 @@ const updateSettingsRoute = protectedProcedure
 
     // secrets stay out of the log
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, klipyApiKey, ...loggedValues } = input;
+    const { password, klipyApiKey, freesoundApiKey, ...loggedValues } = input;
 
     enqueueActivityLog({
       type: ActivityLogType.EDIT_SERVER_SETTINGS,

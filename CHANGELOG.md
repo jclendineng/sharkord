@@ -24,8 +24,9 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   signed. Links handed out before the upgrade stop working once they expire.
 - `storage.forceSignedUrls` in `config.ini` is gone, since links are now always signed. The
   server removes the old key.
-- New `config.ini` options: `registration.inviteOnly` (sign ups by invite only) and the Klipy
-  key for GIFs, which can also be set with `SHARKORD_KLIPY_API_KEY`.
+- New `config.ini` options: `registration.inviteOnly` (sign ups by invite only), the Klipy
+  key for GIFs, which can also be set with `SHARKORD_KLIPY_API_KEY`, and the Freesound key
+  for sound search, `freesoundApiKey` under `[sounds]`.
 - The server image is published to `ghcr.io/jclendineng/sharkord`.
 
 ### Added
@@ -71,6 +72,9 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   or pick them from a library of free CC0 sounds by Kenney that comes with the server, and set
   each one's name, emoji and volume. Two new permissions, Use Soundboard and Manage
   Soundboard.
+- With a Freesound API key, soundboard managers search freesound.org for more sounds, in the
+  app and the web client. Only sounds free to reuse are shown, and a sound that asks for
+  credit keeps it.
 - Link previews for bare domains, previews from the server's own network when the admin
   allows it, and Discord style link cards.
 - A new member lounge: reacting to the rules message gives the role that opens the server.

@@ -771,8 +771,13 @@ final class SessionStore {
             return
         }
 
+        previewSound(at: address.url(path: "soundboard-library/\(key).m4a"))
+    }
+
+    // a sound not on the server yet, a library one or a freesound result
+    func previewSound(at url: URL) {
         Task {
-            await soundboardPlayer.play(address.url(path: "soundboard-library/\(key).m4a"), volume: Float(AppSettings.shared.soundboardVolume))
+            await soundboardPlayer.play(url, volume: Float(AppSettings.shared.soundboardVolume))
         }
     }
 

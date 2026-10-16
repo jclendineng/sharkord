@@ -170,6 +170,19 @@ struct GeneralSettingsScreen: View {
                 Text("Turns on GIFs. Get a free key at klipy.com/developers. Searches go through this server, so the key stays private.")
             }
 
+            Section {
+                SecureField("Paste a key to turn on sound search", text: Binding(
+                    get: { settings.wrappedValue.freesoundApiKey ?? "" },
+                    set: { settings.wrappedValue.freesoundApiKey = $0 }
+                ))
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+            } header: {
+                Text("Freesound API Key")
+            } footer: {
+                Text("Turns on searching Freesound for soundboard sounds. Get a free key at freesound.org/apiv2/apply, it's the client secret. Searches go through this server, so the key stays private.")
+            }
+
             if let showsContent = settings.wrappedValue.pushShowMessageContent {
                 Section {
                     Toggle("Show Message Text", isOn: Binding(
@@ -275,6 +288,7 @@ struct GeneralSettingsScreen: View {
             let linkPreviewsPrivateNetwork: Bool?
             let reportEmail: String?
             let klipyApiKey: String?
+            let freesoundApiKey: String?
 
             // a null password clears it, which a nil optional would leave out of the json
             func encode(to encoder: Encoder) throws {
@@ -295,12 +309,14 @@ struct GeneralSettingsScreen: View {
                 // null clears it, an older server drops the key it doesn't know
                 try container.encode(reportEmail, forKey: .reportEmail)
                 try container.encode(klipyApiKey, forKey: .klipyApiKey)
+                try container.encode(freesoundApiKey, forKey: .freesoundApiKey)
             }
 
             private enum CodingKeys: String, CodingKey {
                 case name, description, password, onlyAskForPasswordOnFirstJoin, allowNewUsers
                 case directMessagesEnabled, enablePlugins, enableSearch, showWelcomeDialog, webRtcSimulcastEnabled
                 case pushShowMessageContent, linkPreviewsPrivateNetwork, reportEmail, klipyApiKey
+                case freesoundApiKey
             }
         }
 
@@ -318,7 +334,8 @@ struct GeneralSettingsScreen: View {
             pushShowMessageContent: settings.pushShowMessageContent,
             linkPreviewsPrivateNetwork: settings.linkPreviewsPrivateNetwork,
             reportEmail: trimmedOrNil(settings.reportEmail),
-            klipyApiKey: trimmedOrNil(settings.klipyApiKey)
+            klipyApiKey: trimmedOrNil(settings.klipyApiKey),
+            freesoundApiKey: trimmedOrNil(settings.freesoundApiKey)
         )
 
         isSaving = true

@@ -562,5 +562,15 @@
   "soundLibraryTitle": "Sound Library",
   "soundLibraryDesc": "Free sounds that come with the server, from Kenney (kenney.nl). Pick the ones this server should have.",
   "soundboardVolumeLabel": "Soundboard Volume",
-  "soundboardVolumeDesc": "How loud sounds from the soundboard play for you."
+  "soundboardVolumeDesc": "How loud sounds from the soundboard play for you.",
+  "freesoundApiKeyLabel": "Freesound API Key",
+  "freesoundApiKeyDesc": "Turns on searching Freesound for soundboard sounds. Get a free key at freesound.org/apiv2/apply, it's the client secret. Searches go through this server, so the key stays private.",
+  "freesoundApiKeyPlaceholder": "Paste a key to turn on sound search",
+  "freesoundTitle": "Freesound",
+  "freesoundDesc": "Search freesound.org for more sounds. Only sounds free to reuse are shown, and a sound that asks for credit keeps it.",
+  "freesoundSearchPlaceholder": "Search for a sound",
+  "freesoundCredit": "by {{username}} · {{license}} · {{seconds}}s",
+  "soundAddedBtn": "Added",
+  "failedSearchSounds": "Couldn't search for sounds",
+  "loadMoreSoundsBtn": "Load More"
 }

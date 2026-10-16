@@ -24,6 +24,7 @@ type TServerGeneralValues = {
   linkPreviewsPrivateNetwork: boolean;
   reportEmail: string;
   klipyApiKey: string;
+  freesoundApiKey: string;
   // undefined means untouched, null means remove
   logo?: TPickedImage | null;
 };
@@ -42,7 +43,8 @@ const INITIAL_VALUES: TServerGeneralValues = {
   pushShowMessageContent: true,
   linkPreviewsPrivateNetwork: false,
   reportEmail: '',
-  klipyApiKey: ''
+  klipyApiKey: '',
+  freesoundApiKey: ''
 };
 
 const General = memo(() => {
@@ -66,7 +68,8 @@ const General = memo(() => {
       pushShowMessageContent: values.pushShowMessageContent,
       linkPreviewsPrivateNetwork: values.linkPreviewsPrivateNetwork,
       reportEmail: values.reportEmail.trim() || null,
-      klipyApiKey: values.klipyApiKey.trim() || null
+      klipyApiKey: values.klipyApiKey.trim() || null,
+      freesoundApiKey: values.freesoundApiKey.trim() || null
     });
 
     if (values.logo !== undefined) {
@@ -99,7 +102,8 @@ const General = memo(() => {
       pushShowMessageContent: settings.pushShowMessageContent ?? true,
       linkPreviewsPrivateNetwork: settings.linkPreviewsPrivateNetwork ?? false,
       reportEmail: settings.reportEmail ?? '',
-      klipyApiKey: settings.klipyApiKey ?? ''
+      klipyApiKey: settings.klipyApiKey ?? '',
+      freesoundApiKey: settings.freesoundApiKey ?? ''
     });
   }, [settings, reset]);
 
@@ -259,6 +263,18 @@ const General = memo(() => {
           type="password"
           autoComplete="off"
           placeholder={t('klipyApiKeyPlaceholder')}
+        />
+      </Group>
+
+      <Group
+        label={t('freesoundApiKeyLabel')}
+        description={t('freesoundApiKeyDesc')}
+      >
+        <Input
+          {...r('freesoundApiKey')}
+          type="password"
+          autoComplete="off"
+          placeholder={t('freesoundApiKeyPlaceholder')}
         />
       </Group>
 

@@ -6,6 +6,10 @@ export const SOUND_NAME_MAX_LENGTH = 32;
 export const SOUND_MAX_FILE_SIZE = 512 * 1024;
 // what an iphone and every browser can play as uploaded
 export const SOUND_EXTENSIONS = ['.mp3', '.wav', '.m4a'];
+// the longest a sound found on freesound can be, discord keeps them about this short
+export const FREESOUND_MAX_DURATION_SECONDS = 10;
+// the credit kept on a sound found on freesound, its title, maker and license
+export const SOUND_ATTRIBUTION_MAX_LENGTH = 200;
 // a percentage, so a loud clip can be turned down for everyone
 export const SOUND_MIN_VOLUME = 0;
 export const SOUND_MAX_VOLUME = 100;

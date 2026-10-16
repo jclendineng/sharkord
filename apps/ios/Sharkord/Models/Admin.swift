@@ -72,6 +72,7 @@ struct AdminServerSettings: Codable, Equatable {
     var linkPreviewsPrivateNetwork: Bool?
     var reportEmail: String?
     var klipyApiKey: String?
+    var freesoundApiKey: String?
 }
 
 // users.getAll

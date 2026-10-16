@@ -9,7 +9,24 @@ struct SoundboardSound: Codable, Hashable, Identifiable {
     let volume: Int
     // set on a sound picked from the server's library
     let libraryKey: String?
+    // who made it and under what license, for one found on freesound
+    let attribution: String?
     let file: SharkordFile
+}
+
+// soundboard.searchFreesound, packages/shared types.ts TFreesoundPage
+struct FreesoundPage: Decodable {
+    let sounds: [FreesoundSound]
+    let hasMore: Bool
+}
+
+struct FreesoundSound: Decodable, Hashable, Identifiable {
+    let id: Int
+    let name: String
+    let username: String
+    let license: String
+    let duration: Double
+    let previewUrl: String
 }
 
 // soundboard.getLibrary: the sounds the server ships with, to pick from

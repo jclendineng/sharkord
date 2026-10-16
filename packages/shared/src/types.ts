@@ -73,6 +73,7 @@ export type TPublicServerSettings = Pick<
   webRtcMaxBitrate: number;
   // a gif provider key is set, so the pickers offer gifs
   gifsEnabled: boolean;
+  soundSearchEnabled: boolean;
 };
 
 // one gif from the provider, sized for the picker and for the message it is sent in
@@ -87,6 +88,21 @@ export type TGif = {
 
 export type TGifPage = {
   gifs: TGif[];
+  hasMore: boolean;
+};
+
+// a sound from a freesound search, only ever one free to reuse: cc0, or cc by with credit
+export type TFreesoundSound = {
+  id: number;
+  name: string;
+  username: string;
+  license: 'CC0' | 'CC BY';
+  duration: number;
+  previewUrl: string;
+};
+
+export type TFreesoundPage = {
+  sounds: TFreesoundSound[];
   hasMore: boolean;
 };
 

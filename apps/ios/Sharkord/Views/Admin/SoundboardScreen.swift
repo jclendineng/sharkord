@@ -16,6 +16,16 @@ struct SoundboardScreen: View {
     @State private var addingKey: String?
     @State private var errorMessage: String?
     @State private var editing: SoundboardSound?
+    @State private var query = ""
+    @State private var results: [FreesoundSound] = []
+    @State private var hasMoreResults = false
+    @State private var isSearching = false
+    @State private var addingFreesoundId: Int?
+    @State private var resultsPage = 1
+
+    private var isSoundSearchEnabled: Bool {
+        session.settings?.soundSearchEnabled == true
+    }
 
     private var unpicked: [SoundboardLibrarySound] {
         let picked = Set(session.sounds.compactMap(\.libraryKey))
@@ -55,13 +65,39 @@ struct SoundboardScreen: View {
                     Button {
                         editing = sound
                     } label: {
-                        SoundRow(name: sound.name, emoji: sound.emoji)
+                        SoundRow(name: sound.name, emoji: sound.emoji, detail: sound.attribution)
                     }
                     .swipeActions {
                         Button("Delete", systemImage: "trash", role: .destructive) {
                             delete(sound)
                         }
                     }
+                }
+            }
+
+            if isSoundSearchEnabled, !query.trimmingCharacters(in: .whitespaces).isEmpty {
+                Section {
+                    ForEach(results) { sound in
+                        FreesoundRow(
+                            sound: sound,
+                            isAdded: session.sounds.contains { $0.libraryKey == "freesound:\(sound.id)" },
+                            isAdding: addingFreesoundId == sound.id,
+                            onAdd: { add(sound) }
+                        )
+                    }
+
+                    if isSearching {
+                        ProgressView()
+                    } else if hasMoreResults {
+                        Button("Load More", action: loadMoreResults)
+                    } else if results.isEmpty {
+                        Text("No sounds found.")
+                            .foregroundStyle(Theme.muted)
+                    }
+                } header: {
+                    Text("Freesound")
+                } footer: {
+                    Text("Only sounds free to reuse are shown. A sound that asks for credit keeps it.")
                 }
             }
 
@@ -99,6 +135,11 @@ struct SoundboardScreen: View {
         .navigationTitle("Soundboard")
         .navigationBarTitleDisplayMode(.inline)
         .task(loadLibrary)
+        .modifier(SoundSearchField(isEnabled: isSoundSearchEnabled, query: $query))
+        // waits for typing to pause before searching, and a new letter cancels the search before
+        .task(id: query) {
+            await search(page: 1)
+        }
         .fileImporter(
             isPresented: $isImporterPresented,
             allowedContentTypes: [.mp3, .wav, .mpeg4Audio],
@@ -125,6 +166,67 @@ struct SoundboardScreen: View {
     private func loadLibrary() async {
         // an older server has no library, the section stays hidden
         library = (try? await session.request("soundboard.getLibrary")) ?? []
+    }
+
+    private func search(page: Int) async {
+        let trimmed = query.trimmingCharacters(in: .whitespaces)
+
+        guard isSoundSearchEnabled, !trimmed.isEmpty else {
+            results = []
+            hasMoreResults = false
+
+            return
+        }
+
+        if page == 1 {
+            try? await Task.sleep(for: .milliseconds(400))
+
+            guard !Task.isCancelled else {
+                return
+            }
+        }
+
+        struct SearchInput: Encodable {
+            let query: String
+            let page: Int
+        }
+
+        isSearching = true
+
+        do {
+            let found: FreesoundPage = try await session.request("soundboard.searchFreesound", SearchInput(query: trimmed, page: page))
+
+            results = page == 1 ? found.sounds : results + found.sounds
+            hasMoreResults = found.hasMore
+            resultsPage = page
+        } catch {
+            if !Task.isCancelled {
+                errorMessage = error.localizedDescription
+            }
+        }
+
+        isSearching = false
+    }
+
+    private func loadMoreResults() {
+        Task {
+            await search(page: resultsPage + 1)
+        }
+    }
+
+    private func add(_ sound: FreesoundSound) {
+        addingFreesoundId = sound.id
+        errorMessage = nil
+
+        Task {
+            do {
+                let _: Int = try await session.perform("soundboard.addFromFreesound", ["freesoundId": sound.id])
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+
+            addingFreesoundId = nil
+        }
     }
 
     private func showImporter() {
@@ -218,6 +320,7 @@ struct SoundboardScreen: View {
 private struct SoundRow: View {
     let name: String
     let emoji: String?
+    var detail: String?
 
     var body: some View {
         HStack(spacing: 10) {
@@ -229,10 +332,72 @@ private struct SoundRow: View {
                     .frame(width: 20)
             }
 
-            Text(name)
-                .foregroundStyle(Theme.header)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(name)
+                    .foregroundStyle(Theme.header)
+
+                if let detail, !detail.isEmpty {
+                    Text(detail)
+                        .font(.caption)
+                        .foregroundStyle(Theme.muted)
+                        .lineLimit(2)
+                }
+            }
 
             Spacer()
+        }
+    }
+}
+
+private struct FreesoundRow: View {
+    let sound: FreesoundSound
+    let isAdded: Bool
+    let isAdding: Bool
+    let onAdd: () -> Void
+
+    @Environment(SessionStore.self) private var session
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Button("Preview", systemImage: "play.fill", action: preview)
+                .labelStyle(.iconOnly)
+                .buttonStyle(.borderless)
+
+            SoundRow(
+                name: sound.name,
+                emoji: nil,
+                detail: "by \(sound.username) · \(sound.license) · \(sound.duration.formatted(.number.precision(.fractionLength(1))))s"
+            )
+
+            if isAdding {
+                ProgressView()
+            } else if isAdded {
+                Text("Added")
+                    .foregroundStyle(Theme.muted)
+            } else {
+                Button("Add", action: onAdd)
+                    .buttonStyle(.borderless)
+            }
+        }
+    }
+
+    private func preview() {
+        if let url = URL(string: sound.previewUrl) {
+            session.previewSound(at: url)
+        }
+    }
+}
+
+// the search field only where the server has a freesound key
+private struct SoundSearchField: ViewModifier {
+    let isEnabled: Bool
+    @Binding var query: String
+
+    func body(content: Content) -> some View {
+        if isEnabled {
+            content.searchable(text: $query, prompt: "Search Freesound")
+        } else {
+            content
         }
     }
 }

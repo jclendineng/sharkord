@@ -414,6 +414,13 @@
       "when": 1792156649358,
       "tag": "0058_grant_soundboard",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "6",
+      "when": 1792158364345,
+      "tag": "0059_freesound",
+      "breakpoints": true
     }
   ]
 }

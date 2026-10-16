@@ -560,5 +560,15 @@
   "soundLibraryTitle": "声音库",
   "soundLibraryDesc": "服务器自带的免费声音，来自 Kenney (kenney.nl)。选择此服务器要使用的声音。",
   "soundboardVolumeLabel": "音效板音量",
-  "soundboardVolumeDesc": "音效板声音为你播放的音量。"
+  "soundboardVolumeDesc": "音效板声音为你播放的音量。",
+  "freesoundApiKeyLabel": "Freesound API 密钥",
+  "freesoundApiKeyDesc": "开启在 Freesound 上搜索音效板声音。在 freesound.org/apiv2/apply 免费获取密钥。搜索经由此服务器进行，因此密钥保持私密。",
+  "freesoundApiKeyPlaceholder": "粘贴密钥以开启声音搜索",
+  "freesoundTitle": "Freesound",
+  "freesoundDesc": "在 freesound.org 上搜索更多声音。只显示可自由再使用的声音，需要署名的声音会保留署名。",
+  "freesoundSearchPlaceholder": "搜索声音",
+  "freesoundCredit": "作者 {{username}} · {{license}} · {{seconds}} 秒",
+  "soundAddedBtn": "已添加",
+  "failedSearchSounds": "无法搜索声音",
+  "loadMoreSoundsBtn": "加载更多"
 }

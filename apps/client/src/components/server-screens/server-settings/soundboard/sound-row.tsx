@@ -115,6 +115,11 @@ const SoundRow = memo(({ sound }: TSoundRowProps) => {
             placeholder={t('soundNamePlaceholder')}
           />
         </div>
+        {sound.attribution && (
+          <span className="text-xs text-muted-foreground">
+            {sound.attribution}
+          </span>
+        )}
         <Slider
           min={SOUND_MIN_VOLUME}
           max={SOUND_MAX_VOLUME}

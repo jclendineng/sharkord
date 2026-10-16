@@ -14,6 +14,7 @@ import { CONFIG_INI_PATH, DATA_PATH } from './paths';
 type TMirroredValues = {
   allowNewUsers: boolean;
   klipyApiKey: string;
+  freesoundApiKey: string;
   previewPrivateNetwork: boolean;
 };
 
@@ -25,6 +26,7 @@ type TFileValues = Partial<TMirroredValues> & {
 const MIRRORED_KEYS = [
   'allowNewUsers',
   'klipyApiKey',
+  'freesoundApiKey',
   'previewPrivateNetwork'
 ] as const;
 
@@ -66,12 +68,16 @@ const readFileValues = async (): Promise<TFileValues> => {
   const registration = toSection(parsed.registration);
   const gifs = toSection(parsed.gifs);
   const links = toSection(parsed.links);
+  const sounds = toSection(parsed.sounds);
   const klipyApiKey = gifs.klipyApiKey;
+  const freesoundApiKey = sounds.freesoundApiKey;
 
   return {
     allowNewUsers: toBoolean(registration.allowNewUsers),
     klipyApiKey:
       typeof klipyApiKey === 'string' ? klipyApiKey.trim() : undefined,
+    freesoundApiKey:
+      typeof freesoundApiKey === 'string' ? freesoundApiKey.trim() : undefined,
     previewPrivateNetwork: toBoolean(links.previewPrivateNetwork),
     inviteOnly: toBoolean(registration.inviteOnly)
   };
@@ -83,6 +89,7 @@ const readDatabaseValues = async (): Promise<TMirroredValues> => {
   return {
     allowNewUsers: settings.allowNewUsers,
     klipyApiKey: settings.klipyApiKey ?? '',
+    freesoundApiKey: settings.freesoundApiKey ?? '',
     previewPrivateNetwork: settings.linkPreviewsPrivateNetwork
   };
 };
@@ -102,6 +109,10 @@ const applyToDatabase = async (changes: Partial<TMirroredValues>) => {
       changes.klipyApiKey === undefined
         ? undefined
         : changes.klipyApiKey || null,
+    freesoundApiKey:
+      changes.freesoundApiKey === undefined
+        ? undefined
+        : changes.freesoundApiKey || null,
     linkPreviewsPrivateNetwork: changes.previewPrivateNetwork
   });
 };
@@ -113,6 +124,7 @@ const writeFile = async (values: TMirroredValues) => {
   const storage = toSection(parsed.storage);
   const gifs = toSection(parsed.gifs);
   const links = toSection(parsed.links);
+  const sounds = toSection(parsed.sounds);
 
   delete registration.inviteOnly;
   // file links are always signed now, there is nothing left to switch
@@ -129,6 +141,7 @@ const writeFile = async (values: TMirroredValues) => {
     delete parsed.storage;
   }
   parsed.gifs = { ...gifs, klipyApiKey: values.klipyApiKey };
+  parsed.sounds = { ...sounds, freesoundApiKey: values.freesoundApiKey };
   parsed.links = {
     ...links,
     previewPrivateNetwork: values.previewPrivateNetwork
@@ -140,7 +153,7 @@ const writeFile = async (values: TMirroredValues) => {
 };
 
 // the values in the file that are edits: different from what was last written, or with no
-// record yet, set at all. an empty klipy key with no record is the old default, not an edit
+// record yet, set at all. an empty api key with no record of it is the old default, not an edit
 const getFileEdits = (
   file: TFileValues,
   last: TMirroredValues | undefined
@@ -154,7 +167,9 @@ const getFileEdits = (
       continue;
     }
 
-    if (!last && key === 'klipyApiKey' && value === '') {
+    const isApiKey = key === 'klipyApiKey' || key === 'freesoundApiKey';
+
+    if (isApiKey && value === '' && (!last || last[key] === undefined)) {
       continue;
     }
 

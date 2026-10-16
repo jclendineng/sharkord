@@ -68,6 +68,7 @@ describe('syncConfigFile', () => {
     // file links are always signed, there is no switch to write
     expect(parsed.storage).toBeUndefined();
     expect(parsed.gifs).toEqual({ klipyApiKey: '' });
+    expect(parsed.sounds).toEqual({ freesoundApiKey: '' });
     expect(parsed.links).toEqual({ previewPrivateNetwork: false });
   });
 
@@ -100,6 +101,31 @@ describe('syncConfigFile', () => {
     expect(allowNewUsers).toBe(false);
     expect(klipyApiKey).toBe('from-the-file');
     expect(linkPreviewsPrivateNetwork).toBe(true);
+  });
+
+  test('should apply a freesound key added to the file', async () => {
+    await syncConfigFile();
+
+    const parsed = await readIni();
+
+    parsed.sounds = { freesoundApiKey: 'sounds-from-the-file' };
+    await writeIni(parsed);
+
+    await syncConfigFile();
+
+    const { freesoundApiKey } = await getSettings();
+
+    expect(freesoundApiKey).toBe('sounds-from-the-file');
+  });
+
+  test('should write a freesound key saved in the settings into the file', async () => {
+    await tdb.update(settings).set({ freesoundApiKey: 'saved-sounds-key' });
+
+    await syncConfigFile();
+
+    expect((await readIni()).sounds).toEqual({
+      freesoundApiKey: 'saved-sounds-key'
+    });
   });
 
   test('should leave the settings alone when the file was not edited', async () => {

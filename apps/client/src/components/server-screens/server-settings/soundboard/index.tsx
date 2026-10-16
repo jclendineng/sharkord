@@ -1,4 +1,5 @@
 import { SettingsSection } from '@/components/server-screens/settings-shell/section';
+import { usePublicServerSettings } from '@/features/server/hooks';
 import { useSounds } from '@/features/server/soundboard/hooks';
 import { uploadFiles } from '@/helpers/upload-file';
 import { useFilePicker } from '@/hooks/use-file-picker';
@@ -13,6 +14,7 @@ import { Upload } from 'lucide-react';
 import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { FreesoundSearch } from './freesound';
 import { SoundLibrary } from './library';
 import { SoundRow } from './sound-row';
 
@@ -27,6 +29,7 @@ const nameFromFile = (originalName: string) => {
 const Soundboard = memo(() => {
   const { t } = useTranslation('settings');
   const sounds = useSounds();
+  const settings = usePublicServerSettings();
   const openFilePicker = useFilePicker();
   const [isUploading, setIsUploading] = useState(false);
 
@@ -94,6 +97,15 @@ const Soundboard = memo(() => {
       >
         <SoundLibrary />
       </SettingsSection>
+
+      {settings?.soundSearchEnabled && (
+        <SettingsSection
+          title={t('freesoundTitle')}
+          description={t('freesoundDesc')}
+        >
+          <FreesoundSearch />
+        </SettingsSection>
+      )}
     </div>
   );
 });
