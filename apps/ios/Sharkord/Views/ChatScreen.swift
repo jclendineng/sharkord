@@ -173,8 +173,9 @@ struct ChatScreen: View {
             }
 
             if ProcessInfo.processInfo.isiOSAppOnMac {
-                // discord's mac: the box itself sits in the top bar, the results drop down under
-                ToolbarItem(placement: .topBarTrailing) {
+                // discord's mac: the box itself sits in the top bar, the results drop down under.
+                // the principal place, the bar's trailing group collapses a text field to nothing
+                ToolbarItem(placement: .principal) {
                     HStack(spacing: 8) {
                         SearchBox(
                             model: searchModel,
@@ -185,6 +186,7 @@ struct ChatScreen: View {
 
                         FilterMenu(isFiltering: !searchModel.filters.isEmpty, onChoose: chooseFilter)
                     }
+                    .frame(maxWidth: .infinity, alignment: .trailing)
                 }
                 .sharedBackgroundVisibility(.hidden)
             } else {

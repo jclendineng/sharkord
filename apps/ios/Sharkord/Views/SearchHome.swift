@@ -246,52 +246,68 @@ private struct SearchTabBar: View {
 
     @Namespace private var underline
 
+    // a mac draws its own scroll bar under a horizontal scroll view whatever it is told, so the
+    // tabs sit flat when they fit and only scroll when they do not
+    private var spacing: CGFloat {
+        ProcessInfo.processInfo.isiOSAppOnMac ? 22 : 28
+    }
+
     var body: some View {
-        ScrollViewReader { proxy in
-            ScrollView(.horizontal) {
-                HStack(spacing: 28) {
-                    ForEach(tabs) { tab in
-                        Button {
-                            select(tab)
-                        } label: {
-                            VStack(spacing: 10) {
-                                Text(tab.title(inDirectMessages: inDirectMessages))
-                                    .font(.system(size: 17, weight: .medium))
-                                    .foregroundStyle(selection == tab ? Theme.blurple : Theme.muted)
+        ViewThatFits(in: .horizontal) {
+            strip
 
-                                ZStack {
-                                    Capsule()
-                                        .fill(.clear)
-
-                                    if selection == tab {
-                                        Capsule()
-                                            .fill(Theme.blurple)
-                                            .matchedGeometryEffect(id: "underline", in: underline)
-                                    }
-                                }
-                                .frame(height: 3)
-                            }
-                            .fixedSize()
-                        }
-                        .buttonStyle(.plain)
-                        .id(tab)
-                    }
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal) {
+                    strip
                 }
-                .padding(.horizontal, 18)
-                .padding(.top, 10)
-            }
-            .scrollIndicators(.hidden)
-            .onChange(of: selection) { _, tab in
-                withAnimation(.smooth(duration: 0.3)) {
-                    proxy.scrollTo(tab, anchor: .center)
+                .scrollIndicators(.hidden)
+                .onChange(of: selection) { _, tab in
+                    withAnimation(.smooth(duration: 0.3)) {
+                        proxy.scrollTo(tab, anchor: .center)
+                    }
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .overlay(alignment: .bottom) {
             Rectangle()
                 .fill(Theme.divider)
                 .frame(height: 1)
         }
+    }
+
+    private var strip: some View {
+        HStack(spacing: spacing) {
+            ForEach(tabs) { tab in
+                Button {
+                    select(tab)
+                } label: {
+                    VStack(spacing: 10) {
+                        Text(tab.title(inDirectMessages: inDirectMessages))
+                            .font(.system(size: 17, weight: .medium))
+                            .foregroundStyle(selection == tab ? Theme.blurple : Theme.muted)
+
+                        ZStack {
+                            Capsule()
+                                .fill(.clear)
+
+                            if selection == tab {
+                                Capsule()
+                                    .fill(Theme.blurple)
+                                    .matchedGeometryEffect(id: "underline", in: underline)
+                            }
+                        }
+                        .frame(height: 3)
+                    }
+                    .fixedSize()
+                }
+                .buttonStyle(.plain)
+                .id(tab)
+            }
+        }
+        .padding(.horizontal, 18)
+        .padding(.top, 10)
+        .fixedSize()
     }
 
     private func select(_ tab: SearchTab) {
