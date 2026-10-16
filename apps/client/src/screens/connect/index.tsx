@@ -191,7 +191,7 @@ const Connect = memo(() => {
       return getFileUrl(info.logo);
     }
 
-    return '/logo.webp';
+    return './logo.webp';
   }, [info]);
 
   if (resetToken) {

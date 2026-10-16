@@ -18,7 +18,7 @@ describe('/manifest.json', () => {
     expect(manifest).toHaveProperty('name');
     expect(manifest).toHaveProperty('short_name');
     expect(manifest).toHaveProperty('description');
-    expect(manifest).toHaveProperty('start_url', '/');
+    expect(manifest).toHaveProperty('start_url', './');
     expect(manifest).toHaveProperty('display', 'standalone');
     expect(manifest).toHaveProperty('background_color', '#171717');
     expect(manifest).toHaveProperty('theme_color', '#171717');
@@ -50,7 +50,7 @@ describe('/manifest.json', () => {
     const manifest = (await response.json()) as TWebAppManifest;
 
     const hasDefaultIcon192 = manifest.icons.some(
-      (icon) => icon.src === '/icon-192.png' && icon.sizes === '192x192'
+      (icon) => icon.src === './icon-192.png' && icon.sizes === '192x192'
     );
     const hasDefaultIcon512 = manifest.icons.some(
       (icon) => icon.src === '/icon-512.png' && icon.sizes === '512x512'
@@ -81,7 +81,7 @@ describe('/manifest.json', () => {
     const manifest = (await response.json()) as TWebAppManifest;
 
     expect(manifest.icons).toHaveLength(1);
-    expect(manifest.icons[0]!.src).toBe('/public/logo%20%231%20100%25.svg');
+    expect(manifest.icons[0]!.src).toBe('./public/logo%20%231%20100%25.svg');
   });
 
   test('should include required icon properties', async () => {

@@ -8,7 +8,7 @@ import {
   takeOidcHandoff,
   takeOidcTransaction
 } from '../../db/mutations/oidc';
-import { getPublicOrigin } from '../../http/helpers';
+import { getPublicBaseUrl } from '../../http/helpers';
 import { logger } from '../../logger';
 
 const DISCOVERY_CACHE_TTL_MS = 5 * 60 * 1000;
@@ -108,7 +108,7 @@ class OidcManager {
   public resolveRedirectUri = (req: http.IncomingMessage): string => {
     if (config.oidc.redirectUri) return config.oidc.redirectUri;
 
-    return `${getPublicOrigin(req)}/oidc/callback`;
+    return `${getPublicBaseUrl(req)}/oidc/callback`;
   };
 
   // logins in flight live in the database, so a restart in the middle of one does not

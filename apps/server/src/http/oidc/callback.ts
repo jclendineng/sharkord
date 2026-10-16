@@ -1,6 +1,7 @@
 import { getErrorMessage, OidcError } from '@sharkord/shared';
 import type http from 'http';
 import * as client from 'openid-client';
+import { config } from '../../config';
 import { isIpBanned } from '../../db/queries/ip-bans';
 import type { getWsInfo } from '../../helpers/get-ws-info';
 import { OidcCallbackError } from '../../helpers/oidc/error';
@@ -177,7 +178,7 @@ const oidcCallbackRouteHandler = async (
       target = new URL(OIDC_APP_REDIRECT);
       target.searchParams.set('code', handoffCode);
     } else {
-      target = new URL(origin);
+      target = new URL(`${origin}${config.server.basePath}/`);
       target.hash = `oidc=${handoffCode}`;
     }
 

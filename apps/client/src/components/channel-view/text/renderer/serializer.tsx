@@ -1,5 +1,6 @@
 import { ChannelChip } from '@/components/channel-chip';
 import { RoleMentionChip } from '@/components/role-mention-chip';
+import { getUrlFromServer } from '@/helpers/get-file-url';
 import { MessageNodeType, parseDomCommand } from '@sharkord/shared';
 import { Element, type DOMNode } from 'html-react-parser';
 import { CommandOverride } from '../overrides/command';
@@ -7,6 +8,18 @@ import { MentionOverride } from '../overrides/mention';
 
 const serializer = (domNode: DOMNode, messageId: number) => {
   try {
+    // custom emoji are stored as /public/... paths, which only point at the server when it runs
+    // at the root, so they are made absolute against wherever the client is served from
+    if (
+      domNode instanceof Element &&
+      domNode.name === 'img' &&
+      domNode.attribs.src?.startsWith('/public/')
+    ) {
+      domNode.attribs.src = `${getUrlFromServer()}${domNode.attribs.src}`;
+
+      return undefined;
+    }
+
     if (domNode instanceof Element && domNode.name === 'command') {
       const command = parseDomCommand(domNode);
 

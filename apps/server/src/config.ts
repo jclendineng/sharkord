@@ -28,6 +28,15 @@ const zConfig = z.object({
   server: z.object({
     host: z.string().trim(),
     port: z.coerce.number().int().positive(),
+    // the path a reverse proxy serves sharkord under, like /sharkord, empty at the root. with no
+    // trailing slash, and stripped from every request whether or not the proxy already did
+    basePath: z
+      .string()
+      .trim()
+      .regex(
+        /^(\/[\w.~-]+)*$/,
+        'basePath looks like /sharkord, with no trailing slash'
+      ),
     debug: z.coerce.boolean(),
     autoupdate: z.coerce.boolean(),
     backupDatabase: z.coerce.boolean(),
@@ -122,6 +131,7 @@ const defaultConfig: TConfig = {
   server: {
     host: '',
     port: 4991,
+    basePath: '',
     debug: IS_DEVELOPMENT,
     autoupdate: false,
     backupDatabase: true,
@@ -320,6 +330,7 @@ if (!configExists) {
 const envOverridesMap: Record<string, string> = {
   'server.host': 'SHARKORD_HOST',
   'server.port': 'SHARKORD_PORT',
+  'server.basePath': 'SHARKORD_BASE_PATH',
   'server.debug': 'SHARKORD_DEBUG',
   'server.autoupdate': 'SHARKORD_AUTOUPDATE',
   'server.backupDatabase': 'SHARKORD_BACKUP_DATABASE',

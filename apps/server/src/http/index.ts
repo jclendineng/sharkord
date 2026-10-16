@@ -139,6 +139,22 @@ const createHttpServer = async (
           return;
         }
 
+        // the web client's files are relative to the page, which only resolves under the base
+        // path when the address ends in a slash
+        const rawPathname = req.url?.split('?')[0];
+
+        if (
+          config.server.basePath &&
+          rawPathname === config.server.basePath &&
+          req.method === 'GET'
+        ) {
+          res.writeHead(301, {
+            Location: `${config.server.basePath}/${url.search}`
+          });
+          res.end();
+          return;
+        }
+
         const pathname = url.pathname;
         const ctx: RouteContext = { info, pathname, url };
 

@@ -6,8 +6,9 @@ import { getSettings } from '../db/queries/server';
 import { PUBLIC_PATH } from '../helpers/paths';
 
 const DEFAULT_ICONS: TWebAppManifest['icons'] = [
-  { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
-  { src: '/icon-512.png', sizes: '512x512', type: 'image/png' }
+  // relative to the manifest, so they also resolve under server.basePath
+  { src: './icon-192.png', sizes: '192x192', type: 'image/png' },
+  { src: './icon-512.png', sizes: '512x512', type: 'image/png' }
 ];
 
 const imageSizeCache = new Map<
@@ -52,7 +53,7 @@ const getIcons = async (settings: TJoinedSettings) => {
   }
 
   const logoPath = path.join(PUBLIC_PATH, settings.logo.name);
-  const logoSrc = `/public/${encodeURIComponent(settings.logo.name)}`;
+  const logoSrc = `./public/${encodeURIComponent(settings.logo.name)}`;
 
   if (settings.logo.mimeType === 'image/svg+xml') {
     return [
@@ -93,7 +94,7 @@ const manifestRouteHandler = async (
     name: settings.name,
     short_name: settings.name.slice(0, 12),
     description: settings.description ?? '',
-    start_url: '/',
+    start_url: './',
     display: 'standalone',
     background_color: '#171717',
     theme_color: '#171717',

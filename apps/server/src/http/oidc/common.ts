@@ -9,7 +9,7 @@ import {
   getClientRateLimitKey,
   getRateLimitRetrySeconds
 } from '../../utils/rate-limiters/rate-limiter';
-import { getPublicOrigin, isSecureRequest, sendJsonError } from '../helpers';
+import { getPublicBaseUrl, isSecureRequest, sendJsonError } from '../helpers';
 
 const OIDC_STATE_COOKIE_PREFIX = 'sharkord_oidc_state_';
 
@@ -32,7 +32,9 @@ const redirectWithError = (
   extraHeaders: Record<string, string | string[]> = {},
   toApp = false
 ) => {
-  const target = new URL(toApp ? OIDC_APP_REDIRECT : getPublicOrigin(req));
+  const target = new URL(
+    toApp ? OIDC_APP_REDIRECT : `${getPublicBaseUrl(req)}/`
+  );
 
   target.searchParams.set('oidc_error', error);
 

@@ -105,8 +105,9 @@ struct MessageContentView: View {
             return nil
         }
 
+        // appended rather than resolved, which would drop a server reached under a subpath
         if source.hasPrefix("/"), let address = session.address {
-            return URL(string: source, relativeTo: address.baseURL)?.absoluteURL
+            return URL(string: address.baseURL.absoluteString + source)
         }
 
         return URL(string: source)

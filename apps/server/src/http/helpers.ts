@@ -193,11 +193,31 @@ const getPublicOrigin = (req: http.IncomingMessage): string => {
   return `${proto}://${forwarded?.host || req.headers.host}`;
 };
 
+// where the web client is reached, the public origin plus server.basePath
+const getPublicBaseUrl = (req: http.IncomingMessage): string =>
+  `${getPublicOrigin(req)}${config.server.basePath}`;
+
+// a request under server.basePath is routed as if it came in at the root, so a proxy that
+// passes the prefix through and one that strips it both work
+const stripBasePath = (url: URL) => {
+  const { basePath } = config.server;
+
+  if (!basePath) return url;
+
+  if (url.pathname === basePath || url.pathname.startsWith(`${basePath}/`)) {
+    url.pathname = url.pathname.slice(basePath.length) || '/';
+  }
+
+  return url;
+};
+
 const getRequestUrl = (req: http.IncomingMessage): URL | null => {
   if (!req.url) return null;
 
   try {
-    return new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+    return stripBasePath(
+      new URL(req.url, `http://${req.headers.host || 'localhost'}`)
+    );
   } catch {
     return null;
   }
@@ -516,6 +536,7 @@ export {
   buildEtag,
   enforceHttpRateLimit,
   getJsonBody,
+  getPublicBaseUrl,
   getPublicOrigin,
   getRequestToken,
   getRequestUrl,

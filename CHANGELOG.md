@@ -41,6 +41,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - New `config.ini` options: `registration.inviteOnly` (sign ups by invite only), the Klipy
   key for GIFs, which can also be set with `SHARKORD_KLIPY_API_KEY`, and the Freesound key
   for sound search, `freesoundApiKey` under `[sounds]`.
+- New `basePath` under `[server]` for running under a subpath. Set the proxy to forward that
+  path and its WebSocket upgrades; it may strip the prefix or not.
 - New `listenIp` under `[webRtc]` in `config.ini` (env `SHARKORD_WEBRTC_LISTEN_IP`), the
   address voice listens on. Set `::` for IPv6 as well as IPv4
   ([#522](https://github.com/Sharkord/sharkord/issues/522)).
@@ -176,6 +178,9 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   leave it to their provider, and QR sign in, approved on a signed in device, is not asked. A
   moderator's password reset link turns it off
   ([#328](https://github.com/Sharkord/sharkord/issues/328)).
+- Sharkord can run under a subpath behind a reverse proxy, like `example.com/sharkord`, with
+  `basePath` under `[server]` in `config.ini` (env `SHARKORD_BASE_PATH`). At the root nothing
+  changes ([#816](https://github.com/Sharkord/sharkord/issues/816)).
 - Mute Stream Audio in Devices settings: screen shares with sound start muted
   ([#749](https://github.com/Sharkord/sharkord/issues/749)).
 

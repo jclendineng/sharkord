@@ -450,6 +450,23 @@ fork is carried over once and then replaced, and the old `signedUrls` and `force
 are removed, since file links are always signed. Code
 `apps/server/src/helpers/config-file-sync.ts`.
 
+## Running under a subpath
+
+```ini
+[server]
+basePath=/sharkord
+```
+
+Env `SHARKORD_BASE_PATH`. The server strips the prefix from every request, so a proxy that
+passes `/sharkord/...` through and one that strips it both work, and `/sharkord` redirects to
+`/sharkord/`. SSO's callback and its return to the web client carry the prefix. The web client
+is built with relative paths and works out its base from the page's own address, so the same
+build runs at the root and under any path; custom emoji, stored as `/public/...` paths, are
+made absolute when shown. The manifest's icons and start URL are relative. In the app, enter
+the full address, `https://example.com/sharkord`. The proxy has to forward WebSocket upgrades
+on that path too. Voice still uses its own port, `webRtc.port`
+([#816](https://github.com/Sharkord/sharkord/issues/816)).
+
 ## Voice networking
 
 ```ini
