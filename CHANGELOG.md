@@ -33,6 +33,9 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - New `config.ini` options: `registration.inviteOnly` (sign ups by invite only), the Klipy
   key for GIFs, which can also be set with `SHARKORD_KLIPY_API_KEY`, and the Freesound key
   for sound search, `freesoundApiKey` under `[sounds]`.
+- New `listenIp` under `[webRtc]` in `config.ini` (env `SHARKORD_WEBRTC_LISTEN_IP`), the
+  address voice listens on. Set `::` for IPv6 as well as IPv4
+  ([#522](https://github.com/Sharkord/sharkord/issues/522)).
 - The server image is published to `ghcr.io/jclendineng/sharkord`.
 
 ### Added
@@ -148,6 +151,9 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 ### Fixed
 
+- Voice works in Firefox when `announcedAddress` is a hostname. The server sends the
+  addresses it resolves the name to beside the hostname, which Firefox ignores
+  ([#756](https://github.com/Sharkord/sharkord/issues/756)).
 - An invite now works for SSO sign ups on a server closed to new users, as it does for
   password sign ups, on the web and in the app. Its role is given and its use counted
   ([#840](https://github.com/Sharkord/sharkord/issues/840)).

@@ -345,7 +345,7 @@ startup and also while the server runs, without a restart: the change is applied
 database and pushed to everyone connected, so the screens show it straight away.
 
 `allowNewUsers=false` makes the server invite only: a new account needs an invite from someone
-with Manage Invites, single sign on cannot create accounts, and the apps say registration is
+with Manage Invites, through a password or single sign on, and the apps say registration is
 closed. `previewPrivateNetwork` lets link previews load pages on the server's own network.
 
 What was last written is recorded in `config-sync.json` next to `config.ini`, so a value that
@@ -353,6 +353,27 @@ differs from it is known to be an edit. The `inviteOnly` key from an earlier ver
 fork is carried over once and then replaced, and the old `signedUrls` and `forceSignedUrls` keys
 are removed, since file links are always signed. Code
 `apps/server/src/helpers/config-file-sync.ts`.
+
+## Voice networking
+
+```ini
+[webRtc]
+announcedAddress=voice.example.com
+listenIp=::
+```
+
+`announcedAddress` may be a hostname. Chromium and the app resolve it themselves, which is
+what lets split DNS send people on the local network to the LAN address. Firefox refuses
+hostname candidates (RFC 8839), so the server also sends each address it resolves the name
+to, after the hostname, and Firefox connects through those. Behind split DNS the server sees
+its own side of it, so Firefox outside the network still needs the public address to resolve
+for the server ([#756](https://github.com/Sharkord/sharkord/issues/756)). Code
+`apps/server/src/utils/resolve-ice-candidates.ts`.
+
+`listenIp` (default `0.0.0.0`, env `SHARKORD_WEBRTC_LISTEN_IP`) is the address voice listens
+on. `::` takes IPv6 as well as IPv4 on a host where IPv6 is set up; a container without it
+fails to bind `::` and has no voice, which is why it is not the default
+([#522](https://github.com/Sharkord/sharkord/issues/522)).
 
 ## Server settings in the app
 
