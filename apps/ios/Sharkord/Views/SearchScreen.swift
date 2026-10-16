@@ -543,6 +543,24 @@ private struct MessageResultRow: View {
         return "@\(session.conversationTitle(for: message.channelId))"
     }
 
+    // the gifs and pictures shown from its links, as the chat shows them
+    private var images: [URL] {
+        (message.metadata ?? [])
+            .filter(\.isImage)
+            .compactMap { URL(string: $0.url) }
+    }
+
+    // a message that is only a picture's link shows the picture, not the address
+    private var text: String? {
+        let content = message.plainContent.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !content.isEmpty, !images.contains(where: { $0.absoluteString == content }) else {
+            return nil
+        }
+
+        return content
+    }
+
     var body: some View {
         Button(action: onOpen) {
             HStack(alignment: .top, spacing: 12) {
@@ -566,11 +584,19 @@ private struct MessageResultRow: View {
                     }
                     .lineLimit(1)
 
-                    Text(message.plainContent)
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.text)
-                        .lineLimit(3)
-                        .multilineTextAlignment(.leading)
+                    if let text {
+                        Text(text)
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.text)
+                            .lineLimit(3)
+                            .multilineTextAlignment(.leading)
+                    }
+
+                    ForEach(images, id: \.self) { url in
+                        AnimatedImage(url: url, maxPointSize: 220)
+                            .frame(maxWidth: 220, maxHeight: 220, alignment: .leading)
+                            .clipShape(.rect(cornerRadius: 6))
+                    }
                 }
             }
         }

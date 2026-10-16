@@ -128,11 +128,11 @@ private struct MemberColumnRow: View {
         // handed the stores by hand: on a mac a presentation is worked out before it inherits
         // to the left, over the chat, as discord's is: the column sits at the window's right edge,
         // where a profile opening rightwards was squeezed into what little room was left. a fixed
-        // width, so it can never be narrower than its content
+        // size, so it can never be narrower than its content: a mac popover takes no ideal height
+        // and opened short, the note cut off under a scroll bar
         .popover(isPresented: $isProfilePresented, arrowEdge: .trailing) {
             MemberProfileSheet(user: user, onMessage: openDirectMessage)
-                .frame(width: 340)
-                .frame(idealHeight: 560)
+                .frame(width: 340, height: 600)
                 .presentationCompactAdaptation(.popover)
                 .environment(session)
                 .environment(servers)
