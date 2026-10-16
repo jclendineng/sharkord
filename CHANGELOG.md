@@ -209,6 +209,13 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 ### Fixed
 
+- A long press on a member in a channel's Members tab opens the same menu as a right click
+  on a Mac, as a sheet on an iPhone or iPad.
+- On a Mac, a member's profile from the member list opens to its left, full width, instead of
+  squeezed against the window's edge.
+- On a Mac, the server menu's rows light up under the pointer.
+- On a Mac, a sheet's X closes it on the first click. Sheets there have no grabber, whose strip
+  took the clicks.
 - On a Mac, right clicking a member in the member list opens Discord's menu: Profile,
   Mention, Message, Add Note, and Roles for someone who manages them.
 - On a Mac, the chat's search is a box in its top bar, with the filter menu beside it, and

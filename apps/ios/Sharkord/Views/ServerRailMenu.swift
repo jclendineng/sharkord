@@ -129,11 +129,18 @@ struct ServerRailMenu: View {
     }
 }
 
+// filled while the pointer is on it, as the other menus' rows are, red for a destructive one
 private struct MenuRow: View {
     let title: String
     let systemImage: String
     var tint = Theme.header
     let action: () -> Void
+
+    @State private var isHovered = false
+
+    private var isDestructive: Bool {
+        tint == Theme.red
+    }
 
     var body: some View {
         Button(action: action) {
@@ -146,11 +153,19 @@ private struct MenuRow: View {
                 Spacer()
             }
             .font(.body)
-            .foregroundStyle(tint)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 13)
+            .foregroundStyle(isHovered && isDestructive ? .white : tint)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 9)
+            .background(isHovered ? (isDestructive ? Theme.red : Theme.hover) : .clear, in: .rect(cornerRadius: 6))
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
+        .onHover(perform: setHovered)
+    }
+
+    private func setHovered(_ hovered: Bool) {
+        isHovered = hovered
     }
 }

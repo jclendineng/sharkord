@@ -69,7 +69,11 @@ private struct MacDismissLock: ViewModifier {
 
     func body(content: Content) -> some View {
         if isOnMac {
-            content.interactiveDismissDisabled()
+            // no grabber either: nothing drags a sheet on a mac, and the strip it owns at the top
+            // took the clicks meant for the x beside it, which needed several to close
+            content
+                .interactiveDismissDisabled()
+                .presentationDragIndicator(.hidden)
         } else {
             content
         }
