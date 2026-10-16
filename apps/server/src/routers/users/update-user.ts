@@ -9,6 +9,7 @@ import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../../db';
 import { publishUser } from '../../db/publishers';
+import { isUserNameTaken } from '../../db/queries/users';
 import { users } from '../../db/schema';
 import { pluginManager } from '../../plugins';
 import { eventBus } from '../../plugins/event-bus';
@@ -53,6 +54,22 @@ const updateUserRoute = protectedProcedure
 
         return { ...payload, name: parsedName.data, bio: parsedBio.data };
       }
+    });
+
+    const currentUser = await db
+      .select({ name: users.name })
+      .from(users)
+      .where(eq(users.id, ctx.userId))
+      .limit(1)
+      .get();
+
+    // only a new name is checked, so two people who already share one can still save the rest
+    // of their profile
+    const isRename = currentUser?.name.toLowerCase() !== name.toLowerCase();
+
+    invariant(!isRename || !(await isUserNameTaken(name, ctx.userId)), {
+      code: 'CONFLICT',
+      message: 'Someone on this server already uses that name.'
     });
 
     const updatedUser = await db

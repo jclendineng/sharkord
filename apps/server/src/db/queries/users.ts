@@ -3,7 +3,7 @@ import {
   type TJoinedUser,
   type TStorageData
 } from '@sharkord/shared';
-import { count, eq, sum, type SQL } from 'drizzle-orm';
+import { and, count, eq, ne, sql, sum, type SQL } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/sqlite-core';
 import jwt from 'jsonwebtoken';
 import { db } from '..';
@@ -387,6 +387,27 @@ const getUsers = async (): Promise<TJoinedUser[]> => {
   }));
 };
 
+// names compare without case, so "Joel" and "joel" count as the same person on screen
+const isUserNameTaken = async (
+  name: string,
+  exceptUserId?: number
+): Promise<boolean> => {
+  const sameName = sql`${users.name} = ${name} COLLATE NOCASE`;
+  const where =
+    exceptUserId === undefined
+      ? sameName
+      : and(sameName, ne(users.id, exceptUserId));
+
+  const taken = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(where)
+    .limit(1)
+    .get();
+
+  return !!taken;
+};
+
 const getAllUserIds = async (): Promise<number[]> => {
   const results = await db.select({ id: users.id }).from(users);
   return results.map((r) => r.id);
@@ -401,5 +422,6 @@ export {
   getUserByIdentity,
   getUserByOidcSub,
   getUserByToken,
-  getUsers
+  getUsers,
+  isUserNameTaken
 };

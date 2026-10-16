@@ -320,7 +320,7 @@ describe('users router', () => {
     const { caller } = await initTest();
 
     await caller.users.update({
-      name: 'Test User',
+      name: 'Test Owner',
       profileColor: '#00ff00'
     });
 
@@ -328,7 +328,7 @@ describe('users router', () => {
     const updatedUser = users.find((u) => u.id === 1);
 
     expect(updatedUser).toBeDefined();
-    expect(updatedUser!.name).toBe('Test User');
+    expect(updatedUser!.name).toBe('Test Owner');
     expect(updatedUser!.profileColor).toBe('#00ff00');
   });
 
@@ -336,7 +336,7 @@ describe('users router', () => {
     const { caller } = await initTest();
 
     await caller.users.update({
-      name: 'Test User',
+      name: 'Test Owner',
       profileColor: '#f0f'
     });
 
@@ -345,12 +345,50 @@ describe('users router', () => {
     expect(info.user.profileColor).toBe('#f0f');
   });
 
+  test('should refuse a name another user already has, whatever its case', async () => {
+    const { caller } = await initTest(1);
+
+    await expect(
+      caller.users.update({ name: 'test user', profileColor: '#000000' })
+    ).rejects.toThrow('Someone on this server already uses that name.');
+
+    const info = await caller.users.getInfo({ userId: 1 });
+
+    expect(info.user.name).toBe('Test Owner');
+  });
+
+  test('should let a user keep a name they already share', async () => {
+    await tdb.update(users).set({ name: 'Test User' }).where(eq(users.id, 1));
+
+    const { caller } = await initTest(1);
+
+    await caller.users.update({
+      name: 'Test User',
+      profileColor: '#000000',
+      bio: 'still here'
+    });
+
+    const info = await caller.users.getInfo({ userId: 1 });
+
+    expect(info.user.bio).toBe('still here');
+  });
+
+  test('should let a user change the case of their own name', async () => {
+    const { caller } = await initTest(1);
+
+    await caller.users.update({ name: 'TEST OWNER', profileColor: '#000000' });
+
+    const info = await caller.users.getInfo({ userId: 1 });
+
+    expect(info.user.name).toBe('TEST OWNER');
+  });
+
   test('should reject a profile color that is not a hex value', async () => {
     const { caller } = await initTest();
 
     await expect(
       caller.users.update({
-        name: 'Test User',
+        name: 'Test Owner',
         // a pre-migration bannerColor could hold a full css gradient
         profileColor: 'linear-gradient(90deg, red, blue)'
       })
@@ -362,7 +400,7 @@ describe('users router', () => {
 
     await expect(
       caller.users.update({
-        name: 'Test User',
+        name: 'Test Owner',
         profileColor: '#12345'
       })
     ).rejects.toThrow('Invalid hex color');
@@ -372,13 +410,13 @@ describe('users router', () => {
     const { caller } = await initTest();
 
     await caller.users.update({
-      name: 'Test User',
+      name: 'Test Owner',
       profileColor: '#123456'
     });
 
     await expect(
       caller.users.update({
-        name: 'Test User',
+        name: 'Test Owner',
         profileColor: 'nope'
       })
     ).rejects.toThrow('Invalid hex color');
@@ -1642,7 +1680,7 @@ describe('users router', () => {
     const specialBio = 'Hello! 👋 This is my bio with émojis & spëcial çhars';
 
     await caller.users.update({
-      name: 'Test User',
+      name: 'Test Owner',
       profileColor: '#000000',
       bio: specialBio
     });

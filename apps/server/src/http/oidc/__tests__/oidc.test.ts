@@ -761,6 +761,24 @@ describe('/oidc/callback', () => {
     expect(created!.name).toStartWith('SharkordUser');
   });
 
+  test('should give a generated name when the provider name is already taken', async () => {
+    provider.setClaims({
+      ...DEFAULT_CLAIMS,
+      preferred_username: 'test user',
+      name: 'test user'
+    });
+
+    await signIn();
+
+    const created = await tdb
+      .select()
+      .from(users)
+      .where(eq(users.oidcSub, 'oidc-subject-1'))
+      .get();
+
+    expect(created!.name).toStartWith('SharkordUser');
+  });
+
   test('should refuse a name past the length the interface allows', async () => {
     provider.setClaims({
       ...DEFAULT_CLAIMS,

@@ -4,6 +4,7 @@ import { HttpValidationError } from '../../http/errors';
 import { eventBus } from '../../plugins/event-bus';
 import { invariant } from '../../utils/invariant';
 import { getDefaultRole } from '../queries/roles';
+import { isUserNameTaken } from '../queries/users';
 import {
   channelReadStates,
   channels,
@@ -40,7 +41,9 @@ const createUser = async ({
   });
 
   const randomNum = Math.floor(Math.random() * 99999) + 10000; // between 10000 and 99999 to ensure it's always 5 digits, for better readability
-  const username = name || `SharkordUser${randomNum}`;
+  // a name from the sign in provider that someone already uses falls back to a generated one
+  const isNameTaken = name ? await isUserNameTaken(name) : false;
+  const username = name && !isNameTaken ? name : `SharkordUser${randomNum}`;
 
   const userId = db.transaction((tx) => {
     if (inviteCode) {
