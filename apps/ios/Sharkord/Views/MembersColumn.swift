@@ -37,7 +37,7 @@ struct MembersColumn: View {
                         .padding(.bottom, 4)
 
                     ForEach(section.users) { user in
-                        MemberColumnRow(user: user)
+                        MemberColumnRow(user: user, channelId: channelId)
                     }
                 }
             }
@@ -74,12 +74,15 @@ extension MembersColumn {
 
 private struct MemberColumnRow: View {
     let user: PublicUser
+    let channelId: Int
 
     @Environment(SessionStore.self) private var session
     @Environment(ServerListStore.self) private var servers
 
     @State private var isProfilePresented = false
     @State private var isHovered = false
+    @State private var isMenuPresented = false
+    @State private var menuAnchor = UnitPoint.center
 
     private var isOffline: Bool {
         user.status == .offline
@@ -110,11 +113,18 @@ private struct MemberColumnRow: View {
             .opacity(isOffline && !isHovered ? 0.45 : 1)
             .padding(.horizontal, 8)
             .padding(.vertical, 5)
-            .background(isHovered ? Theme.hover : .clear, in: .rect(cornerRadius: 6))
+            .background(isHovered || isMenuPresented ? Theme.hover : .clear, in: .rect(cornerRadius: 6))
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
         .onHover(perform: setHovered)
+        // discord's right click on a member, beside the pointer
+        .onSecondaryClick(perform: showMenu)
+        .actionsPresentation(isPresented: $isMenuPresented, anchor: menuAnchor) {
+            MemberActionsMenu(user: user, channelId: channelId, onShowProfile: showProfileFromMenu, onMessage: openDirectMessage)
+                .environment(session)
+                .environment(servers)
+        }
         // handed the stores by hand: on a mac a presentation is worked out before it inherits
         .popover(isPresented: $isProfilePresented, arrowEdge: .leading) {
             MemberProfileSheet(user: user, onMessage: openDirectMessage)
@@ -133,8 +143,19 @@ private struct MemberColumnRow: View {
         isProfilePresented = true
     }
 
+    private func showMenu(_ click: SecondaryClick) {
+        menuAnchor = click.anchor
+        isMenuPresented = true
+    }
+
+    private func showProfileFromMenu() {
+        isMenuPresented = false
+        isProfilePresented = true
+    }
+
     private func openDirectMessage() {
         isProfilePresented = false
+        isMenuPresented = false
 
         Task {
             guard let channelId = try? await session.openDirectMessage(with: user.id) else {
@@ -142,6 +163,84 @@ private struct MemberColumnRow: View {
             }
 
             servers.open(channelId: channelId, in: session)
+        }
+    }
+}
+
+// discord's menu on a member: their profile, a mention in the message box, a direct message, the
+// note on their profile, and for someone who manages roles, which roles they hold
+private struct MemberActionsMenu: View {
+    let user: PublicUser
+    let channelId: Int
+    let onShowProfile: () -> Void
+    let onMessage: () -> Void
+
+    @Environment(SessionStore.self) private var session
+    @Environment(\.closePointerMenu) private var closePointerMenu
+
+    private var isSelf: Bool {
+        user.id == session.ownUserId
+    }
+
+    // the owner role is given at setup, never from a menu
+    private var assignableRoles: [Role] {
+        session.rolesById.values
+            .filter { $0.id != 1 }
+            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ActionGroup(isFirst: true) {
+                ActionRow(title: "Profile", systemImage: "person.crop.circle", action: onShowProfile)
+                ActionRow(title: "Mention", systemImage: "at", action: mention)
+
+                if !isSelf {
+                    ActionRow(title: "Message", systemImage: "bubble.left", action: onMessage)
+                    ActionRow(title: "Add Note", systemImage: "note.text", action: onShowProfile)
+                }
+            }
+
+            if session.can(.manageRoles) && !assignableRoles.isEmpty {
+                ActionGroup {
+                    SubmenuRow(title: "Roles") {
+                        ForEach(assignableRoles) { role in
+                            ActionRow(
+                                title: role.name,
+                                systemImage: user.roleIds.contains(role.id) ? "checkmark" : ""
+                            ) {
+                                toggle(role)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 6)
+        .padding(.bottom, 6)
+    }
+
+    private func mention() {
+        session.messages(for: channelId).pendingInsert = "@\(user.name) "
+        closePointerMenu?()
+    }
+
+    private func toggle(_ role: Role) {
+        struct RoleInput: Encodable {
+            let userId: Int
+            let roleId: Int
+        }
+
+        let hasRole = user.roleIds.contains(role.id)
+
+        closePointerMenu?()
+
+        Task {
+            do {
+                try await session.perform(hasRole ? "users.removeRole" : "users.addRole", RoleInput(userId: user.id, roleId: role.id))
+            } catch {
+                session.showError(error)
+            }
         }
     }
 }

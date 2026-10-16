@@ -209,6 +209,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 ### Fixed
 
+- On a Mac, right clicking a member in the member list opens Discord's menu: Profile,
+  Mention, Message, Add Note, and Roles for someone who manages them.
 - On a Mac, the chat's search is a box in its top bar, with the filter menu beside it, and
   the results drop down under it. The server search above the channel list opens the same
   card, as wide, so its tabs no longer scroll.
