@@ -60,6 +60,10 @@ final class SessionStore {
     private(set) var ownCustomStatus: String?
     private(set) var ownUserId: Int?
     private(set) var ownUserHasPassword = true
+    // set when a password sign in was right but two-factor is on, so the code field shows
+    private(set) var needsTwoFactorCode = false
+    // TOTP_REQUIRED_MESSAGE in packages/shared
+    private static let twoFactorRequiredMessage = "Enter the code from your authenticator app."
     private(set) var categories: [ChannelCategory] = []
     private(set) var channels: [Channel] = []
     private(set) var usersById: [Int: PublicUser] = [:]
@@ -582,14 +586,14 @@ final class SessionStore {
         await connect(address, token: token)
     }
 
-    func signIn(serverURL: String, identity: String, password: String, invite: String? = nil) async {
+    func signIn(serverURL: String, identity: String, password: String, invite: String? = nil, totp: String? = nil) async {
         guard let address = ServerAddress(userInput: serverURL) else {
             errorMessage = "Enter a valid server address."
             return
         }
 
         await signIn(address) {
-            try await AuthAPI.login(address, identity: identity, password: password, invite: invite)
+            try await AuthAPI.login(address, identity: identity, password: password, invite: invite, totp: totp)
         }
     }
 
@@ -656,6 +660,11 @@ final class SessionStore {
             phase = .signedOut
         } catch let error as URLError where error.code == .cancelled {
             phase = .signedOut
+        } catch let error as AuthAPI.RequestError where error.field == "totp" {
+            // the password was right, the account wants its authenticator code next
+            phase = .signedOut
+            needsTwoFactorCode = true
+            errorMessage = error.message == Self.twoFactorRequiredMessage ? nil : error.message
         } catch {
             phase = .signedOut
             errorMessage = error.localizedDescription

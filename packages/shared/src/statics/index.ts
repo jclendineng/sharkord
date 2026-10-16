@@ -40,6 +40,11 @@ export enum DisconnectCode {
 
 export const MAX_USER_NAME_LENGTH = 24;
 
+// what /login answers, on the totp field, when the password is right and an authenticator code
+// is still needed. the apps match it to show the code field
+export const TOTP_REQUIRED_MESSAGE =
+  'Enter the code from your authenticator app.';
+
 // what someone on a network a moderator banned is told, at sign in and when joining
 export const IP_BANNED_MESSAGE = 'This network is banned from the server.';
 

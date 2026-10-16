@@ -22,6 +22,7 @@ import { Hotkeys } from './hotkeys';
 import { Notifications } from './notifications';
 import { Others } from './others';
 import { Password } from './password';
+import { TwoFactor } from './password/two-factor';
 import { Profile } from './profile';
 
 type TUserSettingsProps = TServerScreenBaseProps;
@@ -55,7 +56,12 @@ const UserSettings = memo(({ close }: TUserSettingsProps) => {
         id: 'password',
         label: t('passwordTab'),
         icon: KeyRound,
-        content: <Password />
+        content: (
+          <>
+            <Password />
+            <TwoFactor />
+          </>
+        )
       },
       {
         id: 'notifications',

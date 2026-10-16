@@ -661,5 +661,20 @@
   "retentionDays_one": "After {{count}} day",
   "retentionDays_other": "After {{count}} days",
   "retentionPreview_one": "{{count}} message would be deleted now.",
-  "retentionPreview_other": "{{count}} messages would be deleted now."
+  "retentionPreview_other": "{{count}} messages would be deleted now.",
+  "twoFactorTitle": "Two-Factor Authentication",
+  "twoFactorDesc": "A code from an authenticator app is asked for after your password.",
+  "twoFactorStartBtn": "Set Up Two-Factor",
+  "twoFactorKeyLabel": "Setup Key",
+  "twoFactorKeyDesc": "Add it to an authenticator app such as Google Authenticator, 1Password or Apple Passwords.",
+  "twoFactorOpenApp": "Open in an authenticator app",
+  "twoFactorCodeLabel": "Code from the app",
+  "twoFactorConfirmBtn": "Turn On",
+  "recoveryCodesLabel": "Recovery Codes",
+  "recoveryCodesDesc": "Each works once if you lose your authenticator. Keep them somewhere safe, they won't be shown again.",
+  "twoFactorDisableLabel": "Code to turn it off",
+  "twoFactorDisablePlaceholder": "Authenticator or recovery code",
+  "twoFactorDisableBtn": "Turn Off",
+  "twoFactorOff": "Two-factor authentication is off",
+  "failedTwoFactor": "Couldn't change two-factor authentication"
 }

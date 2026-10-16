@@ -76,6 +76,10 @@ struct AccountSettingsScreen: View {
                 Text("Changing your password logs you out on every device, this one included.")
             }
 
+            if session.ownUserHasPassword {
+                TwoFactorSection()
+            }
+
             Section {
                 if session.ownUserHasPassword {
                     SecureField("Password", text: $deletePassword)

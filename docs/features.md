@@ -328,6 +328,24 @@ the 15 minute file sweep already removes. The dry run: while picking a period, t
 `channels.getRetentionPreview`, which counts what would go if it ran now. Direct messages have
 no retention ([#564](https://github.com/Sharkord/sharkord/issues/564)).
 
+## Two-factor authentication
+
+RFC 6238 codes (SHA1, 30 seconds, 6 digits) from any authenticator app, implemented in
+`utils/totp.ts` with no extra dependency. `users.startTwoFactor` makes a secret and an
+`otpauth://` link (the app shows it as a QR code, the web as a key to type in and a link that
+opens an authenticator), `users.confirmTwoFactor` turns it on with a first code and returns
+eight recovery codes once, and `users.disableTwoFactor` needs a current code. Secrets live in
+`user_totp`, never on the user row, recovery codes only as hashes.
+
+`/login` checks the password first and only then answers `totp` with "Enter the code from your
+authenticator app.", so a wrong password never reveals the account has two-factor. A code is
+accepted one step either side of now and never twice; a recovery code is spent when used. SSO
+accounts cannot turn it on, since their provider is where they sign in. QR sign in and login
+links are approved on a device already signed in and are not asked. A moderator's password
+reset link turns it off, the way back for someone who lost their authenticator and its codes.
+Not yet: a server setting that makes it required
+([#328](https://github.com/Sharkord/sharkord/issues/328)).
+
 ## Permissions and settings from upstream issues
 
 - **Pin messages in direct messages** (`PIN_DM_MESSAGES`): pinning in direct messages and

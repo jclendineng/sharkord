@@ -674,5 +674,20 @@
   "retentionDays_few": "Через {{count}} дня",
   "retentionDays_many": "Через {{count}} дней",
   "retentionPreview_few": "Сейчас было бы удалено {{count}} сообщения.",
-  "retentionPreview_many": "Сейчас было бы удалено {{count}} сообщений."
+  "retentionPreview_many": "Сейчас было бы удалено {{count}} сообщений.",
+  "twoFactorTitle": "Двухфакторная аутентификация",
+  "twoFactorDesc": "После пароля запрашивается код из приложения-аутентификатора.",
+  "twoFactorStartBtn": "Настроить двухфакторную",
+  "twoFactorKeyLabel": "Ключ настройки",
+  "twoFactorKeyDesc": "Добавьте его в приложение-аутентификатор, например Google Authenticator, 1Password или Пароли Apple.",
+  "twoFactorOpenApp": "Открыть в приложении-аутентификаторе",
+  "twoFactorCodeLabel": "Код из приложения",
+  "twoFactorConfirmBtn": "Включить",
+  "recoveryCodesLabel": "Коды восстановления",
+  "recoveryCodesDesc": "Каждый срабатывает один раз, если вы потеряете аутентификатор. Сохраните их, больше они не будут показаны.",
+  "twoFactorDisableLabel": "Код для отключения",
+  "twoFactorDisablePlaceholder": "Код из приложения или восстановления",
+  "twoFactorDisableBtn": "Отключить",
+  "twoFactorOff": "Двухфакторная аутентификация отключена",
+  "failedTwoFactor": "Не удалось изменить двухфакторную аутентификацию"
 }

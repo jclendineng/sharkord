@@ -18,6 +18,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   group direct messages, private notes, the new member lounge, QR sign in and the soundboard.
   Upstream's plugin storage migrations run as this fork's `0060_plugin_storage`, after the
   fork's own, so a database that already ran `0059` still gets them.
+- `0068_user_totp` adds the table that holds two-factor secrets, apart from users.
 - `0067_channel_retention` adds a retention period to channels, off on every channel until
   set.
 - `0066_password_resets` adds the table of reset links.
@@ -169,6 +170,12 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   to a year are deleted every hour, pinned messages and threads still going kept. Before
   saving, the screen shows how many messages it would delete now. Their files go with the
   orphaned file sweep ([#564](https://github.com/Sharkord/sharkord/issues/564)).
+- Two-factor authentication with an authenticator app, set up in Password settings on the web
+  and Account settings in the app, with eight one time recovery codes. Signing in with a
+  password then asks for a code on the web and in the app. Accounts that sign in through SSO
+  leave it to their provider, and QR sign in, approved on a signed in device, is not asked. A
+  moderator's password reset link turns it off
+  ([#328](https://github.com/Sharkord/sharkord/issues/328)).
 - Mute Stream Audio in Devices settings: screen shares with sound start muted
   ([#749](https://github.com/Sharkord/sharkord/issues/749)).
 

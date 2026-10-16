@@ -659,5 +659,20 @@
   "retentionDays_one": "Après {{count}} jour",
   "retentionDays_other": "Après {{count}} jours",
   "retentionPreview_one": "{{count}} message serait supprimé maintenant.",
-  "retentionPreview_other": "{{count}} messages seraient supprimés maintenant."
+  "retentionPreview_other": "{{count}} messages seraient supprimés maintenant.",
+  "twoFactorTitle": "Authentification à deux facteurs",
+  "twoFactorDesc": "Un code d'une application d'authentification est demandé après votre mot de passe.",
+  "twoFactorStartBtn": "Configurer les deux facteurs",
+  "twoFactorKeyLabel": "Clé de configuration",
+  "twoFactorKeyDesc": "Ajoutez-la à une application d'authentification comme Google Authenticator, 1Password ou Mots de passe d'Apple.",
+  "twoFactorOpenApp": "Ouvrir dans une application d'authentification",
+  "twoFactorCodeLabel": "Code de l'application",
+  "twoFactorConfirmBtn": "Activer",
+  "recoveryCodesLabel": "Codes de récupération",
+  "recoveryCodesDesc": "Chacun fonctionne une fois si vous perdez votre application. Gardez-les en lieu sûr, ils ne seront plus affichés.",
+  "twoFactorDisableLabel": "Code pour la désactiver",
+  "twoFactorDisablePlaceholder": "Code de l'application ou de récupération",
+  "twoFactorDisableBtn": "Désactiver",
+  "twoFactorOff": "Authentification à deux facteurs désactivée",
+  "failedTwoFactor": "Impossible de modifier l'authentification à deux facteurs"
 }

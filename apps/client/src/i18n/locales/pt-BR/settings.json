@@ -661,5 +661,20 @@
   "retentionDays_one": "Depois de {{count}} dia",
   "retentionDays_other": "Depois de {{count}} dias",
   "retentionPreview_one": "{{count}} mensagem seria excluída agora.",
-  "retentionPreview_other": "{{count}} mensagens seriam excluídas agora."
+  "retentionPreview_other": "{{count}} mensagens seriam excluídas agora.",
+  "twoFactorTitle": "Autenticação em duas etapas",
+  "twoFactorDesc": "Depois da senha é pedido um código de um app autenticador.",
+  "twoFactorStartBtn": "Configurar duas etapas",
+  "twoFactorKeyLabel": "Chave de configuração",
+  "twoFactorKeyDesc": "Adicione-a a um app autenticador como Google Authenticator, 1Password ou Senhas da Apple.",
+  "twoFactorOpenApp": "Abrir em um app autenticador",
+  "twoFactorCodeLabel": "Código do app",
+  "twoFactorConfirmBtn": "Ativar",
+  "recoveryCodesLabel": "Códigos de recuperação",
+  "recoveryCodesDesc": "Cada um funciona uma vez se você perder o autenticador. Guarde-os bem, não serão mostrados de novo.",
+  "twoFactorDisableLabel": "Código para desativar",
+  "twoFactorDisablePlaceholder": "Código do app ou de recuperação",
+  "twoFactorDisableBtn": "Desativar",
+  "twoFactorOff": "Autenticação em duas etapas desativada",
+  "failedTwoFactor": "Não foi possível alterar a autenticação em duas etapas"
 }

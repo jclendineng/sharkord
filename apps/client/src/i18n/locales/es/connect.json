@@ -30,5 +30,7 @@
   "resetPasswordBtn": "Establecer contraseña",
   "resetPasswordMismatch": "Las contraseñas no coinciden.",
   "resetPasswordFailed": "No se pudo restablecer la contraseña.",
-  "resetPasswordDone": "Contraseña establecida. Inicia sesión con ella."
+  "resetPasswordDone": "Contraseña establecida. Inicia sesión con ella.",
+  "totpLabel": "Código de autenticación",
+  "totpHelp": "O uno de tus códigos de recuperación."
 }

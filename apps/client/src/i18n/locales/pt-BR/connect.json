@@ -30,5 +30,7 @@
   "resetPasswordBtn": "Definir senha",
   "resetPasswordMismatch": "As senhas não coincidem.",
   "resetPasswordFailed": "Não foi possível redefinir a senha.",
-  "resetPasswordDone": "Senha definida. Entre com ela."
+  "resetPasswordDone": "Senha definida. Entre com ela.",
+  "totpLabel": "Código do autenticador",
+  "totpHelp": "Ou um dos seus códigos de recuperação."
 }

@@ -30,5 +30,7 @@
   "resetPasswordBtn": "Nastavit heslo",
   "resetPasswordMismatch": "Hesla se neshodují.",
   "resetPasswordFailed": "Heslo se nepodařilo obnovit.",
-  "resetPasswordDone": "Heslo nastaveno. Přihlas se s ním."
+  "resetPasswordDone": "Heslo nastaveno. Přihlas se s ním.",
+  "totpLabel": "Ověřovací kód",
+  "totpHelp": "Nebo jeden z tvých záložních kódů."
 }

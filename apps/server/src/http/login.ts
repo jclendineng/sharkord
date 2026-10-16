@@ -2,6 +2,7 @@ import {
   ActivityLogType,
   DELETED_USER_IDENTITY_AND_NAME,
   IP_BANNED_MESSAGE,
+  TOTP_REQUIRED_MESSAGE,
   sha256,
   type TBeforeLoginPayload
 } from '@sharkord/shared';
@@ -23,6 +24,7 @@ import { getWsInfo } from '../helpers/get-ws-info';
 import { isLocalLoginDisabled } from '../helpers/oidc/settings';
 import { safeCompare } from '../helpers/safe-compare';
 import { createSessionToken } from '../helpers/sessions';
+import { checkSecondFactor } from '../helpers/two-factor';
 import { logger } from '../logger';
 import { pluginManager } from '../plugins';
 import { runHook } from '../plugins/run-hook';
@@ -41,7 +43,9 @@ const zBody = z.object({
     .string()
     .min(4, 'Password must be at least 4 characters long')
     .max(128),
-  invite: z.string().optional()
+  invite: z.string().optional(),
+  // the authenticator or recovery code, asked for once the password is right
+  totp: z.string().trim().max(12).optional()
 });
 
 const loginRateLimiter = createRateLimiter({
@@ -205,6 +209,21 @@ const loginRouteHandler = async (
       'identity',
       `Identity banned: ${existingUser.banReason || 'No reason provided'}`
     );
+  }
+
+  const secondFactor = await checkSecondFactor(existingUser.id, data.totp);
+
+  // only reached with the right password, so asking for the code says nothing to a guesser
+  if (secondFactor === 'missing') {
+    throw new HttpValidationError('totp', TOTP_REQUIRED_MESSAGE);
+  }
+
+  if (secondFactor === 'invalid') {
+    logger.info(
+      `${chalk.dim('[Auth]')} Failed two-factor code for user "${existingUser.identity}". (IP: ${connectionInfo?.ip || 'unknown'})`
+    );
+
+    throw new HttpValidationError('totp', "That code isn't right.");
   }
 
   const token = await createSessionToken(

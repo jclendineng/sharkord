@@ -30,5 +30,7 @@
   "resetPasswordBtn": "Définir le mot de passe",
   "resetPasswordMismatch": "Les mots de passe ne correspondent pas.",
   "resetPasswordFailed": "Impossible de réinitialiser le mot de passe.",
-  "resetPasswordDone": "Mot de passe défini. Connectez-vous avec."
+  "resetPasswordDone": "Mot de passe défini. Connectez-vous avec.",
+  "totpLabel": "Code d'authentification",
+  "totpHelp": "Ou l'un de vos codes de récupération."
 }

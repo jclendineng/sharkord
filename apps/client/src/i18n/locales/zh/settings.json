@@ -659,5 +659,20 @@
   "retentionDays_one": "{{count}} 天后",
   "retentionDays_other": "{{count}} 天后",
   "retentionPreview_one": "现在会删除 {{count}} 条消息。",
-  "retentionPreview_other": "现在会删除 {{count}} 条消息。"
+  "retentionPreview_other": "现在会删除 {{count}} 条消息。",
+  "twoFactorTitle": "双重验证",
+  "twoFactorDesc": "输入密码后还需要验证器应用中的代码。",
+  "twoFactorStartBtn": "设置双重验证",
+  "twoFactorKeyLabel": "设置密钥",
+  "twoFactorKeyDesc": "将它添加到验证器应用，例如 Google Authenticator、1Password 或 Apple 密码。",
+  "twoFactorOpenApp": "在验证器应用中打开",
+  "twoFactorCodeLabel": "应用中的代码",
+  "twoFactorConfirmBtn": "开启",
+  "recoveryCodesLabel": "恢复代码",
+  "recoveryCodesDesc": "丢失验证器时每个代码可用一次。请妥善保存，之后不会再显示。",
+  "twoFactorDisableLabel": "关闭所需的代码",
+  "twoFactorDisablePlaceholder": "验证器代码或恢复代码",
+  "twoFactorDisableBtn": "关闭",
+  "twoFactorOff": "双重验证已关闭",
+  "failedTwoFactor": "无法更改双重验证"
 }

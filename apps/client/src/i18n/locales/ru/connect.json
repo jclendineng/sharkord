@@ -30,5 +30,7 @@
   "resetPasswordBtn": "Установить пароль",
   "resetPasswordMismatch": "Пароли не совпадают.",
   "resetPasswordFailed": "Не удалось сбросить пароль.",
-  "resetPasswordDone": "Пароль установлен. Войдите с ним."
+  "resetPasswordDone": "Пароль установлен. Войдите с ним.",
+  "totpLabel": "Код аутентификатора",
+  "totpHelp": "Или один из кодов восстановления."
 }

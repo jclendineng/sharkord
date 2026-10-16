@@ -4,6 +4,8 @@ import Foundation
 enum AuthAPI {
     struct RequestError: LocalizedError {
         let message: String
+        // which field the server blamed, "totp" when it wants the authenticator code
+        var field: String? = nil
 
         var errorDescription: String? { message }
     }
@@ -13,6 +15,8 @@ enum AuthAPI {
         let password: String
         // lets a new account in on a server that is closed to everyone else
         let invite: String?
+        // the authenticator or recovery code, once the server asked for it
+        let totp: String?
     }
 
     private struct OIDCExchangeBody: Encodable {
@@ -43,12 +47,12 @@ enum AuthAPI {
         return data
     }
 
-    static func login(_ address: ServerAddress, identity: String, password: String, invite: String? = nil) async throws -> String {
+    static func login(_ address: ServerAddress, identity: String, password: String, invite: String? = nil, totp: String? = nil) async throws -> String {
         var request = URLRequest(url: address.url(path: "login"))
         request.httpMethod = "POST"
         request.setValue(AppInfo.userAgent, forHTTPHeaderField: "User-Agent")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONEncoder().encode(LoginBody(identity: identity, password: password, invite: invite))
+        request.httpBody = try JSONEncoder().encode(LoginBody(identity: identity, password: password, invite: invite, totp: totp))
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -169,8 +173,12 @@ enum AuthAPI {
 
         let body = try? JSONDecoder().decode(ErrorResponse.self, from: data)
 
-        if let message = body?.error ?? body?.errors?.values.first {
+        if let message = body?.error {
             throw RequestError(message: message)
+        }
+
+        if let (field, message) = body?.errors?.first {
+            throw RequestError(message: message, field: field)
         }
 
         throw RequestError(message: "The server responded with status \(http.statusCode).")

@@ -30,5 +30,7 @@
   "resetPasswordBtn": "设置密码",
   "resetPasswordMismatch": "两次输入的密码不一致。",
   "resetPasswordFailed": "无法重置密码。",
-  "resetPasswordDone": "密码已设置，请用它登录。"
+  "resetPasswordDone": "密码已设置，请用它登录。",
+  "totpLabel": "验证器代码",
+  "totpHelp": "或你的一个恢复代码。"
 }

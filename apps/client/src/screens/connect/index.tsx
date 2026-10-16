@@ -14,7 +14,7 @@ import {
   setSessionStorageItem
 } from '@/helpers/storage';
 import { useForm } from '@/hooks/use-form';
-import { PluginSlot, TestId } from '@sharkord/shared';
+import { PluginSlot, TestId, TOTP_REQUIRED_MESSAGE } from '@sharkord/shared';
 import {
   Alert,
   AlertDescription,
@@ -41,12 +41,16 @@ const Connect = memo(() => {
   const { values, r, setErrors, onChange } = useForm<{
     identity: string;
     password: string;
+    totp: string;
     autoLogin: boolean;
   }>({
     identity: getLocalStorageItem(LocalStorageKey.IDENTITY) || '',
     password: '',
+    totp: '',
     autoLogin: getLocalStorageItemBool(LocalStorageKey.AUTO_LOGIN)
   });
+  // the password was right and the account has two-factor on, so the code field shows
+  const [needsCode, setNeedsCode] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [resetToken, setResetToken] = useState(() =>
@@ -115,14 +119,27 @@ const Connect = memo(() => {
         body: JSON.stringify({
           identity: values.identity,
           password: values.password,
-          invite: inviteCode
+          invite: inviteCode,
+          totp: needsCode ? values.totp : undefined
         })
       });
 
       if (!response.ok) {
-        const data = await response.json();
+        const data = (await response.json()) as {
+          errors?: Record<string, string>;
+        };
+        const errors = data.errors ?? {};
 
-        setErrors(data.errors || {});
+        if (errors.totp) {
+          setNeedsCode(true);
+        }
+
+        // being asked for the code is the next step, not a mistake to show in red
+        if (errors.totp === TOTP_REQUIRED_MESSAGE) {
+          delete errors.totp;
+        }
+
+        setErrors(errors);
         return;
       }
 
@@ -142,6 +159,8 @@ const Connect = memo(() => {
   }, [
     values.identity,
     values.password,
+    values.totp,
+    needsCode,
     setErrors,
     inviteCode,
     startSession,
@@ -238,6 +257,17 @@ const Connect = memo(() => {
                   data-testid={TestId.CONNECT_PASSWORD_INPUT}
                 />
               </Group>
+              {needsCode && (
+                <Group label={t('totpLabel')} help={t('totpHelp')}>
+                  <Input
+                    {...r('totp')}
+                    autoComplete="one-time-code"
+                    inputMode="numeric"
+                    autoFocus
+                    onEnter={onConnectClick}
+                  />
+                </Group>
+              )}
             </form>
           )}
 

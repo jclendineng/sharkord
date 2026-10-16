@@ -30,5 +30,7 @@
   "resetPasswordBtn": "Imposta password",
   "resetPasswordMismatch": "Le password non coincidono.",
   "resetPasswordFailed": "Impossibile reimpostare la password.",
-  "resetPasswordDone": "Password impostata. Accedi con quella."
+  "resetPasswordDone": "Password impostata. Accedi con quella.",
+  "totpLabel": "Codice di autenticazione",
+  "totpHelp": "Oppure uno dei tuoi codici di recupero."
 }

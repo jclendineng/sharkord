@@ -30,5 +30,7 @@
   "resetPasswordBtn": "Set Password",
   "resetPasswordMismatch": "The passwords don't match.",
   "resetPasswordFailed": "Couldn't reset the password.",
-  "resetPasswordDone": "Password set. Log in with it."
+  "resetPasswordDone": "Password set. Log in with it.",
+  "totpLabel": "Authenticator code",
+  "totpHelp": "Or one of your recovery codes."
 }

@@ -2,7 +2,7 @@ import { ActivityLogType, DisconnectCode, sha256 } from '@sharkord/shared';
 import { randomBytes } from 'crypto';
 import { and, eq, gt, sql } from 'drizzle-orm';
 import { db } from '../db';
-import { passwordResets, sessions, users } from '../db/schema';
+import { passwordResets, sessions, users, userTotp } from '../db/schema';
 import { enqueueActivityLog } from '../queues/activity-log';
 import { disconnectUser } from '../utils/wss';
 
@@ -60,6 +60,9 @@ const redeemPasswordReset = async (
       .run();
 
     tx.delete(sessions).where(eq(sessions.userId, reset.userId)).run();
+    // a moderator vouching for the person is the way back for someone who lost their
+    // authenticator and its recovery codes too, so the link turns two-factor off as well
+    tx.delete(userTotp).where(eq(userTotp.userId, reset.userId)).run();
     tx.delete(passwordResets)
       .where(eq(passwordResets.userId, reset.userId))
       .run();

@@ -287,6 +287,24 @@ const webhooks = sqliteTable(
   (t) => [index('webhooks_channel_idx').on(t.channelId)]
 );
 
+// an authenticator app as a second step at password sign in. kept apart from users so the
+// secret can never ride along a select of a user row. enabledAt is null while setup waits for
+// its first code, and recovery codes are stored as hashes, each spent once
+const userTotp = sqliteTable('user_totp', {
+  userId: integer('user_id')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  secret: text('secret').notNull(),
+  // the last 30 second step a code was accepted for, so a code cannot be used twice
+  lastStep: integer('last_step').notNull().default(0),
+  recoveryCodeHashes: text('recovery_code_hashes', { mode: 'json' })
+    .$type<string[]>()
+    .notNull()
+    .default([]),
+  enabledAt: integer('enabled_at'),
+  createdAt: integer('created_at').notNull()
+});
+
 // one time links a moderator hands someone who forgot their password, there being no email to
 // send a reset to. only a hash of the token is kept, and using it signs every session out
 const passwordResets = sqliteTable(
@@ -1085,5 +1103,6 @@ export {
   userNotes,
   userRoles,
   users,
+  userTotp,
   webhooks
 };

@@ -38,6 +38,7 @@ struct ConnectView: View {
     @State private var serverInfo: ServerInfo?
     // an invite link or its code, from the address field or typed in on a closed server
     @State private var invite = ""
+    @State private var twoFactorCode = ""
     @State private var serverError: String?
     @State private var isScannerPresented = false
     private let hasCamera = AVCaptureDevice.default(for: .video) != nil
@@ -366,6 +367,19 @@ struct ConnectView: View {
         AuthField(label: "Password") {
             PasswordField(text: $password, contentType: passwordContent, onSubmit: signIn)
         }
+
+        if session.needsTwoFactorCode {
+            AuthField(label: "Authenticator Code") {
+                TextField("", text: $twoFactorCode, prompt: Text("Or a recovery code").foregroundStyle(Theme.muted))
+                    .textContentType(.oneTimeCode)
+                    .keyboardType(.asciiCapable)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .submitLabel(.go)
+                    .onSubmit(signIn)
+                    .accessibilityLabel("Authenticator Code")
+            }
+        }
     }
 
     @ViewBuilder
@@ -599,7 +613,13 @@ struct ConnectView: View {
         }
 
         Task {
-            await session.signIn(serverURL: serverURL, identity: identity, password: password, invite: step == .register ? inviteCode : nil)
+            await session.signIn(
+                serverURL: serverURL,
+                identity: identity,
+                password: password,
+                invite: step == .register ? inviteCode : nil,
+                totp: session.needsTwoFactorCode ? twoFactorCode : nil
+            )
         }
     }
 

@@ -665,5 +665,20 @@
   "retentionDays_few": "Po {{count}} dnech",
   "retentionDays_many": "Po {{count}} dnech",
   "retentionPreview_few": "Teď by se smazaly {{count}} zprávy.",
-  "retentionPreview_many": "Teď by se smazalo {{count}} zpráv."
+  "retentionPreview_many": "Teď by se smazalo {{count}} zpráv.",
+  "twoFactorTitle": "Dvoufázové ověření",
+  "twoFactorDesc": "Po heslu se vyžádá kód z ověřovací aplikace.",
+  "twoFactorStartBtn": "Nastavit dvoufázové ověření",
+  "twoFactorKeyLabel": "Klíč pro nastavení",
+  "twoFactorKeyDesc": "Přidej ho do ověřovací aplikace, třeba Google Authenticator, 1Password nebo Hesla od Applu.",
+  "twoFactorOpenApp": "Otevřít v ověřovací aplikaci",
+  "twoFactorCodeLabel": "Kód z aplikace",
+  "twoFactorConfirmBtn": "Zapnout",
+  "recoveryCodesLabel": "Záložní kódy",
+  "recoveryCodesDesc": "Každý funguje jednou, když ztratíš ověřovací aplikaci. Ulož je bezpečně, znovu se nezobrazí.",
+  "twoFactorDisableLabel": "Kód pro vypnutí",
+  "twoFactorDisablePlaceholder": "Kód z aplikace nebo záložní kód",
+  "twoFactorDisableBtn": "Vypnout",
+  "twoFactorOff": "Dvoufázové ověření je vypnuté",
+  "failedTwoFactor": "Dvoufázové ověření se nepodařilo změnit"
 }
