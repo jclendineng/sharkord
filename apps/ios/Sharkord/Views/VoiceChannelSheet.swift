@@ -71,10 +71,11 @@ struct VoiceChannelSheet: View {
         .presentationBackground(Theme.listBackground)
         // handed over by hand: on a mac a sheet's background is worked out before it inherits
         // anything, so a sheet reading a store it was not given crashed on opening
-        .fullScreenCover(isPresented: $isRoomPresented, onDismiss: close) {
+        .fullScreenCover(isPresented: $isRoomPresented) {
             VoiceRoomScreen()
                 .environment(session)
                 .environment(servers)
+                .environment(\.closeVoiceRoom, close)
         }
     }
 

@@ -5,6 +5,7 @@ import SwiftUI
 struct VoiceRoomScreen: View {
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.closeVoiceRoom) private var closeVoiceRoom
 
     @State private var isReactionBarShown = false
 
@@ -62,7 +63,7 @@ struct VoiceRoomScreen: View {
         .preferredColorScheme(.dark)
         .onChange(of: session.currentVoiceChannelId) { _, channelId in
             if channelId == nil {
-                dismiss()
+                close()
             }
         }
     }
@@ -109,11 +110,15 @@ struct VoiceRoomScreen: View {
     }
 
     private func close() {
-        dismiss()
+        if let closeVoiceRoom {
+            closeVoiceRoom()
+        } else {
+            dismiss()
+        }
     }
 
     private func leave() {
-        dismiss()
+        close()
 
         Task {
             await session.leaveVoice()

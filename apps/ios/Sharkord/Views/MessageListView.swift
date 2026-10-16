@@ -16,6 +16,8 @@ struct MessageListView<Header: View>: View {
     @State private var listFrame = CGRect.zero
     @State private var deletingMessage: Message?
     @State private var openedThread: Message?
+    // opened once the actions sheet has finished going, pushed under it the two moved at once
+    @State private var threadAfterActions: Message?
 
     // consecutive messages from the same author inside this window share one header
     private static var groupingWindow: Int { 7 * 60 * 1000 }
@@ -154,7 +156,7 @@ struct MessageListView<Header: View>: View {
         .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }) { frame in
             listFrame = frame
         }
-        .actionsPresentation(item: $actionsMessage, anchor: menuAnchor) { message in
+        .actionsPresentation(item: $actionsMessage, anchor: menuAnchor, onDismiss: openThreadAfterActions) { message in
             MessageActionsSheet(
                 message: message,
                 store: store,
@@ -232,7 +234,9 @@ struct MessageListView<Header: View>: View {
         // pass catches what finished laying out after the first and is a no op otherwise
         let anchor = UnitPoint(x: 0.5, y: 0.25)
 
-        try? await Task.sleep(for: .milliseconds(120))
+        guard await pause(.milliseconds(120)) else {
+            return
+        }
 
         withAnimation(.smooth(duration: 0.3)) {
             proxy.scrollTo(messageId, anchor: anchor)
@@ -240,7 +244,9 @@ struct MessageListView<Header: View>: View {
 
         highlightedMessageId = messageId
 
-        try? await Task.sleep(for: .milliseconds(350))
+        guard await pause(.milliseconds(350)) else {
+            return endHighlight()
+        }
 
         withAnimation(.smooth(duration: 0.3)) {
             proxy.scrollTo(messageId, anchor: anchor)
@@ -251,19 +257,44 @@ struct MessageListView<Header: View>: View {
                 highlightStrength = strength
             }
 
-            try? await Task.sleep(for: .milliseconds(320))
+            guard await pause(.milliseconds(320)) else {
+                return endHighlight()
+            }
         }
 
-        try? await Task.sleep(for: .seconds(0.9))
+        guard await pause(.seconds(0.9)) else {
+            return endHighlight()
+        }
 
         withAnimation(.easeOut(duration: 0.6)) {
             highlightStrength = 0
         }
 
-        try? await Task.sleep(for: .milliseconds(600))
+        guard await pause(.milliseconds(600)) else {
+            return endHighlight()
+        }
 
-        highlightedMessageId = nil
+        endHighlight()
         store.focusedMessageId = nil
+    }
+
+    // false once the jump has been cancelled. a jump opened from search or pins is set while
+    // that screen still covers the chat, and the chat showing again starts it over. a sleep
+    // that is cancelled returns at once, so the cancelled run used to race through to the end
+    // and clear the jump, taking the new run's glow with it
+    private func pause(_ duration: Duration) async -> Bool {
+        do {
+            try await Task.sleep(for: duration)
+
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    private func endHighlight() {
+        highlightStrength = 0
+        highlightedMessageId = nil
     }
 
     private func scrollToBottom(_ proxy: ScrollViewProxy) {
@@ -372,7 +403,16 @@ struct MessageListView<Header: View>: View {
     }
 
     private func openThread(_ message: Message) {
+        threadAfterActions = message
         actionsMessage = nil
+    }
+
+    private func openThreadAfterActions() {
+        guard let message = threadAfterActions else {
+            return
+        }
+
+        threadAfterActions = nil
         openedThread = message
     }
 

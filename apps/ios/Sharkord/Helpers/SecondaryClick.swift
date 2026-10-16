@@ -42,9 +42,10 @@ extension View {
     func actionsPresentation<Item: Identifiable, Menu: View>(
         item: Binding<Item?>,
         anchor: UnitPoint,
+        onDismiss: (() -> Void)? = nil,
         @ViewBuilder menu: @escaping (Item) -> Menu
     ) -> some View {
-        modifier(ItemActionsPresentation(item: item, anchor: anchor, menu: menu))
+        modifier(ItemActionsPresentation(item: item, anchor: anchor, onDismiss: onDismiss, menu: menu))
     }
 }
 
@@ -89,6 +90,7 @@ private struct ActionsPresentation<Menu: View>: ViewModifier {
 private struct ItemActionsPresentation<Item: Identifiable, Menu: View>: ViewModifier {
     @Binding var item: Item?
     let anchor: UnitPoint
+    let onDismiss: (() -> Void)?
     @ViewBuilder let menu: (Item) -> Menu
 
     @State private var menuId = UUID()
@@ -103,7 +105,7 @@ private struct ItemActionsPresentation<Item: Identifiable, Menu: View>: ViewModi
                 .onChange(of: item.map { AnyHashable($0.id) }, itemChanged)
         } else {
             content
-                .sheet(item: $item, content: menu)
+                .sheet(item: $item, onDismiss: onDismiss, content: menu)
         }
     }
 
@@ -112,6 +114,7 @@ private struct ItemActionsPresentation<Item: Identifiable, Menu: View>: ViewModi
             PointerMenus.show(menuId, at: point(of: anchor, in: frame), content: AnyView(menu(item)), close: close)
         } else {
             PointerMenus.closed(menuId)
+            onDismiss?()
         }
     }
 

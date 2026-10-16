@@ -152,6 +152,12 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   even when the account is still connected elsewhere.
 - Long presses on channels and messages open their menu after the same 0.3 seconds as servers
   and conversations.
+- Lowering the call screen goes straight back to the channel list in one slide, instead of the
+  voice channel sheet showing again on the way down.
+- Jumping to a message from search or pins highlights it again, rather than only scrolling to
+  it.
+- A long press on a message's replies link opens only its menu, not the thread under it too,
+  and Open Thread waits for the menu to close.
 - The iOS app's messages load at launch instead of showing "You must be authenticated" until
   another channel was opened.
 - On an iPad, the message bar sits level with the user bar beside it, and the top bar's pins

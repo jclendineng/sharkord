@@ -11,6 +11,7 @@ struct MessageRow: View {
     var hoverActions: MessageHoverActions?
 
     @Environment(SessionStore.self) private var session
+    @Environment(\.isShowingMessageActions) private var isShowingMessageActions
 
     @State private var isHovered = false
 
@@ -100,6 +101,9 @@ struct MessageRow: View {
                             .foregroundStyle(Theme.blurple)
                     }
                     .buttonStyle(.plain)
+                    // a long press on the link opens the actions sheet, and the finger lifting
+                    // would otherwise also open the thread under it
+                    .disabled(isShowingMessageActions)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
