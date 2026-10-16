@@ -628,5 +628,13 @@
   "deleteAccountKeepMsg": "Ваш аккаунт будет удалён, сообщения останутся от имени Удалённого пользователя. Это нельзя отменить.",
   "deleteAccountWipeMsg": "Ваш аккаунт и всё, что вы публиковали, будут удалены. Это нельзя отменить.",
   "failedDeleteAccount": "Не удалось удалить аккаунт",
-  "deleteAccountBtn": "Удалить аккаунт"
+  "deleteAccountBtn": "Удалить аккаунт",
+  "afkChannelLabel": "AFK-канал",
+  "afkChannelDesc": "Участники, молчащие в звонке дольше указанного ниже времени, перемещаются сюда.",
+  "afkChannelNone": "Без AFK-канала",
+  "afkTimeoutLabel": "Тайм-аут AFK",
+  "afkTimeoutMinutes_one": "{{count}} минута",
+  "afkTimeoutMinutes_other": "{{count}} минут",
+  "afkTimeoutMinutes_few": "{{count}} минуты",
+  "afkTimeoutMinutes_many": "{{count}} минут"
 }

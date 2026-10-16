@@ -1,15 +1,21 @@
 import {
   ActivityLogType,
+  AFK_TIMEOUT_MAX_SECONDS,
+  AFK_TIMEOUT_MIN_SECONDS,
+  ChannelType,
   Permission,
   STORAGE_MAX_FILES_PER_MESSAGE,
   STORAGE_MAX_IMAGE_OPTIMIZATION_QUALITY,
   STORAGE_MIN_IMAGE_OPTIMIZATION_QUALITY,
   StorageOverflowAction
 } from '@sharkord/shared';
+import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { db } from '../../db';
 import { updateSettings } from '../../db/mutations/server';
 import { publishSettings } from '../../db/publishers';
 import { getSettings } from '../../db/queries/server';
+import { channels } from '../../db/schema';
 import { writeSettingsToConfigFile } from '../../helpers/config-file-sync';
 import { pluginManager } from '../../plugins';
 import { enqueueActivityLog } from '../../queues/activity-log';
@@ -61,7 +67,14 @@ const zGeneralSettings = z.object({
     .nullable()
     .optional(),
   klipyApiKey: z.string().trim().min(1).max(200).nullable().optional(),
-  freesoundApiKey: z.string().trim().min(1).max(200).nullable().optional()
+  freesoundApiKey: z.string().trim().min(1).max(200).nullable().optional(),
+  afkChannelId: z.number().int().positive().nullable().optional(),
+  afkTimeoutSeconds: z
+    .number()
+    .int()
+    .min(AFK_TIMEOUT_MIN_SECONDS)
+    .max(AFK_TIMEOUT_MAX_SECONDS)
+    .optional()
 });
 
 const CONFIG_FILE_SETTING_KEYS = [
@@ -96,6 +109,20 @@ const updateSettingsRoute = protectedProcedure
 
     if (touchesGeneral) {
       await ctx.needsPermission(Permission.MANAGE_SETTINGS);
+    }
+
+    if (input.afkChannelId) {
+      const afkChannel = await db
+        .select({ type: channels.type, isDm: channels.isDm })
+        .from(channels)
+        .where(eq(channels.id, input.afkChannelId))
+        .limit(1)
+        .get();
+
+      invariant(afkChannel?.type === ChannelType.VOICE && !afkChannel.isDm, {
+        code: 'BAD_REQUEST',
+        message: 'The AFK channel has to be a voice channel.'
+      });
     }
 
     const { enablePlugins: oldEnablePlugins } = await getSettings();

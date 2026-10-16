@@ -108,6 +108,9 @@ struct AdminServerSettings: Codable, Equatable {
     var reportEmail: String?
     var klipyApiKey: String?
     var freesoundApiKey: String?
+    // missing on a server from before afk, which the screen then leaves out
+    var afkChannelId: Int?
+    var afkTimeoutSeconds: Int?
 }
 
 // users.getAll

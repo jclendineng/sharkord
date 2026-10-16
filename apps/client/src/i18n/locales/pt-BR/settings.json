@@ -621,5 +621,11 @@
   "deleteAccountKeepMsg": "Sua conta será excluída e suas mensagens ficarão como Usuário excluído. Não dá para desfazer.",
   "deleteAccountWipeMsg": "Sua conta e tudo o que você publicou serão excluídos. Não dá para desfazer.",
   "failedDeleteAccount": "Não foi possível excluir sua conta",
-  "deleteAccountBtn": "Excluir conta"
+  "deleteAccountBtn": "Excluir conta",
+  "afkChannelLabel": "Canal AFK",
+  "afkChannelDesc": "Quem ficar em silêncio numa chamada pelo tempo abaixo é movido para cá.",
+  "afkChannelNone": "Sem canal AFK",
+  "afkTimeoutLabel": "Tempo para AFK",
+  "afkTimeoutMinutes_one": "{{count}} minuto",
+  "afkTimeoutMinutes_other": "{{count}} minutos"
 }

@@ -209,6 +209,35 @@ struct GeneralSettingsScreen: View {
                 }
             }
 
+            if let afkTimeout = settings.wrappedValue.afkTimeoutSeconds {
+                Section {
+                    Picker("AFK Channel", selection: Binding(
+                        get: { settings.wrappedValue.afkChannelId },
+                        set: { settings.wrappedValue.afkChannelId = $0 }
+                    )) {
+                        Text("None").tag(Int?.none)
+
+                        ForEach(afkChannelChoices) { channel in
+                            Text(channel.name).tag(Int?.some(channel.id))
+                        }
+                    }
+
+                    Picker("AFK Timeout", selection: Binding(
+                        get: { afkTimeout },
+                        set: { settings.wrappedValue.afkTimeoutSeconds = $0 }
+                    )) {
+                        ForEach(Self.afkTimeoutChoices, id: \.self) { seconds in
+                            Text(seconds == 60 ? "1 minute" : "\(seconds / 60) minutes").tag(seconds)
+                        }
+                    }
+                    .disabled(settings.wrappedValue.afkChannelId == nil)
+                } header: {
+                    Text("AFK")
+                } footer: {
+                    Text("Members silent in a call for the timeout are moved to the AFK channel.")
+                }
+            }
+
             if let errorMessage {
                 Section {
                     Text(errorMessage)
@@ -254,6 +283,13 @@ struct GeneralSettingsScreen: View {
     }
 
 
+    // AFK_TIMEOUT_OPTIONS_SECONDS in packages/shared
+    private static let afkTimeoutChoices = [60, 300, 900, 1800, 3600]
+
+    private var afkChannelChoices: [Channel] {
+        session.channels.filter { $0.type == .voice && !$0.isDm }
+    }
+
     private func load() async {
         do {
             let loaded: AdminServerSettings = try await session.request("others.getSettings")
@@ -289,6 +325,8 @@ struct GeneralSettingsScreen: View {
             let reportEmail: String?
             let klipyApiKey: String?
             let freesoundApiKey: String?
+            let afkChannelId: Int?
+            let afkTimeoutSeconds: Int?
 
             // a null password clears it, which a nil optional would leave out of the json
             func encode(to encoder: Encoder) throws {
@@ -310,13 +348,19 @@ struct GeneralSettingsScreen: View {
                 try container.encode(reportEmail, forKey: .reportEmail)
                 try container.encode(klipyApiKey, forKey: .klipyApiKey)
                 try container.encode(freesoundApiKey, forKey: .freesoundApiKey)
+
+                // only a server that sent the timeout knows afk, null turns the channel off
+                if let afkTimeoutSeconds {
+                    try container.encode(afkChannelId, forKey: .afkChannelId)
+                    try container.encode(afkTimeoutSeconds, forKey: .afkTimeoutSeconds)
+                }
             }
 
             private enum CodingKeys: String, CodingKey {
                 case name, description, password, onlyAskForPasswordOnFirstJoin, allowNewUsers
                 case directMessagesEnabled, enablePlugins, enableSearch, showWelcomeDialog, webRtcSimulcastEnabled
                 case pushShowMessageContent, linkPreviewsPrivateNetwork, reportEmail, klipyApiKey
-                case freesoundApiKey
+                case freesoundApiKey, afkChannelId, afkTimeoutSeconds
             }
         }
 
@@ -335,7 +379,9 @@ struct GeneralSettingsScreen: View {
             linkPreviewsPrivateNetwork: settings.linkPreviewsPrivateNetwork,
             reportEmail: trimmedOrNil(settings.reportEmail),
             klipyApiKey: trimmedOrNil(settings.klipyApiKey),
-            freesoundApiKey: trimmedOrNil(settings.freesoundApiKey)
+            freesoundApiKey: trimmedOrNil(settings.freesoundApiKey),
+            afkChannelId: settings.afkChannelId,
+            afkTimeoutSeconds: settings.afkTimeoutSeconds
         )
 
         isSaving = true

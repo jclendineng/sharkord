@@ -92,6 +92,11 @@ const settings = sqliteTable(
       .notNull()
       .default(true),
     reportEmail: text('report_email'),
+    // the voice channel members silent for afkTimeoutSeconds are moved to, null turns it off.
+    // no foreign key: sqlite drops on delete set null from an added column, so the reference
+    // would block deleting the channel. a channel that is gone simply turns afk off
+    afkChannelId: integer('afk_channel_id'),
+    afkTimeoutSeconds: integer('afk_timeout_seconds').notNull().default(300),
     // the klipy api key the server searches gifs with, never sent to members
     klipyApiKey: text('klipy_api_key'),
     // the freesound api key managers search sounds with, never sent to members

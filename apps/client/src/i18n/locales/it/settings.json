@@ -619,5 +619,11 @@
   "deleteAccountKeepMsg": "Il tuo account verrà eliminato e i tuoi messaggi resteranno come Utente eliminato. Non si può annullare.",
   "deleteAccountWipeMsg": "Il tuo account e tutto ciò che hai pubblicato verranno eliminati. Non si può annullare.",
   "failedDeleteAccount": "Impossibile eliminare l'account",
-  "deleteAccountBtn": "Elimina account"
+  "deleteAccountBtn": "Elimina account",
+  "afkChannelLabel": "Canale AFK",
+  "afkChannelDesc": "Chi resta in silenzio in una chiamata per il tempo qui sotto viene spostato qui.",
+  "afkChannelNone": "Nessun canale AFK",
+  "afkTimeoutLabel": "Timeout AFK",
+  "afkTimeoutMinutes_one": "{{count}} minuto",
+  "afkTimeoutMinutes_other": "{{count}} minuti"
 }

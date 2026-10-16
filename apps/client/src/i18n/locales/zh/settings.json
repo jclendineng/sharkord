@@ -619,5 +619,11 @@
   "deleteAccountKeepMsg": "你的账户将被删除，消息会保留并显示为已删除用户。此操作无法撤销。",
   "deleteAccountWipeMsg": "你的账户和你发布的所有内容都将被删除。此操作无法撤销。",
   "failedDeleteAccount": "无法删除你的账户",
-  "deleteAccountBtn": "删除账户"
+  "deleteAccountBtn": "删除账户",
+  "afkChannelLabel": "挂机频道",
+  "afkChannelDesc": "在通话中沉默超过下方时间的成员会被移到这里。",
+  "afkChannelNone": "不设挂机频道",
+  "afkTimeoutLabel": "挂机超时",
+  "afkTimeoutMinutes_one": "{{count}} 分钟",
+  "afkTimeoutMinutes_other": "{{count}} 分钟"
 }

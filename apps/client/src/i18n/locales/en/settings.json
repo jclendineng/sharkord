@@ -621,5 +621,11 @@
   "deleteAccountKeepMsg": "Your account will be deleted and your messages will stay as Deleted User. This can't be undone.",
   "deleteAccountWipeMsg": "Your account and everything you posted will be deleted. This can't be undone.",
   "failedDeleteAccount": "Couldn't delete your account",
-  "deleteAccountBtn": "Delete Account"
+  "deleteAccountBtn": "Delete Account",
+  "afkChannelLabel": "AFK Channel",
+  "afkChannelDesc": "Members silent in a call for the timeout below are moved here.",
+  "afkChannelNone": "No AFK channel",
+  "afkTimeoutLabel": "AFK Timeout",
+  "afkTimeoutMinutes_one": "{{count}} minute",
+  "afkTimeoutMinutes_other": "{{count}} minutes"
 }

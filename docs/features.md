@@ -289,6 +289,16 @@ Server Settings, Overview, Report Email. The apps' Report action on a server or 
 opens an email to this address, with the server, channel and message filled in. It is
 published in `/info` so a report can be sent without an account. Setting `reportEmail`.
 
+## AFK channel
+
+Server settings, General, AFK Channel and AFK Timeout (`afkChannelId`, `afkTimeoutSeconds`,
+1 to 60 minutes, five by default). Each voice runtime's router has an audio level observer on
+every microphone, and speaking above about -55 dB, joining or changing your voice state marks
+you active. Every 30 seconds `crons/move-afk-users.ts` moves whoever has been inactive for the
+timeout into the AFK channel with the same `moveVoiceUser` a moderator uses, so the apps follow
+it as they follow any move. Direct message calls and the AFK channel itself are left alone, and
+a deleted or no longer voice channel turns AFK off. Muting counts as silence, as on Discord.
+
 ## Permissions and settings from upstream issues
 
 - **Pin messages in direct messages** (`PIN_DM_MESSAGES`): pinning in direct messages and

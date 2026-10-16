@@ -619,5 +619,11 @@
   "deleteAccountKeepMsg": "Votre compte sera supprimé et vos messages resteront sous Utilisateur supprimé. C'est définitif.",
   "deleteAccountWipeMsg": "Votre compte et tout ce que vous avez publié seront supprimés. C'est définitif.",
   "failedDeleteAccount": "Impossible de supprimer votre compte",
-  "deleteAccountBtn": "Supprimer le compte"
+  "deleteAccountBtn": "Supprimer le compte",
+  "afkChannelLabel": "Salon AFK",
+  "afkChannelDesc": "Les membres silencieux dans un appel pendant la durée ci-dessous y sont déplacés.",
+  "afkChannelNone": "Pas de salon AFK",
+  "afkTimeoutLabel": "Délai AFK",
+  "afkTimeoutMinutes_one": "{{count}} minute",
+  "afkTimeoutMinutes_other": "{{count}} minutes"
 }

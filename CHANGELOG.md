@@ -18,6 +18,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   group direct messages, private notes, the new member lounge, QR sign in and the soundboard.
   Upstream's plugin storage migrations run as this fork's `0060_plugin_storage`, after the
   fork's own, so a database that already ran `0059` still gets them.
+- `0063_afk_channel` adds the AFK channel and timeout to the settings table. AFK is off until
+  an admin picks a channel.
 - `0062_oidc_invite_code` adds a column to SSO sign ins in flight, for the invite they carry.
 - `0061_grant_pin_dm_messages` gives the new Pin Messages in Direct Messages permission to
   every role that has Pin Messages. An iOS app from before it shows the roles screen without
@@ -140,6 +142,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   account with a password confirms with it, and you choose whether your messages stay as
   Deleted User or go too. The server owner can't delete theirs
   ([#49](https://github.com/Sharkord/sharkord/issues/49)).
+- An AFK channel, like Discord's: members silent in a call for the server's timeout (1 to
+  60 minutes) are moved into it. Set in server settings on the web and in the app.
 - Mute Stream Audio in Devices settings: screen shares with sound start muted
   ([#749](https://github.com/Sharkord/sharkord/issues/749)).
 

@@ -619,5 +619,13 @@
   "deleteAccountKeepMsg": "Tvůj účet bude smazán a zprávy zůstanou jako Smazaný uživatel. Nelze to vrátit.",
   "deleteAccountWipeMsg": "Tvůj účet a vše, co jsi zveřejnil, bude smazáno. Nelze to vrátit.",
   "failedDeleteAccount": "Účet se nepodařilo smazat",
-  "deleteAccountBtn": "Smazat účet"
+  "deleteAccountBtn": "Smazat účet",
+  "afkChannelLabel": "AFK kanál",
+  "afkChannelDesc": "Kdo v hovoru mlčí déle než časový limit níže, bude přesunut sem.",
+  "afkChannelNone": "Žádný AFK kanál",
+  "afkTimeoutLabel": "AFK limit",
+  "afkTimeoutMinutes_one": "{{count}} minuta",
+  "afkTimeoutMinutes_other": "{{count}} minut",
+  "afkTimeoutMinutes_few": "{{count}} minuty",
+  "afkTimeoutMinutes_many": "{{count}} minut"
 }

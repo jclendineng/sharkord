@@ -2,11 +2,29 @@ import { ImagePicker } from '@/components/image-picker';
 import { SettingsSection } from '@/components/server-screens/settings-shell/section';
 import { useSettingsForm } from '@/components/server-screens/settings-shell/use-settings-form';
 import { useAdminGeneral } from '@/features/server/admin/hooks';
+import { useChannels } from '@/features/server/channels/hooks';
 import { getFileUrl } from '@/helpers/get-file-url';
 import type { TPickedImage } from '@/hooks/use-pick-image';
 import { getTRPCClient } from '@/lib/trpc';
-import { Group, Input, LoadingCard, Switch, Textarea } from '@sharkord/ui';
-import { memo, useCallback, useEffect } from 'react';
+import {
+  AFK_TIMEOUT_DEFAULT_SECONDS,
+  AFK_TIMEOUT_OPTIONS_SECONDS,
+  ChannelType
+} from '@sharkord/shared';
+import {
+  Group,
+  Input,
+  LoadingCard,
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Switch,
+  Textarea
+} from '@sharkord/ui';
+import { memo, useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type TServerGeneralValues = {
@@ -25,9 +43,14 @@ type TServerGeneralValues = {
   reportEmail: string;
   klipyApiKey: string;
   freesoundApiKey: string;
+  // a channel id, or AFK_OFF
+  afkChannelId: string;
+  afkTimeoutSeconds: string;
   // undefined means untouched, null means remove
   logo?: TPickedImage | null;
 };
+
+const AFK_OFF = 'off';
 
 const INITIAL_VALUES: TServerGeneralValues = {
   name: '',
@@ -44,7 +67,9 @@ const INITIAL_VALUES: TServerGeneralValues = {
   linkPreviewsPrivateNetwork: false,
   reportEmail: '',
   klipyApiKey: '',
-  freesoundApiKey: ''
+  freesoundApiKey: '',
+  afkChannelId: AFK_OFF,
+  afkTimeoutSeconds: String(AFK_TIMEOUT_DEFAULT_SECONDS)
 };
 
 const General = memo(() => {
@@ -69,7 +94,10 @@ const General = memo(() => {
       linkPreviewsPrivateNetwork: values.linkPreviewsPrivateNetwork,
       reportEmail: values.reportEmail.trim() || null,
       klipyApiKey: values.klipyApiKey.trim() || null,
-      freesoundApiKey: values.freesoundApiKey.trim() || null
+      freesoundApiKey: values.freesoundApiKey.trim() || null,
+      afkChannelId:
+        values.afkChannelId === AFK_OFF ? null : Number(values.afkChannelId),
+      afkTimeoutSeconds: Number(values.afkTimeoutSeconds)
     });
 
     if (values.logo !== undefined) {
@@ -103,9 +131,33 @@ const General = memo(() => {
       linkPreviewsPrivateNetwork: settings.linkPreviewsPrivateNetwork ?? false,
       reportEmail: settings.reportEmail ?? '',
       klipyApiKey: settings.klipyApiKey ?? '',
-      freesoundApiKey: settings.freesoundApiKey ?? ''
+      freesoundApiKey: settings.freesoundApiKey ?? '',
+      afkChannelId:
+        settings.afkChannelId === null
+          ? AFK_OFF
+          : String(settings.afkChannelId),
+      afkTimeoutSeconds: String(settings.afkTimeoutSeconds)
     });
   }, [settings, reset]);
+
+  const channels = useChannels();
+  const voiceChannels = useMemo(
+    () =>
+      channels.filter(
+        (channel) => channel.type === ChannelType.VOICE && !channel.isDm
+      ),
+    [channels]
+  );
+
+  const handleAfkChannelChange = useCallback(
+    (value: string) => onChange('afkChannelId', value),
+    [onChange]
+  );
+
+  const handleAfkTimeoutChange = useCallback(
+    (value: string) => onChange('afkTimeoutSeconds', value),
+    [onChange]
+  );
 
   const handleLogoChange = useCallback(
     (picked: TPickedImage | null) => onChange('logo', picked),
@@ -247,6 +299,48 @@ const General = memo(() => {
           checked={values.showWelcomeDialog}
           onCheckedChange={handleWelcomeDialogChange}
         />
+      </Group>
+
+      <Group label={t('afkChannelLabel')} description={t('afkChannelDesc')}>
+        <Select
+          value={values.afkChannelId}
+          onValueChange={handleAfkChannelChange}
+        >
+          <SelectTrigger className="w-64">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value={AFK_OFF}>{t('afkChannelNone')}</SelectItem>
+              {voiceChannels.map((channel) => (
+                <SelectItem key={channel.id} value={String(channel.id)}>
+                  {channel.name}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </Group>
+
+      <Group label={t('afkTimeoutLabel')}>
+        <Select
+          value={values.afkTimeoutSeconds}
+          onValueChange={handleAfkTimeoutChange}
+          disabled={values.afkChannelId === AFK_OFF}
+        >
+          <SelectTrigger className="w-64">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              {AFK_TIMEOUT_OPTIONS_SECONDS.map((seconds) => (
+                <SelectItem key={seconds} value={String(seconds)}>
+                  {t('afkTimeoutMinutes', { count: seconds / 60 })}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
       </Group>
 
       <Group label={t('reportEmailLabel')} description={t('reportEmailDesc')}>

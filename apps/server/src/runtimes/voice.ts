@@ -13,6 +13,7 @@ import {
 } from '@sharkord/shared';
 import type {
   AppData,
+  AudioLevelObserver,
   Consumer,
   Producer,
   Router,
@@ -140,6 +141,9 @@ type TExternalStreamInternal = {
 
 const EXTERNAL_STREAM_ID_BASE = 1_000_000;
 
+// louder than this counts as speaking for the afk timer, quiet enough that a room's hum does not
+const AFK_SPEAKING_THRESHOLD_DB = -55;
+
 class VoiceRuntime {
   public readonly id: number;
   private state: TChannelState = { users: [], externalStreams: {} };
@@ -152,6 +156,9 @@ class VoiceRuntime {
   private screenAudioProducers: TProducerMap = {};
   private consumers: TConsumerMap = {};
   private producerQualityLayers: TProducerQualityLayerMap = {};
+  private audioLevelObserver?: AudioLevelObserver<AppData>;
+  // when each user last spoke or changed their voice state, for the afk timer
+  private lastActiveAt = new Map<number, number>();
 
   private static serverMutedUserIds = new Set<number>();
 
@@ -180,6 +187,9 @@ class VoiceRuntime {
 
     return undefined;
   };
+
+  public static getAll = (): VoiceRuntime[] =>
+    Array.from(voiceRuntimes.values());
 
   public static isServerMuted = (userId: number): boolean =>
     VoiceRuntime.serverMutedUserIds.has(userId);
@@ -437,6 +447,8 @@ class VoiceRuntime {
       }
     });
 
+    this.markActive(userId);
+
     eventBus.emit('user:joined_voice', {
       userId: userId,
       channelId: this.id
@@ -445,6 +457,7 @@ class VoiceRuntime {
 
   public removeUser = (userId: number) => {
     this.state.users = this.state.users.filter((u) => u.userId !== userId);
+    this.lastActiveAt.delete(userId);
 
     this.cleanupUserResources(userId);
 
@@ -512,6 +525,7 @@ class VoiceRuntime {
     if (!user) return;
 
     user.state = { ...user.state, ...newState };
+    this.markActive(userId);
 
     eventBus.emit('voice:state_updated', {
       channelId: this.id,
@@ -554,8 +568,45 @@ class VoiceRuntime {
 
   private createRouter = async () => {
     const router = await mediaSoupWorker.createRouter(defaultRouterOptions);
+    const audioLevelObserver = await router.createAudioLevelObserver({
+      maxEntries: 100,
+      threshold: AFK_SPEAKING_THRESHOLD_DB,
+      interval: 2000
+    });
+
+    audioLevelObserver.on('volumes', (volumes) => {
+      volumes.forEach(({ producer }) => {
+        const userId = this.getAudioProducerUserId(producer);
+
+        if (userId !== undefined) this.markActive(userId);
+      });
+    });
 
     this.router = router;
+    this.audioLevelObserver = audioLevelObserver;
+  };
+
+  private getAudioProducerUserId = (producer: Producer): number | undefined => {
+    for (const [userId, audioProducer] of Object.entries(this.audioProducers)) {
+      if (audioProducer === producer) return Number(userId);
+    }
+
+    return undefined;
+  };
+
+  public markActive = (userId: number) => {
+    this.lastActiveAt.set(userId, Date.now());
+  };
+
+  // users who have neither spoken nor touched their voice state for idleMs
+  public getIdleUserIds = (idleMs: number): number[] => {
+    const now = Date.now();
+
+    return this.state.users
+      .map(({ userId }) => userId)
+      .filter(
+        (userId) => now - (this.lastActiveAt.get(userId) ?? now) >= idleMs
+      );
   };
 
   public createTransport = async () => {
@@ -700,6 +751,20 @@ class VoiceRuntime {
       this.videoProducers[userId] = producer;
     } else if (type === StreamKind.AUDIO) {
       this.audioProducers[userId] = producer;
+
+      if (this.audioLevelObserver) {
+        const observing = this.audioLevelObserver.addProducer({
+          producerId: producer.id
+        });
+
+        observing.catch((error) => {
+          logger.error(
+            'Failed to watch audio levels of producer %s: %s',
+            producer.id,
+            getErrorMessage(error)
+          );
+        });
+      }
 
       if (VoiceRuntime.isServerMuted(userId)) {
         this.setProducerPaused(producer, true);
