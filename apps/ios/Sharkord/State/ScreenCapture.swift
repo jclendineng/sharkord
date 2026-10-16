@@ -1,7 +1,8 @@
 import AVFoundation
 import os
-import ScreenCaptureKit
 import WebRTC
+#if canImport(ScreenCaptureKit)
+import ScreenCaptureKit
 
 // the screen share. the system picker asks what to share, then the app captures it itself and
 // hands each frame straight to webrtc, with the game's sound for the mixer when app audio is on
@@ -290,3 +291,21 @@ nonisolated extension ScreenCapture: SCStreamDelegate, SCStreamOutput {
         }
     }
 }
+#else
+// the simulator has no screencapturekit. a stand in so the app still builds there, where a share
+// never starts
+nonisolated final class ScreenCapture: NSObject, @unchecked Sendable {
+    typealias AudioHandler = @Sendable (UnsafeBufferPointer<Float>) -> Void
+
+    init(onPicked: @escaping @Sendable () -> Void, onStopped: @escaping @Sendable () -> Void) {
+        super.init()
+    }
+
+    @MainActor
+    func presentPicker() {}
+
+    func start(sink: ScreenFrameSink, maxDimension: Int, framesPerSecond: Int, onAudio: AudioHandler?) async throws {}
+
+    func stop() async {}
+}
+#endif

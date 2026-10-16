@@ -155,6 +155,10 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - Hear Yourself in calls plays your mic back to you, in the voice channel sheet's new Voice &
   Video settings (pulled up under Join Voice, with Deafen, audio output and noise suppression)
   and in Voice & Video settings.
+- On the phone the voice channel sheet is Discord's: a short sheet with the channel and the
+  join box, which a swipe up grows into the voice settings, the box becoming the sheet as it
+  rises. A swipe down from there goes back to the short sheet, and only a swipe from the short
+  one closes it.
 - A call joined with AirPods or another headset connected plays through the headset instead of
   staying on the speaker when Use Speaker by Default is on, with Hear Yourself or app audio.
 - On the phone and iPad a lowered call is Discord's floating tile, dragged anywhere and let go

@@ -43,7 +43,9 @@ private struct AppSheet: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .interactiveDismissDisabled(isOnMac)
+            // left alone elsewhere: an outer false here would override a sheet that turns the
+            // swipe off for itself, the voice channel's open one does
+            .modifier(MacDismissLock(isOnMac: isOnMac))
             .safeAreaInset(edge: .top, spacing: 0) {
                 if addsClose {
                     HStack {
@@ -59,6 +61,18 @@ private struct AppSheet: ViewModifier {
 
     private func close() {
         dismiss()
+    }
+}
+
+private struct MacDismissLock: ViewModifier {
+    let isOnMac: Bool
+
+    func body(content: Content) -> some View {
+        if isOnMac {
+            content.interactiveDismissDisabled()
+        } else {
+            content
+        }
     }
 }
 

@@ -10,6 +10,7 @@ struct VoiceChannelSheet: View {
     @Environment(SessionStore.self) private var session
     @Environment(ServerListStore.self) private var servers
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     @State private var isRoomPresented = false
     @State private var isSettingsPresented = false
@@ -22,63 +23,26 @@ struct VoiceChannelSheet: View {
         session.currentVoiceChannelId == channel.id
     }
 
+    // discord's on a phone: a short sheet that a swipe grows into the settings, the join box
+    // becoming the sheet as it rises. the system drags the sheet, the contents only follow its
+    // height, so nothing fights the finger. a mac and a wide ipad draw the sheet as a form in
+    // the middle with no heights to move between, so there it stays one list
+    private var growsIntoSettings: Bool {
+        horizontalSizeClass == .compact && !ProcessInfo.processInfo.isiOSAppOnMac
+    }
+
     var body: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 10) {
-                Button("Close", systemImage: "chevron.down", action: close)
-                    .labelStyle(.iconOnly)
-                    .font(.headline)
-                    .foregroundStyle(Theme.header)
-                    .frame(width: 40, height: 40)
-                    .background(Theme.deepBackground, in: .rect(cornerRadius: 10))
-
-                Label(channel.name, systemImage: "speaker.wave.2.fill")
-                    .font(.headline)
-                    .foregroundStyle(Theme.header)
-                    .lineLimit(1)
-                    .padding(.horizontal, 14)
-                    .frame(height: 40)
-                    .background(Theme.deepBackground, in: .rect(cornerRadius: 10))
-
-                Spacer()
+        Group {
+            if growsIntoSettings {
+                growingLayout
+            } else {
+                listLayout
             }
-            .padding(16)
-
-            // one scroll, so pulling up past the join bar opens the sheet onto the settings
-            ScrollView {
-                VStack(spacing: 0) {
-                    Group {
-                        if participants.isEmpty {
-                            VStack(spacing: 4) {
-                                Text("No one's here yet!")
-                                Text("When you are ready to talk, just hop in.")
-                            }
-                            .font(.subheadline)
-                            .foregroundStyle(Theme.text)
-                            .multilineTextAlignment(.center)
-                            .frame(maxWidth: .infinity)
-                        } else {
-                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 88), spacing: 12)], spacing: 16) {
-                                ForEach(participants, id: \.user?.id) { participant in
-                                    ParticipantBadge(user: participant.user, state: participant.state)
-                                }
-                            }
-                            .padding(.horizontal, 16)
-                        }
-                    }
-                    // the half height sheet ends just below the join bar
-                    .frame(minHeight: 200)
-
-                    JoinBar(isConnectedHere: isConnectedHere, onJoin: join, onOpen: openRoom)
-
-                    VoiceSheetSettings(onOpenSettings: showSettings)
-                }
-            }
-            .scrollBounceBehavior(.basedOnSize)
         }
         .background(Theme.listBackground)
-        .sheetDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
+        .modifier(VoiceSheetDetents(growsIntoSettings: growsIntoSettings))
+        // the join box carries the grip there, as discord's does
+        .presentationDragIndicator(growsIntoSettings ? .hidden : .visible)
         .presentationBackground(Theme.listBackground)
         // handed over by hand: on a mac a sheet's background is worked out before it inherits
         // anything, so a sheet reading a store it was not given crashed on opening
@@ -95,6 +59,97 @@ struct VoiceChannelSheet: View {
                 .environment(session)
                 .environment(servers)
                 .environment(\.closeVoiceRoom, close)
+        }
+    }
+
+    private var listLayout: some View {
+        VStack(spacing: 0) {
+            header
+
+            // one scroll, so pulling up past the join bar opens the sheet onto the settings
+            ScrollView {
+                VStack(spacing: 0) {
+                    participantsArea
+                        // the half height sheet ends just below the join bar
+                        .frame(minHeight: 200)
+
+                    JoinBar(isConnectedHere: isConnectedHere, onJoin: join, onOpen: openRoom)
+
+                    VoiceSheetSettings(onOpenSettings: showSettings)
+                }
+            }
+            .scrollBounceBehavior(.basedOnSize)
+        }
+    }
+
+    private var growingLayout: some View {
+        GeometryReader { proxy in
+            let progress = GrowingSheet.progress(height: proxy.size.height)
+            let channelHeight = GrowingSheet.channelHeight * (1 - progress)
+
+            VStack(spacing: 0) {
+                VStack(spacing: 0) {
+                    header
+
+                    participantsArea
+                        .frame(maxHeight: .infinity)
+                }
+                .frame(height: GrowingSheet.channelHeight, alignment: .top)
+                .frame(height: channelHeight, alignment: .bottom)
+                .clipped()
+                .opacity(1 - progress)
+
+                JoinBar(isConnectedHere: isConnectedHere, onJoin: join, onOpen: openRoom, showsGrip: true, boxOpacity: 1 - progress)
+
+                ScrollView {
+                    VoiceSheetSettings(onOpenSettings: showSettings)
+                }
+                .scrollBounceBehavior(.basedOnSize)
+                .opacity(progress)
+            }
+        }
+    }
+
+    private var header: some View {
+        HStack(spacing: 10) {
+            Button("Close", systemImage: "chevron.down", action: close)
+                .labelStyle(.iconOnly)
+                .font(.headline)
+                .foregroundStyle(Theme.header)
+                .frame(width: 40, height: 40)
+                .background(Theme.deepBackground, in: .rect(cornerRadius: 10))
+
+            Label(channel.name, systemImage: "speaker.wave.2.fill")
+                .font(.headline)
+                .foregroundStyle(Theme.header)
+                .lineLimit(1)
+                .padding(.horizontal, 14)
+                .frame(height: 40)
+                .background(Theme.deepBackground, in: .rect(cornerRadius: 10))
+
+            Spacer()
+        }
+        .padding(16)
+    }
+
+    @ViewBuilder
+    private var participantsArea: some View {
+        if participants.isEmpty {
+            VStack(spacing: 4) {
+                Text("No one's here yet!")
+                Text("When you are ready to talk, just hop in.")
+            }
+            .font(.subheadline)
+            .foregroundStyle(Theme.text)
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity)
+        } else {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 88), spacing: 12)], spacing: 16) {
+                ForEach(participants, id: \.user?.id) { participant in
+                    ParticipantBadge(user: participant.user, state: participant.state)
+                }
+            }
+            .padding(.horizontal, 16)
         }
     }
 
@@ -118,6 +173,60 @@ struct VoiceChannelSheet: View {
 
     private func close() {
         dismiss()
+    }
+}
+
+// open, a pull down only takes the sheet back to its short height, however hard the flick:
+// closing is for a swipe from there, as discord's is
+private struct VoiceSheetDetents: ViewModifier {
+    let growsIntoSettings: Bool
+
+    @State private var detent = GrowingSheet.resting
+
+    func body(content: Content) -> some View {
+        if growsIntoSettings {
+            content
+                .presentationDetents([GrowingSheet.resting, GrowingSheet.open], selection: $detent)
+                .interactiveDismissDisabled(detent != GrowingSheet.resting)
+        } else {
+            content.sheetDetents([.medium, .large])
+        }
+    }
+}
+
+// the two heights of the phone's sheet and how far it has moved between them, both counted
+// above the home indicator's strip as the sheet's contents are
+private enum GrowingSheet {
+    // the header, the channel and the join box
+    static let restingHeight: CGFloat = 300
+    // what of the resting sheet the header and the channel take, the join box has the rest
+    static let channelHeight: CGFloat = 190
+
+    static let resting = PresentationDetent.height(restingHeight)
+    static let open = PresentationDetent.custom(OpenDetent.self)
+
+    static func progress(height: CGFloat) -> CGFloat {
+        let openHeight = OpenDetent.height
+
+        guard openHeight > restingHeight else {
+            return 0
+        }
+
+        return min(max((height - restingHeight) / (openHeight - restingHeight), 0), 1)
+    }
+}
+
+// discord's open sheet, about two thirds of the screen. it keeps the height it last worked out,
+// so the contents can tell how far between the two the sheet stands
+private struct OpenDetent: CustomPresentationDetent {
+    static var height: CGFloat = 0
+
+    static func height(in context: Context) -> CGFloat? {
+        let openHeight = (context.maxDetentValue * 0.68).rounded()
+
+        height = openHeight
+
+        return openHeight
     }
 }
 
@@ -150,10 +259,29 @@ private struct JoinBar: View {
     let isConnectedHere: Bool
     let onJoin: () -> Void
     let onOpen: () -> Void
+    var showsGrip = false
+    // the box around it, which melts into the sheet as the sheet grows around it
+    var boxOpacity = 1.0
 
     @Environment(SessionStore.self) private var session
 
     var body: some View {
+        VStack(spacing: 10) {
+            if showsGrip {
+                Capsule()
+                    .fill(Theme.muted.opacity(0.6))
+                    .frame(width: 36, height: 5)
+            }
+
+            row
+        }
+        .padding(14)
+        .background(Theme.deepBackground.opacity(0.6 * boxOpacity), in: .rect(cornerRadius: 22))
+        .padding(.horizontal, 12 * boxOpacity)
+        .padding(.bottom, 8)
+    }
+
+    private var row: some View {
         HStack(spacing: 14) {
             Button(session.micMuted ? "Unmute" : "Mute", systemImage: session.micMuted ? "mic.slash.fill" : "mic.fill", action: toggleMic)
                 .labelStyle(.iconOnly)
@@ -189,10 +317,6 @@ private struct JoinBar: View {
             }
         }
         .buttonStyle(.plain)
-        .padding(14)
-        .background(Theme.deepBackground.opacity(0.6), in: .rect(cornerRadius: 22))
-        .padding(.horizontal, 12)
-        .padding(.bottom, 8)
     }
 
     // before joining this only decides whether the call starts muted

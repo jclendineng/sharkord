@@ -40,5 +40,11 @@ enum DebugLaunch {
     static var forcesSplit: Bool {
         environment["SHARKORD_DEV_SPLIT"] == "1"
     }
+
+    // SHARKORD_DEV_VOICE_PLAYGROUND=1 opens a voice channel's sheet with no server behind it,
+    // so its motion can be tried and recorded on a simulator
+    static var opensVoicePlayground: Bool {
+        environment["SHARKORD_DEV_VOICE_PLAYGROUND"] == "1"
+    }
 }
 #endif
