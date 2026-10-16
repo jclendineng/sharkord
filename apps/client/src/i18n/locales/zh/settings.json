@@ -646,5 +646,11 @@
   "deleteWebhookBtn": "删除",
   "failedLoadWebhooks": "无法加载 Webhook",
   "failedCreateWebhook": "无法创建 Webhook",
-  "failedDeleteWebhook": "无法删除 Webhook"
+  "failedDeleteWebhook": "无法删除 Webhook",
+  "passwordResetLinkBtn": "密码重置链接",
+  "passwordResetLinkTitle": "密码重置链接",
+  "passwordResetLinkMsg": "用你能联系到对方的方式发给他。链接只能使用一次，24 小时内有效，并会让他在所有设备上退出：{{link}}",
+  "passwordResetLinkCopy": "复制链接",
+  "passwordResetLinkCopied": "已复制重置链接",
+  "failedPasswordResetLink": "无法创建重置链接"
 }

@@ -23,5 +23,12 @@
   "loggingInAutomatically": "Entrando automaticamente...",
   "loadingApp": "Carregando o Sharkord",
   "loadingPlugins": "Carregando Plugins",
-  "openInApp": "Abrir no app Sharkord"
+  "openInApp": "Abrir no app Sharkord",
+  "resetPasswordTitle": "Redefinir senha",
+  "resetPasswordNew": "Nova senha",
+  "resetPasswordConfirm": "Confirme a nova senha",
+  "resetPasswordBtn": "Definir senha",
+  "resetPasswordMismatch": "As senhas não coincidem.",
+  "resetPasswordFailed": "Não foi possível redefinir a senha.",
+  "resetPasswordDone": "Senha definida. Entre com ela."
 }

@@ -366,6 +366,12 @@ deletes its webhooks. Code `apps/server/src/http/webhook.ts`, `helpers/webhooks.
   back to Markdown when editing, and draws lists and quotes. A single `*` or `_` against a
   word character stays as typed, so `snake_case` and `2*3*4` are not italics
   ([#401](https://github.com/Sharkord/sharkord/issues/401)).
+- **Password reset links** (`users.createPasswordReset`, Manage Users, not on the owner unless
+  by an owner): there is no email, so a moderator makes a link, `/?reset=<token>`, and passes it
+  on. Only a hash of the token is kept, a newer link replaces an older one, and it lasts 24
+  hours. The web page it opens posts to `/password-reset`, which sets the password, marks it set
+  (an SSO account can then sign in with it too), bumps the token version and deletes the
+  account's sessions ([#331](https://github.com/Sharkord/sharkord/issues/331)).
 - **Unique names**: renaming to a name another member already uses, ignoring case, is
   refused. Names two people already shared before the upgrade stay, and a name from an SSO
   provider that is taken becomes a generated one

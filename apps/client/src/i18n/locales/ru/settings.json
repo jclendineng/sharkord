@@ -657,5 +657,11 @@
   "deleteWebhookBtn": "Удалить",
   "failedLoadWebhooks": "Не удалось загрузить вебхуки",
   "failedCreateWebhook": "Не удалось создать вебхук",
-  "failedDeleteWebhook": "Не удалось удалить вебхук"
+  "failedDeleteWebhook": "Не удалось удалить вебхук",
+  "passwordResetLinkBtn": "Ссылка для сброса пароля",
+  "passwordResetLinkTitle": "Ссылка для сброса пароля",
+  "passwordResetLinkMsg": "Передайте её любым способом. Работает один раз в течение 24 часов и выходит из всех сеансов: {{link}}",
+  "passwordResetLinkCopy": "Копировать ссылку",
+  "passwordResetLinkCopied": "Ссылка скопирована",
+  "failedPasswordResetLink": "Не удалось создать ссылку"
 }

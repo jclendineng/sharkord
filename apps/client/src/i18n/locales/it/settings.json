@@ -646,5 +646,11 @@
   "deleteWebhookBtn": "Elimina",
   "failedLoadWebhooks": "Impossibile caricare i webhook",
   "failedCreateWebhook": "Impossibile creare il webhook",
-  "failedDeleteWebhook": "Impossibile eliminare il webhook"
+  "failedDeleteWebhook": "Impossibile eliminare il webhook",
+  "passwordResetLinkBtn": "Link di reimpostazione password",
+  "passwordResetLinkTitle": "Link di reimpostazione password",
+  "passwordResetLinkMsg": "Mandaglielo come preferisci. Funziona una volta, per 24 ore, e lo disconnette ovunque: {{link}}",
+  "passwordResetLinkCopy": "Copia link",
+  "passwordResetLinkCopied": "Link copiato",
+  "failedPasswordResetLink": "Impossibile creare il link"
 }

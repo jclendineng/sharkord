@@ -648,5 +648,11 @@
   "deleteWebhookBtn": "Smazat",
   "failedLoadWebhooks": "Webhooky se nepodařilo načíst",
   "failedCreateWebhook": "Webhook se nepodařilo vytvořit",
-  "failedDeleteWebhook": "Webhook se nepodařilo smazat"
+  "failedDeleteWebhook": "Webhook se nepodařilo smazat",
+  "passwordResetLinkBtn": "Odkaz pro obnovení hesla",
+  "passwordResetLinkTitle": "Odkaz pro obnovení hesla",
+  "passwordResetLinkMsg": "Pošli mu ho, jak se k němu dostaneš. Funguje jednou, 24 hodin, a odhlásí ho všude: {{link}}",
+  "passwordResetLinkCopy": "Kopírovat odkaz",
+  "passwordResetLinkCopied": "Odkaz zkopírován",
+  "failedPasswordResetLink": "Odkaz se nepodařilo vytvořit"
 }

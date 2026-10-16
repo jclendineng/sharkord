@@ -23,5 +23,12 @@
   "loggingInAutomatically": "Logging in automatically...",
   "loadingApp": "Loading Sharkord",
   "loadingPlugins": "Loading Plugins",
-  "openInApp": "Open in the Sharkord app"
+  "openInApp": "Open in the Sharkord app",
+  "resetPasswordTitle": "Reset Your Password",
+  "resetPasswordNew": "New password",
+  "resetPasswordConfirm": "Confirm new password",
+  "resetPasswordBtn": "Set Password",
+  "resetPasswordMismatch": "The passwords don't match.",
+  "resetPasswordFailed": "Couldn't reset the password.",
+  "resetPasswordDone": "Password set. Log in with it."
 }

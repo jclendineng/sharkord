@@ -23,5 +23,12 @@
   "loggingInAutomatically": "Accesso automatico in corso...",
   "loadingApp": "Caricamento di Sharkord",
   "loadingPlugins": "Caricamento plugin",
-  "openInApp": "Apri nell'app Sharkord"
+  "openInApp": "Apri nell'app Sharkord",
+  "resetPasswordTitle": "Reimposta la password",
+  "resetPasswordNew": "Nuova password",
+  "resetPasswordConfirm": "Conferma la nuova password",
+  "resetPasswordBtn": "Imposta password",
+  "resetPasswordMismatch": "Le password non coincidono.",
+  "resetPasswordFailed": "Impossibile reimpostare la password.",
+  "resetPasswordDone": "Password impostata. Accedi con quella."
 }

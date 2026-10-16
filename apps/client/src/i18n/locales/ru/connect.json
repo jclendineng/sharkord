@@ -23,5 +23,12 @@
   "loggingInAutomatically": "Автоматический вход...",
   "loadingApp": "Загрузка Sharkord",
   "loadingPlugins": "Загрузка плагинов",
-  "openInApp": "Открыть в приложении Sharkord"
+  "openInApp": "Открыть в приложении Sharkord",
+  "resetPasswordTitle": "Сброс пароля",
+  "resetPasswordNew": "Новый пароль",
+  "resetPasswordConfirm": "Повторите новый пароль",
+  "resetPasswordBtn": "Установить пароль",
+  "resetPasswordMismatch": "Пароли не совпадают.",
+  "resetPasswordFailed": "Не удалось сбросить пароль.",
+  "resetPasswordDone": "Пароль установлен. Войдите с ним."
 }

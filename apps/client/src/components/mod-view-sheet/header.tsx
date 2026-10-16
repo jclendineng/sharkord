@@ -7,6 +7,7 @@ import {
 } from '@/features/dialogs/actions';
 import { useUserRoles } from '@/features/server/hooks';
 import { useOwnUserId, useUserStatus } from '@/features/server/users/hooks';
+import { getUrlFromServer } from '@/helpers/get-file-url';
 import { getTRPCClient } from '@/lib/trpc';
 import {
   DELETED_USER_IDENTITY_AND_NAME,
@@ -15,7 +16,7 @@ import {
   UserStatus
 } from '@sharkord/shared';
 import { Button } from '@sharkord/ui';
-import { Gavel, Plus, Trash, UserMinus } from 'lucide-react';
+import { Gavel, KeyRound, Plus, Trash, UserMinus } from 'lucide-react';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -160,6 +161,31 @@ const Header = memo(() => {
     }
   }, [user.id, refetch, isDeletedUser, t]);
 
+  const onPasswordReset = useCallback(async () => {
+    try {
+      const trpc = getTRPCClient();
+      const { token } = await trpc.users.createPasswordReset.mutate({
+        userId: user.id
+      });
+      const link = `${getUrlFromServer()}/?reset=${encodeURIComponent(token)}`;
+
+      // the copy happens on the dialog's button, a click being what lets a browser write to
+      // the clipboard
+      const copy = await requestConfirmation({
+        title: t('passwordResetLinkTitle'),
+        message: t('passwordResetLinkMsg', { link }),
+        confirmLabel: t('passwordResetLinkCopy')
+      });
+
+      if (!copy) return;
+
+      await navigator.clipboard.writeText(link);
+      toast.success(t('passwordResetLinkCopied'));
+    } catch (error) {
+      toast.error(getTrpcError(error, t('failedPasswordResetLink')));
+    }
+  }, [user.id, t]);
+
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-3">
@@ -202,6 +228,15 @@ const Header = memo(() => {
         >
           <Trash className="h-4 w-4" />
           {t('deleteBtn')}
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onPasswordReset}
+          disabled={isDeletedUser}
+        >
+          <KeyRound className="h-4 w-4" />
+          {t('passwordResetLinkBtn')}
         </Button>
       </div>
 

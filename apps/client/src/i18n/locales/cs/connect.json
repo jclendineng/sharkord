@@ -23,5 +23,12 @@
   "loggingInAutomatically": "Automaticky se připojuji...",
   "loadingApp": "Načítám Sharkord",
   "loadingPlugins": "Načítám rozšíření",
-  "openInApp": "Otevřít v aplikaci Sharkord"
+  "openInApp": "Otevřít v aplikaci Sharkord",
+  "resetPasswordTitle": "Obnovit heslo",
+  "resetPasswordNew": "Nové heslo",
+  "resetPasswordConfirm": "Potvrď nové heslo",
+  "resetPasswordBtn": "Nastavit heslo",
+  "resetPasswordMismatch": "Hesla se neshodují.",
+  "resetPasswordFailed": "Heslo se nepodařilo obnovit.",
+  "resetPasswordDone": "Heslo nastaveno. Přihlas se s ním."
 }

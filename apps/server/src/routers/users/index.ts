@@ -3,6 +3,7 @@ import { addRoleRoute } from './add-role';
 import { banRoute } from './ban';
 import { changeAvatarRoute } from './change-avatar';
 import { changeBannerRoute } from './change-banner';
+import { createPasswordResetRoute } from './create-password-reset';
 import { deleteOwnAccountRoute } from './delete-own-account';
 import { deleteUserRoute } from './delete-user';
 import {
@@ -47,6 +48,7 @@ export const usersRouter = t.router({
   unban: unbanRoute,
   delete: deleteUserRoute,
   deleteOwn: deleteOwnAccountRoute,
+  createPasswordReset: createPasswordResetRoute,
   onJoin: onUserJoinRoute,
   onLeave: onUserLeaveRoute,
   onUpdate: onUserUpdateRoute,

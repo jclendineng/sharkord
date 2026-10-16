@@ -646,5 +646,11 @@
   "deleteWebhookBtn": "Eliminar",
   "failedLoadWebhooks": "No se pudieron cargar los webhooks",
   "failedCreateWebhook": "No se pudo crear el webhook",
-  "failedDeleteWebhook": "No se pudo eliminar el webhook"
+  "failedDeleteWebhook": "No se pudo eliminar el webhook",
+  "passwordResetLinkBtn": "Enlace para restablecer contraseña",
+  "passwordResetLinkTitle": "Enlace para restablecer contraseña",
+  "passwordResetLinkMsg": "Envíaselo como puedas. Funciona una vez, durante 24 horas, y cierra su sesión en todas partes: {{link}}",
+  "passwordResetLinkCopy": "Copiar enlace",
+  "passwordResetLinkCopied": "Enlace copiado",
+  "failedPasswordResetLink": "No se pudo crear el enlace"
 }

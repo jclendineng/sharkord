@@ -34,6 +34,7 @@ import { memo, useCallback, useMemo, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useOidcLogin } from './hooks/use-oidc-login';
+import { ResetPassword } from './reset-password';
 
 const Connect = memo(() => {
   const { t } = useTranslation('connect');
@@ -48,6 +49,18 @@ const Connect = memo(() => {
   });
 
   const [loading, setLoading] = useState(false);
+  const [resetToken, setResetToken] = useState(() =>
+    new URLSearchParams(window.location.search).get('reset')
+  );
+
+  // the link's token leaves the address bar once used, so a reload shows the sign in again
+  const clearResetToken = useCallback(() => {
+    const url = new URL(window.location.href);
+
+    url.searchParams.delete('reset');
+    window.history.replaceState(null, '', url.toString());
+    setResetToken(null);
+  }, []);
   const info = useInfo();
 
   // an iphone or ipad, where the app can take the invite over from the browser
@@ -161,6 +174,10 @@ const Connect = memo(() => {
 
     return '/logo.webp';
   }, [info]);
+
+  if (resetToken) {
+    return <ResetPassword token={resetToken} onDone={clearResetToken} />;
+  }
 
   if (oidc.isCompleting) {
     return (

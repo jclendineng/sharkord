@@ -648,5 +648,11 @@
   "deleteWebhookBtn": "Delete",
   "failedLoadWebhooks": "Couldn't load webhooks",
   "failedCreateWebhook": "Couldn't create the webhook",
-  "failedDeleteWebhook": "Couldn't delete the webhook"
+  "failedDeleteWebhook": "Couldn't delete the webhook",
+  "passwordResetLinkBtn": "Password Reset Link",
+  "passwordResetLinkTitle": "Password Reset Link",
+  "passwordResetLinkMsg": "Send this to them however you reach them. It works once, for 24 hours, and signs them out everywhere: {{link}}",
+  "passwordResetLinkCopy": "Copy Link",
+  "passwordResetLinkCopied": "Reset link copied",
+  "failedPasswordResetLink": "Couldn't make a reset link"
 }

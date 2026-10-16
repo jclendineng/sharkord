@@ -285,6 +285,24 @@ const webhooks = sqliteTable(
   (t) => [index('webhooks_channel_idx').on(t.channelId)]
 );
 
+// one time links a moderator hands someone who forgot their password, there being no email to
+// send a reset to. only a hash of the token is kept, and using it signs every session out
+const passwordResets = sqliteTable(
+  'password_resets',
+  {
+    tokenHash: text('token_hash').primaryKey(),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    createdBy: integer('created_by').references(() => users.id, {
+      onDelete: 'set null'
+    }),
+    expiresAt: integer('expires_at').notNull(),
+    createdAt: integer('created_at').notNull()
+  },
+  (t) => [index('password_resets_user_idx').on(t.userId)]
+);
+
 // addresses a moderator banned along with an account. the ban outlives the account, so a
 // deleted user's addresses stay banned, and unbanning the account lifts them
 const ipBans = sqliteTable(
@@ -1046,6 +1064,7 @@ export {
   messages,
   oidcHandoffs,
   oidcTransactions,
+  passwordResets,
   pluginCapabilities,
   pluginCapabilityRoles,
   pluginData,

@@ -18,6 +18,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   group direct messages, private notes, the new member lounge, QR sign in and the soundboard.
   Upstream's plugin storage migrations run as this fork's `0060_plugin_storage`, after the
   fork's own, so a database that already ran `0059` still gets them.
+- `0066_password_resets` adds the table of reset links.
 - `0065_webhooks` adds the webhooks table and the name a webhook posted under to messages.
 - `0064_ip_bans` adds the table of banned addresses.
 - `0063_afk_channel` adds the AFK channel and timeout to the settings table. AFK is off until
@@ -158,6 +159,10 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   `__underline__`, `~~strike~~`, `` `code` ``, code blocks, `- ` lists, `> ` quotes) into
   formatting when sending, shows all of it, and keeps it when editing
   ([#401](https://github.com/Sharkord/sharkord/issues/401)).
+- Password recovery without email: a moderator makes a one time reset link from a member's
+  page on the web or in the app and sends it however they reach them. It works for 24 hours,
+  sets a new password on a page of its own and signs the account out everywhere
+  ([#331](https://github.com/Sharkord/sharkord/issues/331)).
 - Mute Stream Audio in Devices settings: screen shares with sound start muted
   ([#749](https://github.com/Sharkord/sharkord/issues/749)).
 

@@ -29,6 +29,7 @@ import { oidcBackchannelLogoutRouteHandler } from './oidc/backchannel-logout';
 import { oidcCallbackRouteHandler } from './oidc/callback';
 import { oidcExchangeRouteHandler } from './oidc/exchange';
 import { oidcLoginRouteHandler } from './oidc/login';
+import { passwordResetRouteHandler } from './password-reset';
 import { pluginBundleRouteHandler } from './plugin-bundle';
 import { runPluginRoute } from './plugin-route';
 import { pluginsComponentsRouteHandler } from './plugins-components';
@@ -100,6 +101,7 @@ const routeHandlers: Partial<
       '/login': loginRouteHandler,
       '/login/link': loginLinkRouteHandler,
       '/login/request': loginRequestRouteHandler,
+      '/password-reset': passwordResetRouteHandler,
       '/oidc/exchange': oidcExchangeRouteHandler,
       '/oidc/backchannel-logout': oidcBackchannelLogoutRouteHandler
     },

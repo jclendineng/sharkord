@@ -129,6 +129,7 @@ private struct MemberDetail: View {
     @State private var reason = ""
     @State private var wipe = false
     @State private var banIps = false
+    @State private var resetLink: URL?
     @State private var errorMessage: String?
     @State private var isWorking = false
     @State private var info: AdminUserInfo?
@@ -201,6 +202,20 @@ private struct MemberDetail: View {
                 }
             }
 
+            Section {
+                if let resetLink {
+                    ShareLink(item: resetLink) {
+                        Label("Share Reset Link", systemImage: "square.and.arrow.up")
+                    }
+                } else {
+                    Button("Make a Password Reset Link", action: makeResetLink)
+                }
+            } header: {
+                Text("Password")
+            } footer: {
+                Text("A link they open to set a new password. It works once, for 24 hours, and signs them out everywhere.")
+            }
+
             if let errorMessage {
                 Section {
                     Text(errorMessage)
@@ -254,6 +269,22 @@ private struct MemberDetail: View {
 
         run(onFailure: { roleIds = previous }) {
             try await session.perform(isOn ? "users.addRole" : "users.removeRole", RoleInput(userId: user.id, roleId: role.id))
+        }
+    }
+
+    private func makeResetLink() {
+        struct ResetLink: Decodable {
+            let token: String
+        }
+
+        run {
+            let link: ResetLink = try await session.perform("users.createPasswordReset", ["userId": user.id])
+
+            if let address = session.address {
+                var components = URLComponents(url: address.baseURL, resolvingAgainstBaseURL: false)
+                components?.queryItems = [URLQueryItem(name: "reset", value: link.token)]
+                resetLink = components?.url
+            }
         }
     }
 

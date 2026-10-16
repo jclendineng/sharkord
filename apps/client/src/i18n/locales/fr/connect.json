@@ -23,5 +23,12 @@
   "loggingInAutomatically": "Connexion automatique...",
   "loadingApp": "Chargement de Sharkord",
   "loadingPlugins": "Chargement des plugins",
-  "openInApp": "Ouvrir dans l'app Sharkord"
+  "openInApp": "Ouvrir dans l'app Sharkord",
+  "resetPasswordTitle": "Réinitialiser le mot de passe",
+  "resetPasswordNew": "Nouveau mot de passe",
+  "resetPasswordConfirm": "Confirmer le nouveau mot de passe",
+  "resetPasswordBtn": "Définir le mot de passe",
+  "resetPasswordMismatch": "Les mots de passe ne correspondent pas.",
+  "resetPasswordFailed": "Impossible de réinitialiser le mot de passe.",
+  "resetPasswordDone": "Mot de passe défini. Connectez-vous avec."
 }

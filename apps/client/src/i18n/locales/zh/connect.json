@@ -23,5 +23,12 @@
   "loggingInAutomatically": "正在自动登录...",
   "loadingApp": "正在加载 Sharkord",
   "loadingPlugins": "正在加载插件",
-  "openInApp": "在 Sharkord 应用中打开"
+  "openInApp": "在 Sharkord 应用中打开",
+  "resetPasswordTitle": "重置密码",
+  "resetPasswordNew": "新密码",
+  "resetPasswordConfirm": "确认新密码",
+  "resetPasswordBtn": "设置密码",
+  "resetPasswordMismatch": "两次输入的密码不一致。",
+  "resetPasswordFailed": "无法重置密码。",
+  "resetPasswordDone": "密码已设置，请用它登录。"
 }

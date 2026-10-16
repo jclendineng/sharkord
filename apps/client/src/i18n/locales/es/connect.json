@@ -23,5 +23,12 @@
   "loggingInAutomatically": "Iniciando sesión automáticamente...",
   "loadingApp": "Cargando Sharkord",
   "loadingPlugins": "Cargando plugins",
-  "openInApp": "Abrir en la app de Sharkord"
+  "openInApp": "Abrir en la app de Sharkord",
+  "resetPasswordTitle": "Restablecer contraseña",
+  "resetPasswordNew": "Nueva contraseña",
+  "resetPasswordConfirm": "Confirma la nueva contraseña",
+  "resetPasswordBtn": "Establecer contraseña",
+  "resetPasswordMismatch": "Las contraseñas no coinciden.",
+  "resetPasswordFailed": "No se pudo restablecer la contraseña.",
+  "resetPasswordDone": "Contraseña establecida. Inicia sesión con ella."
 }
