@@ -520,9 +520,9 @@ Joining with an invite in the app: the server address field takes an invite link
 server closed to new members asks for the link when making one. The code is sent with the sign
 up, as the web client's invite links do.
 
-Invite links open the app on any server. The app is tied to no domain, so on an iPhone or iPad
-the web invite page shows **Open in the Sharkord app**, a
-`sharkord://join?server=…&invite=…` link. A server already signed in to just opens, and any
+Invite links open the app on any server. The app is tied to no domain, so on an iPhone, iPad or Mac
+the web invite page leads with **Open in the Sharkord app**, a
+`sharkord://join?server=…&invite=…` link, above the invite and the browser sign in. A server already signed in to just opens, and any
 other goes straight to making an account with the invite filled in.
 
 New login alerts, as Discord's: whenever an account signs in somewhere (a password or single sign

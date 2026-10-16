@@ -27,6 +27,7 @@ import {
   Group,
   Input,
   Label,
+  Separator,
   Spinner,
   Switch
 } from '@sharkord/ui';
@@ -67,15 +68,12 @@ const Connect = memo(() => {
   }, []);
   const info = useInfo();
 
-  // an iphone or ipad, where the app can take the invite over from the browser
+  // an iphone, ipad or mac, where the app can take the invite over from the browser
   const appInviteLink = useMemo(() => {
-    const isAppleMobile =
-      /iPhone|iPad|iPod/.test(navigator.userAgent) ||
-      (navigator.userAgent.includes('Macintosh') &&
-        navigator.maxTouchPoints > 1);
+    const isApple = /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent);
     const invite = new URLSearchParams(window.location.search).get('invite');
 
-    if (!isAppleMobile || !invite) {
+    if (!isApple || !invite) {
       return undefined;
     }
 
@@ -194,6 +192,20 @@ const Connect = memo(() => {
     return './logo.webp';
   }, [info]);
 
+  const inviteAlert = useMemo(
+    () => (
+      <Alert variant="info">
+        <AlertTitle>{t('invitedTitle')}</AlertTitle>
+        <AlertDescription>
+          <span className="font-mono text-xs">
+            {t('inviteCode', { code: inviteCode })}
+          </span>
+        </AlertDescription>
+      </Alert>
+    ),
+    [t, inviteCode]
+  );
+
   if (resetToken) {
     return <ResetPassword token={resetToken} onDone={clearResetToken} />;
   }
@@ -233,6 +245,20 @@ const Connect = memo(() => {
             <span className="text-sm text-muted-foreground">
               {info?.description}
             </span>
+          )}
+
+          {appInviteLink && (
+            <div className="flex flex-col gap-2">
+              {inviteAlert}
+              <Button asChild>
+                <a href={appInviteLink}>{t('openInApp')}</a>
+              </Button>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Separator className="w-auto flex-1" />
+                {t('continueInBrowser')}
+                <Separator className="w-auto flex-1" />
+              </div>
+            </div>
           )}
 
           {oidc.isLocalLoginAllowed && (
@@ -322,22 +348,7 @@ const Connect = memo(() => {
                 </span>
               )}
 
-            {inviteCode && (
-              <Alert variant="info">
-                <AlertTitle>{t('invitedTitle')}</AlertTitle>
-                <AlertDescription>
-                  <span className="font-mono text-xs">
-                    {t('inviteCode', { code: inviteCode })}
-                  </span>
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {appInviteLink && (
-              <Button asChild variant="outline">
-                <a href={appInviteLink}>{t('openInApp')}</a>
-              </Button>
-            )}
+            {inviteCode && !appInviteLink && inviteAlert}
           </div>
         </CardContent>
       </Card>

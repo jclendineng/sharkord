@@ -196,6 +196,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 ### Changed
 
+- The web invite page on an iPhone, iPad or Mac puts **Open in the Sharkord app** first, as the
+  main button, with the browser sign in below it.
 - On a Mac: the user bar has mute, deafen and settings, user settings fill the window with a
   search, the message box has GIF, sticker and emoji buttons (the emoji's face changes and
   colours in under the pointer), buttons bounce a little under the pointer, a channel's threads

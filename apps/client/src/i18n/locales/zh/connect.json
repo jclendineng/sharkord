@@ -24,6 +24,7 @@
   "loadingApp": "正在加载 Sharkord",
   "loadingPlugins": "正在加载插件",
   "openInApp": "在 Sharkord 应用中打开",
+  "continueInBrowser": "或在浏览器中继续",
   "resetPasswordTitle": "重置密码",
   "resetPasswordNew": "新密码",
   "resetPasswordConfirm": "确认新密码",

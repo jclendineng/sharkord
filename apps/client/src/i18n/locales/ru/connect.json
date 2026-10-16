@@ -24,6 +24,7 @@
   "loadingApp": "Загрузка Sharkord",
   "loadingPlugins": "Загрузка плагинов",
   "openInApp": "Открыть в приложении Sharkord",
+  "continueInBrowser": "или продолжите в браузере",
   "resetPasswordTitle": "Сброс пароля",
   "resetPasswordNew": "Новый пароль",
   "resetPasswordConfirm": "Повторите новый пароль",
