@@ -291,6 +291,14 @@ Server Settings, Overview, Report Email. The apps' Report action on a server or 
 opens an email to this address, with the server, channel and message filled in. It is
 published in `/info` so a report can be sent without an account. Setting `reportEmail`.
 
+## About
+
+User Settings, About, in the web client and the apps: the version, the server's name, the
+server's report address as its contact when one is set, and links to the source and its issues
+for problems with the app itself. The apps also show their build and the server's version,
+which `joinServer` returns as `serverVersion`; `/info` still leaves the version out for anyone
+not signed in.
+
 ## AFK channel
 
 Server settings, General, AFK Channel and AFK Timeout (`afkChannelId`, `afkTimeoutSeconds`,

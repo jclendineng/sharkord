@@ -154,7 +154,7 @@ struct GeneralSettingsScreen: View {
             } header: {
                 Text("Report Email")
             } footer: {
-                Text("Where people send reports about this server or a message on it. Report in the apps opens an email to this address.")
+                Text("Where people send questions and reports about this server or a message on it. The apps show it as the contact in About, and Report opens an email to it.")
             }
 
             Section {

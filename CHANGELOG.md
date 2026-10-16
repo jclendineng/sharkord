@@ -52,6 +52,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 ### Added
 
+- An About page in user settings, in the web client and the apps: versions, the server's
+  contact (its report email) and links to the source and to report a problem.
 - `messages.getThreads`: a channel's threads, the one replied to last first, for the apps'
   threads list.
 #### iOS app

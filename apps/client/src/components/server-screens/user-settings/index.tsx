@@ -4,6 +4,7 @@ import { Permission, PluginSlot } from '@sharkord/shared';
 import {
   Bell,
   Headphones,
+  Info,
   Keyboard,
   KeyRound,
   Package,
@@ -16,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 import type { TServerScreenBaseProps } from '../screens';
 import { SettingsShell } from '../settings-shell';
 import type { TSettingsEntry } from '../settings-shell/types';
+import { About } from './about';
 import { DeleteAccount } from './delete-account';
 import { Devices } from './devices';
 import { Hotkeys } from './hotkeys';
@@ -74,6 +76,12 @@ const UserSettings = memo(({ close }: TUserSettingsProps) => {
         label: t('othersTab'),
         icon: SlidersHorizontal,
         content: <Others />
+      },
+      {
+        id: 'about',
+        label: t('aboutTab'),
+        icon: Info,
+        content: <About />
       },
       {
         id: 'delete-account',

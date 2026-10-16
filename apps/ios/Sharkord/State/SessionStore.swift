@@ -33,6 +33,7 @@ final class SessionStore {
 
     private(set) var address: ServerAddress?
     private(set) var serverName = ""
+    private(set) var serverVersion: String?
     private(set) var serverId: String?
     private(set) var serverInfo: ServerInfo?
 
@@ -1407,6 +1408,7 @@ final class SessionStore {
     // the server as a join describes it, from the live join or the last one kept on disk
     private func apply(_ result: JoinResult) {
         serverName = result.serverName
+        serverVersion = result.serverVersion
         serverId = result.serverId
         lastChannelId = address.flatMap(CredentialStore.lastChannelId(for:))
         pinnedChannelIds = address.map(CredentialStore.pinnedChannelIds(for:)) ?? []

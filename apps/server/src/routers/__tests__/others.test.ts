@@ -19,6 +19,7 @@ import { activityLog, logins, rolePermissions } from '../../db/schema';
 import * as loginHelpers from '../../helpers/logins';
 import { pluginManager } from '../../plugins';
 import { drainLoginsQueue } from '../../queues/logins';
+import { SERVER_VERSION } from '../../utils/env';
 
 describe('others router', () => {
   test('should throw when user tries to join with no handshake', async () => {
@@ -55,6 +56,7 @@ describe('others router', () => {
     expect(result).toHaveProperty('pluginIdsWithComponents');
 
     expect(result.ownUserId).toBe(joiningUserId);
+    expect(result.serverVersion).toBe(SERVER_VERSION);
 
     for (const user of result.users) {
       expect(user._identity).toBeUndefined();

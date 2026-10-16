@@ -26,6 +26,8 @@ struct JoinResult: Decodable {
     let serverId: String
     let serverName: String
     let ownUserId: Int
+    // missing on a server from before the about page asked for it
+    let serverVersion: String?
     // false for an account made through sso, which has no password to confirm with
     let ownUserPasswordSet: Bool?
     let roles: [Role]
