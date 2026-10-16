@@ -133,6 +133,9 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 ### Fixed
 
+- Turning off Upload Files for a role no longer stops its members from setting an avatar or
+  banner. Upload Files now only covers attaching files to messages
+  ([#830](https://github.com/Sharkord/sharkord/issues/830)).
 - Sticker images are no longer swept up as orphaned files.
 - Search names a direct message after its person or group, not "DM - 2:5".
 - Signing out many devices in a row no longer hits a rate limit.

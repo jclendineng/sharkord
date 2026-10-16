@@ -4,7 +4,7 @@ import { and, eq } from 'drizzle-orm';
 import fs from 'fs/promises';
 import net from 'net';
 import path from 'path';
-import { login, uploadFile } from '../../__tests__/helpers';
+import { initTest, login, uploadFile } from '../../__tests__/helpers';
 import { tdb, testsBaseUrl } from '../../__tests__/setup';
 import { config } from '../../config';
 import { rolePermissions, settings, users } from '../../db/schema';
@@ -93,9 +93,8 @@ describe('/upload', () => {
     expect(uploadResponse.status).toBe(401);
   });
 
-  test('should reject uploads from a user without UPLOAD_FILES', async () => {
-    const response = await login('testuser', 'password123');
-    const data: any = await response.json();
+  test('should let a user without UPLOAD_FILES set an avatar but not attach files', async () => {
+    const { caller, mockedToken } = await initTest(2);
 
     await tdb
       .delete(rolePermissions)
@@ -106,10 +105,38 @@ describe('/upload', () => {
         )
       );
 
-    const file = getMockFile('no permission to upload this');
-    const uploadResponse = await uploadFile(file, data.token);
+    const avatar = new File(['avatar content'], 'avatar.png', {
+      type: 'image/png'
+    });
+    const avatarResponse = await uploadFile(avatar, mockedToken);
 
-    expect(uploadResponse.status).toBe(403);
+    expect(avatarResponse.status).toBe(200);
+
+    const avatarFile = (await avatarResponse.json()) as TTempFile;
+
+    await caller.users.changeAvatar({ fileId: avatarFile.id });
+
+    const user = await tdb
+      .select({ avatarId: users.avatarId })
+      .from(users)
+      .where(eq(users.id, 2))
+      .get();
+
+    expect(user?.avatarId).not.toBeNull();
+
+    const attachmentResponse = await uploadFile(
+      getMockFile('an attachment'),
+      mockedToken
+    );
+    const attachment = (await attachmentResponse.json()) as TTempFile;
+
+    await expect(
+      caller.messages.send({
+        channelId: 1,
+        content: '<p>here</p>',
+        files: [attachment.id]
+      })
+    ).rejects.toThrow('Insufficient permissions');
   });
 
   test('should rate limit excessive upload attempts', async () => {

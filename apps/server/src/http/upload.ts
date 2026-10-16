@@ -1,9 +1,8 @@
-import { getErrorMessage, Permission, UploadHeaders } from '@sharkord/shared';
+import { getErrorMessage, UploadHeaders } from '@sharkord/shared';
 import fs from 'fs';
 import http from 'http';
 import z from 'zod';
 import { config } from '../config';
-import { userCan } from '../db/queries/roles';
 import { getSettings } from '../db/queries/server';
 import { getUserByToken } from '../db/queries/users';
 import { fileManager } from '../helpers/file-manager';
@@ -71,12 +70,9 @@ const uploadFileRouteHandler = async (
     return;
   }
 
-  if (!(await userCan(user.id, Permission.UPLOAD_FILES))) {
-    req.resume();
-    sendJsonError(res, 403, 'You do not have permission to upload files');
-    return;
-  }
-
+  // no UPLOAD_FILES check here: an upload is only a temporary file, and each route that keeps
+  // one checks its own permission. attaching to a message needs UPLOAD_FILES, while an avatar
+  // or banner needs nothing, so turning off file sharing still lets people set a picture
   const settings = await getSettings();
 
   if (contentLength > settings.storageUploadMaxFileSize) {
