@@ -7,6 +7,8 @@ struct ChatScreen: View {
     @Environment(ServerListStore.self) private var servers
     @Environment(\.dismiss) private var dismiss
     @Environment(\.showChannelList) private var showChannelList
+    // set only while the channel list sits beside the chat, see HomeView
+    @Environment(\.expandChat) private var expandChat
 
     @State private var isPinsPresented = false
     @State private var dropdown: ChatDropdown?
@@ -107,7 +109,7 @@ struct ChatScreen: View {
             }
         }
         .safeAreaInset(edge: .top, spacing: 0) {
-            SessionBanners()
+            SessionBanners(showsVoiceTakenOver: expandChat == nil)
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(Theme.chatBackground, for: .navigationBar)

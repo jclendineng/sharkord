@@ -1750,6 +1750,14 @@ final class SessionStore {
                     self.voiceTakenOverChannelId = event.channelId
                 }
             }
+
+            // the device that took the call over hung up, there is nothing left to reconnect from
+            let isOwnLeave = event.userId == self.ownUserId && event.takenOver != true
+            let isInVoiceElsewhere = self.voiceUsers.values.contains { $0[event.userId] != nil }
+
+            if isOwnLeave, !isInVoiceElsewhere {
+                self.voiceTakenOverChannelId = nil
+            }
         }
 
         client.subscribe("voice.onNewProducer") { [weak self] (event: VoiceProducerEvent) in

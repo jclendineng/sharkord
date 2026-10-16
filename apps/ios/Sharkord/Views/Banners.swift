@@ -72,6 +72,9 @@ struct VoiceTakenOverBanner: View {
 // the bars along the top of the channel list and the chat, the reconnecting one and the one
 // for a call another device took over
 struct SessionBanners: View {
+    // false in the chat while the channel list beside it already shows the bar
+    var showsVoiceTakenOver = true
+
     @Environment(SessionStore.self) private var session
 
     var body: some View {
@@ -80,7 +83,7 @@ struct SessionBanners: View {
                 ReconnectingBanner()
             }
 
-            if let channelId = session.voiceTakenOverChannelId {
+            if showsVoiceTakenOver, let channelId = session.voiceTakenOverChannelId {
                 VoiceTakenOverBanner(channelId: channelId)
             }
         }
