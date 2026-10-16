@@ -591,7 +591,7 @@ private struct MembersPage: View {
                 SectionTitle(title: "Online · \(online.count)")
 
                 ForEach(online) { user in
-                    MemberRow(user: user, onOpen: { onOpenUser(user) })
+                    MemberRow(user: user, channelId: model.scope?.id, onOpen: { onOpenUser(user) })
                 }
             }
 
@@ -599,7 +599,7 @@ private struct MembersPage: View {
                 SectionTitle(title: "Offline · \(offline.count)")
 
                 ForEach(offline) { user in
-                    MemberRow(user: user, onOpen: { onOpenUser(user) })
+                    MemberRow(user: user, channelId: model.scope?.id, onOpen: { onOpenUser(user) })
                 }
             }
         } else {
@@ -609,13 +609,95 @@ private struct MembersPage: View {
 }
 
 private struct MemberRow: View {
+    // what the menu asked for, done once its sheet has gone so the two do not collide
+    private enum MenuAction {
+        case profile
+        case message
+    }
+
     let user: PublicUser
+    // the chat a mention from the menu goes into
+    let channelId: Int?
     let onOpen: () -> Void
 
     @Environment(SessionStore.self) private var session
+    @Environment(ServerListStore.self) private var servers
+
+    @State private var isMenuPresented = false
+    @State private var menuAnchor = UnitPoint.center
+    @State private var pendingAction: MenuAction?
+    @State private var isProfilePresented = false
 
     var body: some View {
-        Button(action: onOpen) {
+        content
+            // discord's menu on a member: a long press on a touch screen, a right click on a mac
+            .onLongPressGesture(minimumDuration: 0.3, perform: showMenu)
+            .onSecondaryClick(perform: showMenuAtPointer)
+            .accessibilityAction(named: "More Options", showMenu)
+            .actionsPresentation(isPresented: $isMenuPresented, anchor: menuAnchor, onDismiss: runPendingAction) {
+                MemberActionsSheet(user: user, channelId: channelId, onShowProfile: requestProfile, onMessage: requestMessage)
+                    .environment(session)
+                    .environment(servers)
+            }
+            .sheet(isPresented: $isProfilePresented) {
+                MemberProfileSheet(user: user, onMessage: openDirectMessage)
+                    .environment(session)
+                    .environment(servers)
+                    .appSheet(addsClose: true)
+            }
+    }
+
+    private func showMenu() {
+        menuAnchor = .center
+        isMenuPresented = true
+    }
+
+    private func showMenuAtPointer(_ click: SecondaryClick) {
+        menuAnchor = click.anchor
+        isMenuPresented = true
+    }
+
+    private func requestProfile() {
+        pendingAction = .profile
+        isMenuPresented = false
+    }
+
+    private func requestMessage() {
+        pendingAction = .message
+        isMenuPresented = false
+    }
+
+    private func runPendingAction() {
+        let action = pendingAction
+
+        pendingAction = nil
+
+        switch action {
+        case .profile:
+            isProfilePresented = true
+        case .message:
+            openDirectMessage()
+        case nil:
+            break
+        }
+    }
+
+    private func openDirectMessage() {
+        isProfilePresented = false
+
+        Task {
+            guard let channelId = try? await session.openDirectMessage(with: user.id) else {
+                return
+            }
+
+            servers.open(channelId: channelId, in: session)
+        }
+    }
+
+    // plain gestures rather than a button: a recognised long press cancels the tap, where a
+    // button still fires when the finger lifts after one
+    private var content: some View {
+        Group {
             HStack(spacing: 14) {
                 AvatarView(user: user, size: 40, showsStatus: true)
 
@@ -639,7 +721,8 @@ private struct MemberRow: View {
             .padding(.vertical, 7)
             .contentShape(.rect)
         }
-        .buttonStyle(.plain)
+        .onTapGesture(perform: onOpen)
+        .accessibilityAddTraits(.isButton)
     }
 }
 
