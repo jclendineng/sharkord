@@ -26,6 +26,15 @@ final class ServerListStore {
     // a server icon held down, HomeView draws the menu beside it
     var railMenu: RailMenu?
 
+    // the mac's search card under the box above the channel list, drawn over the window rather
+    // than as a popover, whose window a right click menu inside it could not reach
+    struct SearchDropdown {
+        let route: SearchRoute
+        let anchor: CGRect
+    }
+
+    var searchDropdown: SearchDropdown?
+
     @ObservationIgnored private var backgroundTask: UIBackgroundTaskIdentifier = .invalid
 
     init() {
@@ -265,6 +274,7 @@ final class ServerListStore {
             session.messages(for: channelId).pendingJumpMessageId = messageId
         }
 
+        searchDropdown = nil
         select(session)
         isShowingDirectMessages = session.channel(channelId)?.isDm == true
         session.requestedChannelId = channelId

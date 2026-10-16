@@ -92,7 +92,10 @@ private struct SheetCloseButton: View {
                 .frame(width: 44, height: 44)
         }
         .buttonStyle(.plain)
-        .glassEffect(.regular.interactive(), in: .circle)
+        // plain glass on a mac: the interactive kind takes the press for its own animation there,
+        // and the button only saw an occasional click, so the x needed several to close
+        .glassEffect(ProcessInfo.processInfo.isiOSAppOnMac ? .regular : .regular.interactive(), in: .circle)
+        .contentShape(.circle)
         .accessibilityLabel("Close")
     }
 }

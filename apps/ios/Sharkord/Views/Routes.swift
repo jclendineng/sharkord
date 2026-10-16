@@ -39,32 +39,19 @@ struct SearchLink<Label: View>: View {
     @Environment(SessionStore.self) private var session
     @Environment(ServerListStore.self) private var servers
 
-    @State private var isDropdownPresented = false
+    @State private var frame = CGRect.zero
 
     var body: some View {
         if ProcessInfo.processInfo.isiOSAppOnMac {
-            // discord's mac search drops down from the box, filters and results in it, and a
-            // result opens in the window behind as the dropdown goes. handed the stores by hand:
-            // on a mac a presentation is worked out before it inherits anything
+            // discord's mac search drops down from the box, filters and results in it, the same
+            // card as the chat's search, drawn by HomeView over the window
             Button(action: showDropdown) {
                 label
             }
-            .popover(isPresented: $isDropdownPresented, arrowEdge: .top) {
-                // the same card as the chat's search dropdown: its width fits every tab without
-                // the strip scrolling, and the panel colour rather than the popover's glass
-                NavigationStack {
-                    SearchScreen(channelId: route.channelId, directMessages: route.directMessages)
-                }
-                .frame(width: 500, height: 640)
-                .presentationBackground(Theme.deepBackground)
-                .presentationCompactAdaptation(.popover)
-                .environment(session)
-                .environment(servers)
-            }
-            .onChange(of: session.requestedChannelId) { _, channelId in
-                if channelId != nil {
-                    isDropdownPresented = false
-                }
+            .onGeometryChange(for: CGRect.self) { proxy in
+                proxy.frame(in: .named(HomeView.coordinateSpace))
+            } action: { newFrame in
+                frame = newFrame
             }
         } else if let presentSearch {
             Button {
@@ -82,7 +69,7 @@ struct SearchLink<Label: View>: View {
 
 extension SearchLink {
     private func showDropdown() {
-        isDropdownPresented = true
+        servers.searchDropdown = ServerListStore.SearchDropdown(route: route, anchor: frame)
     }
 }
 

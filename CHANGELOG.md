@@ -209,6 +209,10 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 ### Fixed
 
+- On a Mac, the server search above the channel list is a card drawn over the window, like
+  the chat's, rather than a popover, so a right click on a member in it opens their menu.
+  Members in search light up under the pointer.
+- On a Mac, a sheet's X closes on the first click: its glass no longer takes the press.
 - A long press on a member in a channel's Members tab opens the same menu as a right click
   on a Mac, as a sheet on an iPhone or iPad.
 - On a Mac, a member's profile from the member list opens to its left, full width, instead of

@@ -643,9 +643,13 @@ private struct MemberRow: View {
     @State private var menuAnchor = UnitPoint.center
     @State private var pendingAction: MenuAction?
     @State private var isProfilePresented = false
+    @State private var isHovered = false
 
     var body: some View {
         content
+            .background(isHovered || isMenuPresented ? Theme.hover : .clear, in: .rect(cornerRadius: 6))
+            .padding(.horizontal, 6)
+            .onHover(perform: setHovered)
             // discord's menu on a member: a long press on a touch screen, a right click on a mac
             .onLongPressGesture(minimumDuration: 0.3, perform: showMenu)
             .onSecondaryClick(perform: showMenuAtPointer)
@@ -661,6 +665,10 @@ private struct MemberRow: View {
                     .environment(servers)
                     .appSheet(addsClose: true)
             }
+    }
+
+    private func setHovered(_ hovered: Bool) {
+        isHovered = hovered
     }
 
     private func showMenu() {

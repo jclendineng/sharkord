@@ -92,6 +92,12 @@ struct HomeView: View {
             }
         }
         .animation(.snappy(duration: 0.2), value: servers.railMenu?.server.id)
+        .overlay {
+            if let dropdown = servers.searchDropdown {
+                SearchDropdownCard(dropdown: dropdown)
+                    .environment(session)
+            }
+        }
         .overlay(alignment: .top) {
             if let toastMessage = session.toastMessage {
                 ErrorToast(message: toastMessage)
