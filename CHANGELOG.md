@@ -209,6 +209,13 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 ### Fixed
 
+- On a Mac, the chat's search is a box in its top bar, with the filter menu beside it, and
+  the results drop down under it. The server search above the channel list opens the same
+  card, as wide, so its tabs no longer scroll.
+- On a Mac, settings rows light up under the pointer, as channels and messages do.
+- The button that opens the system's settings says Settings on an iPhone or iPad and System
+  Settings on a Mac, where it now opens the matching pane (Notifications, Camera, Photos)
+  instead of the app's Touch Alternatives.
 - On a Mac, the inbox under the bell has an X in its top left and closes with Escape. It
   opens as a sheet there, which a click outside never closed.
 - The web client joins its call again after a dropped connection comes back, instead of
