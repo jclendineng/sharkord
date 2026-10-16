@@ -39,6 +39,14 @@ struct ServerSettingsScreen: View {
                             SettingsRow(title: "Stickers", systemImage: "seal.fill")
                         }
                     }
+
+                    if session.can(.manageSoundboard) {
+                        NavigationLink {
+                            SoundboardScreen()
+                        } label: {
+                            SettingsRow(title: "Soundboard", systemImage: "waveform")
+                        }
+                    }
                 }
 
                 Section("Community") {

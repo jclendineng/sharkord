@@ -2,6 +2,7 @@ import { store } from '@/features/store';
 import { logDebug } from '@/helpers/browser-logger';
 import { getTRPCClient } from '@/lib/trpc';
 import { currentVoiceChannelIdSelector } from '../channels/selectors';
+import { playSoundboardSound } from '../soundboard/actions';
 import { handleSubscriptionError } from '../subscription-error';
 import {
   addExternalStreamToVoiceChannel,
@@ -89,6 +90,14 @@ const subscribeToVoice = () => {
     onError: handleSubscriptionError('onVoiceReaction')
   });
 
+  const onSoundSub = trpc.voice.onSound.subscribe(undefined, {
+    onData: ({ channelId, userId, soundId }) => {
+      logDebug('[EVENTS] voice.onSound', { channelId, userId, soundId });
+      playSoundboardSound(channelId, soundId);
+    },
+    onError: handleSubscriptionError('onVoiceSound')
+  });
+
   const onMovedSub = trpc.voice.onMoved.subscribe(undefined, {
     onData: ({ channelId, fromChannelId }) => {
       logDebug('[EVENTS] voice.onMoved', { channelId, fromChannelId });
@@ -111,6 +120,7 @@ const subscribeToVoice = () => {
     onVoiceUpdateExternalStreamSub.unsubscribe();
     onVoiceRemoveExternalStreamSub.unsubscribe();
     onReactionSub.unsubscribe();
+    onSoundSub.unsubscribe();
     onMovedSub.unsubscribe();
   };
 };

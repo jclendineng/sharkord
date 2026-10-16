@@ -81,6 +81,22 @@ struct VoiceVideoSettingsScreen: View {
                 }
                 .padding(.vertical, 4)
 
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Soundboard Volume")
+                        .foregroundStyle(Theme.header)
+
+                    HStack(spacing: 12) {
+                        Image(systemName: "speaker.slash.fill")
+                            .foregroundStyle(Theme.muted)
+
+                        Slider(value: $settings.soundboardVolume, in: 0...1)
+
+                        Image(systemName: "speaker.wave.3.fill")
+                            .foregroundStyle(Theme.muted)
+                    }
+                }
+                .padding(.vertical, 4)
+
                 Toggle("Use Speaker by Default", isOn: $settings.speakerByDefault)
             }
 

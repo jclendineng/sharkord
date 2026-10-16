@@ -11,6 +11,7 @@ import {
   onUserUpdateVoiceStateRoute,
   onUserVoiceMovedRoute,
   onUserVoiceReactionRoute,
+  onUserVoiceSoundRoute,
   onVoiceAddExternalStreamRoute,
   onVoiceNewProducerRoute,
   onVoiceProducerClosedRoute,
@@ -21,6 +22,7 @@ import { getProducersRoute } from './get-producers';
 import { joinVoiceRoute } from './join';
 import { leaveVoiceRoute } from './leave';
 import { moveUserRoute } from './move';
+import { playSoundRoute } from './play-sound';
 import { produceRoute } from './produce';
 import { sendVoiceReactionRoute } from './send-reaction';
 import { setConsumerQualityRoute } from './set-consumer-quality';
@@ -32,6 +34,7 @@ export const voiceRouter = t.router({
   moveUser: moveUserRoute,
   updateState: updateVoiceStateRoute,
   sendReaction: sendVoiceReactionRoute,
+  playSound: playSoundRoute,
   createProducerTransport: createProducerTransportRoute,
   connectProducerTransport: connectProducerTransportRoute,
   createConsumerTransport: createConsumerTransportRoute,
@@ -46,6 +49,7 @@ export const voiceRouter = t.router({
   onUpdateState: onUserUpdateVoiceStateRoute,
   onMoved: onUserVoiceMovedRoute,
   onReaction: onUserVoiceReactionRoute,
+  onSound: onUserVoiceSoundRoute,
   onNewProducer: onVoiceNewProducerRoute,
   onProducerClosed: onVoiceProducerClosedRoute,
   onAddExternalStream: onVoiceAddExternalStreamRoute,

@@ -16,6 +16,7 @@ import {
   files,
   messageReactions,
   messages,
+  soundboardSounds,
   stickers,
   users
 } from '../../db/schema';
@@ -123,6 +124,11 @@ const deleteUserRoute = protectedProcedure
         tx.update(stickers)
           .set({ userId: deletedUserId })
           .where(eq(stickers.userId, input.userId))
+          .run();
+
+        tx.update(soundboardSounds)
+          .set({ userId: deletedUserId })
+          .where(eq(soundboardSounds.userId, input.userId))
           .run();
 
         // the reactions primary key is (messageId, userId, emoji), so a

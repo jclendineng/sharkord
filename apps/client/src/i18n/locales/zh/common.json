@@ -164,5 +164,8 @@
   "failedSetRules": "无法更新规则消息",
   "noteLabel": "备注（仅你可见）",
   "notePlaceholder": "点击添加备注",
-  "failedSaveNote": "无法保存备注"
+  "failedSaveNote": "无法保存备注",
+  "soundboard": "音效板",
+  "failedPlaySound": "无法播放声音",
+  "noSoundsYet": "还没有声音。"
 }

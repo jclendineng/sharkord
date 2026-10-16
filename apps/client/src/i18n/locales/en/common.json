@@ -166,5 +166,8 @@
   "failedSetRules": "Could not update the rules message",
   "noteLabel": "Note (only visible to you)",
   "notePlaceholder": "Click to add a note",
-  "failedSaveNote": "Could not save the note"
+  "failedSaveNote": "Could not save the note",
+  "soundboard": "Soundboard",
+  "failedPlaySound": "Couldn't play the sound",
+  "noSoundsYet": "No sounds yet."
 }

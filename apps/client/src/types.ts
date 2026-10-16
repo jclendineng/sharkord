@@ -75,6 +75,8 @@ export type TDeviceSettings = {
   screenCodec: VideoCodec;
   screenBitrate: number;
   screenCursor: ScreenCursor;
+  // a percentage, see SOUND_MAX_VOLUME
+  soundboardVolume: number;
 };
 
 export type TRemoteUserStreamKinds =

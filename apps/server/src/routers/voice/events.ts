@@ -35,6 +35,13 @@ const onUserVoiceReactionRoute = protectedProcedure.subscription(
   }
 );
 
+// broadcast like reactions, each app plays only the sounds of the call it is in
+const onUserVoiceSoundRoute = protectedProcedure.subscription(
+  async ({ ctx }) => {
+    return ctx.pubsub.subscribe(ServerEvents.USER_VOICE_SOUND);
+  }
+);
+
 const onUserVoiceMovedRoute = protectedProcedure.subscription(
   async ({ ctx }) => {
     return ctx.pubsub.subscribeFor(ctx.user.id, ServerEvents.USER_VOICE_MOVED);
@@ -94,6 +101,7 @@ export {
   onUserUpdateVoiceStateRoute,
   onUserVoiceMovedRoute,
   onUserVoiceReactionRoute,
+  onUserVoiceSoundRoute,
   onVoiceAddExternalStreamRoute,
   onVoiceNewProducerRoute,
   onVoiceProducerClosedRoute,

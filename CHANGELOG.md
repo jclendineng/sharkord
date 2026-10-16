@@ -15,7 +15,11 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 ### Upgrade notes
 
 - Database migrations run by themselves at startup. This release adds tables for friends,
-  group direct messages, private notes, the new member lounge and QR sign in.
+  group direct messages, private notes, the new member lounge, QR sign in and the soundboard.
+- The soundboard's permissions are granted on upgrade: Use Soundboard to every role that can
+  join voice, Manage Soundboard to every role that manages emoji.
+- An iOS app from before the soundboard can't open the roles screen on an upgraded server,
+  because it doesn't know the two new permissions. Update the app along with the server.
 - On first start, existing uploads are renamed to random names and every file link becomes
   signed. Links handed out before the upgrade stop working once they expire.
 - `storage.forceSignedUrls` in `config.ini` is gone, since links are now always signed. The
@@ -62,6 +66,11 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - Polls.
 - Voice messages that play in place, in the app and on the web.
 - Server stickers and Klipy GIFs, in the app and the web client's picker.
+- A soundboard like Discord's, in the app and the web client. Anyone in a call plays a sound
+  for everyone there, and each person sets their own soundboard volume. Managers upload sounds
+  or pick them from a library of free CC0 sounds by Kenney that comes with the server, and set
+  each one's name, emoji and volume. Two new permissions, Use Soundboard and Manage
+  Soundboard.
 - Link previews for bare domains, previews from the server's own network when the admin
   allows it, and Discord style link cards.
 - A new member lounge: reacting to the rules message gives the role that opens the server.

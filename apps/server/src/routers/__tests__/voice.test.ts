@@ -750,6 +750,92 @@ describe('voice router', () => {
     });
   });
 
+  describe('playSound', () => {
+    test('should broadcast the sound to every listener', async () => {
+      const { caller: owner } = await initTest(1);
+      const soundId = await owner.soundboard.addFromLibrary({ key: 'ding' });
+      const { runtime, caller } = await joinVoiceChannelTwo(1);
+
+      const plays: { channelId: number; userId: number; soundId: number }[] =
+        [];
+
+      const subscription = pubsub
+        .subscribe(ServerEvents.USER_VOICE_SOUND)
+        .subscribe({
+          next: (play) => {
+            plays.push(play);
+          }
+        });
+
+      try {
+        await caller.voice.playSound({ soundId });
+
+        expect(plays).toEqual([
+          { channelId: VOICE_CHANNEL_ID, userId: 1, soundId }
+        ]);
+      } finally {
+        subscription.unsubscribe();
+        await runtime.destroy();
+      }
+    });
+
+    test('should refuse a sound that does not exist', async () => {
+      const { runtime, caller } = await joinVoiceChannelTwo(1);
+
+      try {
+        await expect(caller.voice.playSound({ soundId: 999 })).rejects.toThrow(
+          'Sound not found.'
+        );
+      } finally {
+        await runtime.destroy();
+      }
+    });
+
+    test('should refuse someone who is not in a voice channel', async () => {
+      const { caller } = await initTest(1);
+      const soundId = await caller.soundboard.addFromLibrary({ key: 'ding' });
+
+      await expect(caller.voice.playSound({ soundId })).rejects.toThrow(
+        'User is not in a voice channel'
+      );
+    });
+
+    test('should refuse a sound without USE_SOUNDBOARD', async () => {
+      await revokeFromDefaultRole(Permission.USE_SOUNDBOARD);
+
+      const { caller: owner } = await initTest(1);
+      const soundId = await owner.soundboard.addFromLibrary({ key: 'ding' });
+      const { runtime, caller } = await joinVoiceChannelTwo(2);
+
+      try {
+        await expect(caller.voice.playSound({ soundId })).rejects.toThrow(
+          'Insufficient permissions'
+        );
+      } finally {
+        await runtime.destroy();
+      }
+    });
+
+    test('should rate limit a stream of sounds', async () => {
+      const { caller: owner } = await initTest(1);
+      const soundId = await owner.soundboard.addFromLibrary({ key: 'ding' });
+      const { runtime, caller } = await joinVoiceChannelTwo(1);
+      const { maxRequests } = config.rateLimiters.soundboardPlay;
+
+      try {
+        for (let i = 0; i < maxRequests; i++) {
+          await caller.voice.playSound({ soundId });
+        }
+
+        await expect(caller.voice.playSound({ soundId })).rejects.toThrow(
+          'Too many requests. Please try again shortly.'
+        );
+      } finally {
+        await runtime.destroy();
+      }
+    });
+  });
+
   describe('sendReaction', () => {
     test('should broadcast the reaction to every listener', async () => {
       const { runtime, caller } = await joinVoiceChannelTwo(1);

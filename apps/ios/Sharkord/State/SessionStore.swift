@@ -66,6 +66,7 @@ final class SessionStore {
     private(set) var rolesById: [Int: Role] = [:]
     private(set) var customEmojis: [CustomEmoji] = []
     private(set) var stickers: [Sticker] = []
+    private(set) var sounds: [SoundboardSound] = []
     private(set) var settings: PublicSettings?
     // keyed by channel id, only private channels are bound by it, as on the web
     private(set) var channelPermissions: [Int: [String: Bool]] = [:]
@@ -105,6 +106,7 @@ final class SessionStore {
     private var pushToken: String?
     private var hasRequestedPush = false
     private var voice: VoiceConnection?
+    @ObservationIgnored private let soundboardPlayer = SoundboardPlayer()
     private var screenCapture: ScreenCapture?
     // present when the call was joined with app audio on, see AppSettings.shareAppAudio
     private var mixingDevice: MixingAudioDevice?
@@ -710,6 +712,7 @@ final class SessionStore {
         rolesById = [:]
         customEmojis = []
         stickers = []
+        sounds = []
         settings = nil
         errorMessage = message
         wantsSignInPrompt = message != nil
@@ -737,6 +740,39 @@ final class SessionStore {
             try await perform("voice.sendReaction", ["emoji": emoji])
         } catch {
             showError(error)
+        }
+    }
+
+    // USE_SOUNDBOARD: plays a sound for everyone in this call, this app included through
+    // voice.onSound like everyone else's
+    func playSound(_ sound: SoundboardSound) async {
+        do {
+            try await perform("voice.playSound", ["soundId": sound.id])
+        } catch {
+            showError(error)
+        }
+    }
+
+    // only here, at the sound's volume and this person's soundboard volume
+    func previewSound(_ sound: SoundboardSound, volume: Int? = nil) {
+        guard let address else {
+            return
+        }
+
+        let level = Double(volume ?? sound.volume) / 100 * AppSettings.shared.soundboardVolume
+
+        Task {
+            await soundboardPlayer.play(address.fileURL(sound.file), volume: Float(level))
+        }
+    }
+
+    func previewLibrarySound(_ key: String) {
+        guard let address else {
+            return
+        }
+
+        Task {
+            await soundboardPlayer.play(address.url(path: "soundboard-library/\(key).m4a"), volume: Float(AppSettings.shared.soundboardVolume))
         }
     }
 
@@ -1337,6 +1373,7 @@ final class SessionStore {
         rolesById = Dictionary(uniqueKeysWithValues: result.roles.map { ($0.id, $0) })
         customEmojis = result.emojis
         stickers = result.stickers ?? []
+        sounds = result.sounds ?? []
         settings = result.publicSettings
         applyChannelPermissions(result.channelPermissions ?? [:])
         unreadCounts = Dictionary(
@@ -1747,6 +1784,24 @@ final class SessionStore {
             self?.stickers.removeAll { $0.id == stickerId }
         }
 
+        for path in ["soundboard.onCreate", "soundboard.onUpdate"] {
+            client.subscribe(path) { [weak self] (sound: SoundboardSound) in
+                guard let self else {
+                    return
+                }
+
+                if let index = self.sounds.firstIndex(where: { $0.id == sound.id }) {
+                    self.sounds[index] = sound
+                } else {
+                    self.sounds.append(sound)
+                }
+            }
+        }
+
+        client.subscribe("soundboard.onDelete") { [weak self] (soundId: Int) in
+            self?.sounds.removeAll { $0.id == soundId }
+        }
+
         for path in ["roles.onCreate", "roles.onUpdate"] {
             client.subscribe(path) { [weak self] (role: Role) in
                 self?.rolesById[role.id] = role
@@ -1853,6 +1908,19 @@ final class SessionStore {
             }
 
             self.showVoiceReaction(event.emoji, from: event.userId)
+        }
+
+        // deafened, a sound is not heard either, as discord's
+        client.subscribe("voice.onSound") { [weak self] (event: VoiceSoundEvent) in
+            guard let self, event.channelId == self.currentVoiceChannelId, !self.soundMuted else {
+                return
+            }
+
+            guard let sound = self.sounds.first(where: { $0.id == event.soundId }) else {
+                return
+            }
+
+            self.previewSound(sound)
         }
 
         client.subscribe("voice.onMoved") { [weak self] (event: VoiceMovedEvent) in

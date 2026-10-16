@@ -8,6 +8,7 @@ struct VoiceRoomScreen: View {
     @Environment(\.closeVoiceRoom) private var closeVoiceRoom
 
     @State private var isReactionBarShown = false
+    @State private var isSoundboardPresented = false
 
     private var channelName: String {
         session.currentVoiceChannelId.flatMap { session.channel($0)?.name } ?? "Voice"
@@ -66,6 +67,11 @@ struct VoiceRoomScreen: View {
                 close()
             }
         }
+        // handed over by hand: on a mac a presentation is worked out before it inherits anything
+        .sheet(isPresented: $isSoundboardPresented) {
+            SoundboardSheet()
+                .environment(session)
+        }
     }
 
     private var header: some View {
@@ -90,6 +96,15 @@ struct VoiceRoomScreen: View {
 
             Spacer()
 
+            if session.can(.useSoundboard) {
+                Button("Soundboard", systemImage: "waveform", action: showSoundboard)
+                    .labelStyle(.iconOnly)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Theme.header)
+                    .frame(width: 40, height: 40)
+                    .background(Theme.listBackground, in: .circle)
+            }
+
             if session.can(.sendVoiceReaction) {
                 Button("Reactions", systemImage: "face.smiling", action: toggleReactionBar)
                     .labelStyle(.iconOnly)
@@ -101,6 +116,10 @@ struct VoiceRoomScreen: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
+    }
+
+    private func showSoundboard() {
+        isSoundboardPresented = true
     }
 
     private func toggleReactionBar() {

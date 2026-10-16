@@ -455,6 +455,33 @@ const stickers = sqliteTable(
   ]
 );
 
+// a server's soundboard. a sound picked from the library keeps the library's key, so the
+// picker can show which of them the server already has
+const soundboardSounds = sqliteTable(
+  'soundboard_sounds',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    name: text('name').notNull(),
+    emoji: text('emoji'),
+    // a percentage, see SOUND_MAX_VOLUME
+    volume: integer('volume').notNull().default(100),
+    libraryKey: text('library_key'),
+    fileId: integer('file_id')
+      .notNull()
+      .references(() => files.id, { onDelete: 'cascade' }),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: integer('created_at').notNull(),
+    updatedAt: integer('updated_at')
+  },
+  (t) => [
+    index('soundboard_sounds_user_idx').on(t.userId),
+    index('soundboard_sounds_file_idx').on(t.fileId),
+    uniqueIndex('soundboard_sounds_library_key_idx').on(t.libraryKey)
+  ]
+);
+
 // a message can carry one poll, its answers in order and who picked which
 const polls = sqliteTable('polls', {
   messageId: integer('message_id')
@@ -968,6 +995,7 @@ export {
   roles,
   sessions,
   settings,
+  soundboardSounds,
   stickers,
   userNotes,
   userRoles,

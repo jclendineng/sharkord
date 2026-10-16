@@ -33,6 +33,7 @@ import { pluginBundleRouteHandler } from './plugin-bundle';
 import { runPluginRoute } from './plugin-route';
 import { pluginsComponentsRouteHandler } from './plugins-components';
 import { publicRouteHandler } from './public';
+import { soundboardLibraryRouteHandler } from './soundboard-library';
 import { uploadFileRouteHandler } from './upload';
 
 // parsed once per request and handed to every handler, so nothing below re-parses the url
@@ -88,7 +89,8 @@ const routeHandlers: Partial<
     prefix: {
       '/public': publicRouteHandler,
       '/plugin-components': pluginsComponentsRouteHandler,
-      '/plugin-bundle': pluginBundleRouteHandler
+      '/plugin-bundle': pluginBundleRouteHandler,
+      '/soundboard-library': soundboardLibraryRouteHandler
     }
   },
   POST: {

@@ -29,6 +29,7 @@ final class AppSettings {
         static let streamQuality = "settings.streamQuality"
         static let shareAppAudio = "settings.shareAppAudio"
         static let hearYourselfInCalls = "settings.hearYourselfInCalls"
+        static let soundboardVolume = "settings.soundboardVolume"
         static let doubleTapReaction = "settings.doubleTapReaction"
     }
 
@@ -71,6 +72,11 @@ final class AppSettings {
         didSet { defaults.set(hearYourselfInCalls, forKey: Key.hearYourselfInCalls) }
     }
 
+    // 0 to 1, how loud soundboard sounds play for this person, on top of each sound's own volume
+    var soundboardVolume: Double {
+        didSet { defaults.set(soundboardVolume, forKey: Key.soundboardVolume) }
+    }
+
     // the shortcode a double tap on a message reacts with, picked from the message menu's
     // edit link like discord's
     var doubleTapReaction: String {
@@ -84,6 +90,7 @@ final class AppSettings {
             Key.autoGainControl: true,
             Key.speakerByDefault: true,
             Key.outputVolume: 1.0,
+            Key.soundboardVolume: 1.0,
             Key.doubleTapReaction: "heart"
         ])
 
@@ -94,6 +101,7 @@ final class AppSettings {
         outputVolume = defaults.double(forKey: Key.outputVolume)
         shareAppAudio = defaults.bool(forKey: Key.shareAppAudio)
         hearYourselfInCalls = defaults.bool(forKey: Key.hearYourselfInCalls)
+        soundboardVolume = defaults.double(forKey: Key.soundboardVolume)
         doubleTapReaction = defaults.string(forKey: Key.doubleTapReaction) ?? "heart"
         streamQuality = defaults.string(forKey: Key.streamQuality).flatMap(StreamQuality.init(rawValue:)) ?? .standard
     }

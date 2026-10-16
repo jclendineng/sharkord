@@ -29,6 +29,8 @@ struct JoinResult: Decodable {
     let roles: [Role]
     let emojis: [CustomEmoji]
     let stickers: [Sticker]?
+    // missing on a server from before the soundboard
+    let sounds: [SoundboardSound]?
     let publicSettings: PublicSettings
     // this account's resolved permissions in each channel, keyed by channel id
     let channelPermissions: [String: ChannelPermissions]?

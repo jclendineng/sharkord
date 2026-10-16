@@ -230,6 +230,32 @@ Routes `stickers.add`, `stickers.update`, `stickers.delete`, `stickers.getAll` a
 `onCreate`, `onUpdate`, `onDelete` subscriptions. Table `stickers`, column
 `messages.sticker_id`. Bounds in `packages/shared/src/statics/stickers.ts`.
 
+## Soundboard
+
+Discord's soundboard. Anyone in a call with Use Soundboard plays a sound from the call's
+controls, and everyone in that call hears it. Each app plays the sound itself, at the sound's
+volume times that person's soundboard volume, so it never goes into anyone's mic and a
+deafened member does not hear it.
+
+Members with Manage Soundboard add sounds in Server Settings, Soundboard, two ways:
+
+- **Upload:** MP3, WAV or M4A, 512 KB at most. There is no transcoding, so the size is what
+  keeps a sound short.
+- **Library:** the server ships with a library of CC0 sounds from
+  [Kenney](https://kenney.nl), embedded in the binary. Picking one copies it into storage, and
+  from then on it is a sound like any other. Each library sound can be added once.
+
+Each sound has a name of 2 to 32 characters, an optional emoji and a volume from 0 to 100.
+The migration grants Use Soundboard to every role that can join voice, and Manage Soundboard
+to every role that manages emoji.
+
+Routes `soundboard.add`, `soundboard.addFromLibrary`, `soundboard.update`,
+`soundboard.delete`, `soundboard.getAll`, `soundboard.getLibrary`, the `onCreate`, `onUpdate`,
+`onDelete` subscriptions, `voice.playSound` (rate limited by `rateLimiters.soundboardPlay`)
+and `voice.onSound`. HTTP `GET /soundboard-library/<key>.m4a` serves a library sound to
+preview without signing in. Table `soundboard_sounds`. Bounds and the library list in
+`packages/shared/src/statics/soundboard.ts`, audio in `apps/server/src/soundboard-library`.
+
 ## GIFs
 
 The GIFs tab of the expression picker searches [Klipy](https://klipy.com), the provider

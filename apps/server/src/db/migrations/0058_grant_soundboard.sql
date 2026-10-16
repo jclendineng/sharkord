@@ -1,0 +1,2 @@
+INSERT OR IGNORE INTO `role_permissions` (`role_id`, `permission`, `created_at`) SELECT `role_id`, 'USE_SOUNDBOARD', unixepoch() FROM `role_permissions` WHERE `permission` = 'JOIN_VOICE_CHANNELS';--> statement-breakpoint
+INSERT OR IGNORE INTO `role_permissions` (`role_id`, `permission`, `created_at`) SELECT `role_id`, 'MANAGE_SOUNDBOARD', unixepoch() FROM `role_permissions` WHERE `permission` = 'MANAGE_EMOJIS';

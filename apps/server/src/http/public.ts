@@ -17,7 +17,11 @@ const INLINE_ALLOW_LIST = [
   'image/webp',
   'image/avif',
   'video/mp4',
-  'audio/mpeg'
+  'audio/mpeg',
+  'audio/mp4',
+  'audio/x-m4a',
+  'audio/wav',
+  'audio/x-wav'
 ];
 
 const publicRouteHandler = async (

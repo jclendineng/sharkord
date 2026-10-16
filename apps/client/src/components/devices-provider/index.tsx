@@ -13,7 +13,7 @@ import {
   VideoCodec,
   type TDeviceSettings
 } from '@/types';
-import { DEFAULT_BITRATE } from '@sharkord/shared';
+import { DEFAULT_BITRATE, SOUND_MAX_VOLUME } from '@sharkord/shared';
 import {
   createContext,
   memo,
@@ -46,7 +46,8 @@ const getDefaultDeviceSettings = (): TDeviceSettings => ({
   screenFramerate: 30,
   screenCodec: VideoCodec.AUTO,
   screenBitrate: DEFAULT_BITRATE,
-  screenCursor: ScreenCursor.ALWAYS
+  screenCursor: ScreenCursor.ALWAYS,
+  soundboardVolume: SOUND_MAX_VOLUME
 });
 
 const resolveDeviceId = (

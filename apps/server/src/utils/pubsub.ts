@@ -10,6 +10,7 @@ import type {
   TJoinedMessage,
   TJoinedPublicUser,
   TJoinedRole,
+  TJoinedSoundboardSound,
   TJoinedSticker,
   TLogEntry,
   TPluginCapabilityAccessRule,
@@ -88,6 +89,11 @@ type Events = {
     userId: number;
     emoji: string;
   };
+  [ServerEvents.USER_VOICE_SOUND]: {
+    channelId: number;
+    userId: number;
+    soundId: number;
+  };
   [ServerEvents.VOICE_NEW_PRODUCER]: {
     channelId: number;
     remoteId: number;
@@ -127,6 +133,10 @@ type Events = {
   [ServerEvents.STICKER_CREATE]: TJoinedSticker;
   [ServerEvents.STICKER_UPDATE]: TJoinedSticker;
   [ServerEvents.STICKER_DELETE]: number;
+
+  [ServerEvents.SOUND_CREATE]: TJoinedSoundboardSound;
+  [ServerEvents.SOUND_UPDATE]: TJoinedSoundboardSound;
+  [ServerEvents.SOUND_DELETE]: number;
 
   [ServerEvents.ROLE_CREATE]: TJoinedRole;
   [ServerEvents.ROLE_UPDATE]: TJoinedRole;

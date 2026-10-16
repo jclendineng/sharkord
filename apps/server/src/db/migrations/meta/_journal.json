@@ -400,6 +400,20 @@
       "when": 1792095405312,
       "tag": "0056_login_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "6",
+      "when": 1792156642321,
+      "tag": "0057_soundboard",
+      "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "6",
+      "when": 1792156649358,
+      "tag": "0058_grant_soundboard",
+      "breakpoints": true
     }
   ]
 }

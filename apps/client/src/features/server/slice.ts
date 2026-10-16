@@ -14,6 +14,7 @@ import type {
   TJoinedMessage,
   TJoinedPublicUser,
   TJoinedRole,
+  TJoinedSoundboardSound,
   TJoinedSticker,
   TPluginCapabilityAccessRule,
   TPluginComponentsMap,
@@ -47,6 +48,7 @@ export interface IServerState {
   channels: TChannel[];
   emojis: TJoinedEmoji[];
   stickers: TJoinedSticker[];
+  sounds: TJoinedSoundboardSound[];
   ownUserId: number | undefined;
   ownUserPasswordSet: boolean;
   selectedChannelId: number | undefined;
@@ -106,6 +108,7 @@ const initialState: IServerState = {
   channels: [],
   emojis: [],
   stickers: [],
+  sounds: [],
   selectedChannelId: undefined,
   currentVoiceChannelId: undefined,
   voiceMoveTargetChannelId: undefined,
@@ -199,6 +202,7 @@ export const serverSlice = createSlice({
         roles: TJoinedRole[];
         emojis: TJoinedEmoji[];
         stickers?: TJoinedSticker[];
+        sounds?: TJoinedSoundboardSound[];
         publicSettings: TPublicServerSettings | undefined;
         voiceMap: TVoiceMap;
         externalStreamsMap: TExternalStreamsMap;
@@ -213,6 +217,7 @@ export const serverSlice = createSlice({
       state.channels = action.payload.channels;
       state.emojis = action.payload.emojis;
       state.stickers = action.payload.stickers ?? [];
+      state.sounds = action.payload.sounds ?? [];
       state.users = action.payload.users;
       state.roles = action.payload.roles;
       state.ownUserId = action.payload.ownUserId;
@@ -536,9 +541,10 @@ export const serverSlice = createSlice({
           }));
       }
 
-      // remove user from emojis and stickers
+      // remove user from emojis, stickers and sounds
       state.emojis = state.emojis.filter((e) => e.userId !== userId);
       state.stickers = state.stickers.filter((s) => s.userId !== userId);
+      state.sounds = state.sounds.filter((s) => s.userId !== userId);
     },
     reassignUser: (
       state,
@@ -596,6 +602,9 @@ export const serverSlice = createSlice({
         e.userId === userId ? { ...e, userId: deletedUserId } : e
       );
       state.stickers = state.stickers.map((s) =>
+        s.userId === userId ? { ...s, userId: deletedUserId } : s
+      );
+      state.sounds = state.sounds.map((s) =>
         s.userId === userId ? { ...s, userId: deletedUserId } : s
       );
     },
@@ -747,6 +756,23 @@ export const serverSlice = createSlice({
     removeSticker: (state, action: PayloadAction<{ stickerId: number }>) => {
       state.stickers = state.stickers.filter(
         (s) => s.id !== action.payload.stickerId
+      );
+    },
+
+    // SOUNDBOARD ------------------------------------------------------------
+
+    upsertSound: (state, action: PayloadAction<TJoinedSoundboardSound>) => {
+      const index = state.sounds.findIndex((s) => s.id === action.payload.id);
+
+      if (index === -1) {
+        state.sounds.push(action.payload);
+      } else {
+        state.sounds[index] = action.payload;
+      }
+    },
+    removeSound: (state, action: PayloadAction<{ soundId: number }>) => {
+      state.sounds = state.sounds.filter(
+        (s) => s.id !== action.payload.soundId
       );
     },
 

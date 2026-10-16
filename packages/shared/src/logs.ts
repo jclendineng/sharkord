@@ -39,6 +39,10 @@ export enum ActivityLogType {
   CREATED_STICKER = 'CREATED_STICKER',
   DELETED_STICKER = 'DELETED_STICKER',
   UPDATED_STICKER = 'UPDATED_STICKER',
+  // -------------------- SOUNDBOARD --------------------
+  CREATED_SOUND = 'CREATED_SOUND',
+  DELETED_SOUND = 'DELETED_SOUND',
+  UPDATED_SOUND = 'UPDATED_SOUND',
   // -------------------- CATEGORIES --------------------
   CREATED_CATEGORY = 'CREATED_CATEGORY',
   DELETED_CATEGORY = 'DELETED_CATEGORY',
@@ -175,6 +179,17 @@ export type TActivityLogDetailsMap = {
     name: string;
   };
   [ActivityLogType.UPDATED_STICKER]: {
+    fromName: string;
+    toName: string;
+  };
+  // -------------------- SOUNDBOARD --------------------
+  [ActivityLogType.CREATED_SOUND]: {
+    name: string;
+  };
+  [ActivityLogType.DELETED_SOUND]: {
+    name: string;
+  };
+  [ActivityLogType.UPDATED_SOUND]: {
     fromName: string;
     toName: string;
   };

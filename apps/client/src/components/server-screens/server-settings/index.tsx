@@ -2,6 +2,7 @@ import { useAdminPlugins } from '@/features/server/admin/hooks';
 import { useCan, usePluginsEnabled } from '@/features/server/hooks';
 import { Permission } from '@sharkord/shared';
 import {
+  AudioLines,
   Blocks,
   Mail,
   Package,
@@ -23,6 +24,7 @@ import { Invites } from './invites';
 import { PluginView } from './plugin-view';
 import { Plugins } from './plugins';
 import { Roles } from './roles';
+import { Soundboard } from './soundboard';
 import { Stickers } from './stickers';
 import { Storage } from './storage';
 import { Updates } from './updates';
@@ -70,6 +72,13 @@ const ServerSettings = memo(({ close }: TServerSettingsProps) => {
         icon: Sticker,
         content: <Stickers />,
         permission: Permission.MANAGE_EMOJIS
+      },
+      {
+        id: 'soundboard',
+        label: t('soundboardTab'),
+        icon: AudioLines,
+        content: <Soundboard />,
+        permission: Permission.MANAGE_SOUNDBOARD
       },
       {
         id: 'storage',

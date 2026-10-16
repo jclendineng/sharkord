@@ -20,6 +20,7 @@ export enum ServerEvents {
   USER_VOICE_STATE_UPDATE = 'userVoiceStateUpdate',
   USER_VOICE_MOVED = 'userVoiceMoved',
   USER_VOICE_REACTION = 'userVoiceReaction',
+  USER_VOICE_SOUND = 'userVoiceSound',
 
   VOICE_ADD_EXTERNAL_STREAM = 'voiceAddExternalStream',
   VOICE_UPDATE_EXTERNAL_STREAM = 'voiceUpdateExternalStream',
@@ -33,6 +34,9 @@ export enum ServerEvents {
   STICKER_CREATE = 'stickerCreate',
   STICKER_UPDATE = 'stickerUpdate',
   STICKER_DELETE = 'stickerDelete',
+  SOUND_CREATE = 'soundCreate',
+  SOUND_UPDATE = 'soundUpdate',
+  SOUND_DELETE = 'soundDelete',
 
   ROLE_CREATE = 'roleCreate',
   ROLE_UPDATE = 'roleUpdate',

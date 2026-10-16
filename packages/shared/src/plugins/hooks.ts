@@ -24,6 +24,7 @@ export enum FileSaveType {
   BANNER = 'banner',
   EMOJI = 'emoji',
   STICKER = 'sticker',
+  SOUND = 'sound',
   SERVER_LOGO = 'server_logo'
 }
 

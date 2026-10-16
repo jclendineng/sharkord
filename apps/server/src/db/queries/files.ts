@@ -51,6 +51,9 @@ const getExceedingOldFiles = async (newFileSize: number) => {
       SELECT 1 FROM stickers st WHERE st.file_id = f.id
     )
     AND NOT EXISTS (
+      SELECT 1 FROM soundboard_sounds ss WHERE ss.file_id = f.id
+    )
+    AND NOT EXISTS (
       SELECT 1 FROM settings s WHERE s.logo_id = f.id
     )
     ORDER BY f.created_at ASC
@@ -174,6 +177,9 @@ const getOrphanedFileIds = async (): Promise<number[]> => {
       SELECT 1 FROM stickers st WHERE st.file_id = f.id
     )
     AND NOT EXISTS (
+      SELECT 1 FROM soundboard_sounds ss WHERE ss.file_id = f.id
+    )
+    AND NOT EXISTS (
       SELECT 1 FROM settings s WHERE s.logo_id = f.id
     )
     LIMIT ${ORPHAN_BATCH_SIZE}
@@ -191,6 +197,7 @@ const isFileOrphaned = async (fileId: number): Promise<boolean> => {
         AND NOT EXISTS (SELECT 1 FROM emojis e WHERE e.file_id = ${fileId})
         AND NOT EXISTS (SELECT 1 FROM message_reactions mr WHERE mr.file_id = ${fileId})
         AND NOT EXISTS (SELECT 1 FROM stickers st WHERE st.file_id = ${fileId})
+        AND NOT EXISTS (SELECT 1 FROM soundboard_sounds ss WHERE ss.file_id = ${fileId})
         AND NOT EXISTS (SELECT 1 FROM settings s WHERE s.logo_id = ${fileId})
         THEN 1
         ELSE 0
@@ -203,7 +210,7 @@ const isFileOrphaned = async (fileId: number): Promise<boolean> => {
 };
 
 type TFileReferences = {
-  // shown to everyone signed in: avatars, banners, emoji, stickers and the server logo
+  // shown to everyone signed in: avatars, banners, emoji, stickers, sounds and the server logo
   everyoneFileIds: number[];
   // attached to, or reacted with on, a message in that channel
   channelFiles: { fileId: number; channelId: number }[];
@@ -228,6 +235,7 @@ const getFileReferences = async (
         EXISTS (SELECT 1 FROM users u WHERE u.avatar_id = f.id OR u.banner_id = f.id)
         OR EXISTS (SELECT 1 FROM emojis e WHERE e.file_id = f.id)
         OR EXISTS (SELECT 1 FROM stickers st WHERE st.file_id = f.id)
+        OR EXISTS (SELECT 1 FROM soundboard_sounds ss WHERE ss.file_id = f.id)
         OR EXISTS (SELECT 1 FROM settings s WHERE s.logo_id = f.id)
       )
     `),

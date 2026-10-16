@@ -19,6 +19,7 @@ import {
   rolePermissions,
   roles,
   settings,
+  soundboardSounds,
   stickers,
   userRoles,
   users
@@ -130,6 +131,12 @@ export type TMessageReplyPreview = Pick<
 export type TSticker = InferSelectModel<typeof stickers>;
 
 export type TJoinedSticker = TSticker & {
+  file: TFile;
+};
+
+export type TSoundboardSound = InferSelectModel<typeof soundboardSounds>;
+
+export type TJoinedSoundboardSound = TSoundboardSound & {
   file: TFile;
 };
 

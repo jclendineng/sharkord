@@ -164,5 +164,8 @@
   "failedSetRules": "Zprávu s pravidly se nepodařilo upravit",
   "noteLabel": "Poznámka (vidíte ji jen vy)",
   "notePlaceholder": "Klikněte a přidejte poznámku",
-  "failedSaveNote": "Poznámku se nepodařilo uložit"
+  "failedSaveNote": "Poznámku se nepodařilo uložit",
+  "soundboard": "Zvuková deska",
+  "failedPlaySound": "Zvuk se nepodařilo přehrát",
+  "noSoundsYet": "Zatím žádné zvuky."
 }

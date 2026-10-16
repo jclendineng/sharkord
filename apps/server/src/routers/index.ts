@@ -14,6 +14,7 @@ import { pluginsRouter } from './plugins';
 import { pollsRouter } from './polls';
 import { rolesRouter } from './roles';
 import { sessionsRouter } from './sessions';
+import { soundboardRouter } from './soundboard';
 import { stickersRouter } from './stickers';
 import { usersRouter } from './users';
 import { voiceRouter } from './voice';
@@ -34,6 +35,7 @@ const appRouter = t.router({
   notifications: notificationsRouter,
   sessions: sessionsRouter,
   polls: pollsRouter,
+  soundboard: soundboardRouter,
   stickers: stickersRouter,
   gifs: gifsRouter,
   friends: friendsRouter

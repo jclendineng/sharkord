@@ -21,7 +21,11 @@ import {
   VideoCodec,
   type TDeviceSettings
 } from '@/types';
-import { DEFAULT_BITRATE } from '@sharkord/shared';
+import {
+  DEFAULT_BITRATE,
+  SOUND_MAX_VOLUME,
+  SOUND_MIN_VOLUME
+} from '@sharkord/shared';
 import {
   Alert,
   AlertDescription,
@@ -85,6 +89,10 @@ const Devices = memo(() => {
     successMessage: t('deviceSettingsSaved'),
     errorMessage: t('failedSaveDeviceSettings')
   });
+  const onSoundboardVolumeChange = useCallback(
+    ([value]: number[]) => onChange('soundboardVolume', value),
+    [onChange]
+  );
   const noiseGateWorkletAvailability = useSyncExternalStore(
     subscribeNoiseGateWorkletAvailability,
     getNoiseGateWorkletAvailabilitySnapshot,
@@ -298,6 +306,25 @@ const Devices = memo(() => {
               </SelectGroup>
             </SelectContent>
           </Select>
+        </Group>
+
+        <Group
+          label={t('soundboardVolumeLabel')}
+          description={t('soundboardVolumeDesc')}
+        >
+          <Slider
+            className="max-w-96"
+            min={SOUND_MIN_VOLUME}
+            max={SOUND_MAX_VOLUME}
+            step={5}
+            value={[values.soundboardVolume ?? SOUND_MAX_VOLUME]}
+            onValueChange={onSoundboardVolumeChange}
+            rightSlot={
+              <span className="w-12 text-right text-sm text-muted-foreground">
+                {values.soundboardVolume ?? SOUND_MAX_VOLUME}%
+              </span>
+            }
+          />
         </Group>
 
         <Group label={t('microphoneLabel')}>

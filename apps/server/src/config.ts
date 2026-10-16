@@ -101,6 +101,7 @@ const zConfig = z.object({
     voiceTransport: zRateLimiter,
     voiceStream: zRateLimiter,
     voiceReaction: zRateLimiter,
+    soundboardPlay: zRateLimiter,
     useSecretToken: zRateLimiter,
     pluginExecute: zRateLimiter,
     pluginInstall: zRateLimiter,
@@ -238,6 +239,11 @@ const defaultConfig: TConfig = {
     },
     voiceReaction: {
       maxRequests: 20,
+      windowMs: 30_000
+    },
+    // a sound plays for everyone in the call, so it is held to fewer than reactions
+    soundboardPlay: {
+      maxRequests: 10,
       windowMs: 30_000
     },
     useSecretToken: {

@@ -166,5 +166,8 @@
   "failedSetRules": "Não foi possível atualizar a mensagem de regras",
   "noteLabel": "Nota (visível só para você)",
   "notePlaceholder": "Clique para adicionar uma nota",
-  "failedSaveNote": "Não foi possível salvar a nota"
+  "failedSaveNote": "Não foi possível salvar a nota",
+  "soundboard": "Mesa de sons",
+  "failedPlaySound": "Não foi possível tocar o som",
+  "noSoundsYet": "Ainda não há sons."
 }

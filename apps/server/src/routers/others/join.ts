@@ -12,6 +12,7 @@ import { getEmojis } from '../../db/queries/emojis';
 import { hasUserJoinedBefore } from '../../db/queries/logins';
 import { getRoles } from '../../db/queries/roles';
 import { getPublicSettings, getSettings } from '../../db/queries/server';
+import { getSounds } from '../../db/queries/soundboard-sounds';
 import { getStickers } from '../../db/queries/stickers';
 import { getPublicUsers } from '../../db/queries/users';
 import { categories, users } from '../../db/schema';
@@ -94,7 +95,8 @@ const joinServerRoute = rateLimitedProcedure(publicProcedure, {
       pluginsMetadata,
       hasJoinedBefore,
       pluginCapabilityAccess,
-      stickers
+      stickers,
+      sounds
     ] = await Promise.all([
       db.select().from(categories),
       getChannelsForUser(ctx.user.id), // filter channels based on permissions and DM participation
@@ -107,7 +109,8 @@ const joinServerRoute = rateLimitedProcedure(publicProcedure, {
       pluginManager.getActivePluginMetadata(),
       hasUserJoinedBefore(ctx.user.id),
       getCapabilityAccessRules(),
-      getStickers()
+      getStickers(),
+      getSounds()
     ]);
 
     const showWelcomeDialog = settings.showWelcomeDialog && !hasJoinedBefore;
@@ -170,6 +173,7 @@ const joinServerRoute = rateLimitedProcedure(publicProcedure, {
       roles,
       emojis,
       stickers,
+      sounds,
       publicSettings,
       channelPermissions,
       readStates,
