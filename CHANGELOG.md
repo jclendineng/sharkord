@@ -155,8 +155,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - On the phone and iPad a lowered call is Discord's floating tile, dragged anywhere and let go
   into the nearest corner, and tapped to open the call again. It replaces the voice bar above
   the user bar, which stays on the Mac.
-- Whoever is talking gets Discord's green ring, on the call screen, on the floating tile and
-  under the voice channel in the channel list.
+- Whoever is talking gets Discord's green ring, on the call screen and under the voice channel
+  in the channel list. The floating tile shows them without a ring.
 - Lowering the call screen goes straight back to the channel list in one slide, instead of the
   voice channel sheet showing again on the way down.
 - Jumping to a message from search or pins highlights it again, rather than only scrolling to

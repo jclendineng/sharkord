@@ -28,9 +28,6 @@ struct FloatingCallTile: View {
         return talking ?? others.first ?? participants.first
     }
 
-    private var isShownSpeaking: Bool {
-        shown?.user.map { session.speakingUserIds.contains($0.id) } ?? false
-    }
 
     var body: some View {
         GeometryReader { proxy in
@@ -78,9 +75,8 @@ struct FloatingCallTile: View {
         }
         .overlay {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(isShownSpeaking ? Theme.green : Theme.panelEdge, lineWidth: isShownSpeaking ? 3 : 1)
+                .strokeBorder(Theme.panelEdge, lineWidth: 1)
         }
-        .animation(.easeOut(duration: 0.15), value: isShownSpeaking)
         .shadow(color: .black.opacity(0.45), radius: 12, y: 4)
         .contentShape(.rect(cornerRadius: 14))
         .accessibilityElement()
