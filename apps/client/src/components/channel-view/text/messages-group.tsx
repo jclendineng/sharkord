@@ -47,15 +47,17 @@ const MessagesGroup = memo(
     const authorName = useMessageAuthorName(firstMessage);
     const isDeletedUser = user?.name === DELETED_USER_IDENTITY_AND_NAME;
     const isPluginMessage = !!firstMessage.pluginId;
+    const webhookName = firstMessage.webhookName;
+    const isBotMessage = isPluginMessage || !!webhookName;
 
     const isReplyToMessage =
       group.length === 1 && !!firstMessage.replyToMessageId;
 
     const groupContent = (
       <div className="flex min-w-0 max-w-dvw gap-1 pl-2 pt-2 pr-2">
-        {isPluginMessage ? (
+        {isBotMessage ? (
           <PluginAvatar
-            name={pluginMetadata?.name}
+            name={pluginMetadata?.name ?? webhookName ?? undefined}
             avatarUrl={pluginMetadata?.avatarUrl}
             className="h-10 w-10"
           />
@@ -68,12 +70,12 @@ const MessagesGroup = memo(
               className={cn(
                 isOwnUser && 'font-bold',
                 isDeletedUser && 'line-through text-muted-foreground',
-                isPluginMessage && 'text-primary/80'
+                isBotMessage && 'text-primary/80'
               )}
             >
               {authorName}
             </span>
-            {isPluginMessage && (
+            {isBotMessage && (
               <span className="inline-flex items-center rounded-sm bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary/60 uppercase tracking-wide">
                 bot
               </span>

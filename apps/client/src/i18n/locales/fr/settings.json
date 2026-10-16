@@ -629,5 +629,22 @@
   "banIpsTitle": "Bannir aussi ses adresses IP ?",
   "banIpsMsg": "Bloque aussi les adresses publiques depuis lesquelles il s'est connecté, un nouveau compte depuis là est refusé. Toute autre personne sur ces réseaux, comme un foyer, est aussi bloquée. Le débannissement le lève.",
   "banIpsConfirm": "Bannir aussi les adresses",
-  "banIpsCancel": "Seulement le compte"
+  "banIpsCancel": "Seulement le compte",
+  "webhooksTab": "Webhooks",
+  "webhooksTitle": "Webhooks",
+  "webhooksDesc": "Des adresses par lesquelles d'autres services peuvent publier dans ce salon. Envoyez un POST JSON avec content, et éventuellement username, à l'URL.",
+  "webhookNameLabel": "Nom",
+  "webhookNamePlaceholder": "Nommez-le d'après ce qui publiera, comme GitHub",
+  "createWebhookBtn": "Créer un webhook",
+  "webhookUrlLabel": "URL du webhook",
+  "webhookUrlDesc": "Copiez-la maintenant, elle ne sera plus affichée. Quiconque l'a peut publier ici.",
+  "webhookUrlCopied": "URL du webhook copiée",
+  "failedCopyWebhookUrl": "Impossible de copier l'URL",
+  "noWebhooks": "Aucun webhook pour l'instant.",
+  "deleteWebhookTitle": "Supprimer le webhook",
+  "deleteWebhookMsg": "Supprimer {{name}} ? Les services qui utilisent son URL ne pourront plus publier.",
+  "deleteWebhookBtn": "Supprimer",
+  "failedLoadWebhooks": "Impossible de charger les webhooks",
+  "failedCreateWebhook": "Impossible de créer le webhook",
+  "failedDeleteWebhook": "Impossible de supprimer le webhook"
 }

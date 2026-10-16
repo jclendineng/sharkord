@@ -629,5 +629,22 @@
   "banIpsTitle": "同时封禁其 IP 地址？",
   "banIpsMsg": "同时封禁其登录过的公网地址，从那里注册的新账户也会被拒绝。同一网络中的其他人（例如家人）也会被挡在外面。解封时一并解除。",
   "banIpsConfirm": "同时封禁地址",
-  "banIpsCancel": "仅封禁账户"
+  "banIpsCancel": "仅封禁账户",
+  "webhooksTab": "Webhook",
+  "webhooksTitle": "Webhook",
+  "webhooksDesc": "其他服务可以通过这些地址向此频道发消息。向 URL 发送包含 content（可选 username）的 JSON POST 请求。",
+  "webhookNameLabel": "名称",
+  "webhookNamePlaceholder": "按发消息的来源命名，例如 GitHub",
+  "createWebhookBtn": "创建 Webhook",
+  "webhookUrlLabel": "Webhook URL",
+  "webhookUrlDesc": "请立即复制，之后不会再显示。拥有它的任何人都能在这里发消息。",
+  "webhookUrlCopied": "已复制 Webhook URL",
+  "failedCopyWebhookUrl": "无法复制 URL",
+  "noWebhooks": "暂无 Webhook。",
+  "deleteWebhookTitle": "删除 Webhook",
+  "deleteWebhookMsg": "删除 {{name}}？使用其 URL 的服务将无法再发消息。",
+  "deleteWebhookBtn": "删除",
+  "failedLoadWebhooks": "无法加载 Webhook",
+  "failedCreateWebhook": "无法创建 Webhook",
+  "failedDeleteWebhook": "无法删除 Webhook"
 }

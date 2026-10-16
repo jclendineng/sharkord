@@ -631,5 +631,22 @@
   "banIpsTitle": "Ban Their IP Addresses Too?",
   "banIpsMsg": "Also blocks the public addresses they signed in from, so a new account from there is refused. Anyone else on those networks, like a household, is locked out too. Unbanning lifts it.",
   "banIpsConfirm": "Ban Addresses Too",
-  "banIpsCancel": "Only the Account"
+  "banIpsCancel": "Only the Account",
+  "webhooksTab": "Webhooks",
+  "webhooksTitle": "Webhooks",
+  "webhooksDesc": "Addresses other services can post to this channel through. POST JSON with content, and optionally username, to the URL.",
+  "webhookNameLabel": "Name",
+  "webhookNamePlaceholder": "Name it after what will post, like GitHub",
+  "createWebhookBtn": "Create Webhook",
+  "webhookUrlLabel": "Webhook URL",
+  "webhookUrlDesc": "Copy it now, it won't be shown again. Anyone with it can post here.",
+  "webhookUrlCopied": "Webhook URL copied",
+  "failedCopyWebhookUrl": "Couldn't copy the URL",
+  "noWebhooks": "No webhooks yet.",
+  "deleteWebhookTitle": "Delete Webhook",
+  "deleteWebhookMsg": "Delete {{name}}? Services using its URL can no longer post.",
+  "deleteWebhookBtn": "Delete",
+  "failedLoadWebhooks": "Couldn't load webhooks",
+  "failedCreateWebhook": "Couldn't create the webhook",
+  "failedDeleteWebhook": "Couldn't delete the webhook"
 }

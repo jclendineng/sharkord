@@ -110,6 +110,7 @@ export type TMessageJumpToTarget = {
 export type TReplyTarget = {
   userId: number | null;
   pluginId: string | null;
+  webhookName?: string | null;
 };
 
 export type { TStreamQuality };

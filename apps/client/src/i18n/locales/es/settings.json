@@ -629,5 +629,22 @@
   "banIpsTitle": "¿Banear también sus direcciones IP?",
   "banIpsMsg": "También bloquea las direcciones públicas desde las que inició sesión, así que una cuenta nueva desde ahí se rechaza. Cualquier otra persona en esas redes, como un hogar, también queda fuera. Desbanear lo quita.",
   "banIpsConfirm": "Banear también las direcciones",
-  "banIpsCancel": "Solo la cuenta"
+  "banIpsCancel": "Solo la cuenta",
+  "webhooksTab": "Webhooks",
+  "webhooksTitle": "Webhooks",
+  "webhooksDesc": "Direcciones por las que otros servicios pueden publicar en este canal. Envía un POST JSON con content, y opcionalmente username, a la URL.",
+  "webhookNameLabel": "Nombre",
+  "webhookNamePlaceholder": "Ponle el nombre de lo que publicará, como GitHub",
+  "createWebhookBtn": "Crear webhook",
+  "webhookUrlLabel": "URL del webhook",
+  "webhookUrlDesc": "Cópiala ahora, no se volverá a mostrar. Cualquiera que la tenga puede publicar aquí.",
+  "webhookUrlCopied": "URL del webhook copiada",
+  "failedCopyWebhookUrl": "No se pudo copiar la URL",
+  "noWebhooks": "Aún no hay webhooks.",
+  "deleteWebhookTitle": "Eliminar webhook",
+  "deleteWebhookMsg": "¿Eliminar {{name}}? Los servicios que usan su URL ya no podrán publicar.",
+  "deleteWebhookBtn": "Eliminar",
+  "failedLoadWebhooks": "No se pudieron cargar los webhooks",
+  "failedCreateWebhook": "No se pudo crear el webhook",
+  "failedDeleteWebhook": "No se pudo eliminar el webhook"
 }

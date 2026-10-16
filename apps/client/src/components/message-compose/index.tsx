@@ -115,7 +115,8 @@ const MessageCompose = memo(
     const allPluginCommands = useFlatPluginCommands();
     const replyAuthorName = useMessageAuthorName({
       userId: replyTarget?.userId ?? 0,
-      pluginId: replyTarget?.pluginId ?? ''
+      pluginId: replyTarget?.pluginId ?? '',
+      webhookName: replyTarget?.webhookName ?? null
     });
 
     const canSendMessages = useMemo(() => {

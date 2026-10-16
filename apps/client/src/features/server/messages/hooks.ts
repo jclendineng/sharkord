@@ -67,9 +67,12 @@ const useGroupedMessages = (messages: TJoinedMessage[]) =>
         continue;
       }
 
-      const sameAuthor = message.pluginId
-        ? lastMessage.pluginId === message.pluginId
-        : lastMessage.userId === message.userId;
+      // webhook posts have neither a user nor a plugin, the name they posted under tells them apart
+      const sameAuthor =
+        lastMessage.webhookName === message.webhookName &&
+        (message.pluginId
+          ? lastMessage.pluginId === message.pluginId
+          : lastMessage.userId === message.userId);
 
       if (!sameAuthor) {
         grouped.push({

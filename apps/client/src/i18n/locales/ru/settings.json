@@ -640,5 +640,22 @@
   "banIpsTitle": "Забанить и его IP-адреса?",
   "banIpsMsg": "Также блокирует публичные адреса, с которых он входил, поэтому новый аккаунт оттуда будет отклонён. Все остальные в этих сетях, например семья, тоже не смогут войти. Разбан снимает это.",
   "banIpsConfirm": "Забанить и адреса",
-  "banIpsCancel": "Только аккаунт"
+  "banIpsCancel": "Только аккаунт",
+  "webhooksTab": "Вебхуки",
+  "webhooksTitle": "Вебхуки",
+  "webhooksDesc": "Адреса, через которые другие сервисы могут писать в этот канал. Отправьте на URL POST с JSON, содержащим content и, по желанию, username.",
+  "webhookNameLabel": "Название",
+  "webhookNamePlaceholder": "Назовите по тому, что будет писать, например GitHub",
+  "createWebhookBtn": "Создать вебхук",
+  "webhookUrlLabel": "URL вебхука",
+  "webhookUrlDesc": "Скопируйте сейчас, он больше не будет показан. Любой, у кого он есть, может писать сюда.",
+  "webhookUrlCopied": "URL вебхука скопирован",
+  "failedCopyWebhookUrl": "Не удалось скопировать URL",
+  "noWebhooks": "Вебхуков пока нет.",
+  "deleteWebhookTitle": "Удалить вебхук",
+  "deleteWebhookMsg": "Удалить {{name}}? Сервисы, использующие его URL, больше не смогут писать.",
+  "deleteWebhookBtn": "Удалить",
+  "failedLoadWebhooks": "Не удалось загрузить вебхуки",
+  "failedCreateWebhook": "Не удалось создать вебхук",
+  "failedDeleteWebhook": "Не удалось удалить вебхук"
 }

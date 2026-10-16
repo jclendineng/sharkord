@@ -18,6 +18,7 @@ import { soundboardRouter } from './soundboard';
 import { stickersRouter } from './stickers';
 import { usersRouter } from './users';
 import { voiceRouter } from './voice';
+import { webhooksRouter } from './webhooks';
 
 const appRouter = t.router({
   others: othersRouter,
@@ -38,7 +39,8 @@ const appRouter = t.router({
   soundboard: soundboardRouter,
   stickers: stickersRouter,
   gifs: gifsRouter,
-  friends: friendsRouter
+  friends: friendsRouter,
+  webhooks: webhooksRouter
 });
 
 type AppRouter = typeof appRouter;

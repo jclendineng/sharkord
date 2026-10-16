@@ -12,6 +12,8 @@ struct Message: Codable, Hashable, Identifiable {
     let content: String?
     let userId: Int?
     let pluginId: String?
+    // the name an incoming webhook posted under, nil for everything else
+    let webhookName: String?
     let channelId: Int
     let parentMessageId: Int?
     let replyToMessageId: Int?

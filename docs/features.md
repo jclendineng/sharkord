@@ -299,6 +299,24 @@ timeout into the AFK channel with the same `moveVoiceUser` a moderator uses, so 
 it as they follow any move. Direct message calls and the AFK channel itself are left alone, and
 a deleted or no longer voice channel turns AFK off. Muting counts as silence, as on Discord.
 
+## Incoming webhooks
+
+Channel settings, Webhooks (Manage Channels). A webhook gets a URL,
+`/webhooks/<id>/<token>`, shown once, since only a hash of the token is kept. Another service
+posts JSON to it:
+
+```json
+{ "content": "Build passed", "username": "CI" }
+```
+
+`content` is plain text up to 4000 characters, a paragraph a line, with links made clickable;
+nothing is read as HTML. `username` (up to 32) replaces the webhook's name on that message. The
+message is stored with `webhook_name` and no user, so renaming or deleting the webhook leaves its
+old messages as they were, and the apps show it with the APP tag. A wrong id and a wrong token both
+answer 404, posts are rate limited per address (`rateLimiters.webhook`), and deleting the channel
+deletes its webhooks. Code `apps/server/src/http/webhook.ts`, `helpers/webhooks.ts`
+([#293](https://github.com/Sharkord/sharkord/issues/293)).
+
 ## Permissions and settings from upstream issues
 
 - **Pin messages in direct messages** (`PIN_DM_MESSAGES`): pinning in direct messages and

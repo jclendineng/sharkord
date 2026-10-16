@@ -101,6 +101,7 @@ const zConfig = z.object({
     updatePassword: zRateLimiter,
     revokeSession: zRateLimiter,
     loginLink: zRateLimiter,
+    webhook: zRateLimiter,
     adminCreate: zRateLimiter,
     voiceTransport: zRateLimiter,
     voiceStream: zRateLimiter,
@@ -228,6 +229,10 @@ const defaultConfig: TConfig = {
     // a new device asks every couple of seconds whether it was approved yet
     loginLink: {
       maxRequests: 60,
+      windowMs: 60_000
+    },
+    webhook: {
+      maxRequests: 30,
       windowMs: 60_000
     },
     adminCreate: {

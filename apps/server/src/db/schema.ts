@@ -266,6 +266,25 @@ const userRoles = sqliteTable(
   ]
 );
 
+// an address outside the server can post to a channel through, discord's incoming webhook.
+// only a hash of the token is kept, the url carrying it is shown once when it is made
+const webhooks = sqliteTable(
+  'webhooks',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    channelId: integer('channel_id')
+      .notNull()
+      .references(() => channels.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    tokenHash: text('token_hash').notNull(),
+    createdBy: integer('created_by').references(() => users.id, {
+      onDelete: 'set null'
+    }),
+    createdAt: integer('created_at').notNull()
+  },
+  (t) => [index('webhooks_channel_idx').on(t.channelId)]
+);
+
 // addresses a moderator banned along with an account. the ban outlives the account, so a
 // deleted user's addresses stay banned, and unbanning the account lifts them
 const ipBans = sqliteTable(
@@ -321,6 +340,9 @@ const messages = sqliteTable(
       onDelete: 'cascade'
     }),
     pluginId: text('plugin_id'),
+    // the name an incoming webhook posted under, kept with the message as discord does, so a
+    // renamed or deleted webhook leaves its old messages as they were
+    webhookName: text('webhook_name'),
     pluginComponents: text('plugin_components', {
       mode: 'json'
     }).$type<TPluginMessageComponent[] | null>(),
@@ -1041,5 +1063,6 @@ export {
   stickers,
   userNotes,
   userRoles,
-  users
+  users,
+  webhooks
 };

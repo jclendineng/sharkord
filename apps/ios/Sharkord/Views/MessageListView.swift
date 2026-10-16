@@ -449,6 +449,7 @@ struct MessageListView<Header: View>: View {
         return message.replyToMessageId != nil
             || previous.userId != message.userId
             || previous.pluginId != message.pluginId
+            || previous.webhookName != message.webhookName
             || message.createdAt - previous.createdAt > Self.groupingWindow
     }
 }

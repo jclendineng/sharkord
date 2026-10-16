@@ -4,10 +4,14 @@ import { getRenderedUsername } from '@/helpers/get-rendered-username';
 import type { TMessage } from '@sharkord/shared';
 
 const useMessageAuthorName = (
-  message: Pick<TMessage, 'pluginId' | 'userId'>
+  message: Pick<TMessage, 'pluginId' | 'userId' | 'webhookName'>
 ) => {
   const pluginMetadata = usePluginMetadata(message.pluginId);
   const user = useUserById(message.userId);
+
+  if (message.webhookName) {
+    return message.webhookName;
+  }
 
   if (pluginMetadata) {
     return pluginMetadata.name ?? message.pluginId ?? 'Unknown Plugin';

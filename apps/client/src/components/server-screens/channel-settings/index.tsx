@@ -1,6 +1,6 @@
 import { useCan } from '@/features/server/hooks';
 import { Permission } from '@sharkord/shared';
-import { Settings, Shield } from 'lucide-react';
+import { Settings, Shield, Webhook } from 'lucide-react';
 import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TServerScreenBaseProps } from '../screens';
@@ -8,6 +8,7 @@ import { SettingsShell } from '../settings-shell';
 import type { TSettingsEntry } from '../settings-shell/types';
 import { General } from './general';
 import { ChannelPermissions } from './permissions';
+import { Webhooks } from './webhooks';
 
 type TChannelSettingsProps = TServerScreenBaseProps & {
   channelId: number;
@@ -33,6 +34,13 @@ const ChannelSettings = memo(({ close, channelId }: TChannelSettingsProps) => {
         icon: Shield,
         content: <ChannelPermissions channelId={channelId} />,
         permission: Permission.MANAGE_CHANNEL_PERMISSIONS
+      },
+      {
+        id: 'webhooks',
+        label: t('webhooksTab'),
+        icon: Webhook,
+        content: <Webhooks channelId={channelId} />,
+        permission: Permission.MANAGE_CHANNELS
       }
     ];
 

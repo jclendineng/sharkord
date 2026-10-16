@@ -631,5 +631,22 @@
   "banIpsTitle": "Banir os endereços IP também?",
   "banIpsMsg": "Também bloqueia os endereços públicos de onde entrou, então uma nova conta de lá é recusada. Qualquer outra pessoa nessas redes, como uma família, também fica de fora. Desbanir remove isso.",
   "banIpsConfirm": "Banir endereços também",
-  "banIpsCancel": "Só a conta"
+  "banIpsCancel": "Só a conta",
+  "webhooksTab": "Webhooks",
+  "webhooksTitle": "Webhooks",
+  "webhooksDesc": "Endereços pelos quais outros serviços podem postar neste canal. Envie um POST JSON com content, e opcionalmente username, para a URL.",
+  "webhookNameLabel": "Nome",
+  "webhookNamePlaceholder": "Dê o nome do que vai postar, como GitHub",
+  "createWebhookBtn": "Criar webhook",
+  "webhookUrlLabel": "URL do webhook",
+  "webhookUrlDesc": "Copie agora, ela não será mostrada de novo. Qualquer pessoa com ela pode postar aqui.",
+  "webhookUrlCopied": "URL do webhook copiada",
+  "failedCopyWebhookUrl": "Não foi possível copiar a URL",
+  "noWebhooks": "Nenhum webhook ainda.",
+  "deleteWebhookTitle": "Excluir webhook",
+  "deleteWebhookMsg": "Excluir {{name}}? Serviços que usam a URL dele não poderão mais postar.",
+  "deleteWebhookBtn": "Excluir",
+  "failedLoadWebhooks": "Não foi possível carregar os webhooks",
+  "failedCreateWebhook": "Não foi possível criar o webhook",
+  "failedDeleteWebhook": "Não foi possível excluir o webhook"
 }

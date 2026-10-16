@@ -20,7 +20,7 @@ struct MessageRow: View {
     }
 
     private var authorName: String {
-        author?.name ?? message.pluginId ?? "Unknown"
+        author?.name ?? message.webhookName ?? message.pluginId ?? "Unknown"
     }
 
     private var nameColor: Color {
@@ -148,7 +148,7 @@ struct MessageRow: View {
                 .foregroundStyle(nameColor)
                 .lineLimit(1)
 
-            if message.pluginId != nil {
+            if message.pluginId != nil || message.webhookName != nil {
                 Text("APP")
                     .font(.system(size: 10, weight: .bold))
                     .foregroundStyle(.white)

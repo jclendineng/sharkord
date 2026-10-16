@@ -631,5 +631,22 @@
   "banIpsTitle": "Zabanovat i jeho IP adresy?",
   "banIpsMsg": "Zablokuje i veřejné adresy, ze kterých se přihlašoval, takže nový účet odtud bude odmítnut. Kdokoli další v těch sítích, třeba domácnost, se také nedostane dovnitř. Odbanování to zruší.",
   "banIpsConfirm": "Zabanovat i adresy",
-  "banIpsCancel": "Jen účet"
+  "banIpsCancel": "Jen účet",
+  "webhooksTab": "Webhooky",
+  "webhooksTitle": "Webhooky",
+  "webhooksDesc": "Adresy, přes které mohou jiné služby psát do tohoto kanálu. Pošli na URL POST s JSON obsahujícím content a volitelně username.",
+  "webhookNameLabel": "Název",
+  "webhookNamePlaceholder": "Pojmenuj ho podle toho, co bude psát, třeba GitHub",
+  "createWebhookBtn": "Vytvořit webhook",
+  "webhookUrlLabel": "URL webhooku",
+  "webhookUrlDesc": "Zkopíruj ji teď, znovu se nezobrazí. Kdokoli ji má, může sem psát.",
+  "webhookUrlCopied": "URL webhooku zkopírována",
+  "failedCopyWebhookUrl": "URL se nepodařilo zkopírovat",
+  "noWebhooks": "Zatím žádné webhooky.",
+  "deleteWebhookTitle": "Smazat webhook",
+  "deleteWebhookMsg": "Smazat {{name}}? Služby, které používají jeho URL, už nebudou moct psát.",
+  "deleteWebhookBtn": "Smazat",
+  "failedLoadWebhooks": "Webhooky se nepodařilo načíst",
+  "failedCreateWebhook": "Webhook se nepodařilo vytvořit",
+  "failedDeleteWebhook": "Webhook se nepodařilo smazat"
 }

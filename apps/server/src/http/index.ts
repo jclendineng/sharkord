@@ -35,6 +35,7 @@ import { pluginsComponentsRouteHandler } from './plugins-components';
 import { publicRouteHandler } from './public';
 import { soundboardLibraryRouteHandler } from './soundboard-library';
 import { uploadFileRouteHandler } from './upload';
+import { webhookRouteHandler } from './webhook';
 
 // parsed once per request and handed to every handler, so nothing below re-parses the url
 // or re-resolves the client ip
@@ -102,7 +103,9 @@ const routeHandlers: Partial<
       '/oidc/exchange': oidcExchangeRouteHandler,
       '/oidc/backchannel-logout': oidcBackchannelLogoutRouteHandler
     },
-    prefix: {}
+    prefix: {
+      '/webhooks': webhookRouteHandler
+    }
   }
 };
 
