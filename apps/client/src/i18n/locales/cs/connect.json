@@ -21,7 +21,6 @@
     "registration_closed": "Tento server nepřijímá nové registrace. Požádejte správce o vytvoření účtu.",
     "server_error": "Při přihlašování se něco pokazilo. Zkuste to prosím znovu."
   },
-  "loggingInAutomatically": "Automaticky se připojuji...",
   "loadingApp": "Načítám Sharkord",
   "loadingPlugins": "Načítám rozšíření",
   "openInApp": "Otevřít v aplikaci Sharkord",

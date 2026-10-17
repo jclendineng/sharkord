@@ -39,7 +39,8 @@ const Routing = memo(() => {
 
   if (!isConnected && !isReconnecting) {
     if (isAutoConnecting) {
-      return <LoadingApp text={t('loggingInAutomatically')} />;
+      // resuming a session, which on a refresh is still the page loading rather than a sign in
+      return <LoadingApp text={t('loadingApp')} />;
     }
 
     if (

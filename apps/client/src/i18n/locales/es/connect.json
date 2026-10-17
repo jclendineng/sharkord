@@ -21,7 +21,6 @@
     "registration_closed": "Este servidor no acepta nuevos registros. Pide a un administrador que cree tu cuenta.",
     "server_error": "Algo salió mal al iniciar sesión. Inténtalo de nuevo."
   },
-  "loggingInAutomatically": "Iniciando sesión automáticamente...",
   "loadingApp": "Cargando Sharkord",
   "loadingPlugins": "Cargando plugins",
   "openInApp": "Abrir en la app de Sharkord",
