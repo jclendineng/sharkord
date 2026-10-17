@@ -34,7 +34,7 @@ const getYoutubeVideoId = (url: URL) => {
     return url.pathname.split('/').filter(Boolean)[0] ?? undefined;
   }
 
-  if (!hostname.endsWith('youtube.com')) {
+  if (hostname !== 'youtube.com' && !hostname.endsWith('.youtube.com')) {
     return undefined;
   }
 

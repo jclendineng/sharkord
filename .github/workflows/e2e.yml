@@ -5,6 +5,9 @@ on:
   workflow_dispatch:
   workflow_call:
 
+permissions:
+  contents: read
+
 jobs:
   ci:
     name: Run E2E Tests

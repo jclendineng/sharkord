@@ -7,7 +7,7 @@ const isExplicitHttpUrl = (value: string): boolean =>
 
 const normalizeAnchorHref = (anchorHtml: string): string => {
   const hrefMatch = anchorHtml.match(/\bhref=(['"])(.*?)\1/i);
-  const contentMatch = anchorHtml.match(/^<a\b[^>]*>([\s\S]*?)<\/a>$/i);
+  const contentMatch = anchorHtml.match(/^<a\b[^<>]*>([\s\S]*?)<\/a>$/i);
 
   if (!hrefMatch || !contentMatch) {
     return anchorHtml;
@@ -22,7 +22,7 @@ const normalizeAnchorHref = (anchorHtml: string): string => {
 
   if (
     !innerText ||
-    /<[^>]+>/.test(innerText) ||
+    /<[^<>]+>/.test(innerText) ||
     !isExplicitHttpUrl(innerText)
   ) {
     return anchorHtml;
@@ -37,7 +37,7 @@ const normalizeAnchorHref = (anchorHtml: string): string => {
 
 // processes an HTML string and wraps explicit http/https URLs in <a> tags
 const linkifyHtml = (html: string): string => {
-  const parts = html.split(/(<a\b[^>]*>[\s\S]*?<\/a>|<[^>]+>)/gi);
+  const parts = html.split(/(<a\b[^<>]*>[\s\S]*?<\/a>|<[^<>]+>)/gi);
 
   return parts
     .map((part) => {
