@@ -1,6 +1,11 @@
 import { useTheme } from 'next-themes';
 import { Toaster as Sonner, type ToasterProps } from 'sonner';
 
+// the close button took the light theme's text colour, an invisible x on a dark toast
+const TOAST_OPTIONS: ToasterProps['toastOptions'] = {
+  classNames: { closeButton: 'text-inherit!' }
+};
+
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = 'system' } = useTheme();
 
@@ -9,6 +14,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       closeButton
       theme={theme as ToasterProps['theme']}
       className="toaster group"
+      toastOptions={TOAST_OPTIONS}
       style={
         {
           '--normal-bg': 'var(--popover)',

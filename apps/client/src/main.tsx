@@ -28,6 +28,10 @@ exposePluginStore();
 
 await i18nReady;
 
+// on a phone the bottom holds the message box and a call's controls, so toasts drop from the top
+const phoneQuery = window.matchMedia('(max-width: 767px)');
+const toastPosition = phoneQuery.matches ? 'top-center' : 'bottom-right';
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider
@@ -36,7 +40,7 @@ createRoot(document.getElementById('root')!).render(
     >
       <GlobalErrorBoundary>
         <DebugInfo />
-        <Toaster />
+        <Toaster position={toastPosition} />
         <Provider store={store}>
           <StoreDebug />
           <KeyboardController />
