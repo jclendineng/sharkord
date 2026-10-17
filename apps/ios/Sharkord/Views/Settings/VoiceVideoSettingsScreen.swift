@@ -161,7 +161,7 @@ struct VoiceVideoSettingsScreen: View {
             } header: {
                 SectionTitle("Noise Suppression")
             } footer: {
-                VoiceIsolationHint(isOn: micMode == .voiceIsolation, isInCall: isInCall)
+                VoiceIsolationHint(isOn: micMode == .voiceIsolation, isMicInUse: isInCall || tester.isRunning)
             }
 
             Section {
@@ -231,6 +231,7 @@ struct VoiceVideoSettingsScreen: View {
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: settings.outputVolume) { _, volume in
             servers.voiceSession?.setOutputVolume(volume)
+            tester.setOutputVolume(volume)
         }
         .onChange(of: settings.streamQuality) { _, quality in
             servers.voiceSession?.setStreamQuality(quality)
@@ -326,10 +327,10 @@ private struct SectionTitle: View {
 
 // discord's note under its noise suppression: apple's voice isolation beats any of these, so it
 // says whether it is on and opens the panel that turns it on. the panel only has the modes while
-// the mic is in use, so outside a call it says where to find it instead
+// the mic is in use, in a call or the mic test, so otherwise it says where to find it instead
 private struct VoiceIsolationHint: View {
     let isOn: Bool
-    let isInCall: Bool
+    let isMicInUse: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -340,14 +341,14 @@ private struct VoiceIsolationHint: View {
                 Label("For the strongest noise suppression, turn on Voice Isolation. It is Apple's own and runs on the phone.", systemImage: "waveform.badge.mic")
                     .labelStyle(HintLabelStyle(tint: Theme.blurple))
 
-                if isInCall {
+                if isMicInUse {
                     Button("Open Mic Mode", action: openMicModes)
                         .font(.footnote.weight(.semibold))
                         .buttonStyle(.bordered)
                         .buttonBorderShape(.capsule)
                         .tint(Theme.blurple)
                 } else {
-                    Text("Join a voice channel, then pick it under Mic Mode in the call's settings or Control Center.")
+                    Text("Start the mic test or join a voice channel, then pick it under Mic Mode here or in Control Center.")
                 }
             }
         }

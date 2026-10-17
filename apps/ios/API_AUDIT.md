@@ -28,12 +28,6 @@ environment values use `@Entry`, and the app already uses `onGeometryChange`,
 
 ## Worth considering
 
-- **Hearing yourself in the mic test is noisy.** The test turns voice processing off so echo
-  cancellation does not take your own voice out, which also drops noise suppression and Voice
-  Isolation, and AirPods add the hiss of their headset mic. A call keeps voice processing on and
-  sounds cleaner than the test. Try `AVAudioSession.setPrefersEchoCancelledInput` to keep the
-  suppression without losing your voice; whether it works with AirPods needs a phone.
-
 - **`swipeActions` on any view** (iOS 27, `swipeActionsContainer`): swipe on channel and direct
   message rows, which are plain stacks, for mute or mark as read. Messages keep long press.
 - **`copyable` / `pasteDestination` / `onCopyCommand`** (iOS 27): Cmd C on a message on the Mac

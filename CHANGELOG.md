@@ -288,6 +288,11 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 ### Fixed
 
+- In the app, the mic test is processed the way a call is: with Echo Cancellation on it uses
+  Apple's voice processing, so its noise suppression, gain control and Voice Isolation apply,
+  and Mic Mode can be opened while the test runs. Hearing yourself plays at the output volume
+  setting, and turning voice processing on no longer sends the test into a restart loop that
+  stalled the phone.
 - In the app, the conversation scrolls without jumping: fast scrolls no longer stop dead at the
   top or bounce twice at the bottom.
 - On an iPad and a Mac, the button down to the newest message scrolls there smoothly instead
