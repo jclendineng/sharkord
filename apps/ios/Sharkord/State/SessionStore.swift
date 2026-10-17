@@ -76,6 +76,8 @@ final class SessionStore {
     private(set) var customEmojis: [CustomEmoji] = []
     private(set) var stickers: [Sticker] = []
     private(set) var sounds: [SoundboardSound] = []
+    // how many times each sound is playing here right now, its tile lights up while it does
+    private(set) var playingSounds: [Int: Int] = [:]
     private(set) var settings: PublicSettings?
     // keyed by channel id, only private channels are bound by it, as on the web
     private(set) var channelPermissions: [Int: [String: Bool]] = [:]
@@ -903,7 +905,17 @@ final class SessionStore {
         let level = Double(volume ?? sound.volume) / 100 * AppSettings.shared.soundboardVolume
 
         Task {
-            await soundboardPlayer.play(address.fileURL(sound.file), volume: Float(level))
+            guard let duration = await soundboardPlayer.play(address.fileURL(sound.file), volume: Float(level)) else {
+                return
+            }
+
+            playingSounds[sound.id, default: 0] += 1
+            try? await Task.sleep(for: .seconds(duration))
+            playingSounds[sound.id, default: 1] -= 1
+
+            if playingSounds[sound.id] == 0 {
+                playingSounds[sound.id] = nil
+            }
         }
     }
 

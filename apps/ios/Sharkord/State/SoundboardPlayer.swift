@@ -8,14 +8,16 @@ final class SoundboardPlayer {
     // held while they play, a player let go stops at once
     private var players: [AVAudioPlayer] = []
 
-    func play(_ url: URL, volume: Float) async {
+    // how long the sound runs, nil when it could not be played
+    @discardableResult
+    func play(_ url: URL, volume: Float) async -> TimeInterval? {
         let data: Data
 
         if let cached = cache[url] {
             data = cached
         } else {
             guard let (fetched, _) = try? await URLSession.shared.data(from: url) else {
-                return
+                return nil
             }
 
             cache[url] = fetched
@@ -23,12 +25,14 @@ final class SoundboardPlayer {
         }
 
         guard let player = try? AVAudioPlayer(data: data) else {
-            return
+            return nil
         }
 
         player.volume = volume
         players.removeAll { !$0.isPlaying }
         players.append(player)
         player.play()
+
+        return player.duration
     }
 }

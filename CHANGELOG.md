@@ -109,7 +109,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   for everyone there, and each person sets their own soundboard volume. Managers upload sounds
   or pick them from a library of free CC0 sounds by Kenney that comes with the server, and set
   each one's name, emoji and volume. Two new permissions, Use Soundboard and Manage
-  Soundboard.
+  Soundboard. In the app the sounds are cards with a large emoji, in a sheet as tall as they
+  need, and a card lights up while its sound plays, whoever played it.
 - With a Freesound API key, soundboard managers search freesound.org for more sounds, in the
   app and the web client. Only sounds free to reuse are shown, and a sound that asks for
   credit keeps it.
