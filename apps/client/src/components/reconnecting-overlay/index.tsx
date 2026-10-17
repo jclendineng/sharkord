@@ -13,7 +13,9 @@ const ReconnectingOverlay = memo(() => {
 
   const handleAbort = useCallback(() => disconnectFromServer(), []);
 
-  if (!reconnect) return null;
+  // not on the first try: a phone's browser drops the connection whenever the page goes to the
+  // background, and coming back the first try almost always works, so the dialog only flashed
+  if (!reconnect || reconnect.attempt < 2) return null;
 
   const isAttemptInFlight = reconnect.nextAttemptAt === null;
 
