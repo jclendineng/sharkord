@@ -149,6 +149,12 @@ html.document-scroll body {
   overflow: visible;
 }
 
+/* no rubber band: safari let a page that fits be dragged past its edge and snap back, and a
+pull at the top reloaded the page */
+html.document-scroll {
+  overscroll-behavior: none;
+}
+
 /* the small viewport, not 100vh: on a phone 100vh is the height with safari's toolbar tucked
 away, so a page that fits would still scroll by the toolbar's height and jump */
 html.document-scroll #root {

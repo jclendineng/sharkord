@@ -256,7 +256,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - Open in the Sharkord app on the invite page keeps a server's subpath, so a server under `example.com/sharkord` opens there in the app instead of at `example.com`.
 - The sign in page scrolls on a phone instead of cutting off its top and bottom, and the language picker sits below it there rather than over the Connect button.
 - In Safari on an iPhone the sign in page runs under the glass address bar instead of stopping above it on a black band.
-- The sign in page stays still in Safari on an iPhone when everything fits on screen, rather than scrolling and jumping by the height of the address bar.
+- The sign in page stays still in Safari on an iPhone when everything fits on screen, rather than scrolling and jumping by the height of the address bar, and it no longer bounces past its edges or reloads on a pull down.
 - The reset password and single sign-on screens are centred again.
 - Dependencies with published security fixes are upgraded, among them the HTML sanitizer, the websocket server, the image size reader, the message editor and the database layer.
 - The web client joins its call again after a dropped connection comes back, instead of showing a call the server had already ended ([#849](https://github.com/Sharkord/sharkord/issues/849)).
