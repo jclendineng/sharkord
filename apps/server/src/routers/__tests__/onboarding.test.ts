@@ -373,6 +373,32 @@ describe('reacting to the rules message', () => {
     expect(await hasRole(3, DEFAULT_ROLE_ID)).toBe(false);
   });
 
+  test('should take the default role away from someone who already had the onboarding role', async () => {
+    const { caller: owner } = await initTest(1);
+
+    await owner.others.setOnboarding({
+      messageId: RULES_MESSAGE_ID,
+      roleId: ONBOARDING_ROLE_ID,
+      removeDefaultRole: true
+    });
+
+    await letMembersReact();
+
+    await tdb
+      .insert(userRoles)
+      .values({ userId: 3, roleId: ONBOARDING_ROLE_ID, createdAt: Date.now() });
+
+    const { caller } = await initTest(3);
+
+    await caller.messages.toggleReaction({
+      messageId: RULES_MESSAGE_ID,
+      emoji: 'white_check_mark'
+    });
+
+    expect(await hasRole(3, ONBOARDING_ROLE_ID)).toBe(true);
+    expect(await hasRole(3, DEFAULT_ROLE_ID)).toBe(false);
+  });
+
   test('should keep the role when the reaction is taken back', async () => {
     await setUpRules();
 

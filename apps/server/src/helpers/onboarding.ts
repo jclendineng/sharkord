@@ -20,15 +20,19 @@ const grantOnboardingRole = async (userId: number, messageId: number) => {
     getUserRoleIds(userId)
   ]);
 
-  if (!role || roleIds.includes(role.id)) {
+  if (!role) {
     return;
   }
 
-  try {
-    await assignRole(userId, role);
-  } catch {
-    // a second reaction landing at the same moment already gave it
-    return;
+  // someone given the role before the default one was set to go, by hand or by an earlier
+  // reaction, still loses the default role on reacting now
+  if (!roleIds.includes(role.id)) {
+    try {
+      await assignRole(userId, role);
+    } catch {
+      // a second reaction landing at the same moment already gave it
+      return;
+    }
   }
 
   if (!onboardingRemovesDefaultRole) {
