@@ -24,7 +24,7 @@
     "@sharkord/shared": "workspace:*",
     "@sharkord/ui": "workspace:*",
     "@tailwindcss/vite": "^4.1.13",
-    "@tiptap/core": "3.22.2",
+    "@tiptap/core": "3.30.5",
     "@tiptap/extension-emoji": "3.22.2",
     "@tiptap/extension-link": "3.22.2",
     "@tiptap/pm": "3.22.2",
