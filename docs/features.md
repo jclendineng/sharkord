@@ -144,9 +144,11 @@ conversation's media, pins, links and files.
 In a call the app's camera captures 1080p at 30 frames a second, in a format the system's
 Portrait and Studio Light effects support where the camera has one (the app opts in with
 `NSCameraPortraitEffectEnabled`, `NSCameraStudioLightEnabled` and `NSCameraReactionEffectsEnabled`,
-since it is not a VoIP app). With the server's simulcast setting on, it sends three VP8 layers
-(a quarter, a half and the full picture, the web's numbers with 2.5 Mbps at the top); otherwise
-one H.264 stream. VP8 because the bundled WebRTC (m120) only splits VP8 into layers. Each video
+since it is not a VoIP app). It sends one H.264 stream: three VP8 layers for simulcast were
+tried, and the bundled WebRTC (m120) encoded no frames in any of them, so the picture reached
+nobody. Each frame is tagged with its rotation from the device orientation, read when the camera
+starts rather than taken as upright until the first turn. Apple's rotation coordinator answered
+0 degrees on an upright iPhone, so it is not used. Each video
 tile reports how many pixels tall it is drawn, and the app asks `voice.setConsumerQuality` for the
 lowest layer that fills the tallest tile (up to 270 lines the low one, up to 540 the middle, above
 that auto). A screen share always asks for its sharpest. Leaving the app with someone else's video

@@ -203,9 +203,9 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - Mute Stream Audio in Devices settings: screen shares with sound start muted
   ([#749](https://github.com/Sharkord/sharkord/issues/749)).
 
-- Better calls in the apps. The camera sends 1080p. On a server with simulcast on, it sends a
-  low, a medium and a full quality copy, and each viewer gets the one their tile needs, so a
-  thumbnail no longer pulls a full camera. Video keeps playing in picture in picture when you
+- Better calls in the apps. The camera sends 1080p. On a server with simulcast on, each viewer
+  gets the quality their tile needs from the people sending layers, so a thumbnail no longer
+  pulls a full camera. Video keeps playing in picture in picture when you
   leave the app. A signal badge on the call shows the ping and packet loss. Mic Mode (Voice
   Isolation, Wide Spectrum) opens from the call sheet. A Video Effects sheet plays reactions on
   your camera, switches Center Stage and shows whether Portrait and Studio Light are on, and hand
@@ -299,8 +299,10 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   share button did nothing, and a picker that cannot open now says so.
 - In the app, an error during a call, such as the camera not starting, shows over the call
   instead of behind it.
-- In the app, the camera's picture is turned the right way up from the camera's own position,
-  so an iPad held upright no longer sends and shows it on its side.
+- In the app, the camera's picture is turned the right way up from how the device is held, on
+  an iPhone and on an iPad already held sideways when the camera starts.
+- In the app, the camera reaches the others in the call again. It had been sending layers that
+  never carried a frame, so only you could see your picture.
 - In the app, the mic test is processed the way a call is: with Echo Cancellation on it uses
   Apple's voice processing, so its noise suppression, gain control and Voice Isolation apply,
   and Mic Mode can be opened while the test runs. Hearing yourself plays at the output volume

@@ -2,6 +2,7 @@ import AVFoundation
 import Foundation
 import Mediasoup
 import os
+import UIKit
 import WebRTC
 
 // the webrtc side of a voice channel: one send transport carrying the microphone and camera,
@@ -56,9 +57,6 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
     private var screenTrack: RTCVideoTrack?
     private var rtpCapabilities = "{}"
     private var sendVideoCodec: String?
-    // the web's three camera layers, sent when the server has simulcast on, in vp8: this webrtc
-    // build splits only vp8 into layers, h264 went out as one
-    private var simulcastCodec: String?
     private var soundMuted = false
     private var outputVolume: Double
     private let audioOptions: AudioOptions
@@ -98,12 +96,11 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
         self.device = Device(pcFactory: factory)
     }
 
-    func start(routerRtpCapabilities: String, micMuted: Bool, soundMuted: Bool, canSpeak: Bool, simulcast: Bool) async throws {
+    func start(routerRtpCapabilities: String, micMuted: Bool, soundMuted: Bool, canSpeak: Bool) async throws {
         try await onQueue {
             try self.device.load(with: routerRtpCapabilities)
             self.rtpCapabilities = try self.device.rtpCapabilities()
             self.sendVideoCodec = Self.baselineH264(in: self.rtpCapabilities)
-            self.simulcastCodec = simulcast ? Self.codec(in: self.rtpCapabilities) { $0 == "video/vp8" } : nil
             self.soundMuted = soundMuted
         }
 
@@ -243,7 +240,7 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
             self.cameraPosition = self.cameraPosition == .front ? .back : .front
 
             if let device = Self.captureDevice(self.cameraPosition) {
-                self.cameraRotation?.follow(device)
+                self.cameraRotation?.follow(device.position)
                 Self.startCapture(camera, device: device)
                 self.cameraDevice = device
             }
@@ -429,12 +426,6 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
         }
     }
 
-    private static func codec(in capabilities: String, where matches: (String) -> Bool) -> String? {
-        codec(in: capabilities) { mimeType, _ in
-            matches(mimeType)
-        }
-    }
-
     // the first of the router's codecs that matches, as the json createProducer takes
     private static func codec(in capabilities: String, where matches: (String, [String: Any]) -> Bool) -> String? {
         guard
@@ -493,28 +484,25 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
         }
 
         let source = factory.videoSource()
-        let rotation = CameraRotation(source: source, device: device)
+        let rotation = CameraRotation(source: source, position: device.position)
         let capturer = RTCCameraVideoCapturer(delegate: rotation)
         let track = factory.videoTrack(with: source, trackId: "camera")
 
         Self.startCapture(capturer, device: device)
         cameraDevice = device
 
-        let isLayered = simulcastCodec != nil
-        // the kind travels in appData, onProduce reads it back for voice.produce. the layer names
-        // are the web's
-        let appData = isLayered
-            ? "{\"kind\":\"video\",\"qualityLayers\":[{\"spatialLayer\":0,\"label\":\"Low\"},{\"spatialLayer\":1,\"label\":\"Medium\"},{\"spatialLayer\":2,\"label\":\"High\"}]}"
-            : "{\"kind\":\"video\"}"
+        // one h264 stream, not the web's three vp8 layers: this webrtc build encoded none of
+        // them, so the picture showed here and reached nobody. the kind travels in appData,
+        // onProduce reads it back for voice.produce
         let producer: Producer
 
         do {
             producer = try sendTransport.createProducer(
                 for: track,
-                encodings: isLayered ? Self.cameraLayers() : nil,
+                encodings: nil,
                 codecOptions: nil,
-                codec: simulcastCodec ?? sendVideoCodec,
-                appData: appData
+                codec: sendVideoCodec,
+                appData: "{\"kind\":\"video\"}"
             )
         } catch {
             capturer.stopCapture()
@@ -537,26 +525,6 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
     private static func captureDevice(_ position: AVCaptureDevice.Position) -> AVCaptureDevice? {
         RTCCameraVideoCapturer.captureDevices().first { $0.position == position }
             ?? RTCCameraVideoCapturer.captureDevices().first
-    }
-
-    // a quarter, a half and the whole picture, which the server hands out by what each viewer
-    // shows and can take. the web's numbers, with more room at the top for 1080p
-    private static func cameraLayers() -> [RTCRtpEncodingParameters] {
-        let layers: [(scale: Double, bitrate: Int, framerate: Int)] = [
-            (4, 150_000, 24),
-            (2, 500_000, 30),
-            (1, 2_500_000, 30)
-        ]
-
-        return layers.map { layer in
-            let encoding = RTCRtpEncodingParameters()
-
-            encoding.scaleResolutionDownBy = NSNumber(value: layer.scale)
-            encoding.maxBitrateBps = NSNumber(value: layer.bitrate)
-            encoding.maxFramerate = NSNumber(value: layer.framerate)
-
-            return encoding
-        }
     }
 
     // 1080p at 30fps where the camera has it, the size a call gets on a mac or a full screen.
@@ -860,50 +828,119 @@ nonisolated final class ScreenFrameSink: @unchecked Sendable {
     }
 }
 
-// between the camera and its track, turning each frame by apple's rotation coordinator. webrtc's
-// capturer works the turn out from the device orientation for an iphone's camera, which put the
-// picture on its side on an ipad held upright, whose camera sits on another edge
+// between the camera and its track, telling each frame which way up it is. webrtc's capturer
+// does the same but takes the phone as upright until the first turn, so an ipad already lying
+// sideways sent its picture on its side. apple's rotation coordinator answered 0 degrees on an
+// upright phone, so the turn is worked out here from the device orientation
 nonisolated private final class CameraRotation: NSObject, RTCVideoCapturerDelegate, @unchecked Sendable {
-    private let source: RTCVideoSource
-    private let rotation = OSAllocatedUnfairLock(initialState: RTCVideoRotation._0)
-    private var coordinator: AVCaptureDevice.RotationCoordinator?
-    private var observation: NSKeyValueObservation?
-
-    init(source: RTCVideoSource, device: AVCaptureDevice) {
-        self.source = source
-        super.init()
-        follow(device)
+    private struct State {
+        var orientation = UIDeviceOrientation.portrait
+        var position = AVCaptureDevice.Position.front
     }
 
-    // a flip to the other camera, which can sit another way round
-    func follow(_ device: AVCaptureDevice) {
-        let coordinator = AVCaptureDevice.RotationCoordinator(device: device, previewLayer: nil)
+    private let source: RTCVideoSource
+    private let state = OSAllocatedUnfairLock(initialState: State())
+    private var observer: NSObjectProtocol?
 
-        self.coordinator = coordinator
-        observation = coordinator.observe(\.videoRotationAngleForHorizonLevelCapture, options: [.initial, .new]) { [weak self] coordinator, _ in
-            let rotation = Self.turn(degrees: coordinator.videoRotationAngleForHorizonLevelCapture)
+    init(source: RTCVideoSource, position: AVCaptureDevice.Position) {
+        self.source = source
+        super.init()
+        follow(position)
 
-            self?.rotation.withLock { $0 = rotation }
+        DispatchQueue.main.async {
+            MainActor.assumeIsolated {
+                UIDevice.current.beginGeneratingDeviceOrientationNotifications()
+                self.observer = NotificationCenter.default.addObserver(
+                    forName: UIDevice.orientationDidChangeNotification,
+                    object: nil,
+                    queue: .main
+                ) { [weak self] _ in
+                    MainActor.assumeIsolated {
+                        self?.readOrientation()
+                    }
+                }
+                self.readOrientation()
+            }
+        }
+    }
+
+    deinit {
+        let observer = observer
+
+        DispatchQueue.main.async {
+            MainActor.assumeIsolated {
+                observer.map(NotificationCenter.default.removeObserver)
+                UIDevice.current.endGeneratingDeviceOrientationNotifications()
+            }
+        }
+    }
+
+    // a flip to the other camera, whose picture lies the other way round when held sideways
+    func follow(_ position: AVCaptureDevice.Position) {
+        state.withLock { $0.position = position }
+    }
+
+    // face up, face down and unknown say nothing about which way up the picture is, so the last
+    // turn stays. before any turn, the screen's own orientation stands in for it
+    @MainActor
+    private func readOrientation() {
+        var orientation = UIDevice.current.orientation
+
+        if !orientation.isPortrait, !orientation.isLandscape {
+            guard state.withLock({ $0.orientation }) == .portrait, let scene = Self.activeScene else {
+                return
+            }
+
+            orientation = Self.deviceOrientation(of: scene.effectiveGeometry.interfaceOrientation)
+        }
+
+        let shown = orientation
+
+        state.withLock { $0.orientation = shown }
+    }
+
+    @MainActor
+    private static var activeScene: UIWindowScene? {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive }
+    }
+
+    // the interface turns the opposite way to the device: a device turned left shows the
+    // interface turned right
+    private static func deviceOrientation(of interface: UIInterfaceOrientation) -> UIDeviceOrientation {
+        switch interface {
+        case .landscapeLeft:
+            return .landscapeRight
+        case .landscapeRight:
+            return .landscapeLeft
+        case .portraitUpsideDown:
+            return .portraitUpsideDown
+        default:
+            return .portrait
         }
     }
 
     func capturer(_ capturer: RTCVideoCapturer, didCapture frame: RTCVideoFrame) {
-        let rotation = rotation.withLock { $0 }
+        let rotation = state.withLock { Self.rotation(for: $0) }
         let turned = RTCVideoFrame(buffer: frame.buffer, rotation: rotation, timeStampNs: frame.timeStampNs)
 
         source.capturer(capturer, didCapture: turned)
     }
 
-    private static func turn(degrees: CGFloat) -> RTCVideoRotation {
-        switch Int(degrees.rounded()) {
-        case 90:
-            return ._90
-        case 180:
-            return ._180
-        case 270:
+    // webrtc's own table: the front camera's picture lies the other way round when held sideways
+    private static func rotation(for state: State) -> RTCVideoRotation {
+        let isFront = state.position == .front
+
+        switch state.orientation {
+        case .portraitUpsideDown:
             return ._270
+        case .landscapeLeft:
+            return isFront ? ._180 : ._0
+        case .landscapeRight:
+            return isFront ? ._0 : ._180
         default:
-            return ._0
+            return ._90
         }
     }
 }

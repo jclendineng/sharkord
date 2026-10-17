@@ -1052,8 +1052,7 @@ final class SessionStore {
                 // push to talk opens the mic only while its key is held
                 micMuted: micMuted || AppSettings.shared.pushToTalk,
                 soundMuted: soundMuted,
-                canSpeak: canSpeak,
-                simulcast: self.settings?.webRtcSimulcastEnabled == true
+                canSpeak: canSpeak
             )
 
             subscribeToProducers(client)
