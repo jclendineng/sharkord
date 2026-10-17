@@ -29,6 +29,9 @@ struct MessageListView<Header: View>: View {
     @State private var highlightStrength = 0.0
     // far enough up the conversation for discord's round button back down
     @State private var isAwayFromBottom = false
+    // the jump button's way down. a scrollTo through the reader's proxy was dropped when tapped
+    // while the list still coasted or settled from a bounce, and stopped short of the padding
+    @State private var scrollPosition = ScrollPosition()
     // a tap's putting the keyboard away, held back long enough to see whether it is the first
     // half of a double tap
     @State private var keyboardDismissal: Task<Void, Never>?
@@ -45,9 +48,7 @@ struct MessageListView<Header: View>: View {
                 }
                 .overlay(alignment: .bottomTrailing) {
                     if isAwayFromBottom, !store.hasNewer {
-                        JumpToBottomButton {
-                            scrollToBottom(proxy)
-                        }
+                        JumpToBottomButton(action: scrollToBottom)
                         .padding(12)
                         .transition(.scale(scale: 0.6).combined(with: .opacity))
                     }
@@ -79,14 +80,14 @@ struct MessageListView<Header: View>: View {
 
     private var messageList: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 0) {
+            // every loaded message is laid out, not only the ones on screen: a lazy stack guessed the
+            // height of the rest, and with pictures and previews its guesses were hundreds of points
+            // out, the list jumping as it corrected them mid scroll. a page is fifty messages
+            VStack(alignment: .leading, spacing: 0) {
                 if store.hasOlder {
                     ProgressView()
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .task {
-                            await store.loadOlder()
-                        }
                 } else if store.hasLoaded {
                     header
                 }
@@ -128,6 +129,7 @@ struct MessageListView<Header: View>: View {
             }
             .padding(.bottom, 12)
         }
+        .scrollPosition($scrollPosition)
         .defaultScrollAnchor(.bottom)
         .defaultScrollAnchor(.bottom, for: .sizeChanges)
         .onScrollGeometryChange(for: Bool.self) { geometry in
@@ -136,6 +138,15 @@ struct MessageListView<Header: View>: View {
             return distance > 600
         } action: { _, isAway in
             isAwayFromBottom = isAway
+        }
+        // the next page up, a screen before the top comes into view. with every row laid out the
+        // spinner up there appears at once and could not be what asks for it
+        .onScrollGeometryChange(for: Bool.self) { geometry in
+            geometry.contentOffset.y + geometry.contentInsets.top < geometry.containerSize.height
+        } action: { _, isNearTop in
+            if isNearTop {
+                loadOlder()
+            }
         }
         .scrollDismissesKeyboard(.interactively)
         // like the keyboard: a swipe down on the conversation drags the attachment panel with
@@ -249,6 +260,12 @@ struct MessageListView<Header: View>: View {
         return .handled
     }
 
+    private func loadOlder() {
+        Task {
+            await store.loadOlder()
+        }
+    }
+
     // after the window has been laid out, then the highlight fades
     private func scrollToFocused(_ proxy: ScrollViewProxy) async {
         guard let messageId = store.focusedMessageId else {
@@ -323,13 +340,9 @@ struct MessageListView<Header: View>: View {
         highlightedMessageId = nil
     }
 
-    private func scrollToBottom(_ proxy: ScrollViewProxy) {
-        guard let last = store.messages.last else {
-            return
-        }
-
+    private func scrollToBottom() {
         withAnimation(.smooth(duration: 0.35)) {
-            proxy.scrollTo(last.id, anchor: .bottom)
+            scrollPosition.scrollTo(edge: .bottom)
         }
     }
 
@@ -623,18 +636,23 @@ private struct NewMessagesDivider: View {
 private struct JumpToBottomButton: View {
     let action: () -> Void
 
+    // the whole tile inside the button, not just the arrow: a tap beside the arrow went through
+    // to the message under it
     var body: some View {
-        Button("Jump to Bottom", systemImage: "arrow.down", action: action)
-            .labelStyle(.iconOnly)
-            .font(.body.weight(.semibold))
-            .foregroundStyle(Theme.text)
-            .frame(width: 44, height: 44)
-            .background(Theme.listBackground, in: .rect(cornerRadius: 12))
-            .overlay {
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Theme.divider, lineWidth: 1)
-            }
-            .shadow(color: .black.opacity(0.3), radius: 6, y: 2)
-            .buttonStyle(.plain)
+        Button(action: action) {
+            Label("Jump to Bottom", systemImage: "arrow.down")
+                .labelStyle(.iconOnly)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(Theme.text)
+                .frame(width: 44, height: 44)
+                .background(Theme.listBackground, in: .rect(cornerRadius: 12))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Theme.divider, lineWidth: 1)
+                }
+                .contentShape(.rect(cornerRadius: 12))
+        }
+        .shadow(color: .black.opacity(0.3), radius: 6, y: 2)
+        .buttonStyle(.plain)
     }
 }

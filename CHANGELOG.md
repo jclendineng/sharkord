@@ -288,6 +288,10 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 ### Fixed
 
+- In the app, the conversation scrolls without jumping: fast scrolls no longer stop dead at the
+  top or bounce twice at the bottom.
+- In the app, the button down to the newest message works on the first tap, even while the
+  conversation is still moving, the whole button takes the tap, and it lands right at the bottom.
 - In the app, the messages keep scrolling after a long press opens a message's menu partway
   through, and the pressed row lets go as soon as the menu shows.
 - On an iPad, a tap on the channel list beside the chat puts away the chat's pins or threads
