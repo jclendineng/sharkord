@@ -7,6 +7,8 @@ struct ChannelActionsSheet: View {
     let onMute: () -> Void
     // the mac's menu hands the invite to its row, a sheet shown from the menu left it open behind
     var onInvite: (() -> Void)?
+    // the editor opens from the row once this has gone, as the mute lengths do
+    let onEdit: () -> Void
 
     @Environment(SessionStore.self) private var session
     @Environment(ServerListStore.self) private var servers
@@ -46,6 +48,11 @@ struct ChannelActionsSheet: View {
                         systemImage: session.isPinned(channel.id) ? "pin.slash.fill" : "pin.fill",
                         action: togglePinned
                     )
+
+                    // the app opens it, a voice channel has no chat for it to land on
+                    if channel.type == .text {
+                        ActionRow(title: "Copy Link", systemImage: "link", action: copyLink)
+                    }
                 }
 
                 ActionGroup {
@@ -72,6 +79,26 @@ struct ChannelActionsSheet: View {
                         }
                     } else {
                         ActionRow(title: "Notification Settings", systemImage: "app.badge", action: showNotifications)
+                    }
+                }
+
+                if channel.type == .voice {
+                    ActionGroup {
+                        ActionRow(
+                            title: session.hidesNames(in: channel.id) ? "Show Names" : "Hide Names",
+                            systemImage: "person.crop.circle",
+                            action: toggleNames
+                        )
+                    }
+                }
+
+                if session.can(.manageChannels) {
+                    ActionGroup {
+                        ActionRow(title: "Edit Channel", systemImage: "gearshape.fill", action: onEdit)
+
+                        if channel.categoryId != nil {
+                            ActionRow(title: "Duplicate Channel", systemImage: "plus.square.on.square", action: duplicate)
+                        }
                     }
                 }
             }
@@ -108,6 +135,56 @@ struct ChannelActionsSheet: View {
 
     private func togglePinned() {
         session.togglePinned(channel.id)
+        closeMenu()
+    }
+
+    private func copyLink() {
+        UIPasteboard.general.url = session.link(to: channel.id)
+        closeMenu()
+    }
+
+    private func toggleNames() {
+        session.toggleHidesNames(in: channel.id)
+        closeMenu()
+    }
+
+    // discord's clone: the same name, kind and category, private and with its topic if it was
+    private func duplicate() {
+        struct NewChannelInput: Encodable {
+            let type: ChannelType
+            let name: String
+            let categoryId: Int
+        }
+
+        struct UpdateInput: Encodable {
+            let channelId: Int
+            let name: String
+            let topic: String?
+            let `private`: Bool
+        }
+
+        guard let categoryId = channel.categoryId else {
+            return
+        }
+
+        Task {
+            do {
+                let channelId: Int = try await session.perform(
+                    "channels.add",
+                    NewChannelInput(type: channel.type, name: channel.name, categoryId: categoryId)
+                )
+
+                if channel.private || channel.topic != nil {
+                    try await session.perform(
+                        "channels.update",
+                        UpdateInput(channelId: channelId, name: channel.name, topic: channel.topic, private: channel.private)
+                    )
+                }
+            } catch {
+                session.showError(error)
+            }
+        }
+
         closeMenu()
     }
 
@@ -253,7 +330,8 @@ struct MuteChoices: View {
 
 // which messages notify, the current one filled in like discord's radio buttons
 struct NotificationLevelChoices: View {
-    let selected: ChannelNotificationLevel
+    // nil for a category whose channels differ
+    let selected: ChannelNotificationLevel?
     let onPick: (ChannelNotificationLevel) -> Void
 
     private static let levels: [(level: ChannelNotificationLevel, title: String)] = [

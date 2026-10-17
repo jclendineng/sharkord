@@ -175,6 +175,30 @@ final class ServerListStore {
         return sessions.first { $0.address == address }
     }
 
+    struct ChannelLink {
+        let server: String
+        let channelId: Int
+
+        // sharkord://channel?server=…&channel=…, a channel's copied link
+        init?(url: URL) {
+            guard url.scheme == "sharkord", url.host() == "channel" else {
+                return nil
+            }
+
+            let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+
+            guard
+                let server = items.first(where: { $0.name == "server" })?.value,
+                let channelId = items.first(where: { $0.name == "channel" })?.value.flatMap(Int.init)
+            else {
+                return nil
+            }
+
+            self.server = server
+            self.channelId = channelId
+        }
+    }
+
     struct LinkLogin: Equatable {
         let server: String
         let token: String
@@ -211,6 +235,18 @@ final class ServerListStore {
 
             select(session)
             pendingApproval = approval
+            return
+        }
+
+        if let link = ChannelLink(url: url) {
+            let address = ServerAddress(userInput: link.server)
+
+            guard let session = sessions.first(where: { $0.address == address && $0.phase != .signedOut }) else {
+                selectedSession?.showError(AuthAPI.RequestError(message: "Sign in to that server on this device first, then open the link again."))
+                return
+            }
+
+            open(channelId: link.channelId, in: session)
             return
         }
 

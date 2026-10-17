@@ -5,7 +5,8 @@ import SwiftUI
 struct MuteDurationSheet: View {
     let title: String
     let subtitle: String
-    let channelId: Int
+    // a category mutes each of its channels
+    let channelIds: [Int]
 
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
@@ -51,7 +52,9 @@ struct MuteDurationSheet: View {
 
     private func mute(for duration: MuteDuration) {
         Task {
-            await session.setNotificationLevel(.none, for: channelId, muteForMinutes: duration.minutes)
+            for channelId in channelIds {
+                await session.setNotificationLevel(.none, for: channelId, muteForMinutes: duration.minutes)
+            }
         }
 
         dismiss()

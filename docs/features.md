@@ -141,6 +141,15 @@ again, the other person's list and the messages are untouched. Tapping a direct 
 opens the same screen as a channel's, with the person's avatar, their two members, and the
 conversation's media, pins, links and files.
 
+A long press on a channel opens its menu: invite, pin it to the top, copy its link, mark it read,
+mute it, its notification settings, and for anyone who can manage channels, edit or duplicate it.
+The link is `sharkord://channel?server=…&channel=…`, which the app opens on any server it is
+signed in to; only text channels have one. A voice channel's menu can hide the names under it,
+leaving only the faces, kept per channel on the device. A long press on a category opens the
+same kind of menu for every channel in it: mark them read, mute them for a while, set their
+notifications, and for managers rename or delete the category and create a channel in it. Muting
+a category mutes each of its channels, so any one can still be changed on its own.
+
 Muting a conversation or a channel in the app asks how long, as Discord does: 15 minutes, 1, 3,
 8 or 24 hours, or until it is turned back on. `notifications.setChannelSetting` takes
 `muteForMinutes` with the `none` level and stores when the mute ends; past that, push and

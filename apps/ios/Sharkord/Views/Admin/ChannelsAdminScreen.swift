@@ -411,21 +411,36 @@ struct ChannelEditor: View {
     }
 }
 
-private struct NewChannelSheet: View {
-    let type: ChannelType
+struct NewChannelSheet: View {
     let categories: [ChannelCategory]
 
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
 
+    @State private var type: ChannelType
     @State private var name = ""
     @State private var categoryId: Int?
     @State private var errorMessage: String?
     @State private var isSaving = false
 
+    // a category's long press opens it on that category
+    init(type: ChannelType, categories: [ChannelCategory], categoryId: Int? = nil) {
+        self.categories = categories
+        _type = State(initialValue: type)
+        _categoryId = State(initialValue: categoryId)
+    }
+
     var body: some View {
         NavigationStack {
             List {
+                Section {
+                    Picker("Type", selection: $type) {
+                        Label("Text", systemImage: "number").tag(ChannelType.text)
+                        Label("Voice", systemImage: "speaker.wave.2").tag(ChannelType.voice)
+                    }
+                    .pickerStyle(.segmented)
+                }
+
                 Section("Name") {
                     TextField(type == .voice ? "General Voice" : "general", text: $name)
                         .textInputAutocapitalization(.never)

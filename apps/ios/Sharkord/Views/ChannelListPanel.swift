@@ -37,6 +37,7 @@ struct ChannelListPanel: View {
                     if let title = section.title {
                         CategoryHeader(
                             title: title,
+                            category: session.categories.first { $0.id == section.id },
                             isCollapsed: collapsedCategoryIds.contains(section.id),
                             onToggle: { toggle(section.id) }
                         )
@@ -187,29 +188,140 @@ struct ChannelListPanel: View {
 
 private struct CategoryHeader: View {
     let title: String
+    // nil for the pinned section, which has nothing of its own to set
+    let category: ChannelCategory?
     let isCollapsed: Bool
     let onToggle: () -> Void
 
-    var body: some View {
-        Button(action: onToggle) {
-            HStack(spacing: 4) {
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 9, weight: .bold))
-                    .rotationEffect(.degrees(isCollapsed ? -90 : 0))
+    @Environment(SessionStore.self) private var session
+    @Environment(ServerListStore.self) private var servers
 
-                Text(title.uppercased())
-                    .font(.caption.weight(.bold))
-                    .tracking(0.3)
+    @State private var isActionsPresented = false
+    @State private var isPressed = false
+    @State private var isHovered = false
+    @State private var menuAnchor = UnitPoint.center
+    @State private var wantedSheet: WantedSheet?
+    @State private var shownSheet: WantedSheet?
 
-                Spacer()
-            }
-            .foregroundStyle(Theme.muted)
-            .padding(.top, 18)
-            .padding(.bottom, 4)
-            .padding(.horizontal, 4)
-            .contentShape(.rect)
+    // what the menu asked for, opened once it has gone
+    private enum WantedSheet: String, Identifiable {
+        case mute
+        case edit
+        case createChannel
+
+        var id: String {
+            rawValue
         }
-        .buttonStyle(.plain)
+    }
+
+    var body: some View {
+        // plain gestures, as a channel row has, so a long press does not also collapse it
+        label
+            .onHover(perform: setHovered)
+            .onTapGesture(perform: onToggle)
+            .onLongPressGesture(minimumDuration: 0.3, perform: showActions, onPressingChanged: setPressed)
+            .onSecondaryClick(perform: showActionsAtPointer)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction(named: "More Options", showActions)
+            .actionsPresentation(isPresented: $isActionsPresented, anchor: menuAnchor, onDismiss: showWantedSheet) {
+                if let category {
+                    CategoryActionsSheet(
+                        category: category,
+                        onMute: { request(.mute) },
+                        onEdit: { request(.edit) },
+                        onCreateChannel: { request(.createChannel) }
+                    )
+                    .environment(session)
+                    .environment(servers)
+                }
+            }
+            .sheet(item: $shownSheet) { sheet in
+                if let category {
+                    wanted(sheet, for: category)
+                        .environment(session)
+                        .environment(servers)
+                        .appSheet()
+                }
+            }
+    }
+
+    @ViewBuilder
+    private func wanted(_ sheet: WantedSheet, for category: ChannelCategory) -> some View {
+        switch sheet {
+        case .mute:
+            MuteDurationSheet(title: "Mute Category", subtitle: category.name, channelIds: session.channelIds(in: category.id))
+        case .edit:
+            CategoryEditor(category: category)
+        case .createChannel:
+            NewChannelSheet(
+                type: .text,
+                categories: session.categories.sorted { $0.position < $1.position },
+                categoryId: category.id
+            )
+        }
+    }
+
+    private func request(_ sheet: WantedSheet) {
+        wantedSheet = sheet
+        isActionsPresented = false
+    }
+
+    private func showWantedSheet() {
+        shownSheet = wantedSheet
+        wantedSheet = nil
+    }
+
+    private func showActions() {
+        guard category != nil else {
+            return
+        }
+
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        isActionsPresented = true
+    }
+
+    private func showActionsAtPointer(_ click: SecondaryClick) {
+        guard category != nil else {
+            return
+        }
+
+        menuAnchor = click.anchor
+        isActionsPresented = true
+    }
+
+    // pressed, under the pointer, or showing its menu, lit up as a channel row is
+    private var isHighlighted: Bool {
+        isPressed || isHovered || isActionsPresented
+    }
+
+    private var label: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "chevron.down")
+                .font(.system(size: 9, weight: .bold))
+                .rotationEffect(.degrees(isCollapsed ? -90 : 0))
+
+            Text(title.uppercased())
+                .font(.caption.weight(.bold))
+                .tracking(0.3)
+
+            Spacer()
+        }
+        .foregroundStyle(isHighlighted ? Theme.header : Theme.muted)
+        .padding(.vertical, 4)
+        .padding(.horizontal, 4)
+        .background(isHighlighted ? Theme.panelSelected : .clear, in: .rect(cornerRadius: 6))
+        // the gap above stays out of the highlight, and out of reach of a press
+        .padding(.top, 14)
+        .contentShape(.rect)
+    }
+
+    private func setPressed(_ pressed: Bool) {
+        // the pinned section has no menu, a press there only collapses it
+        isPressed = pressed && category != nil
+    }
+
+    private func setHovered(_ hovered: Bool) {
+        isHovered = hovered
     }
 }
 
@@ -225,6 +337,8 @@ private struct ChannelRow: View {
     @State private var isMutePresented = false
     @State private var wantsInvite = false
     @State private var isInvitePresented = false
+    @State private var wantsEdit = false
+    @State private var isEditPresented = false
     @State private var isPressed = false
     @State private var isHovered = false
 
@@ -265,12 +379,12 @@ private struct ChannelRow: View {
             .accessibilityAddTraits(.isButton)
             .accessibilityAction(named: "More Options", showActions)
             .actionsPresentation(isPresented: $isActionsSheetPresented, anchor: menuAnchor, onDismiss: showWantedSheet) {
-                ChannelActionsSheet(channel: channel, onMute: requestMute, onInvite: requestInvite)
+                ChannelActionsSheet(channel: channel, onMute: requestMute, onInvite: requestInvite, onEdit: requestEdit)
                     .environment(session)
                     .environment(servers)
             }
             .sheet(isPresented: $isMutePresented) {
-                MuteDurationSheet(title: "Mute Channel", subtitle: "#\(channel.name)", channelId: channel.id)
+                MuteDurationSheet(title: "Mute Channel", subtitle: "#\(channel.name)", channelIds: [channel.id])
                     .environment(session)
                     .environment(servers)
                     .appSheet()
@@ -280,6 +394,19 @@ private struct ChannelRow: View {
                     .environment(session)
                     .environment(servers)
                     .appSheet()
+            }
+            .sheet(isPresented: $isEditPresented) {
+                NavigationStack {
+                    ChannelEditor(channel: channel)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Cancel", action: closeEditor)
+                            }
+                        }
+                }
+                .environment(session)
+                .environment(servers)
+                .appSheet()
             }
             .sheet(isPresented: $isVoiceSheetPresented) {
                 VoiceChannelSheet(channel: channel)
@@ -321,7 +448,21 @@ private struct ChannelRow: View {
         isActionsSheetPresented = false
     }
 
+    private func closeEditor() {
+        isEditPresented = false
+    }
+
+    private func requestEdit() {
+        wantsEdit = true
+        isActionsSheetPresented = false
+    }
+
     private func showWantedSheet() {
+        if wantsEdit {
+            wantsEdit = false
+            isEditPresented = true
+        }
+
         if wantsMute {
             wantsMute = false
             isMutePresented = true
@@ -398,6 +539,32 @@ private struct VoiceParticipants: View {
     let channelId: Int
 
     var body: some View {
+        if session.hidesNames(in: channelId) {
+            faces
+        } else {
+            rows
+        }
+    }
+
+    // discord's hidden names: just the faces, side by side under the channel
+    private var faces: some View {
+        HStack(spacing: 4) {
+            ForEach(session.voiceParticipants(in: channelId), id: \.user?.id) { participant in
+                AvatarView(user: participant.user, size: 22)
+                    .overlay {
+                        if participant.user.map({ session.speakingUserIds.contains($0.id) }) == true {
+                            Circle()
+                                .strokeBorder(Theme.green, lineWidth: 2)
+                                .padding(-2)
+                        }
+                    }
+            }
+        }
+        .padding(.leading, 40)
+        .padding(.vertical, 3)
+    }
+
+    private var rows: some View {
         ForEach(session.voiceParticipants(in: channelId), id: \.user?.id) { participant in
             HStack(spacing: 8) {
                 AvatarView(user: participant.user, size: 22)

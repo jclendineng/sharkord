@@ -38,7 +38,7 @@ underline drawn in messages, two-factor sign in (a code field after the password
 a QR code in Account settings), deleting your own account, turning off incoming video in the
 voice sheet, a private channel's member column showing only who can see it, generated avatars,
 webhook messages under their name, and for moderators an optional IP ban, password reset links
-shared from a member's page, and the AFK channel in General settings. Not in the app: plugin slash commands, actions and plugin panels, which are web
+shared from a member's page, and the AFK channel in General settings. Long pressing a channel or a category opens its menu (copy link, hide names in voice, edit, duplicate, mute or set notifications for a whole category, create a channel in it), a right click on a Mac. Not in the app: plugin slash commands, actions and plugin panels, which are web
 only. See
 [docs/features.md](../../docs/features.md) for what the server side of each needs.
 

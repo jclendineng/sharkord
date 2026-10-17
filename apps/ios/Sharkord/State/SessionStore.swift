@@ -55,6 +55,8 @@ final class SessionStore {
     private(set) var pinnedChannelIds: [Int] = []
     private var serverKeepsPins = false
     private(set) var hidesMutedChannels = false
+    // voice channels showing who is in them as faces alone, on this device
+    private(set) var namesHiddenChannelIds: [Int] = []
     private(set) var allowsDirectMessages = true
     private(set) var friendLists = FriendLists()
     // what this account picked, which the member list cannot say for invisible
@@ -376,6 +378,55 @@ final class SessionStore {
         if let merged: [Int] = try? await client.query("channels.getPins") {
             applyPins(merged)
         }
+    }
+
+    // every channel of a category, the pinned and hidden ones too, which a category's settings reach
+    func channelIds(in categoryId: Int) -> [Int] {
+        channels
+            .filter { !$0.isDm && $0.categoryId == categoryId }
+            .map(\.id)
+    }
+
+    // what every one of them is set to, nil when they differ
+    func sharedNotificationLevel(of channelIds: [Int]) -> ChannelNotificationLevel? {
+        let levels = Set(channelIds.map(notificationLevel(for:)))
+
+        return levels.count == 1 ? levels.first : nil
+    }
+
+    func hidesNames(in channelId: Int) -> Bool {
+        namesHiddenChannelIds.contains(channelId)
+    }
+
+    func toggleHidesNames(in channelId: Int) {
+        guard let address else {
+            return
+        }
+
+        if hidesNames(in: channelId) {
+            namesHiddenChannelIds.removeAll { $0 == channelId }
+        } else {
+            namesHiddenChannelIds.append(channelId)
+        }
+
+        CredentialStore.setNamesHiddenChannelIds(namesHiddenChannelIds, for: address)
+    }
+
+    // sharkord://channel?server=…&channel=…, which the app opens on any server it is signed in to
+    func link(to channelId: Int) -> URL? {
+        guard let address else {
+            return nil
+        }
+
+        var components = URLComponents()
+        components.scheme = "sharkord"
+        components.host = "channel"
+        components.queryItems = [
+            URLQueryItem(name: "server", value: address.baseURL.absoluteString),
+            URLQueryItem(name: "channel", value: String(channelId))
+        ]
+
+        return components.url
     }
 
     func setHidesMutedChannels(_ hides: Bool) {
@@ -1475,6 +1526,7 @@ final class SessionStore {
         lastChannelId = address.flatMap(CredentialStore.lastChannelId(for:))
         pinnedChannelIds = address.map(CredentialStore.pinnedChannelIds(for:)) ?? []
         hidesMutedChannels = address.map(CredentialStore.hidesMutedChannels(for:)) ?? false
+        namesHiddenChannelIds = address.map(CredentialStore.namesHiddenChannelIds(for:)) ?? []
         ownUserId = result.ownUserId
         ownUserHasPassword = result.ownUserPasswordSet ?? true
         categories = result.categories

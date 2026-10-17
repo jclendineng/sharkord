@@ -213,7 +213,7 @@ private struct ConversationRow: View {
                 MuteDurationSheet(
                     title: "Mute this conversation",
                     subtitle: "@\(user?.name ?? "Unknown")",
-                    channelId: conversation.channelId
+                    channelIds: [conversation.channelId]
                 )
                     .environment(session)
                     .environment(servers)

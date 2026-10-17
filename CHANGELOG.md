@@ -203,6 +203,12 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - Mute Stream Audio in Devices settings: screen shares with sound start muted
   ([#749](https://github.com/Sharkord/sharkord/issues/749)).
 
+- In the apps, a long press on a channel adds Copy Link (text channels), Hide Names (voice
+  channels, shows only who is in it as faces), and for managers Edit Channel and Duplicate
+  Channel. A long press on a category opens its own menu: Mark As Read, Mute Category,
+  Notification Settings for every channel in it, Edit Category and Create Channel. On a Mac the
+  same menus open on a right click.
+
 #### From upstream
 
 - Hotkeys in the web client for mute, deafen, push to talk and more, set in a new Hotkeys

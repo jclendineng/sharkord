@@ -48,6 +48,14 @@ enum CredentialStore {
         UserDefaults.standard.set(true, forKey: "pinsUploaded." + address.baseURL.absoluteString)
     }
 
+    static func namesHiddenChannelIds(for address: ServerAddress) -> [Int] {
+        UserDefaults.standard.array(forKey: "hiddenNames." + address.baseURL.absoluteString) as? [Int] ?? []
+    }
+
+    static func setNamesHiddenChannelIds(_ channelIds: [Int], for address: ServerAddress) {
+        UserDefaults.standard.set(channelIds, forKey: "hiddenNames." + address.baseURL.absoluteString)
+    }
+
     static func hidesMutedChannels(for address: ServerAddress) -> Bool {
         UserDefaults.standard.bool(forKey: "hideMuted." + address.baseURL.absoluteString)
     }
