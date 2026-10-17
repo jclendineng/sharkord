@@ -78,6 +78,31 @@ const ServerView = memo(() => {
     onSwipeLeft: handleSwipeLeft
   });
 
+  // ios safari scrolls the page up to keep a field above the keyboard and can leave it there
+  // once the keyboard closes, though this layout never scrolls, cutting off its top and leaving
+  // a gap at the bottom. focus moving to another field keeps the keyboard up, so that is left be
+  useEffect(() => {
+    const onFocusOut = () => {
+      setTimeout(() => {
+        const active = document.activeElement;
+        const isTyping =
+          active instanceof HTMLInputElement ||
+          active instanceof HTMLTextAreaElement ||
+          (active instanceof HTMLElement && active.isContentEditable);
+
+        if (!isTyping && window.scrollY !== 0) {
+          window.scrollTo(0, 0);
+        }
+      }, 100);
+    };
+
+    document.addEventListener('focusout', onFocusOut);
+
+    return () => {
+      document.removeEventListener('focusout', onFocusOut);
+    };
+  }, []);
+
   useEffect(() => {
     if (publicSettings?.directMessagesEnabled === false && dmsOpen) {
       setDmsOpen(false);

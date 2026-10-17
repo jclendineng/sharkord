@@ -272,6 +272,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   - Leaving a call opens the channel list instead of the welcome screen.
   - Coming back to the page after it was in the background no longer flashes the connection lost dialog; it shows only if the first try to reconnect fails.
   - Notifications drop in from the top instead of covering the message box or a call's controls.
+  - Closing the keyboard in Safari on an iPhone puts the page back in place, instead of leaving it shifted up with its top cut off and a gap at the bottom.
 - A notification's close button shows its X; it was drawn dark on the dark notification.
 - Only a message's author can edit it. Manage messages let anyone holding it change other people's messages; it still lets them delete one.
 - Dependencies with published security fixes are upgraded, among them the HTML sanitizer, the websocket server, the image size reader, the message editor and the database layer.
