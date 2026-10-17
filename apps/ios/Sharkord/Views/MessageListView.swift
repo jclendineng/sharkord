@@ -151,6 +151,8 @@ struct MessageListView<Header: View>: View {
         // a long press opens the menu with the finger still down, and lifting it would otherwise
         // also count as a tap on the file or image under it
         .environment(\.isShowingMessageActions, actionsMessage != nil)
+        .environment(\.showMessageActions, showActionsFromRow)
+        .environment(\.reactToMessage, react)
         // the same for a link in the message, which opens on the finger lifting
         .environment(\.openURL, OpenURLAction(handler: openUnlessShowingActions))
         // handed over by hand: on a mac a sheet's background is worked out before it inherits
@@ -215,6 +217,14 @@ struct MessageListView<Header: View>: View {
     private func showActions(for message: Message) {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         actionsMessage = message
+    }
+
+    private func showActionsFromRow(_ message: Message, at click: SecondaryClick?) {
+        if let click {
+            showActions(for: message, at: click)
+        } else {
+            showActions(for: message)
+        }
     }
 
     private func showActions(for message: Message, at click: SecondaryClick) {

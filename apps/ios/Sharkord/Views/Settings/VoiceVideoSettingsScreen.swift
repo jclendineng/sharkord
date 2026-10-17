@@ -13,6 +13,8 @@ struct VoiceVideoSettingsScreen: View {
     @State private var inputs: [AVAudioSessionPortDescription] = []
     // whether the input device lets its gain be set, most built in and usb mics on a mac do not
     @State private var canSetInputGain = false
+    // the mic mode picked in control center, which the system changes without telling the app
+    @State private var micMode = AVCaptureDevice.activeMicrophoneMode
 
     private let isOnMac = ProcessInfo.processInfo.isiOSAppOnMac
 
@@ -29,6 +31,14 @@ struct VoiceVideoSettingsScreen: View {
         }
 
         return note
+    }
+
+    private var micFooter: String {
+        if isInCall {
+            return "Leave the voice channel to test your mic."
+        }
+
+        return "Talk and watch the meter move. Use headphones to hear yourself without feedback."
     }
 
     var body: some View {
@@ -56,30 +66,19 @@ struct VoiceVideoSettingsScreen: View {
                         OutputDevicePicker()
                             .frame(width: 36, height: 36)
                     }
+
                     if canSetInputGain {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Input Volume")
-                                .foregroundStyle(Theme.header)
-
-                            HStack(spacing: 12) {
-                                Image(systemName: "mic.slash.fill")
-                                    .foregroundStyle(Theme.muted)
-
-                                Slider(value: $settings.inputGain, in: 0...1)
-
-                                Image(systemName: "mic.fill")
-                                    .foregroundStyle(Theme.muted)
-                            }
-                        }
-                        .padding(.vertical, 4)
+                        VolumeSlider(title: "Input Volume", value: $settings.inputGain, range: 0...1, lowIcon: "mic.slash.fill", highIcon: "mic.fill")
                     }
                 } header: {
-                    Text("Devices")
+                    SectionTitle("Devices")
                 } footer: {
                     Text("Automatic uses a headset's mic whenever one is plugged in.")
                 }
+            }
 
-                Section {
+            Section {
+                if isOnMac {
                     Picker("Input Mode", selection: $settings.pushToTalk) {
                         Text("Voice Activity").tag(false)
                         Text("Push to Talk").tag(true)
@@ -92,94 +91,104 @@ struct VoiceVideoSettingsScreen: View {
                             }
                         }
                     }
-                } footer: {
-                    Text(settings.pushToTalk
-                        ? "In a call your mic stays closed until you hold the key, while Sharkord is the app in front."
-                        : "Your mic is open in a call whenever it is not muted.")
                 }
-            }
 
-            Section {
                 VStack(alignment: .leading, spacing: 12) {
+                    Text("Mic Test")
+                        .foregroundStyle(Theme.header)
+
                     MicLevelMeter(level: tester.level)
 
-                    Toggle("Hear yourself", isOn: $hearYourself)
-                        .disabled(tester.isRunning)
+                    HStack {
+                        Button(tester.isRunning ? "Stop Testing" : "Let's Check", action: toggleMicTest)
+                            .font(.subheadline.weight(.semibold))
+                            .buttonStyle(.borderedProminent)
+                            .buttonBorderShape(.capsule)
+                            .tint(tester.isRunning ? Theme.red : Theme.blurple)
+                            .disabled(isInCall)
 
-                    Button(tester.isRunning ? "Stop Testing" : "Let's Check", action: toggleMicTest)
-                        .buttonStyle(.borderedProminent)
-                        .disabled(isInCall)
+                        Spacer()
+
+                        Toggle("Hear Yourself", isOn: $hearYourself)
+                            .font(.subheadline)
+                            .fixedSize()
+                            .disabled(tester.isRunning)
+                    }
                 }
-                .padding(.vertical, 4)
+                .padding(.vertical, 6)
 
                 if let errorMessage = tester.errorMessage {
                     Text(errorMessage)
                         .foregroundStyle(Theme.red)
                 }
             } header: {
-                Text("Mic Test")
+                SectionTitle("Input")
             } footer: {
-                Text(isInCall
-                    ? "Leave the voice channel to test your mic."
-                    : "Talk and watch the meter move. Use headphones to hear yourself without feedback.")
+                Text(micFooter)
             }
 
             Section {
-                Toggle("Echo Cancellation", isOn: $settings.echoCancellation)
-                Toggle("Noise Suppression", isOn: $settings.noiseSuppression)
-                Toggle("Automatic Gain Control", isOn: $settings.autoGainControl)
-            } header: {
-                Text("Input Processing")
-            } footer: {
-                Text("Applies the next time you join a voice channel.")
-            }
-
-            Section("Output") {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Volume")
-                        .foregroundStyle(Theme.header)
-
-                    HStack(spacing: 12) {
-                        Image(systemName: "speaker.slash.fill")
-                            .foregroundStyle(Theme.muted)
-
-                        Slider(value: $settings.outputVolume, in: 0...2)
-
-                        Image(systemName: "speaker.wave.3.fill")
-                            .foregroundStyle(Theme.muted)
-                    }
-                }
-                .padding(.vertical, 4)
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Soundboard Volume")
-                        .foregroundStyle(Theme.header)
-
-                    HStack(spacing: 12) {
-                        Image(systemName: "speaker.slash.fill")
-                            .foregroundStyle(Theme.muted)
-
-                        Slider(value: $settings.soundboardVolume, in: 0...1)
-
-                        Image(systemName: "speaker.wave.3.fill")
-                            .foregroundStyle(Theme.muted)
-                    }
-                }
-                .padding(.vertical, 4)
+                VolumeSlider(title: "Volume", value: $settings.outputVolume, range: 0...2)
 
                 // a phone's choice between its earpiece and speaker, a mac has neither
                 if !isOnMac {
-                    Toggle("Use Speaker by Default", isOn: $settings.speakerByDefault)
+                    DetailToggle(
+                        title: "Use Speaker by Default",
+                        subtitle: "Calls start on the loudspeaker instead of the earpiece.",
+                        isOn: $settings.speakerByDefault
+                    )
                 }
+            } header: {
+                SectionTitle("Output")
             }
 
             Section {
-                Toggle("Hear Yourself in Calls", isOn: $settings.hearYourselfInCalls)
-                    .onChange(of: settings.hearYourselfInCalls) { _, hears in
-                        servers.voiceSession?.setHearsYourself(hears)
-                    }
+                VolumeSlider(title: "Soundboard Volume", value: $settings.soundboardVolume, range: 0...1)
+            } header: {
+                SectionTitle("Soundboard")
             } footer: {
-                Text(hearYourselfFooter)
+                Text("Controls how loud sounds are for you personally.")
+            }
+
+            Section {
+                RadioRow(title: "Standard", isSelected: settings.noiseSuppression) {
+                    settings.noiseSuppression = true
+                }
+
+                RadioRow(title: "None", isSelected: !settings.noiseSuppression) {
+                    settings.noiseSuppression = false
+                }
+            } header: {
+                SectionTitle("Noise Suppression")
+            } footer: {
+                VoiceIsolationHint(isOn: micMode == .voiceIsolation, isInCall: isInCall)
+            }
+
+            Section {
+                DetailToggle(
+                    title: "Echo Cancellation",
+                    subtitle: "Stops others hearing themselves through your speaker.",
+                    isOn: $settings.echoCancellation
+                )
+
+                DetailToggle(
+                    title: "Automatic Gain Control",
+                    subtitle: "Automatically adjusts your mic volume to keep it clear and consistent.",
+                    isOn: $settings.autoGainControl
+                )
+
+                DetailToggle(
+                    title: "Hear Yourself in Calls",
+                    subtitle: hearYourselfFooter,
+                    isOn: $settings.hearYourselfInCalls
+                )
+                .onChange(of: settings.hearYourselfInCalls) { _, hears in
+                    servers.voiceSession?.setHearsYourself(hears)
+                }
+            } header: {
+                SectionTitle("Voice Processing")
+            } footer: {
+                Text("Noise suppression, echo cancellation and gain control apply the next time you join a voice channel.")
             }
 
             Section {
@@ -188,19 +197,13 @@ struct VoiceVideoSettingsScreen: View {
                     Text("High (1080p)").tag(AppSettings.StreamQuality.high)
                 }
 
-                Toggle(isOn: $settings.shareAppAudio) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Share App Audio")
-
-                        Text("Beta")
-                            .font(.caption)
-                            .foregroundStyle(Theme.muted)
-                    }
-                }
+                DetailToggle(
+                    title: "Share App Audio",
+                    subtitle: "Beta. Sends the sound of what you share, like a game, mixed into your voice. Takes effect the next time you join.",
+                    isOn: $settings.shareAppAudio
+                )
             } header: {
-                Text("Screen Share")
-            } footer: {
-                Text("App audio sends the sound of what you share, like a game, mixed into your voice. It takes effect the next time you join a voice channel.")
+                SectionTitle("Screen Share")
             }
 
             Section {
@@ -210,13 +213,13 @@ struct VoiceVideoSettingsScreen: View {
                         .clipShape(.rect(cornerRadius: 12))
                         .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
 
-                    Button("Flip Camera", systemImage: "arrow.triangle.2.circlepath.camera", action: flipCamera)
+                    Button("Flip Camera", action: flipCamera)
                 }
 
                 Button(isCameraPreviewOn ? "Stop Video Preview" : "Test Video", action: toggleCameraPreview)
                     .disabled(isInCall)
             } header: {
-                Text("Video")
+                SectionTitle("Video")
             } footer: {
                 if isInCall {
                     Text("Leave the voice channel to preview your camera.")
@@ -246,6 +249,13 @@ struct VoiceVideoSettingsScreen: View {
         }
         .task {
             loadInputs()
+        }
+        .task {
+            while !Task.isCancelled {
+                micMode = AVCaptureDevice.activeMicrophoneMode
+
+                try? await Task.sleep(for: .seconds(1))
+            }
         }
         .onDisappear {
             tester.stop()
@@ -294,6 +304,145 @@ struct VoiceVideoSettingsScreen: View {
 
     private func flipCamera() {
         cameraPosition = cameraPosition == .front ? .back : .front
+    }
+}
+
+// discord's section titles: sentence case and a size up, not the system's small capitals
+private struct SectionTitle: View {
+    let title: String
+
+    init(_ title: String) {
+        self.title = title
+    }
+
+    var body: some View {
+        Text(title)
+            .font(.body)
+            .foregroundStyle(Theme.muted)
+            .textCase(nil)
+            .padding(.leading, -4)
+    }
+}
+
+// discord's note under its noise suppression: apple's voice isolation beats any of these, so it
+// says whether it is on and opens the panel that turns it on. the panel only has the modes while
+// the mic is in use, so outside a call it says where to find it instead
+private struct VoiceIsolationHint: View {
+    let isOn: Bool
+    let isInCall: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if isOn {
+                Label("Voice Isolation is on. Apple's own suppression already cleans your mic, so Standard adds little.", systemImage: "checkmark.circle.fill")
+                    .labelStyle(HintLabelStyle(tint: Theme.green))
+            } else {
+                Label("For the strongest noise suppression, turn on Voice Isolation. It is Apple's own and runs on the phone.", systemImage: "waveform.badge.mic")
+                    .labelStyle(HintLabelStyle(tint: Theme.blurple))
+
+                if isInCall {
+                    Button("Open Mic Mode", action: openMicModes)
+                        .font(.footnote.weight(.semibold))
+                        .buttonStyle(.bordered)
+                        .buttonBorderShape(.capsule)
+                        .tint(Theme.blurple)
+                } else {
+                    Text("Join a voice channel, then pick it under Mic Mode in the call's settings or Control Center.")
+                }
+            }
+        }
+        .padding(.top, 4)
+    }
+
+    private func openMicModes() {
+        AVCaptureDevice.showSystemUserInterface(.microphoneModes)
+    }
+}
+
+private struct HintLabelStyle: LabelStyle {
+    let tint: Color
+
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            configuration.icon
+                .foregroundStyle(tint)
+
+            configuration.title
+        }
+    }
+}
+
+// a switch with a line under its title saying what it does
+private struct DetailToggle: View {
+    let title: String
+    let subtitle: String
+    @Binding var isOn: Bool
+
+    var body: some View {
+        Toggle(isOn: $isOn) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .foregroundStyle(Theme.header)
+
+                Text(subtitle)
+                    .font(.footnote)
+                    .foregroundStyle(Theme.muted)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+// a title over a slider with a speaker at each end, as discord's volumes are
+private struct VolumeSlider: View {
+    let title: String
+    @Binding var value: Double
+    let range: ClosedRange<Double>
+    var lowIcon = "speaker.slash.fill"
+    var highIcon = "speaker.wave.3.fill"
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .foregroundStyle(Theme.header)
+
+            HStack(spacing: 14) {
+                Image(systemName: lowIcon)
+                    .foregroundStyle(Theme.muted)
+
+                Slider(value: $value, in: range)
+
+                Image(systemName: highIcon)
+                    .foregroundStyle(Theme.muted)
+            }
+        }
+        .padding(.vertical, 6)
+    }
+}
+
+// one of a few choices, the picked one filled, as discord lists its noise suppression
+private struct RadioRow: View {
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack {
+                Text(title)
+                    .foregroundStyle(Theme.header)
+
+                Spacer()
+
+                Image(systemName: isSelected ? "largecircle.fill.circle" : "circle")
+                    .font(.title3)
+                    .foregroundStyle(isSelected ? Theme.blurple : Theme.muted)
+            }
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .padding(.vertical, 4)
+        .sensoryFeedback(.selection, trigger: isSelected)
     }
 }
 

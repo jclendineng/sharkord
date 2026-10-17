@@ -41,7 +41,7 @@ struct ThreadScreen: View {
     private var thread: some View {
         MessageListView(store: store) {
             VStack(alignment: .leading, spacing: 0) {
-                MessageRow(message: parent, showsHeader: true, showsThreadLink: false, onLongPress: {}, onDoubleTap: {})
+                ThreadStarterRow(parent: parent)
 
                 Theme.divider
                     .frame(height: 1)
@@ -99,4 +99,43 @@ private struct ThreadPanelHeader: View {
 extension EnvironmentValues {
     // the mac's chat shows a thread in a panel beside it rather than as a page over it
     @Entry var openThreadPanel: (@MainActor (Message) -> Void)?
+}
+
+// the message the thread hangs off, with the same menu as any other: edit, reply, react, pin.
+// read from its channel, so an edit made here shows here, not the copy the thread was opened with
+private struct ThreadStarterRow: View {
+    let parent: Message
+
+    @Environment(SessionStore.self) private var session
+    @Environment(\.showMessageActions) private var showMessageActions
+    @Environment(\.reactToMessage) private var reactToMessage
+
+    private var message: Message {
+        let channel = session.messages(for: parent.channelId)
+
+        return channel.messages.first { $0.id == parent.id } ?? parent
+    }
+
+    var body: some View {
+        MessageRow(
+            message: message,
+            showsHeader: true,
+            showsThreadLink: false,
+            onLongPress: showActions,
+            onDoubleTap: react,
+            onSecondaryClick: showActionsAtPointer
+        )
+    }
+
+    private func showActions() {
+        showMessageActions?(message, nil)
+    }
+
+    private func react() {
+        reactToMessage?(message)
+    }
+
+    private func showActionsAtPointer(_ click: SecondaryClick) {
+        showMessageActions?(message, click)
+    }
 }

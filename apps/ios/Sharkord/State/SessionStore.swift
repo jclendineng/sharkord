@@ -102,9 +102,18 @@ final class SessionStore {
     private(set) var micMuted = false
     private(set) var soundMuted = false
     private(set) var cameraEnabled = false
+    // the call is on its way out behind a closing sheet, nothing should come up for it meanwhile
+    private(set) var isLeavingVoice = false
     private(set) var isSharingScreen = false
     // webcams and screen shares in the current voice channel, the own camera under the own id
     private(set) var videoTracks: [VoiceStreamKey: VideoTrackBox] = [:]
+    // how the call's connection is doing, read every two seconds while in one
+    private(set) var connectionQuality: ConnectionQuality?
+    @ObservationIgnored private var lastNetworkStats: VoiceConnection.NetworkStats?
+    // how tall each stream is drawn right now, in pixels, by the tiles showing it
+    @ObservationIgnored private var videoTileHeights: [VoiceStreamKey: [UUID: CGFloat]] = [:]
+    // the quality last asked of the server for each stream
+    @ObservationIgnored private var requestedLayers: [VoiceStreamKey: Int] = [:]
 
     private var handshakeHash: String?
     private var messageStores: [Int: ChannelMessagesStore] = [:]
@@ -1026,6 +1035,7 @@ final class SessionStore {
                 },
                 onVideo: { [weak self] key, track in
                     self?.videoTracks[key] = track
+                    self?.videoTrackChanged(key)
                 }
             )
 
@@ -1042,7 +1052,8 @@ final class SessionStore {
                 // push to talk opens the mic only while its key is held
                 micMuted: micMuted || AppSettings.shared.pushToTalk,
                 soundMuted: soundMuted,
-                canSpeak: canSpeak
+                canSpeak: canSpeak,
+                simulcast: self.settings?.webRtcSimulcastEnabled == true
             )
 
             subscribeToProducers(client)
@@ -1057,6 +1068,15 @@ final class SessionStore {
             showError(error)
             await leaveVoice()
         }
+    }
+
+    // the call's sheet slides off first and the call is left once it has: leaving at the tap
+    // emptied the tiles and dropped the video while the sheet was still on its way down
+    func leaveVoiceAfterClosing() async {
+        isLeavingVoice = true
+
+        try? await Task.sleep(for: .milliseconds(400))
+        await leaveVoice()
     }
 
     func leaveVoice() async {
@@ -1183,6 +1203,14 @@ final class SessionStore {
 
     func flipCamera() {
         voice?.flipCamera()
+    }
+
+    func cameraEffects() async -> VoiceConnection.CameraEffects? {
+        await voice?.cameraEffects()
+    }
+
+    func performCameraReaction(_ reaction: AVCaptureReactionType) {
+        voice?.performReaction(reaction)
     }
 
     // push to talk's key held or let go. a mic muted by hand stays muted, and only this device's
@@ -1785,6 +1813,8 @@ final class SessionStore {
     }
 
     private func stopVoice() {
+        isLeavingVoice = false
+
         if let screenCapture {
             Task {
                 await screenCapture.stop()
@@ -1810,6 +1840,81 @@ final class SessionStore {
         currentVoiceChannelId = nil
         cameraEnabled = false
         videoTracks = [:]
+        videoTileHeights = [:]
+        requestedLayers = [:]
+        connectionQuality = nil
+        lastNetworkStats = nil
+    }
+
+    // a tile drawing a stream, or nil when it has gone. with simulcast on, the server is asked
+    // for the quality the biggest tile needs, so a thumbnail does not pull a full camera
+    func setVideoTileHeight(_ pixels: CGFloat?, tile: UUID, for key: VoiceStreamKey) {
+        guard key.remoteId != ownUserId else {
+            return
+        }
+
+        videoTileHeights[key, default: [:]][tile] = pixels
+
+        let tallest = videoTileHeights[key, default: [:]].values.max()
+
+        updateLayer(Self.layer(forPixelHeight: tallest, kind: key.kind), for: key)
+    }
+
+    // a new consumer starts at the server's own choice, so the tiles' size is asked for again
+    private func videoTrackChanged(_ key: VoiceStreamKey) {
+        requestedLayers[key] = nil
+
+        if let tallest = videoTileHeights[key]?.values.max() {
+            updateLayer(Self.layer(forPixelHeight: tallest, kind: key.kind), for: key)
+        }
+    }
+
+    // a quarter of a 1080p camera is 270 lines and a half is 540. a screen share always wants its
+    // sharpest while it shows, text gets unreadable sooner than a face does
+    private static func layer(forPixelHeight pixels: CGFloat?, kind: VoiceStreamKey.Kind) -> Int {
+        guard let pixels else {
+            return 0
+        }
+
+        if kind == .screen || pixels > 540 {
+            return 2
+        }
+
+        return pixels > 270 ? 1 : 0
+    }
+
+    private func updateLayer(_ layer: Int, for key: VoiceStreamKey) {
+        guard settings?.webRtcSimulcastEnabled == true, requestedLayers[key] != layer, let client else {
+            return
+        }
+
+        requestedLayers[key] = layer
+
+        struct QualityInput: Encodable {
+            struct Quality: Encodable {
+                let mode: String
+                let spatialLayer: Int?
+            }
+
+            let remoteId: Int
+            let kind: String
+            let quality: Quality
+        }
+
+        // the top one as auto, which a sender with fewer layers than three still has
+        let quality = layer == 2
+            ? QualityInput.Quality(mode: "auto", spatialLayer: nil)
+            : QualityInput.Quality(mode: "layer", spatialLayer: layer)
+        let input = QualityInput(remoteId: key.remoteId, kind: key.kind.rawValue, quality: quality)
+
+        Task {
+            do {
+                try await client.mutation("voice.setConsumerQuality", input: input)
+            } catch {
+                // a sender of one layer has none to pick, nothing to tell anyone about
+                print("[voice] could not set the quality of \(key): \(error)")
+            }
+        }
     }
 
     // four times a second, as discord's ring reacts. speech sits well above a room's quiet, and
@@ -1817,6 +1922,8 @@ final class SessionStore {
     private func watchSpeaking() {
         speakingTask?.cancel()
         speakingTask = Task { [weak self] in
+            var tick = 0
+
             while !Task.isCancelled {
                 do {
                     try await Task.sleep(for: .milliseconds(250))
@@ -1831,8 +1938,30 @@ final class SessionStore {
                 let levels = await voice.audioLevels()
 
                 self?.updateSpeaking(own: levels.own, remote: levels.remote)
+
+                tick += 1
+
+                if tick % 8 == 0 {
+                    let stats = await voice.networkStats()
+
+                    self?.updateConnectionQuality(stats)
+                }
             }
         }
+    }
+
+    // the losses since the last reading, so a bad minute long ago does not keep the badge red
+    private func updateConnectionQuality(_ stats: VoiceConnection.NetworkStats) {
+        let previous = lastNetworkStats
+        let lost = stats.packetsLost - (previous?.packetsLost ?? 0)
+        let received = stats.packetsReceived - (previous?.packetsReceived ?? 0)
+        let total = lost + received
+
+        lastNetworkStats = stats
+        connectionQuality = ConnectionQuality(
+            ping: stats.roundTrip.map { Int(($0 * 1000).rounded()) },
+            loss: total > 0 ? Double(max(lost, 0)) / Double(total) : 0
+        )
     }
 
     private func updateSpeaking(own: Double?, remote: [Int: Double]) {

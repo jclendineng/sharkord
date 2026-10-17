@@ -71,6 +71,8 @@ struct PublicSettings: Decodable {
     let soundSearchEnabled: Bool?
     // the rules message members react to for access, missing from an older server
     let onboardingMessageId: Int?
+    // whether cameras send several qualities for viewers to pick from, missing from an older server
+    let webRtcSimulcastEnabled: Bool?
 }
 
 struct Role: Decodable, Hashable, Identifiable {

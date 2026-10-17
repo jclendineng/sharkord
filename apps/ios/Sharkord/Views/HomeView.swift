@@ -1,3 +1,4 @@
+import GameController
 import SwiftUI
 
 // discord's layout: the server rail on the left, the picked server's channels or the direct
@@ -14,6 +15,7 @@ struct HomeView: View {
     // the ipad's: the list and the chat side by side as two cards, in either orientation. a
     // phone, or a narrow ipad window, pushes the chat over the list
     @State private var isSplit = false
+    @State private var hasHardwareKeyboard = GCKeyboard.coalesced != nil
     @State private var bottomSafeArea: CGFloat = 0
     @State private var width: CGFloat = 0
     // the chat opens beside the list, and its handle slides it over the list to the full width
@@ -44,6 +46,11 @@ struct HomeView: View {
     private static let cardRadius: CGFloat = 22
     private static let cardGap: CGFloat = 8
 
+    // an ipad's alone: a phone in landscape can be wide enough to split, and keeps its own
+    private var usesDesktopLayout: Bool {
+        ProcessInfo.processInfo.isiOSAppOnMac || (isSplit && UIDevice.current.userInterfaceIdiom == .pad)
+    }
+
     private static func isSplit(_ size: CGSize) -> Bool {
         #if DEBUG
         if DebugLaunch.forcesSplit {
@@ -63,6 +70,14 @@ struct HomeView: View {
                 stackedLayout
             }
         }
+        .environment(\.usesDesktopLayout, usesDesktopLayout)
+        .environment(\.usesDesktopSearch, ProcessInfo.processInfo.isiOSAppOnMac || (usesDesktopLayout && (isPortrait || hasHardwareKeyboard)))
+        .onReceive(NotificationCenter.default.publisher(for: .GCKeyboardDidConnect)) { _ in
+            hasHardwareKeyboard = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .GCKeyboardDidDisconnect)) { _ in
+            hasHardwareKeyboard = GCKeyboard.coalesced != nil
+        }
         .onGeometryChange(for: Bool.self, of: { Self.isSplit($0.size) }, action: setSplit)
         .onGeometryChange(for: Bool.self, of: { $0.size.height > $0.size.width }) { portrait in
             isPortrait = portrait
@@ -78,7 +93,7 @@ struct HomeView: View {
         // a lowered call on a phone or an ipad, discord's floating tile. a mac keeps the bar
         // above the user bar, as discord's desktop app has
         .overlay {
-            if !ProcessInfo.processInfo.isiOSAppOnMac, let voiceSession = servers.voiceSession {
+            if !ProcessInfo.processInfo.isiOSAppOnMac, let voiceSession = servers.voiceSession, !voiceSession.isLeavingVoice {
                 FloatingCallTile()
                     .environment(voiceSession)
                     .transition(.scale(scale: 0.6).combined(with: .opacity))
@@ -234,6 +249,8 @@ struct HomeView: View {
                                 .frame(width: 22)
                                 .contentShape(.rect)
                                 .gesture(edgeSwipeBack)
+                                // clear of the back button in the top bar, as search's strip is
+                                .padding(.top, 64)
                         }
                     }
                     .environment(\.showChannelList, isChatExpanded ? collapseChat : nil)
@@ -272,11 +289,13 @@ struct HomeView: View {
             .environment(session)
             .background(Theme.deepBackground.ignoresSafeArea())
             .offset(x: searchSwipe)
+            // below the top bar: over it, the strip took a tap on the back button's left half
             .overlay(alignment: .leading) {
                 Color.clear
                     .frame(width: 24)
                     .contentShape(.rect)
                     .gesture(searchEdgeSwipe)
+                    .padding(.top, 64)
             }
             // see through, so a swipe back shows the screen behind as the search slides off
             .presentationBackground(.clear)
@@ -422,18 +441,15 @@ struct HomeView: View {
             .id(ObjectIdentifier(session))
     }
 
-    // an ipad's home indicator lifts the bars clear of the card's bottom edge. a mac window or a
-    // home button ipad has no inset, so the bars are lifted by hand to sit the same way
+    // the bars end 28 points above the window's bottom, level with the message box and its plus
+    // beside them, whatever of that the home indicator's inset already gives. the ipad's inset
+    // once covered all of a smaller lift, and the bar hung below the box
     private var barLift: CGFloat {
         guard isSplit else {
             return 0
         }
 
-        // on a mac a little more, so the bar sits level with the message box and its plus beside
-        // it rather than hanging below them
-        let macLift: CGFloat = ProcessInfo.processInfo.isiOSAppOnMac ? 8 : 0
-
-        return max(Self.cardGap + 12 - bottomSafeArea, 0) + macLift
+        return max(Self.cardGap + 20 - bottomSafeArea, 0)
     }
 
     private var bottomBars: some View {

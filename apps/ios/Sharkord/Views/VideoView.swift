@@ -45,3 +45,31 @@ struct VideoView: UIViewRepresentable {
         var track: RTCVideoTrack?
     }
 }
+
+extension View {
+    // tells the session how big a stream is drawn, so it can ask for no more than that
+    func reportsVideoSize(of key: VoiceStreamKey) -> some View {
+        modifier(VideoSizeReporter(key: key))
+    }
+}
+
+private struct VideoSizeReporter: ViewModifier {
+    let key: VoiceStreamKey
+
+    @Environment(SessionStore.self) private var session
+    @Environment(\.displayScale) private var displayScale
+
+    @State private var tile = UUID()
+
+    func body(content: Content) -> some View {
+        content
+            .onGeometryChange(for: CGFloat.self, of: { $0.size.height }) { height in
+                session.setVideoTileHeight(height * displayScale, tile: tile, for: key)
+            }
+            .onDisappear(perform: forget)
+    }
+
+    private func forget() {
+        session.setVideoTileHeight(nil, tile: tile, for: key)
+    }
+}

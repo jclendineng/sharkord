@@ -203,6 +203,26 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - Mute Stream Audio in Devices settings: screen shares with sound start muted
   ([#749](https://github.com/Sharkord/sharkord/issues/749)).
 
+- Better calls in the apps. The camera sends 1080p. On a server with simulcast on, it sends a
+  low, a medium and a full quality copy, and each viewer gets the one their tile needs, so a
+  thumbnail no longer pulls a full camera. Video keeps playing in picture in picture when you
+  leave the app. A signal badge on the call shows the ping and packet loss. Mic Mode (Voice
+  Isolation, Wide Spectrum) opens from the call sheet. A Video Effects sheet plays reactions on
+  your camera, switches Center Stage and shows whether Portrait and Studio Light are on, and hand
+  gestures play reactions too. In a dim room the camera slows to 24 frames a second to gather
+  light. A gear on the call opens the call's settings, which have quick tiles for Deafen, Output
+  and incoming video. Long pressing someone in a voice channel opens their menu, with Move To for
+  anyone who can move members. The Voice & Video settings page has a new layout, with a hint to
+  turn on Voice Isolation when it is off. Tapping someone in a call brings their video to the
+  front, with everyone else in a strip under it.
+- On an iPad showing the channels beside the chat, search drops down under its box (full screen
+  in landscape without a hardware keyboard), threads open in a panel beside the chat when it is
+  wide enough, and settings fill the screen. Pins open as a panel from the top bar.
+- Messages light up under the finger while pressed. A thread's first message has the same menu
+  and double tap reaction as any other, so it can be edited from the thread.
+- Fixed in the apps: the iPad's user bar sits level with the message box, the back button of the
+  iPad's search takes the first tap, and the reply links no longer dim while a message's menu is
+  open.
 - In the apps, a long press on a channel adds Copy Link (text channels), Hide Names (voice
   channels, shows only who is in it as faces), and for managers Edit Channel and Duplicate
   Channel. A long press on a category opens its own menu: Mark As Read, Mute Category,

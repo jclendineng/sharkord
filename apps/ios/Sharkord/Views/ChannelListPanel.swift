@@ -277,6 +277,8 @@ private struct CategoryHeader: View {
         }
 
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        // the menu takes over from the press, the header lets go as it rises
+        isPressed = false
         isActionsPresented = true
     }
 
@@ -289,10 +291,12 @@ private struct CategoryHeader: View {
         isActionsPresented = true
     }
 
-    // pressed, under the pointer, or showing its menu, lit up as a channel row is
+    // pressed or under the pointer, as a channel row is, and on a mac while its menu is beside it
     private var isHighlighted: Bool {
-        isPressed || isHovered || isActionsPresented
+        isPressed || isHovered || (isOnMac && isActionsPresented)
     }
+
+    private let isOnMac = ProcessInfo.processInfo.isiOSAppOnMac
 
     private var label: some View {
         HStack(spacing: 4) {
@@ -310,6 +314,7 @@ private struct CategoryHeader: View {
         .padding(.vertical, 4)
         .padding(.horizontal, 4)
         .background(isHighlighted ? Theme.panelSelected : .clear, in: .rect(cornerRadius: 6))
+        .animation(isHighlighted ? nil : .easeOut(duration: 0.15), value: isHighlighted)
         // the gap above stays out of the highlight, and out of reach of a press
         .padding(.top, 14)
         .contentShape(.rect)
@@ -372,6 +377,8 @@ private struct ChannelRow: View {
         // tap, where a button still fires when the finger lifts after one
         label
             .background(isHighlighted ? Theme.panelSelected : .clear, in: .rect(cornerRadius: 6))
+            // on at once under the finger, a quick fade as it lets go
+            .animation(isHighlighted ? nil : .easeOut(duration: 0.15), value: isHighlighted)
             .onHover(perform: setHovered)
             .onTapGesture(perform: open)
             .onLongPressGesture(minimumDuration: 0.3, perform: showActions, onPressingChanged: setPressed)
@@ -425,10 +432,13 @@ private struct ChannelRow: View {
         }
     }
 
-    // pressed, under the pointer, or showing its menu, as discord lights a channel up
+    // pressed or under the pointer, as discord lights a channel up, and on a mac while its menu
+    // is beside it. a phone's menu covers the list, so the row lets go the moment it rises
     private var isHighlighted: Bool {
-        isPressed || (!isSelected && (isHovered || isActionsSheetPresented))
+        isPressed || (!isSelected && (isHovered || (isOnMac && isActionsSheetPresented)))
     }
+
+    private let isOnMac = ProcessInfo.processInfo.isiOSAppOnMac
 
     private func setPressed(_ pressed: Bool) {
         isPressed = pressed
@@ -481,6 +491,7 @@ private struct ChannelRow: View {
 
     private func showActions() {
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        isPressed = false
         isActionsSheetPresented = true
     }
 
@@ -566,72 +577,168 @@ private struct VoiceParticipants: View {
 
     private var rows: some View {
         ForEach(session.voiceParticipants(in: channelId), id: \.user?.id) { participant in
-            HStack(spacing: 8) {
-                AvatarView(user: participant.user, size: 22)
-                    .overlay {
-                        if participant.user.map({ session.speakingUserIds.contains($0.id) }) == true {
-                            Circle()
-                                .strokeBorder(Theme.green, lineWidth: 2)
-                                .padding(-2)
-                        }
-                    }
-
-                Text(participant.user?.name ?? "Unknown")
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.muted)
-                    .lineLimit(1)
-
-                Spacer()
-
-                if participant.state.micMuted {
-                    Image(systemName: "mic.slash.fill")
-                }
-
-                if participant.state.soundMuted {
-                    Image(systemName: "speaker.slash.fill")
-                }
-            }
-            .font(.caption)
-            .foregroundStyle(Theme.muted)
-            .padding(.leading, 40)
-            .padding(.trailing, 8)
-            .padding(.vertical, 3)
-            .contentShape(.rect)
-            .contextMenu {
-                if let user = participant.user, session.can(.moveMembers) {
-                    MoveToVoiceMenu(user: user, fromChannelId: channelId)
-                }
-            }
+            VoiceParticipantRow(user: participant.user, state: participant.state, channelId: channelId)
         }
     }
 }
 
-// the web's drag of a member to another voice channel, for anyone who can move members
-struct MoveToVoiceMenu: View {
-    let user: PublicUser
-    let fromChannelId: Int
+// someone in a voice channel under it in the list: a tap opens their profile, a long press or a
+// right click their menu, with moving them for anyone who can. tall enough to hit apart from the
+// channel below, and lit while pressed as a channel row is
+private struct VoiceParticipantRow: View {
+    let user: PublicUser?
+    let state: VoiceUserState
+    let channelId: Int
 
     @Environment(SessionStore.self) private var session
+    @Environment(ServerListStore.self) private var servers
 
-    private var targets: [Channel] {
-        session.channelSections
-            .flatMap(\.channels)
-            .filter { $0.type == .voice && $0.id != fromChannelId }
+    @State private var isMenuPresented = false
+    @State private var isProfilePresented = false
+    @State private var wantsProfile = false
+    @State private var menuAnchor = UnitPoint.center
+    @State private var isPressed = false
+    @State private var isHovered = false
+
+    private let isOnMac = ProcessInfo.processInfo.isiOSAppOnMac
+
+    private var isHighlighted: Bool {
+        isPressed || isHovered || (isOnMac && isMenuPresented)
+    }
+
+    private var isSpeaking: Bool {
+        user.map { session.speakingUserIds.contains($0.id) } ?? false
     }
 
     var body: some View {
-        Menu("Move To", systemImage: "arrow.right.arrow.left") {
-            ForEach(targets) { channel in
-                Button(channel.name, systemImage: "speaker.wave.2.fill") {
-                    move(to: channel.id)
+        label
+            .background(isHighlighted ? Theme.panelSelected : .clear, in: .rect(cornerRadius: 6))
+            .animation(isHighlighted ? nil : .easeOut(duration: 0.15), value: isHighlighted)
+            .padding(.leading, 32)
+            .onHover(perform: setHovered)
+            .onTapGesture(perform: showProfile)
+            .onLongPressGesture(minimumDuration: 0.3, perform: showMenu, onPressingChanged: setPressed)
+            .onSecondaryClick(perform: showMenuAtPointer)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction(named: "More Options", showMenu)
+            .actionsPresentation(isPresented: $isMenuPresented, anchor: menuAnchor, onDismiss: showWantedProfile) {
+                if let user {
+                    MemberActionsSheet(
+                        user: user,
+                        channelId: nil,
+                        onShowProfile: requestProfile,
+                        onMessage: openDirectMessage,
+                        voiceChannelId: channelId
+                    )
+                    .environment(session)
+                    .environment(servers)
                 }
             }
+            .sheet(isPresented: $isProfilePresented) {
+                if let user {
+                    MemberProfileSheet(user: user, onMessage: openDirectMessage)
+                        .environment(session)
+                        .environment(servers)
+                        .appSheet(addsClose: true)
+                }
+            }
+    }
+
+    private var label: some View {
+        HStack(spacing: 8) {
+            AvatarView(user: user, size: 22)
+                .overlay {
+                    if isSpeaking {
+                        Circle()
+                            .strokeBorder(Theme.green, lineWidth: 2)
+                            .padding(-2)
+                    }
+                }
+
+            Text(user?.name ?? "Unknown")
+                .font(.subheadline)
+                .foregroundStyle(isHighlighted ? Theme.header : Theme.muted)
+                .lineLimit(1)
+
+            Spacer()
+
+            if state.micMuted {
+                Image(systemName: "mic.slash.fill")
+            }
+
+            if state.soundMuted {
+                Image(systemName: "speaker.slash.fill")
+            }
+        }
+        .font(.caption)
+        .foregroundStyle(Theme.muted)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .contentShape(.rect)
+    }
+
+    private func setPressed(_ pressed: Bool) {
+        isPressed = pressed
+    }
+
+    private func setHovered(_ hovered: Bool) {
+        isHovered = hovered
+    }
+
+    private func showProfile() {
+        guard user != nil else {
+            return
+        }
+
+        isProfilePresented = true
+    }
+
+    private func showMenu() {
+        guard user != nil else {
+            return
+        }
+
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        isPressed = false
+        isMenuPresented = true
+    }
+
+    private func showMenuAtPointer(_ click: SecondaryClick) {
+        guard user != nil else {
+            return
+        }
+
+        menuAnchor = click.anchor
+        isMenuPresented = true
+    }
+
+    // the profile opens once the menu has gone, a sheet cannot rise while another is closing
+    private func requestProfile() {
+        wantsProfile = true
+        isMenuPresented = false
+    }
+
+    private func showWantedProfile() {
+        if wantsProfile {
+            wantsProfile = false
+            isProfilePresented = true
         }
     }
 
-    private func move(to channelId: Int) {
+    private func openDirectMessage() {
+        isProfilePresented = false
+        isMenuPresented = false
+
+        guard let user else {
+            return
+        }
+
         Task {
-            await session.moveToVoice(userId: user.id, channelId: channelId)
+            guard let channelId = try? await session.openDirectMessage(with: user.id) else {
+                return
+            }
+
+            servers.open(channelId: channelId, in: session)
         }
     }
 }

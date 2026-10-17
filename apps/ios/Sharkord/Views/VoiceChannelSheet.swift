@@ -169,6 +169,10 @@ struct VoiceChannelSheet: View {
                 .background(Theme.deepBackground, in: .rect(cornerRadius: 10))
 
             Spacer()
+
+            if session.currentVoiceChannelId == channel.id {
+                ConnectionBadge()
+            }
         }
         .padding(16)
     }
@@ -501,7 +505,7 @@ private struct JoinBar: View {
 
 // discord's voice and video settings under the join bar: what can be changed right here,
 // before or during the call, and the way into the rest
-private struct VoiceSheetSettings: View {
+struct VoiceSheetSettings: View {
     let onOpenSettings: () -> Void
 
     @Environment(SessionStore.self) private var session
@@ -531,33 +535,34 @@ private struct VoiceSheetSettings: View {
     var body: some View {
         @Bindable var settings = settings
 
-        VStack(alignment: .leading, spacing: 8) {
-            Text("VOICE & VIDEO SETTINGS")
-                .font(.caption.weight(.bold))
-                .foregroundStyle(Theme.muted)
-                .padding(.horizontal, 4)
+        VStack(alignment: .leading, spacing: 20) {
+            // the three a call reaches for most, lit like the call bar's buttons when on
+            HStack(spacing: 10) {
+                QuickTile(title: "Deafen", systemImage: session.soundMuted ? "headphones.slash" : "headphones", isOn: isDeafened)
 
-            VStack(spacing: 0) {
-                SettingToggle(title: "Deafen", subtitle: "Mutes everyone in the call", systemImage: "headphones", isOn: isDeafened)
+                OutputTile()
 
-                Theme.divider.frame(height: 1).padding(.leading, 52)
-
-                HStack(spacing: 14) {
-                    Image(systemName: "speaker.wave.2.fill")
-                        .frame(width: 24)
-
-                    Text("Audio Output")
-
-                    Spacer()
-
-                    AudioRoutePicker()
-                        .frame(width: 36, height: 36)
+                QuickTile(
+                    title: "No Video",
+                    systemImage: settings.incomingVideoOff ? "video.slash.fill" : "video.fill",
+                    isOn: $settings.incomingVideoOff
+                )
+                .onChange(of: settings.incomingVideoOff) { _, off in
+                    Task {
+                        await session.setIncomingVideoOff(off)
+                    }
                 }
-                .foregroundStyle(Theme.header)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
+            }
 
-                Theme.divider.frame(height: 1).padding(.leading, 52)
+            SettingsCard(title: "Audio") {
+                SettingToggle(
+                    title: "Noise Suppression",
+                    subtitle: "Cuts background noise from your mic",
+                    systemImage: "waveform",
+                    isOn: $settings.noiseSuppression
+                )
+
+                CardDivider()
 
                 SettingToggle(
                     title: "Hear Yourself",
@@ -569,44 +574,28 @@ private struct VoiceSheetSettings: View {
                     session.setHearsYourself(hears)
                 }
 
-                Theme.divider.frame(height: 1).padding(.leading, 52)
+                CardDivider()
 
-                SettingToggle(
-                    title: "Turn Off Incoming Video",
-                    subtitle: "Stops cameras and screen shares, saves data",
-                    systemImage: "video.slash",
-                    isOn: $settings.incomingVideoOff
-                )
-                .onChange(of: settings.incomingVideoOff) { _, off in
-                    Task {
-                        await session.setIncomingVideoOff(off)
-                    }
-                }
-
-                Theme.divider.frame(height: 1).padding(.leading, 52)
-
-                SettingToggle(
-                    title: "Noise Suppression",
-                    subtitle: "Cuts background noise from your mic",
-                    systemImage: "waveform",
-                    isOn: $settings.noiseSuppression
+                // ios fills these panels only for a mic and a camera in use, before that they
+                // came up empty
+                SystemPanelRow(
+                    title: "Mic Mode",
+                    subtitle: "Voice Isolation or Wide Spectrum",
+                    systemImage: "mic.badge.plus",
+                    panel: .microphoneModes,
+                    unavailableReason: session.currentVoiceChannelId == nil ? "Join a voice channel first" : nil
                 )
             }
-            .background(Theme.deepBackground, in: .rect(cornerRadius: 14))
 
-            if let footnote {
-                Text(footnote)
-                    .font(.caption)
-                    .foregroundStyle(Theme.muted)
-                    .padding(.horizontal, 4)
+            SettingsCard(title: "Video", footnote: footnote) {
+                VideoEffectsRow(unavailableReason: session.cameraEnabled ? nil : "Turn on your camera first")
             }
 
             Button(action: onOpenSettings) {
                 HStack(spacing: 14) {
-                    Image(systemName: "gearshape.fill")
-                        .frame(width: 24)
+                    SettingIcon(systemImage: "slider.horizontal.3")
 
-                    Text("Voice & Video Settings")
+                    Text("All Voice & Video Settings")
 
                     Spacer()
 
@@ -615,14 +604,14 @@ private struct VoiceSheetSettings: View {
                         .foregroundStyle(Theme.muted)
                 }
                 .foregroundStyle(Theme.header)
-                .padding(14)
-                .background(Theme.deepBackground, in: .rect(cornerRadius: 14))
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .background(Theme.deepBackground, in: .rect(cornerRadius: 16))
                 .contentShape(.rect)
             }
             .buttonStyle(.plain)
-            .padding(.top, 8)
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 16)
         .padding(.top, 12)
         .padding(.bottom, 24)
     }
@@ -634,7 +623,7 @@ private struct VoiceSheetSettings: View {
     }
 }
 
-private struct SettingToggle: View {
+struct SettingToggle: View {
     let title: String
     let subtitle: String
     let systemImage: String
@@ -643,8 +632,7 @@ private struct SettingToggle: View {
     var body: some View {
         Toggle(isOn: $isOn) {
             HStack(spacing: 14) {
-                Image(systemName: systemImage)
-                    .frame(width: 24)
+                SettingIcon(systemImage: systemImage)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
@@ -663,6 +651,108 @@ private struct SettingToggle: View {
     }
 }
 
+// a row's symbol on a soft square, so a card of settings reads as a list of things at a glance
+struct SettingIcon: View {
+    let systemImage: String
+
+    var body: some View {
+        Image(systemName: systemImage)
+            .font(.system(size: 15, weight: .semibold))
+            .foregroundStyle(Theme.header)
+            .frame(width: 32, height: 32)
+            .background(Theme.listBackground, in: .rect(cornerRadius: 9))
+    }
+}
+
+// a titled group of rows on one rounded card, with a note under it when there is one
+struct SettingsCard<Content: View>: View {
+    let title: String
+    var footnote: String?
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Theme.muted)
+                .padding(.horizontal, 4)
+
+            VStack(spacing: 0) {
+                content
+            }
+            .background(Theme.deepBackground, in: .rect(cornerRadius: 16))
+
+            if let footnote {
+                Text(footnote)
+                    .font(.caption)
+                    .foregroundStyle(Theme.muted)
+                    .padding(.horizontal, 4)
+            }
+        }
+    }
+}
+
+struct CardDivider: View {
+    var body: some View {
+        Theme.divider
+            .frame(height: 1)
+            .padding(.leading, 60)
+    }
+}
+
+// a big square switch, white with a dark symbol while on, as the call bar's are
+private struct QuickTile: View {
+    let title: String
+    let systemImage: String
+    @Binding var isOn: Bool
+
+    var body: some View {
+        Button(action: toggle) {
+            VStack(spacing: 8) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 22, weight: .semibold))
+                    .contentTransition(.symbolEffect(.replace))
+                    .frame(height: 28)
+
+                Text(title)
+                    .font(.footnote.weight(.semibold))
+                    .lineLimit(1)
+            }
+            .foregroundStyle(isOn ? Color.black : Theme.header)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(isOn ? Color.white : Theme.deepBackground, in: .rect(cornerRadius: 16))
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .sensoryFeedback(.selection, trigger: isOn)
+        .accessibilityValue(isOn ? "On" : "Off")
+    }
+
+    private func toggle() {
+        withAnimation(.snappy(duration: 0.2)) {
+            isOn.toggle()
+        }
+    }
+}
+
+// the system's route picker as a tile: speaker, earpiece, headphones or a car
+private struct OutputTile: View {
+    var body: some View {
+        VStack(spacing: 8) {
+            AudioRoutePicker()
+                .frame(width: 32, height: 28)
+
+            Text("Output")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Theme.header)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 16)
+        .background(Theme.deepBackground, in: .rect(cornerRadius: 16))
+    }
+}
+
 // the system's own picker for where the call plays, the speaker, headphones or airpods
 private struct AudioRoutePicker: UIViewRepresentable {
     func makeUIView(context: Context) -> AVRoutePickerView {
@@ -675,4 +765,96 @@ private struct AudioRoutePicker: UIViewRepresentable {
     }
 
     func updateUIView(_ picker: AVRoutePickerView, context: Context) {}
+}
+
+// the system's own panel for the mic or the camera, the ones control center shows during a call
+private struct SystemPanelRow: View {
+    let title: String
+    let subtitle: String
+    let systemImage: String
+    let panel: AVCaptureDevice.SystemUserInterface
+    // why it cannot open yet, shown in place of the subtitle
+    var unavailableReason: String?
+
+    var body: some View {
+        Button(action: show) {
+            HStack(spacing: 14) {
+                SettingIcon(systemImage: systemImage)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+
+                    Text(unavailableReason ?? subtitle)
+                        .font(.caption)
+                        .foregroundStyle(Theme.muted)
+                }
+
+                Spacer()
+
+                Image(systemName: "arrow.up.forward.app")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Theme.muted)
+            }
+            .foregroundStyle(Theme.header)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .contentShape(.rect)
+            .opacity(unavailableReason == nil ? 1 : 0.5)
+        }
+        .buttonStyle(.plain)
+        .disabled(unavailableReason != nil)
+    }
+
+    private func show() {
+        AVCaptureDevice.showSystemUserInterface(panel)
+    }
+}
+
+// opens the app's own video effects sheet, once there is a camera for them to work on
+private struct VideoEffectsRow: View {
+    let unavailableReason: String?
+
+    @Environment(SessionStore.self) private var session
+    @Environment(ServerListStore.self) private var servers
+
+    @State private var isPresented = false
+
+    var body: some View {
+        Button(action: show) {
+            HStack(spacing: 14) {
+                SettingIcon(systemImage: "camera.filters")
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Video Effects")
+
+                    Text(unavailableReason ?? "Reactions, Center Stage, Portrait and Studio Light")
+                        .font(.caption)
+                        .foregroundStyle(Theme.muted)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Theme.muted)
+            }
+            .foregroundStyle(Theme.header)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .contentShape(.rect)
+            .opacity(unavailableReason == nil ? 1 : 0.5)
+        }
+        .buttonStyle(.plain)
+        .disabled(unavailableReason != nil)
+        .sheet(isPresented: $isPresented) {
+            VideoEffectsSheet()
+                .environment(session)
+                .environment(servers)
+                .appSheet()
+        }
+    }
+
+    private func show() {
+        isPresented = true
+    }
 }

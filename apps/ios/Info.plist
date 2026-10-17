@@ -24,6 +24,14 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSCameraPortraitEffectEnabled</key>
+	<true/>
+	<key>NSCameraReactionEffectsEnabled</key>
+	<true/>
+	<key>NSCameraReactionEffectGesturesEnabledDefault</key>
+	<true/>
+	<key>NSCameraStudioLightEnabled</key>
+	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Sharkord uses the camera so you can share video in voice channels.</string>
 	<key>NSLocalNetworkUsageDescription</key>

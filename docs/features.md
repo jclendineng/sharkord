@@ -141,6 +141,46 @@ again, the other person's list and the messages are untouched. Tapping a direct 
 opens the same screen as a channel's, with the person's avatar, their two members, and the
 conversation's media, pins, links and files.
 
+In a call the app's camera captures 1080p at 30 frames a second, in a format the system's
+Portrait and Studio Light effects support where the camera has one (the app opts in with
+`NSCameraPortraitEffectEnabled`, `NSCameraStudioLightEnabled` and `NSCameraReactionEffectsEnabled`,
+since it is not a VoIP app). With the server's simulcast setting on, it sends three VP8 layers
+(a quarter, a half and the full picture, the web's numbers with 2.5 Mbps at the top); otherwise
+one H.264 stream. VP8 because the bundled WebRTC (m120) only splits VP8 into layers. Each video
+tile reports how many pixels tall it is drawn, and the app asks `voice.setConsumerQuality` for the
+lowest layer that fills the tallest tile (up to 270 lines the low one, up to 540 the middle, above
+that auto). A screen share always asks for its sharpest. Leaving the app with someone else's video
+in the call opens picture in picture (a screen share first, then the person in the floating
+tile, then anyone's camera), drawn through a sample buffer layer since WebRTC's Metal view
+stays blank there. The call headers show signal bars from the connection's round trip and the
+packets lost in the last two seconds, with the numbers on a tap. The call sheet opens the
+system's Mic Mode panel and the app's own Video Effects sheet: the camera's preview, a grid of
+reactions played with `performEffect(for:)`, Center Stage switched in the cooperative control
+mode, and Portrait and Studio Light shown as on or off (apps can only read those two, so a row
+opens the system panel to change them). Hand gestures play reactions too, since the camera picks
+the 1080p format supporting the most of reactions, Portrait and Studio Light. In dim light the
+camera may lower its frame rate to 24 so each exposure runs longer, with low light boost where
+the phone has it. A gear in the call header opens the call's settings: tiles for Deafen, Output
+and incoming video, then audio and video cards. Leaving a call lets its sheet slide away before the
+call is torn down, and the floating tile stays hidden meanwhile. Each person under a voice
+channel is a row of its own: a tap opens their profile, a long press the member menu, which in a
+voice channel adds Move To for anyone with Move Members. The Voice & Video settings page follows
+the sections of Discord's, and its noise suppression footer says whether the system's Voice
+Isolation is on (`AVCaptureDevice.activeMicrophoneMode`), with a button to the Mic Mode panel in a
+call.
+
+In a call, tapping a person's tile or a screen share fills the call with it, the rest in a strip of
+thumbnails under it; tapping the big tile or its collapse button goes back to the grid.
+
+An iPad showing the list beside the chat takes the Mac's desktop layout (`usesDesktopLayout`):
+search drops down under the box it came from, threads open in a panel beside the conversation
+(up to 45% of the chat's width, from 640 points of chat), and settings fill the window. In
+landscape without a hardware keyboard (`GCKeyboard`) search stays full screen, since the screen's
+keyboard covers half of it. Pins open as the top bar's panel on every device. A message lights up
+under the finger as it is held, a rounded card a few points past it on every side. A thread's
+first message is read live from its channel and takes the list's menu and double tap reaction
+through the environment (`showMessageActions`, `reactToMessage`).
+
 A long press on a channel opens its menu: invite, pin it to the top, copy its link, mark it read,
 mute it, its notification settings, and for anyone who can manage channels, edit or duplicate it.
 The link is `sharkord://channel?server=…&channel=…`, which the app opens on any server it is

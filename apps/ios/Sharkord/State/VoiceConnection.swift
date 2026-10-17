@@ -47,10 +47,15 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
     private var cameraTrack: RTCVideoTrack?
     private var cameraProducer: Producer?
     private var cameraPosition = AVCaptureDevice.Position.front
+    // the camera filming now, which the reactions are played on
+    private var cameraDevice: AVCaptureDevice?
     private var screenProducer: Producer?
     private var screenTrack: RTCVideoTrack?
     private var rtpCapabilities = "{}"
     private var sendVideoCodec: String?
+    // the web's three camera layers, sent when the server has simulcast on, in vp8: this webrtc
+    // build splits only vp8 into layers, h264 went out as one
+    private var simulcastCodec: String?
     private var soundMuted = false
     private var outputVolume: Double
     private let audioOptions: AudioOptions
@@ -90,11 +95,12 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
         self.device = Device(pcFactory: factory)
     }
 
-    func start(routerRtpCapabilities: String, micMuted: Bool, soundMuted: Bool, canSpeak: Bool) async throws {
+    func start(routerRtpCapabilities: String, micMuted: Bool, soundMuted: Bool, canSpeak: Bool, simulcast: Bool) async throws {
         try await onQueue {
             try self.device.load(with: routerRtpCapabilities)
             self.rtpCapabilities = try self.device.rtpCapabilities()
             self.sendVideoCodec = Self.baselineH264(in: self.rtpCapabilities)
+            self.simulcastCodec = simulcast ? Self.codec(in: self.rtpCapabilities) { $0 == "video/vp8" } : nil
             self.soundMuted = soundMuted
         }
 
@@ -169,6 +175,7 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
             self.camera?.stopCapture()
             self.camera = nil
             self.cameraTrack = nil
+            self.cameraDevice = nil
         }
 
         await onVideo(VoiceStreamKey(kind: .video, remoteId: ownUserId), nil)
@@ -198,6 +205,31 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
         _ = try? await signal("voice.closeProducer", json)
     }
 
+    struct CameraEffects: Sendable {
+        // the reactions the camera can play now, empty when its format or the phone has none
+        let reactions: [AVCaptureReactionType]
+        let supportsCenterStage: Bool
+    }
+
+    func cameraEffects() async -> CameraEffects {
+        await onQueueValue {
+            guard let device = self.cameraDevice else {
+                return CameraEffects(reactions: [], supportsCenterStage: false)
+            }
+
+            let reactions = device.canPerformReactionEffects ? Array(device.availableReactionTypes) : []
+
+            return CameraEffects(reactions: reactions, supportsCenterStage: device.activeFormat.isCenterStageSupported)
+        }
+    }
+
+    // drawn into the video by the camera itself, so everyone in the call sees it
+    func performReaction(_ reaction: AVCaptureReactionType) {
+        queue.async {
+            self.cameraDevice?.performEffect(for: reaction)
+        }
+    }
+
     func flipCamera() {
         queue.async {
             guard let camera = self.camera else {
@@ -208,6 +240,7 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
 
             if let device = Self.captureDevice(self.cameraPosition) {
                 Self.startCapture(camera, device: device)
+                self.cameraDevice = device
             }
         }
     }
@@ -383,6 +416,21 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
     // the phone sends h264 baseline: the hardware encodes it and chrome, safari and firefox all
     // decode it. left to itself mediasoup takes the server's first codec, vp9, encoded in software
     private static func baselineH264(in capabilities: String) -> String? {
+        codec(in: capabilities) { mimeType, parameters in
+            let profile = parameters["profile-level-id"] as? String
+
+            return mimeType == "video/h264" && profile?.hasPrefix("42e0") == true
+        }
+    }
+
+    private static func codec(in capabilities: String, where matches: (String) -> Bool) -> String? {
+        codec(in: capabilities) { mimeType, _ in
+            matches(mimeType)
+        }
+    }
+
+    // the first of the router's codecs that matches, as the json createProducer takes
+    private static func codec(in capabilities: String, where matches: (String, [String: Any]) -> Bool) -> String? {
         guard
             let object = try? JSONSerialization.jsonObject(with: Data(capabilities.utf8)) as? [String: Any],
             let codecs = object["codecs"] as? [[String: Any]]
@@ -391,10 +439,10 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
         }
 
         let codec = codecs.first { codec in
-            let parameters = codec["parameters"] as? [String: Any]
-            let profile = parameters?["profile-level-id"] as? String
+            let mimeType = (codec["mimeType"] as? String)?.lowercased() ?? ""
+            let parameters = codec["parameters"] as? [String: Any] ?? [:]
 
-            return (codec["mimeType"] as? String)?.lowercased() == "video/h264" && profile?.hasPrefix("42e0") == true
+            return matches(mimeType, parameters)
         }
 
         guard let codec, let data = try? JSONSerialization.data(withJSONObject: codec) else {
@@ -443,15 +491,28 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
         let track = factory.videoTrack(with: source, trackId: "camera")
 
         Self.startCapture(capturer, device: device)
+        cameraDevice = device
 
-        // the kind travels in appData, onProduce reads it back for voice.produce
-        let producer = try sendTransport.createProducer(
-            for: track,
-            encodings: nil,
-            codecOptions: nil,
-            codec: sendVideoCodec,
-            appData: "{\"kind\":\"video\"}"
-        )
+        let isLayered = simulcastCodec != nil
+        // the kind travels in appData, onProduce reads it back for voice.produce. the layer names
+        // are the web's
+        let appData = isLayered
+            ? "{\"kind\":\"video\",\"qualityLayers\":[{\"spatialLayer\":0,\"label\":\"Low\"},{\"spatialLayer\":1,\"label\":\"Medium\"},{\"spatialLayer\":2,\"label\":\"High\"}]}"
+            : "{\"kind\":\"video\"}"
+        let producer: Producer
+
+        do {
+            producer = try sendTransport.createProducer(
+                for: track,
+                encodings: isLayered ? Self.cameraLayers() : nil,
+                codecOptions: nil,
+                codec: simulcastCodec ?? sendVideoCodec,
+                appData: appData
+            )
+        } catch {
+            capturer.stopCapture()
+            throw sendSignaler?.produceError ?? error
+        }
 
         camera = capturer
         cameraTrack = track
@@ -470,22 +531,79 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
             ?? RTCCameraVideoCapturer.captureDevices().first
     }
 
-    // 720p at 30fps where the camera has it, which is plenty for a phone sized tile
-    private static func startCapture(_ capturer: RTCCameraVideoCapturer, device: AVCaptureDevice) {
-        let formats = RTCCameraVideoCapturer.supportedFormats(for: device)
-        let format = formats.first { format in
-            let dimensions = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
+    // a quarter, a half and the whole picture, which the server hands out by what each viewer
+    // shows and can take. the web's numbers, with more room at the top for 1080p
+    private static func cameraLayers() -> [RTCRtpEncodingParameters] {
+        let layers: [(scale: Double, bitrate: Int, framerate: Int)] = [
+            (4, 150_000, 24),
+            (2, 500_000, 30),
+            (1, 2_500_000, 30)
+        ]
 
-            return dimensions.width == 1280 && dimensions.height == 720
-        } ?? formats.last
+        return layers.map { layer in
+            let encoding = RTCRtpEncodingParameters()
+
+            encoding.scaleResolutionDownBy = NSNumber(value: layer.scale)
+            encoding.maxBitrateBps = NSNumber(value: layer.bitrate)
+            encoding.maxFramerate = NSNumber(value: layer.framerate)
+
+            return encoding
+        }
+    }
+
+    // 1080p at 30fps where the camera has it, the size a call gets on a mac or a full screen.
+    // of those, the one the most of the system's effects work in: reactions, the hand gestures
+    // among them, are only drawn in a format that supports them
+    private static func startCapture(_ capturer: RTCCameraVideoCapturer, device: AVCaptureDevice) {
+        let formats = RTCCameraVideoCapturer.supportedFormats(for: device).filter { format in
+            let dimensions = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
+            let maxRate = format.videoSupportedFrameRateRanges.map(\.maxFrameRate).max() ?? 0
+
+            return dimensions.width == 1920 && dimensions.height == 1080 && maxRate >= 30
+        }
+        let format = formats.max { Self.effectCount(of: $0) < Self.effectCount(of: $1) }
+            ?? RTCCameraVideoCapturer.supportedFormats(for: device).last
 
         guard let format else {
             return
         }
 
         let maxRate = format.videoSupportedFrameRateRanges.map(\.maxFrameRate).max() ?? 30
+        let minRate = format.videoSupportedFrameRateRanges.map(\.minFrameRate).min() ?? 30
 
-        capturer.startCapture(with: device, format: format, fps: Int(min(maxRate, 30)))
+        capturer.startCapture(with: device, format: format, fps: Int(min(maxRate, 30))) { error in
+            guard error == nil else {
+                return
+            }
+
+            allowDimLight(on: device, slowestRate: max(minRate, 24))
+        }
+    }
+
+    // webrtc holds the camera at exactly 30 frames a second, which caps each exposure at a 30th
+    // of a second and left a dim room dark and smeared. the camera app slows down in the dark
+    // instead, so this lets it drop to 24 when it needs the light, and turns on the phone's low
+    // light boost where it has one
+    private static func allowDimLight(on device: AVCaptureDevice, slowestRate: Double) {
+        do {
+            try device.lockForConfiguration()
+        } catch {
+            return
+        }
+
+        device.activeVideoMaxFrameDuration = CMTime(value: 1, timescale: CMTimeScale(slowestRate))
+
+        if device.isLowLightBoostSupported {
+            device.automaticallyEnablesLowLightBoostWhenAvailable = true
+        }
+
+        device.unlockForConfiguration()
+    }
+
+    private static func effectCount(of format: AVCaptureDevice.Format) -> Int {
+        [format.reactionEffectsSupported, format.isPortraitEffectSupported, format.isStudioLightSupported]
+            .filter { $0 }
+            .count
     }
 
     private func onQueue(_ work: @escaping @Sendable () throws -> Void) async throws {
@@ -520,23 +638,54 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
         }
     }
 
-    // a stats report as webrtc serialises it, a list of entries or a map of them by id
     private static func audioLevel(in stats: String, type: String) -> Double? {
-        guard let json = try? JSONSerialization.jsonObject(with: Data(stats.utf8)) else {
-            return nil
-        }
-
-        var entries: [[String: Any]] = []
-
-        if let list = json as? [[String: Any]] {
-            entries = list
-        } else if let map = json as? [String: Any] {
-            entries = map.values.compactMap { $0 as? [String: Any] }
-        }
-
-        let entry = entries.first { $0["type"] as? String == type && $0["audioLevel"] != nil }
+        let entry = entries(in: stats).first { $0["type"] as? String == type && $0["audioLevel"] != nil }
 
         return entry?["audioLevel"] as? Double
+    }
+
+    struct NetworkStats: Sendable {
+        // to the server and back, in seconds
+        let roundTrip: Double?
+        // everything received so far, which the caller compares with the last reading
+        let packetsLost: Int
+        let packetsReceived: Int
+    }
+
+    // the round trip from the pair of addresses the send transport settled on, the losses from
+    // everything the receive transport carries
+    func networkStats() async -> NetworkStats {
+        await onQueueValue {
+            let sendEntries = self.sendTransport.map { Self.entries(in: $0.stats) } ?? []
+            let receiveEntries = self.receiveTransport.map { Self.entries(in: $0.stats) } ?? []
+            let pair = (sendEntries + receiveEntries).first { entry in
+                entry["type"] as? String == "candidate-pair" && entry["nominated"] as? Bool == true && entry["currentRoundTripTime"] != nil
+            }
+            let inbound = receiveEntries.filter { $0["type"] as? String == "inbound-rtp" }
+
+            return NetworkStats(
+                roundTrip: pair?["currentRoundTripTime"] as? Double,
+                packetsLost: inbound.reduce(0) { $0 + (($1["packetsLost"] as? Int) ?? 0) },
+                packetsReceived: inbound.reduce(0) { $0 + (($1["packetsReceived"] as? Int) ?? 0) }
+            )
+        }
+    }
+
+    // a stats report as webrtc serialises it, a list of entries or a map of them by id
+    private static func entries(in stats: String) -> [[String: Any]] {
+        guard let json = try? JSONSerialization.jsonObject(with: Data(stats.utf8)) else {
+            return []
+        }
+
+        if let list = json as? [[String: Any]] {
+            return list
+        }
+
+        if let map = json as? [String: Any] {
+            return map.values.compactMap { $0 as? [String: Any] }
+        }
+
+        return []
     }
 
     private func onQueueResult<T: Sendable>(_ work: @escaping @Sendable () throws -> T) async throws -> T {
@@ -581,6 +730,9 @@ nonisolated private final class TransportSignaler: SendTransportDelegate, Receiv
     private let connectPath: String
     private let signal: VoiceConnection.Signal
     private let onFailure: @MainActor @Sendable () -> Void
+    // the server's own words when it turns a stream down, which mediasoup only reports as a
+    // numbered error
+    private(set) var produceError: Error?
 
     init(connectPath: String, signal: @escaping VoiceConnection.Signal, onFailure: @escaping @MainActor @Sendable () -> Void) {
         self.connectPath = connectPath
@@ -624,7 +776,11 @@ nonisolated private final class TransportSignaler: SendTransportDelegate, Receiv
         let signal = signal
         let reply = UncheckedBox(callback)
         let kind = ProducerAppData.kind(appData)
-        let json = Data("{\"transportId\":\"\(transport.id)\",\"kind\":\"\(kind)\",\"rtpParameters\":\(rtpParameters)}".utf8)
+        // a camera in layers names each one, the server turns it down otherwise
+        let layers = ProducerAppData.qualityLayers(appData).map { ",\"qualityLayers\":\($0)" } ?? ""
+        let json = Data("{\"transportId\":\"\(transport.id)\",\"kind\":\"\(kind)\",\"rtpParameters\":\(rtpParameters)\(layers)}".utf8)
+
+        produceError = nil
 
         Task {
             do {
@@ -633,6 +789,7 @@ nonisolated private final class TransportSignaler: SendTransportDelegate, Receiv
 
                 reply.value(producerId)
             } catch {
+                self.produceError = error
                 // nil fails createProducer, which is waiting on this, instead of hanging it
                 reply.value(nil)
             }
@@ -711,6 +868,19 @@ nonisolated private enum ProducerAppData {
 
         return kind
     }
+
+    // the layers' names as json, nil for a stream sent as one
+    static func qualityLayers(_ appData: String) -> String? {
+        guard
+            let object = try? JSONSerialization.jsonObject(with: Data(appData.utf8)) as? [String: Any],
+            let layers = object["qualityLayers"],
+            let data = try? JSONSerialization.data(withJSONObject: layers)
+        else {
+            return nil
+        }
+
+        return String(decoding: data, as: UTF8.self)
+    }
 }
 
 nonisolated private struct UncheckedBox<T>: @unchecked Sendable {
@@ -771,4 +941,32 @@ nonisolated private func jsonString(_ value: Any?) throws -> String {
     let data = try JSONSerialization.data(withJSONObject: value, options: .fragmentsAllowed)
 
     return String(decoding: data, as: UTF8.self)
+}
+
+// the call's ping and packet loss, graded the way discord colours its signal bars
+nonisolated struct ConnectionQuality: Equatable, Sendable {
+    enum Grade {
+        case good
+        case fair
+        case poor
+    }
+
+    // milliseconds, nil until the connection has measured one
+    let ping: Int?
+    // the share of packets lost lately, 0 to 1
+    let loss: Double
+
+    var grade: Grade {
+        let ping = ping ?? 0
+
+        if ping < 150 && loss < 0.02 {
+            return .good
+        }
+
+        if ping < 300 && loss < 0.08 {
+            return .fair
+        }
+
+        return .poor
+    }
 }

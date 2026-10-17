@@ -15,6 +15,8 @@ struct MessageRow: View {
     @Environment(\.openThreadPanel) private var openThreadPanel
 
     @State private var isHovered = false
+    // the finger on the row, lit as it is held so the press has something to show for it
+    @GestureState private var isPressed = false
 
     private var author: PublicUser? {
         message.userId.flatMap { session.usersById[$0] }
@@ -97,15 +99,26 @@ struct MessageRow: View {
 
                 if showsThreadLink, let replyCount = message.replyCount, replyCount > 0 {
                     threadLink(replyCount: replyCount)
-                        .buttonStyle(.plain)
                         // a long press on the link opens the actions sheet, and the finger lifting
-                        // would otherwise also open the thread under it
+                        // would otherwise also open the thread under it. switched off rather than
+                        // ignored, which cancels that lift, in a style that does not dim it
+                        .buttonStyle(UndimmedButtonStyle())
                         .disabled(isShowingMessageActions)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.horizontal, 16)
+        // the press: a rounded card the same few points past the message on every side, inset from
+        // the screen's edges, rather than a band taking in the gap above a header
+        .background {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Theme.hover)
+                .padding(.horizontal, 6)
+                .padding(.vertical, -6)
+                .opacity(isPressed ? 1 : 0)
+        }
+        .animation(.easeOut(duration: isPressed ? 0.08 : 0.2), value: isPressed)
         .padding(.top, showsHeader ? 16 : 2)
         .background(isHovered ? Color.black.opacity(0.08) : .clear)
         // over the row's top right, discord's quick reactions, reply and the menu
@@ -121,7 +134,13 @@ struct MessageRow: View {
         .onTapGesture(count: 2, perform: onDoubleTap)
         // simultaneous so it also works over an attachment's own button, a voice message's play
         // button for one. the sheet opening cancels that button's tap
-        .simultaneousGesture(LongPressGesture(minimumDuration: 0.3).onEnded(longPressed))
+        .simultaneousGesture(
+            LongPressGesture(minimumDuration: 0.3)
+                .updating($isPressed) { isDown, isPressed, _ in
+                    isPressed = isDown
+                }
+                .onEnded(longPressed)
+        )
         .onSecondaryClick(perform: onSecondaryClick)
     }
 
@@ -313,5 +332,14 @@ private struct MessageHoverBar: View {
     // discord opens the menu to the left of the button, level with its top
     private func showMore() {
         actions.onMore(SecondaryClick(anchor: .topLeading, windowPoint: CGPoint(x: moreFrame.minX - 224, y: moreFrame.minY)))
+    }
+}
+
+// plain, but the same while switched off: the system's dimmed the reply links for the whole time a
+// message's menu was up and a moment after
+private struct UndimmedButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .opacity(configuration.isPressed ? 0.6 : 1)
     }
 }

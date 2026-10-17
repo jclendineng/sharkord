@@ -76,6 +76,11 @@ enum FileThumbnails {
 extension EnvironmentValues {
     // the message menu is up, see MessageListView
     @Entry var isShowingMessageActions = false
+    // the list's own menu for a message, which a row it holds but did not draw, like a thread's
+    // first message, opens through. at the pointer when a right click opened it
+    @Entry var showMessageActions: (@MainActor (Message, SecondaryClick?) -> Void)?
+    // the list's double tap reaction, for such a row the same way
+    @Entry var reactToMessage: (@MainActor (Message) -> Void)?
 }
 
 // a button that downloads the file and shows it in quick look, its label told whether it is loading

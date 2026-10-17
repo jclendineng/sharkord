@@ -9,6 +9,8 @@ struct MemberActionsSheet: View {
     let channelId: Int?
     let onShowProfile: () -> Void
     let onMessage: () -> Void
+    // the voice channel they are in, when the menu opens on them there, which offers moving them
+    var voiceChannelId: Int?
 
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
@@ -24,6 +26,17 @@ struct MemberActionsSheet: View {
         session.rolesById.values
             .filter { $0.id != 1 }
             .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
+    // the web's drag of a member to another voice channel
+    private var moveTargets: [Channel] {
+        guard let voiceChannelId, session.can(.moveMembers) else {
+            return []
+        }
+
+        return session.channelSections
+            .flatMap(\.channels)
+            .filter { $0.type == .voice && $0.id != voiceChannelId }
     }
 
     private var canManageRoles: Bool {
@@ -59,6 +72,18 @@ struct MemberActionsSheet: View {
                     }
                 }
 
+                if !moveTargets.isEmpty {
+                    ActionGroup {
+                        if isPointerMenu {
+                            SubmenuRow(title: "Move To") {
+                                moveRows
+                            }
+                        } else {
+                            moveRows
+                        }
+                    }
+                }
+
                 if canManageRoles {
                     ActionGroup {
                         // a submenu beside the pointer on a mac, a sheet lists them in place
@@ -78,6 +103,22 @@ struct MemberActionsSheet: View {
         .scrollBounceBehavior(.basedOnSize)
         .presentationDragIndicator(.visible)
         .presentationBackground(Theme.deepBackground)
+    }
+
+    private var moveRows: some View {
+        ForEach(moveTargets) { channel in
+            ActionRow(title: isPointerMenu ? channel.name : "Move to \(channel.name)", systemImage: "speaker.wave.2.fill") {
+                move(to: channel.id)
+            }
+        }
+    }
+
+    private func move(to channelId: Int) {
+        close()
+
+        Task {
+            await session.moveToVoice(userId: user.id, channelId: channelId)
+        }
     }
 
     private var roleRows: some View {

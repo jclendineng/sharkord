@@ -6,12 +6,10 @@ struct ChatScreen: View {
     @Environment(SessionStore.self) private var session
     @Environment(ServerListStore.self) private var servers
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.showChannelList) private var showChannelList
     // set only while the channel list sits beside the chat, see HomeView
     @Environment(\.expandChat) private var expandChat
 
-    @State private var isPinsPresented = false
     @State private var dropdown: ChatDropdown?
     // the mac's search box lives in the top bar and types into the dropdown's search
     @State private var searchModel = SearchQueryModel()
@@ -24,6 +22,10 @@ struct ChatScreen: View {
     @State private var membersScale = MembersColumn.minimumScale
     // the mac's thread panel, which takes the member list's place beside the conversation
     @State private var threadParent: Message?
+    @State private var chatWidth: CGFloat = 0
+
+    @Environment(\.usesDesktopLayout) private var usesDesktopLayout
+    @Environment(\.usesDesktopSearch) private var usesDesktopSearch
     // discord's member list beside a server channel, on by default, the header's button hides it
     @AppStorage("showsMemberList") private var showsMemberList = true
 
@@ -92,7 +94,7 @@ struct ChatScreen: View {
                     .frame(width: 1)
 
                 ThreadScreen(parent: threadParent, onClose: closeThreadPanel)
-                    .frame(width: 420)
+                    .frame(width: ProcessInfo.processInfo.isiOSAppOnMac ? 420 : min(420, chatWidth * 0.45))
                     .id(threadParent.id)
                     .transition(.opacity)
             } else if canShowMembers && showsMemberList {
@@ -105,6 +107,15 @@ struct ChatScreen: View {
         }
         .onGeometryChange(for: CGFloat.self, of: { MembersColumn.scale(forChatWidth: $0.size.width) }) { scale in
             membersScale = scale
+        }
+        .onGeometryChange(for: CGFloat.self, of: \.size.width) { width in
+            chatWidth = width
+        }
+        // a rotation that takes the room away puts the panel's thread away with it
+        .onChange(of: canShowThreadPanel) { _, canShow in
+            if !canShow {
+                threadParent = nil
+            }
         }
         .animation(.easeOut(duration: 0.12), value: showsMemberList)
         // discord's mac pins and search slide down from under the top bar at its right edge,
@@ -208,14 +219,6 @@ struct ChatScreen: View {
                 }
                 .accessibilityLabel("Pinned Messages")
                 .hoverEffectDisabled()
-                // pins hang off the button on an ipad, a phone and a mac get the dropdown.
-                // handed the stores by hand: a popover from the toolbar does not inherit them
-                .popover(isPresented: $isPinsPresented) {
-                    PinnedMessagesSheet(channelId: channelId)
-                        .frame(idealWidth: 420, idealHeight: 560)
-                        .environment(session)
-                        .environment(servers)
-                }
             }
 
             // discord's mac keeps the inbox at the top right rather than in the user bar
@@ -225,7 +228,7 @@ struct ChatScreen: View {
                 }
             }
 
-            if ProcessInfo.processInfo.isiOSAppOnMac {
+            if hasDesktopRoom && usesDesktopSearch {
                 // discord's mac: the box itself sits in the top bar, the results drop down under.
                 // the principal place, the bar's trailing group collapses a text field to nothing
                 ToolbarItem(placement: .principal) {
@@ -290,9 +293,16 @@ struct ChatScreen: View {
         }
     }
 
-    // a mac's channel, threads being a channel's
+    // the desktop layout's top bar and thread panel, once the chat is wide enough for them beside
+    // the conversation. an ipad in portrait is not, and pushes threads and opens search from
+    // its magnifier instead
+    private var hasDesktopRoom: Bool {
+        ProcessInfo.processInfo.isiOSAppOnMac || (usesDesktopLayout && chatWidth >= 640)
+    }
+
+    // a channel's threads, never a direct message's
     private var canShowThreadPanel: Bool {
-        ProcessInfo.processInfo.isiOSAppOnMac && channel?.isDm == false
+        hasDesktopRoom && channel?.isDm == false
     }
 
     private func openThreadPanel(_ parent: Message) {
@@ -336,11 +346,7 @@ struct ChatScreen: View {
     private func showPins() {
         dismissKeyboard()
 
-        if ProcessInfo.processInfo.isiOSAppOnMac || horizontalSizeClass == .compact {
-            toggleDropdown(.pins)
-        } else {
-            isPinsPresented = true
-        }
+        toggleDropdown(.pins)
     }
 
     // a filter picked from the menu beside the box goes in as its token, the dropdown listing

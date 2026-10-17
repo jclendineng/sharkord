@@ -315,13 +315,15 @@ extension View {
 }
 
 private struct ServerMenuSheetPresentation: ViewModifier {
+    @Environment(\.usesDesktopLayout) private var usesDesktopLayout
+
     @Binding var sheet: ServerMenuSheet?
 
     @Environment(ServerListStore.self) private var servers
     @Environment(SessionStore.self) private var session
 
     private var isFullWindow: Bool {
-        ProcessInfo.processInfo.isiOSAppOnMac && sheet == .settings
+        usesDesktopLayout && sheet == .settings
     }
 
     private var sheetBinding: Binding<ServerMenuSheet?> {

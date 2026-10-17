@@ -55,13 +55,17 @@ struct FloatingCallTile: View {
                 .opacity(0.35)
                 .background(Theme.deepBackground)
 
-            if let track {
-                VideoView(track: track, isMirrored: shown?.user?.id == session.ownUserId)
+            if let track, let user = shown?.user {
+                VideoView(track: track, isMirrored: user.id == session.ownUserId)
+                    .reportsVideoSize(of: VoiceStreamKey(kind: .video, remoteId: user.id))
             } else {
                 AvatarView(user: shown?.user, size: 48)
             }
         }
         .frame(width: Self.width, height: Self.height)
+        .background {
+            PictureInPictureSource(track: pictureInPictureTrack)
+        }
         .clipShape(.rect(cornerRadius: 14, style: .continuous))
         .overlay(alignment: .bottomLeading) {
             if shown?.state.micMuted == true {
@@ -86,6 +90,25 @@ struct FloatingCallTile: View {
 
     private var track: VideoTrackBox? {
         shown?.user.flatMap { session.videoTracks[VoiceStreamKey(kind: .video, remoteId: $0.id)] }
+    }
+
+    // what picture in picture shows away from the app: a screen share first, then the camera of
+    // whoever the tile shows, then anyone else's. never the own camera, which stops in the
+    // background anyway
+    private var pictureInPictureTrack: VideoTrackBox? {
+        let remote = session.videoTracks
+            .filter { $0.key.remoteId != session.ownUserId }
+            .sorted { $0.key.remoteId < $1.key.remoteId }
+
+        if let screen = remote.first(where: { $0.key.kind == .screen }) {
+            return screen.value
+        }
+
+        if let user = shown?.user, user.id != session.ownUserId, let camera = session.videoTracks[VoiceStreamKey(kind: .video, remoteId: user.id)] {
+            return camera
+        }
+
+        return remote.first?.value
     }
 
     private func dragGesture(in size: CGSize) -> some Gesture {

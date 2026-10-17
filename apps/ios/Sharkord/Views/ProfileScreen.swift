@@ -209,6 +209,8 @@ extension View {
 }
 
 private struct ProfileSheetPresentation: ViewModifier {
+    @Environment(\.usesDesktopLayout) private var usesDesktopLayout
+
     @Binding var sheet: ProfileSheet?
 
     @Environment(ServerListStore.self) private var servers
@@ -216,7 +218,7 @@ private struct ProfileSheetPresentation: ViewModifier {
 
     // settings take the whole window on a mac, as discord's do, the rest are sheets
     private var isFullWindow: Bool {
-        ProcessInfo.processInfo.isiOSAppOnMac && sheet == .settings
+        usesDesktopLayout && sheet == .settings
     }
 
     private var sheetBinding: Binding<ProfileSheet?> {

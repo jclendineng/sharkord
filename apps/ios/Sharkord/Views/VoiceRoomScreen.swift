@@ -8,11 +8,15 @@ struct VoiceRoomScreen: View {
     var channelId: Int?
 
     @Environment(SessionStore.self) private var session
+    @Environment(ServerListStore.self) private var servers
     @Environment(\.dismiss) private var dismiss
     @Environment(\.closeVoiceRoom) private var closeVoiceRoom
 
     @State private var isReactionBarShown = false
     @State private var isSoundboardPresented = false
+    @State private var isSettingsPresented = false
+    // the tile tapped to fill the call, with everyone else in a strip under it
+    @State private var focused: FocusTarget?
 
     private var shownChannelId: Int? {
         channelId ?? session.currentVoiceChannelId
@@ -33,6 +37,19 @@ struct VoiceRoomScreen: View {
             .map { ($0.key, $0.value) }
     }
 
+    // only while what was tapped is still there, someone leaving or ending a share drops back to
+    // the grid
+    private var shownFocus: FocusTarget? {
+        switch focused {
+        case .person(let userId) where participants.contains(where: { $0.user?.id == userId }):
+            focused
+        case .screen(let userId) where screenShares.contains(where: { $0.key.remoteId == userId }):
+            focused
+        default:
+            nil
+        }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             header
@@ -42,28 +59,10 @@ struct VoiceRoomScreen: View {
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
 
-            ScrollView {
-                VStack(spacing: 10) {
-                    if session.isSharingScreen {
-                        Label("You're sharing your screen", systemImage: "rectangle.on.rectangle")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .background(Theme.blurple, in: .rect(cornerRadius: 12))
-                    }
-
-                    ForEach(screenShares, id: \.key) { share in
-                        ScreenShareTile(userId: share.key.remoteId, track: share.track)
-                    }
-
-                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
-                        ForEach(participants, id: \.user?.id) { participant in
-                            ParticipantTile(user: participant.user, state: participant.state)
-                        }
-                    }
-                }
-                .padding(12)
+            if let shownFocus {
+                focusedLayout(shownFocus)
+            } else {
+                grid
             }
 
             VoiceControls(onLeave: leave)
@@ -80,6 +79,115 @@ struct VoiceRoomScreen: View {
             SoundboardSheet()
                 .environment(session)
         }
+        .sheet(isPresented: $isSettingsPresented) {
+            CallSettingsSheet()
+                .environment(session)
+                .environment(servers)
+                .appSheet()
+        }
+    }
+
+    // the one tapped as big as the call allows, the rest in a row under it to switch to
+    private func focusedLayout(_ target: FocusTarget) -> some View {
+        VStack(spacing: 10) {
+            focusedTile(target)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .onTapGesture {
+                    setFocus(nil)
+                }
+                .overlay(alignment: .topLeading) {
+                    Button("Back to Grid", systemImage: "arrow.down.right.and.arrow.up.left", action: clearFocus)
+                        .labelStyle(.iconOnly)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 36, height: 36)
+                        .background(.black.opacity(0.55), in: .circle)
+                        .padding(8)
+                }
+
+            ScrollView(.horizontal) {
+                HStack(spacing: 8) {
+                    ForEach(screenShares.filter { target != .screen($0.key.remoteId) }, id: \.key) { share in
+                        ScreenShareTile(userId: share.key.remoteId, track: share.track)
+                            .frame(height: 112)
+                            .onTapGesture {
+                                setFocus(.screen(share.key.remoteId))
+                            }
+                    }
+
+                    ForEach(participants.filter { target != .person($0.user?.id ?? -1) }, id: \.user?.id) { participant in
+                        ParticipantTile(user: participant.user, state: participant.state, isCompact: true)
+                            .frame(width: 84)
+                            .onTapGesture {
+                                if let userId = participant.user?.id {
+                                    setFocus(.person(userId))
+                                }
+                            }
+                    }
+                }
+            }
+            .scrollIndicators(.hidden)
+            .frame(height: 112)
+        }
+        .padding(12)
+    }
+
+    @ViewBuilder
+    private func focusedTile(_ target: FocusTarget) -> some View {
+        switch target {
+        case .person(let userId):
+            if let participant = participants.first(where: { $0.user?.id == userId }) {
+                ParticipantTile(user: participant.user, state: participant.state, fills: true)
+            }
+        case .screen(let userId):
+            if let share = screenShares.first(where: { $0.key.remoteId == userId }) {
+                ScreenShareTile(userId: userId, track: share.track, fills: true)
+            }
+        }
+    }
+
+    private var grid: some View {
+            ScrollView {
+                VStack(spacing: 10) {
+                    if session.isSharingScreen {
+                        Label("You're sharing your screen", systemImage: "rectangle.on.rectangle")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(Theme.blurple, in: .rect(cornerRadius: 12))
+                    }
+
+                    ForEach(screenShares, id: \.key) { share in
+                        ScreenShareTile(userId: share.key.remoteId, track: share.track)
+                            .onTapGesture {
+                                setFocus(.screen(share.key.remoteId))
+                            }
+                    }
+
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                        ForEach(participants, id: \.user?.id) { participant in
+                            ParticipantTile(user: participant.user, state: participant.state)
+                                .onTapGesture {
+                                    if let userId = participant.user?.id {
+                                        setFocus(.person(userId))
+                                    }
+                                }
+                        }
+                    }
+                }
+                .padding(12)
+            }
+    }
+
+    private func setFocus(_ target: FocusTarget?) {
+        withAnimation(.snappy(duration: 0.3)) {
+            focused = target
+        }
+    }
+
+    private func clearFocus() {
+        setFocus(nil)
     }
 
     private var header: some View {
@@ -91,18 +199,32 @@ struct VoiceRoomScreen: View {
                 .frame(width: 40, height: 40)
                 .background(Theme.listBackground, in: .circle)
 
+            // the names alone, the speaker beside them cost the channel's name its room
             VStack(alignment: .leading, spacing: 1) {
-                Label(channelName, systemImage: "speaker.wave.2.fill")
+                Text(channelName)
                     .font(.headline)
                     .foregroundStyle(Theme.header)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
 
                 Text(session.displayName)
                     .font(.caption)
                     .foregroundStyle(Theme.muted)
+                    .lineLimit(1)
             }
+            .layoutPriority(1)
 
             Spacer()
+
+            ConnectionBadge(isRound: true)
+
+            // the sheet's settings, which the call covers once it has started
+            Button("Voice Settings", systemImage: "gearshape.fill", action: showSettings)
+                .labelStyle(.iconOnly)
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(Theme.header)
+                .frame(width: 40, height: 40)
+                .background(Theme.listBackground, in: .circle)
 
             if session.can(.useSoundboard) {
                 Button("Soundboard", systemImage: "waveform", action: showSoundboard)
@@ -124,6 +246,10 @@ struct VoiceRoomScreen: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
+    }
+
+    private func showSettings() {
+        isSettingsPresented = true
     }
 
     private func showSoundboard() {
@@ -148,7 +274,7 @@ struct VoiceRoomScreen: View {
         close()
 
         Task {
-            await session.leaveVoice()
+            await session.leaveVoiceAfterClosing()
         }
     }
 }
@@ -156,6 +282,10 @@ struct VoiceRoomScreen: View {
 private struct ParticipantTile: View {
     let user: PublicUser?
     let state: VoiceUserState
+    // filling the call when tapped, its own shape left to the space it is given
+    var fills = false
+    // a thumbnail in the strip under one, too small for the name and the flip button
+    var isCompact = false
 
     @Environment(SessionStore.self) private var session
 
@@ -172,13 +302,14 @@ private struct ParticipantTile: View {
             Color(hex: user?.profileColor ?? "#5865F2")
                 .opacity(0.35)
 
-            if let track {
+            if let track, let user {
                 VideoView(track: track, isMirrored: isOwn)
+                    .reportsVideoSize(of: VoiceStreamKey(kind: .video, remoteId: user.id))
             } else {
-                AvatarView(user: user, size: 64)
+                AvatarView(user: user, size: isCompact ? 36 : 64)
             }
         }
-        .aspectRatio(3 / 4, contentMode: .fit)
+        .aspectRatio(fills ? nil : 3 / 4, contentMode: .fit)
         .clipShape(.rect(cornerRadius: 14))
         .overlay {
             if let user, session.speakingUserIds.contains(user.id) {
@@ -199,18 +330,21 @@ private struct ParticipantTile: View {
                         .foregroundStyle(Theme.red)
                 }
 
-                Text(user?.name ?? "Unknown")
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
+                if !isCompact {
+                    Text(user?.name ?? "Unknown")
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                }
             }
             .font(.caption.weight(.semibold))
-            .padding(.horizontal, 8)
+            .padding(.horizontal, isCompact ? 5 : 8)
             .padding(.vertical, 4)
             .background(.black.opacity(0.55), in: .capsule)
-            .padding(8)
+            .padding(isCompact ? 4 : 8)
+            .opacity(isCompact && !state.micMuted ? 0 : 1)
         }
         .overlay(alignment: .topTrailing) {
-            if isOwn && track != nil {
+            if isOwn && track != nil && !isCompact {
                 Button("Flip Camera", systemImage: "arrow.triangle.2.circlepath.camera.fill", action: flipCamera)
                     .labelStyle(.iconOnly)
                     .font(.subheadline)
@@ -230,12 +364,14 @@ private struct ParticipantTile: View {
 private struct ScreenShareTile: View {
     let userId: Int
     let track: VideoTrackBox
+    var fills = false
 
     @Environment(SessionStore.self) private var session
 
     var body: some View {
         VideoView(track: track, contentMode: .scaleAspectFit)
-            .aspectRatio(16 / 9, contentMode: .fit)
+            .reportsVideoSize(of: VoiceStreamKey(kind: .screen, remoteId: userId))
+            .aspectRatio(fills ? nil : 16 / 9, contentMode: .fit)
             .background(Color.black)
             .clipShape(.rect(cornerRadius: 14))
             .overlay(alignment: .bottomLeading) {
@@ -398,4 +534,46 @@ private struct FloatingReaction: View {
                 }
             }
     }
+}
+
+// the voice sheet's settings card in the call, with the full voice and video settings behind it
+private struct CallSettingsSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var isFullSettingsShown = false
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VoiceSheetSettings(onOpenSettings: showFullSettings)
+                    .padding(.top, 8)
+            }
+            .background(Theme.listBackground)
+            .navigationTitle("Voice Settings")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done", action: close)
+                }
+            }
+            .navigationDestination(isPresented: $isFullSettingsShown) {
+                VoiceVideoSettingsScreen()
+            }
+        }
+        .sheetDetents([.medium, .large])
+        .presentationBackground(Theme.listBackground)
+    }
+
+    private func showFullSettings() {
+        isFullSettingsShown = true
+    }
+
+    private func close() {
+        dismiss()
+    }
+}
+
+private enum FocusTarget: Hashable {
+    case person(Int)
+    case screen(Int)
 }
