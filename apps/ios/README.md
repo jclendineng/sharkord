@@ -42,6 +42,9 @@ shared from a member's page, and the AFK channel in General settings. Calls send
 only. See
 [docs/features.md](../../docs/features.md) for what the server side of each needs.
 
+[API_AUDIT.md](API_AUDIT.md) lists the iOS 26 and 27 SDK changes still to adopt, with the
+deprecations the compiler reports.
+
 ## The composer's panels
 
 The attachment panel and the expression panel take the keyboard's place under the

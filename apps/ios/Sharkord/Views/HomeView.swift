@@ -721,7 +721,9 @@ private struct SlidingCard<Content: View>: View {
 // kept at full width and only moved ran its top bar's buttons off the screen until it settled.
 // worked out on every frame of a tap's animation as a drag's are. the frames themselves carry no
 // animation inward: under the slide's spring the top bar animated toward each new width on its
-// own and trailed behind, running its buttons off the edge until the slide ended
+// own and trailed behind, running its buttons off the edge until the slide ended. only frames
+// that move the card: stripped from everything, the chat's own animations jumped, the button
+// down to the newest message among them
 private struct CardPosition: ViewModifier, Animatable {
     var position: CGFloat
     let fullWidth: CGFloat
@@ -733,7 +735,7 @@ private struct CardPosition: ViewModifier, Animatable {
 
     func body(content: Content) -> some View {
         content
-            .transaction(disableAnimation)
+            .transaction(value: position, disableAnimation)
             .frame(width: max(fullWidth - position, 0))
             .offset(x: position)
     }

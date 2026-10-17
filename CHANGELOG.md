@@ -290,6 +290,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 - In the app, the conversation scrolls without jumping: fast scrolls no longer stop dead at the
   top or bounce twice at the bottom.
+- On an iPad and a Mac, the button down to the newest message scrolls there smoothly instead
+  of jumping, as on a phone.
 - In the app, the button down to the newest message works on the first tap, even while the
   conversation is still moving, the whole button takes the tap, and it lands right at the bottom.
 - In the app, the messages keep scrolling after a long press opens a message's menu partway
