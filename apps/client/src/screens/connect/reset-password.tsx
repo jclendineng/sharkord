@@ -85,7 +85,7 @@ const ResetPassword = memo(({ token, onDone }: TResetPasswordProps) => {
   );
 
   return (
-    <div className="flex flex-col gap-2 justify-center items-center h-full">
+    <div className="flex flex-col gap-2 justify-center items-center min-h-svh px-4 py-6">
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="text-center">

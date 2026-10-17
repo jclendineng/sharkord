@@ -231,7 +231,7 @@ const Connect = memo(() => {
 
   if (oidc.isCompleting) {
     return (
-      <div className="flex flex-col justify-center items-center h-full gap-2">
+      <div className="flex flex-col justify-center items-center min-h-svh gap-2">
         <Spinner size="lg" />
         <span className="text-xl">{t('oidcCompleting')}</span>
       </div>

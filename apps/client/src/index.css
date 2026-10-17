@@ -149,8 +149,11 @@ html.document-scroll body {
   overflow: visible;
 }
 
+/* the small viewport, not 100vh: on a phone 100vh is the height with safari's toolbar tucked
+away, so a page that fits would still scroll by the toolbar's height and jump */
 html.document-scroll #root {
   height: auto;
+  min-height: 100svh;
 }
 
 /* Define CSS variables for light and dark themes */
