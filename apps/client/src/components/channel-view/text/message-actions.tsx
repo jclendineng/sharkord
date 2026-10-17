@@ -38,6 +38,7 @@ type TMessageActionsProps = {
   onEdit: () => void;
   onReply?: () => void;
   canManage: boolean;
+  canEdit: boolean;
   editable: boolean;
   isThreadReply?: boolean;
   isPinned?: boolean;
@@ -82,6 +83,7 @@ const MessageActions = memo(
     messageId,
     channelId,
     canManage,
+    canEdit,
     editable,
     isThreadReply,
     isPinned,
@@ -188,26 +190,25 @@ const MessageActions = memo(
             title={t('replyInThread')}
           />
         )}
+        {canEdit && (
+          <IconButton
+            size="sm"
+            variant="ghost"
+            icon={Pencil}
+            onClick={onEdit}
+            disabled={!editable}
+            title={t('editMessage')}
+          />
+        )}
         {canManage && (
-          <>
-            <IconButton
-              size="sm"
-              variant="ghost"
-              icon={Pencil}
-              onClick={onEdit}
-              disabled={!editable}
-              title={t('editMessage')}
-            />
-
-            <IconButton
-              size="sm"
-              variant="ghost"
-              icon={isShiftHeld ? Trash2 : Trash}
-              className={isShiftHeld ? 'text-destructive' : ''}
-              onClick={onDeleteClick}
-              title={t('deleteMessageTitle')}
-            />
-          </>
+          <IconButton
+            size="sm"
+            variant="ghost"
+            icon={isShiftHeld ? Trash2 : Trash}
+            className={isShiftHeld ? 'text-destructive' : ''}
+            onClick={onDeleteClick}
+            title={t('deleteMessageTitle')}
+          />
         )}
         {!disablePin && (
           <Protect permission={pinPermission}>

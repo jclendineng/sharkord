@@ -114,6 +114,7 @@ const Message = memo(
               <MessageActions
                 onEdit={handleEdit}
                 canManage={canManage}
+                canEdit={isFromOwnUser}
                 messageId={message.id}
                 channelId={message.channelId}
                 editable={message.editable ?? false}

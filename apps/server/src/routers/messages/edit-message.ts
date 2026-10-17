@@ -11,10 +11,7 @@ import { db } from '../../db';
 import { publishMessage } from '../../db/publishers';
 import { getSettings } from '../../db/queries/server';
 import { messages } from '../../db/schema';
-import {
-  assertCanModifyMessage,
-  loadMessageForWrite
-} from '../../helpers/load-message-for-write';
+import { loadMessageForWrite } from '../../helpers/load-message-for-write';
 import { runBeforeMessageSaveHooks } from '../../helpers/run-before-message-save-hooks';
 import { sanitizeMessageHtml } from '../../helpers/sanitize-html';
 import { eventBus } from '../../plugins/event-bus';
@@ -41,7 +38,12 @@ const editMessageRoute = rateLimitedProcedure(protectedProcedure, {
       message: 'This message is not editable'
     });
 
-    await assertCanModifyMessage(ctx, message, 'edit this message');
+    // only the author: manage messages lets a moderator remove a message, never change what
+    // someone else said
+    invariant(message.userId === ctx.user.id, {
+      code: 'FORBIDDEN',
+      message: 'You can only edit your own messages'
+    });
 
     invariant(!isEmptyMessage(input.content), {
       code: 'BAD_REQUEST',
