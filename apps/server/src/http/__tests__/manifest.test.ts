@@ -53,7 +53,7 @@ describe('/manifest.json', () => {
       (icon) => icon.src === './icon-192.png' && icon.sizes === '192x192'
     );
     const hasDefaultIcon512 = manifest.icons.some(
-      (icon) => icon.src === '/icon-512.png' && icon.sizes === '512x512'
+      (icon) => icon.src === './icon-512.png' && icon.sizes === '512x512'
     );
 
     expect(hasDefaultIcon192).toBe(true);

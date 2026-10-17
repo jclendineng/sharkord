@@ -40,6 +40,7 @@ const resetToUnsynced = async () => {
   delete parsed.storage;
   delete parsed.gifs;
   delete parsed.links;
+  delete parsed.sounds;
 
   await writeIni(parsed);
   await fs.rm(LAST_SYNC_PATH, { force: true });

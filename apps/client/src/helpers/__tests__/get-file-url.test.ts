@@ -12,7 +12,11 @@ const getFile = (name: string, accessToken?: string): TFile =>
 describe('getFileUrl', () => {
   beforeAll(() => {
     globalThis.window = {
-      location: { host: 'chat.example.com', protocol: 'https:' }
+      location: {
+        host: 'chat.example.com',
+        protocol: 'https:',
+        href: 'https://chat.example.com/'
+      }
     } as never;
   });
 

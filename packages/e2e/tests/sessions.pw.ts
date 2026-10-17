@@ -235,6 +235,12 @@ test('a ban ends the session and offers no way back', async ({ browser }) => {
       BAN_REASON
     );
 
+    // the ban then asks whether to block the addresses too, local ones are never banned
+    await admin
+      .getByRole('alertdialog')
+      .getByRole('button', { name: 'Only the Account' })
+      .click();
+
     await expect(victim.getByText(BAN_REASON)).toBeVisible();
     await expect(victim.getByTestId(TestId.SERVER_VIEW)).toBeHidden();
 
@@ -258,7 +264,10 @@ test('a ban ends the session and offers no way back', async ({ browser }) => {
     // assertion is what proves the ban was actually lifted. a failure before this point
     // leaves the user banned, so a retry needs the re-seed that every run does anyway
     await admin.getByTestId(TestId.MOD_VIEW_BAN).click();
-    await confirmDialog(admin);
+    await admin
+      .getByRole('alertdialog')
+      .getByRole('button', { name: 'Unban', exact: true })
+      .click();
 
     await expect(admin.getByTestId(TestId.MOD_VIEW_BAN)).toHaveText(/Ban/);
   } finally {

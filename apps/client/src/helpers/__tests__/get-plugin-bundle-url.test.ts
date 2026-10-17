@@ -5,7 +5,11 @@ describe('getPluginBundleUrl', () => {
   // outside development the base url comes from the page the client is served on
   beforeAll(() => {
     globalThis.window = {
-      location: { host: 'chat.example.com', protocol: 'https:' }
+      location: {
+        host: 'chat.example.com',
+        protocol: 'https:',
+        href: 'https://chat.example.com/'
+      }
     } as never;
   });
 

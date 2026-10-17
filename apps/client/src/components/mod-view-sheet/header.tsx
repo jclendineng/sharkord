@@ -101,7 +101,9 @@ const Header = memo(() => {
       title: t('banTitle'),
       message: t('banMsg'),
       confirmLabel: t('banConfirm'),
-      allowEmpty: true
+      allowEmpty: true,
+      // the address question opens right after, and a delayed close would shut it unanswered
+      autoClose: false
     });
 
     if (reason === null) {

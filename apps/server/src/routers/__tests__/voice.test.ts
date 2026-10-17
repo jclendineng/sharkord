@@ -1132,9 +1132,13 @@ describe('voice producer subscriptions', () => {
 
       runtime.addUser(2, { micMuted: false, soundMuted: false });
 
+      const socket = createFakeSocket();
+
+      socket.inVoice = true;
+
       const { caller } = await initTest(
         2,
-        { socket: createFakeSocket() },
+        { socket },
         { currentVoiceChannelId: PRIVATE_VOICE_CHANNEL_ID }
       );
 

@@ -25,6 +25,7 @@
   "include": [
     "tests",
     "playwright.config.ts",
-    "../../apps/server/src/declarations.d.ts"
+    "../../apps/server/src/declarations.d.ts",
+    "../../apps/server/src/assets.d.ts"
   ]
 }

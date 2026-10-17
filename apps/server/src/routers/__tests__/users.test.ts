@@ -1064,7 +1064,8 @@ describe('users router', () => {
   });
 
   describe('ip bans', () => {
-    const PUBLIC_IP = '203.0.113.10';
+    // a routable address: documentation ranges like 203.0.113.0/24 count as reserved
+    const PUBLIC_IP = '8.8.8.8';
     const PRIVATE_IP = '192.168.1.20';
 
     const addLogins = (userId: number, ips: string[]) =>
@@ -1122,7 +1123,8 @@ describe('users router', () => {
         .insert(ipBans)
         .values({ ip: PUBLIC_IP, userId: null, createdAt: Date.now() });
 
-      const { caller } = await initTest(3, { remoteAddress: PUBLIC_IP });
+      // getCaller, since initTest would already join and throw before the assertion
+      const { caller } = await getCaller(3, { remoteAddress: PUBLIC_IP });
       const { handshakeHash } = await caller.others.handshake();
 
       await expect(caller.others.joinServer({ handshakeHash })).rejects.toThrow(
