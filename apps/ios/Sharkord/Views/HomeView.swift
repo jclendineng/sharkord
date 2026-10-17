@@ -222,6 +222,13 @@ struct HomeView: View {
                         .padding(.top, Self.cardGap)
                 }
                 .frame(width: listWidth)
+                .overlay {
+                    if servers.isChatDropdownOpen && !ProcessInfo.processInfo.isiOSAppOnMac {
+                        Color.clear
+                            .contentShape(.rect)
+                            .onTapGesture(perform: dismissChatDropdown)
+                    }
+                }
                 .background(Theme.railBackground.ignoresSafeArea())
 
                 // a card of its own beside the list's, rounded all round with the rail showing
@@ -348,6 +355,10 @@ struct HomeView: View {
         let landing = resting + translation + velocity * 0.2
 
         settleChat(expanded: landing < listWidth / 2)
+    }
+
+    private func dismissChatDropdown() {
+        servers.chatDropdownDismissals += 1
     }
 
     private func expandForTyping() {

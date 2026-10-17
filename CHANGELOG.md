@@ -288,6 +288,10 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 ### Fixed
 
+- In the app, the messages keep scrolling after a long press opens a message's menu partway
+  through, and the pressed row lets go as soon as the menu shows.
+- On an iPad, a tap on the channel list beside the chat puts away the chat's pins or threads
+  panel.
 - On a Mac, the search box keeps focus while typing, the chat keeps its top bar and channel name
   while searching, search results open when clicked, and a message found by a GIF shows it.
 - On a Mac, a menu closes before the sheet it opens instead of staying open behind it, the

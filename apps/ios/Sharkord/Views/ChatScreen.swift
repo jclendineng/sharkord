@@ -140,6 +140,12 @@ struct ChatScreen: View {
             }
             .animation(.snappy(duration: 0.18), value: dropdown)
         }
+        .onChange(of: dropdown != nil) { _, isOpen in
+            servers.isChatDropdownOpen = isOpen
+        }
+        .onChange(of: servers.chatDropdownDismissals) {
+            closeDropdown()
+        }
         .onChange(of: session.requestedChannelId) { _, requestedChannelId in
             if requestedChannelId != nil {
                 closeDropdown()
@@ -283,6 +289,7 @@ struct ChatScreen: View {
             await session.markAsRead(channelId)
         }
         .onDisappear {
+            servers.isChatDropdownOpen = false
             store.isVisible = false
         }
         // a group left, or a channel deleted, takes its chat with it back to the list

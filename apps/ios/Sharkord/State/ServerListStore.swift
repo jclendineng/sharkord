@@ -47,6 +47,11 @@ final class ServerListStore {
         let anchor: CGRect
     }
 
+    // the chat's pins or threads panel is out. on an ipad a tap on the list beside the chat puts
+    // it away, as one anywhere puts the search card away, which the chat's own catcher cannot reach
+    var isChatDropdownOpen = false
+    var chatDropdownDismissals = 0
+
     var searchDropdown: SearchDropdown? {
         didSet {
             if searchDropdown != nil {

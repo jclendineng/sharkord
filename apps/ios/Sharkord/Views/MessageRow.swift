@@ -16,7 +16,12 @@ struct MessageRow: View {
 
     @State private var isHovered = false
     // the finger on the row, lit as it is held so the press has something to show for it
-    @GestureState private var isPressed = false
+    @State private var isFingerDown = false
+
+    // let go the moment the menu takes over from the press
+    private var isPressed: Bool {
+        isFingerDown && !isShowingMessageActions
+    }
 
     private var author: PublicUser? {
         message.userId.flatMap { session.usersById[$0] }
@@ -134,13 +139,8 @@ struct MessageRow: View {
         .onTapGesture(count: 2, perform: onDoubleTap)
         // simultaneous so it also works over an attachment's own button, a voice message's play
         // button for one. the sheet opening cancels that button's tap
-        .simultaneousGesture(
-            LongPressGesture(minimumDuration: 0.3)
-                .updating($isPressed) { isDown, isPressed, _ in
-                    isPressed = isDown
-                }
-                .onEnded(longPressed)
-        )
+        .simultaneousGesture(LongPressGesture(minimumDuration: 0.3).onEnded(longPressed))
+        .gesture(PressTracker(isPressed: $isFingerDown))
         .onSecondaryClick(perform: onSecondaryClick)
     }
 
@@ -341,5 +341,46 @@ private struct UndimmedButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .opacity(configuration.isPressed ? 0.6 : 1)
+    }
+}
+
+// whether a finger rests on the row, from uikit's own recogniser alongside every other one. a
+// swiftui gesture tracking it shared the touch with the list, and a menu opening part way through
+// a press left it holding on, the messages no longer scrolling. this one never claims the touch
+// and lets go as soon as the finger moves, so a scroll always wins
+private struct PressTracker: UIGestureRecognizerRepresentable {
+    @Binding var isPressed: Bool
+
+    func makeUIGestureRecognizer(context: Context) -> UILongPressGestureRecognizer {
+        let recognizer = UILongPressGestureRecognizer()
+
+        recognizer.minimumPressDuration = 0.05
+        recognizer.allowableMovement = 10
+        recognizer.cancelsTouchesInView = false
+        recognizer.delaysTouchesEnded = false
+        recognizer.delegate = context.coordinator
+
+        return recognizer
+    }
+
+    func handleUIGestureRecognizerAction(_ recognizer: UILongPressGestureRecognizer, context: Context) {
+        switch recognizer.state {
+        case .began:
+            isPressed = true
+        case .ended, .cancelled, .failed:
+            isPressed = false
+        default:
+            break
+        }
+    }
+
+    func makeCoordinator(converter: CoordinateSpaceConverter) -> Coordinator {
+        Coordinator()
+    }
+
+    final class Coordinator: NSObject, UIGestureRecognizerDelegate {
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+            true
+        }
     }
 }
