@@ -243,7 +243,7 @@ const Connect = memo(() => {
       <div className="hidden md:block fixed bottom-6 right-6 z-50">
         <LanguageSwitcher variant="icon" />
       </div>
-      <div className="flex flex-col gap-2 justify-center items-center min-h-dvh px-4 py-6">
+      <div className="flex flex-col gap-2 justify-center items-center min-h-svh px-4 py-6">
         <Card className="w-full max-w-sm shrink-0">
           <CardHeader>
             <CardTitle className="flex flex-col items-center gap-2 text-center">
