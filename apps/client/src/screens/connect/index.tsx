@@ -77,7 +77,8 @@ const Connect = memo(() => {
       return undefined;
     }
 
-    return `sharkord://join?server=${encodeURIComponent(window.location.origin)}&invite=${encodeURIComponent(invite)}`;
+    // with the subpath a server behind a proxy is served under, which the origin alone leaves out
+    return `sharkord://join?server=${encodeURIComponent(getUrlFromServer())}&invite=${encodeURIComponent(invite)}`;
   }, []);
 
   const inviteCode = useMemo(() => {
