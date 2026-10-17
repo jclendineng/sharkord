@@ -42,7 +42,7 @@ test.describe('Auto Login', () => {
     await page.goto('/');
 
     await page.evaluate(() => {
-      localStorage.setItem('sharkord-auto-login', 'true');
+      localStorage.setItem('sharkord-keep-signed-in', 'true');
     });
 
     await page.reload();
@@ -59,7 +59,7 @@ test.describe('Auto Login', () => {
     await page.goto('/');
 
     await page.evaluate(() => {
-      localStorage.setItem('sharkord-auto-login', 'true');
+      localStorage.setItem('sharkord-keep-signed-in', 'true');
       localStorage.removeItem('sharkord-auto-login-token');
     });
 
@@ -75,7 +75,7 @@ test.describe('Auto Login', () => {
     await page.goto('/');
 
     await page.evaluate(() => {
-      localStorage.setItem('sharkord-auto-login', 'false');
+      localStorage.setItem('sharkord-keep-signed-in', 'false');
       localStorage.setItem('sharkord-auto-login-token', 'some-token');
     });
 
@@ -91,7 +91,7 @@ test.describe('Auto Login', () => {
     await page.goto('/');
 
     await page.evaluate(() => {
-      localStorage.setItem('sharkord-auto-login', 'true');
+      localStorage.setItem('sharkord-keep-signed-in', 'true');
       localStorage.setItem('sharkord-auto-login-token', 'invalid-token');
     });
 
@@ -103,7 +103,7 @@ test.describe('Auto Login', () => {
 
     // the refused token is forgotten, but the preference stays for the next sign in
     const autoLoginEnabled = await page.evaluate(() =>
-      localStorage.getItem('sharkord-auto-login')
+      localStorage.getItem('sharkord-keep-signed-in')
     );
     expect(autoLoginEnabled).toBe('true');
 
