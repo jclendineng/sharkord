@@ -13,8 +13,9 @@ environment values use `@Entry`, and the app already uses `onGeometryChange`,
 
 ## To do, in order
 
-- [ ] **`installTap` deprecated in iOS 27** (`State/MicrophoneTester.swift:44`). Move to the
-      throwing overload, `installTap(onBus:bufferSize:format:error:block:)` in Objective C.
+- [x] **`installTap` deprecated in iOS 27** (`State/MicrophoneTester.swift`). Now on
+      `installAudioTap(onBus:bufferSize:format:tapProvider:)`, the Swift name of the throwing tap,
+      reading an `AVReadOnlyAudioPCMBuffer`.
 - [ ] **Drag to reorder with `reorderable()` / `reorderContainer`** (iOS 27). Channels
       (`Views/Admin/ChannelsAdminScreen.swift`) and roles (`Views/Admin/RolesScreen.swift`) use
       `onMove` in edit mode on iPhone and iPad and arrow buttons on the Mac, where edit mode does
@@ -26,6 +27,12 @@ environment values use `@Entry`, and the app already uses `onGeometryChange`,
       `sampleBufferReceiver(adding:)`. Needs a live call with picture in picture to verify.
 
 ## Worth considering
+
+- **Hearing yourself in the mic test is noisy.** The test turns voice processing off so echo
+  cancellation does not take your own voice out, which also drops noise suppression and Voice
+  Isolation, and AirPods add the hiss of their headset mic. A call keeps voice processing on and
+  sounds cleaner than the test. Try `AVAudioSession.setPrefersEchoCancelledInput` to keep the
+  suppression without losing your voice; whether it works with AirPods needs a phone.
 
 - **`swipeActions` on any view** (iOS 27, `swipeActionsContainer`): swipe on channel and direct
   message rows, which are plain stacks, for mute or mark as read. Messages keep long press.

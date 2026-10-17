@@ -38,10 +38,8 @@ final class MicrophoneTester {
             let format = input.outputFormat(forBus: 0)
 
             // sendable so it is not tied to the main actor like the rest of the app: the engine
-            // calls it on its audio thread, and a main actor closure there traps. ios 27's
-            // replacement, installTap with an error, reaches swift only as __installTap returning
-            // a bool, so this stays until the sdk gives it a swift name
-            input.installTap(onBus: 0, bufferSize: 1024, format: format) { @Sendable [weak self] buffer, _ in
+            // calls it on its audio thread, and a main actor closure there traps
+            try input.installAudioTap(onBus: 0, bufferSize: 1024, format: format) { @Sendable [weak self] buffer, _ in
                 let level = Self.rms(buffer)
 
                 Task { @MainActor in
@@ -92,15 +90,17 @@ final class MicrophoneTester {
     }
 
     // a rough loudness from 0 to 1, a meter needs nothing more exact
-    nonisolated private static func rms(_ buffer: AVAudioPCMBuffer) -> Float {
-        guard let samples = buffer.floatChannelData?[0], buffer.frameLength > 0 else {
+    nonisolated private static func rms(_ buffer: AVReadOnlyAudioPCMBuffer) -> Float {
+        guard buffer.frameLength > 0, case .float(let samples) = buffer.channelData(0) else {
             return 0
         }
 
         var sum: Float = 0
 
-        for index in 0..<Int(buffer.frameLength) {
-            sum += samples[index] * samples[index]
+        for index in 0..<buffer.frameLength {
+            let sample = samples[index * buffer.stride]
+
+            sum += sample * sample
         }
 
         let rms = (sum / Float(buffer.frameLength)).squareRoot()
