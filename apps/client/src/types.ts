@@ -47,6 +47,12 @@ export enum ScreenCursor {
   NEVER = 'never'
 }
 
+// the channel list or the member list, slid in over the chat on a phone
+export enum MobileDrawer {
+  CHANNELS = 'channels',
+  MEMBERS = 'members'
+}
+
 export enum MicMode {
   OPEN = 'open',
   PUSH_TO_TALK = 'push-to-talk'

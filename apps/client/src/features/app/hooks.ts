@@ -17,6 +17,7 @@ import {
   messageJumpTargetSelector,
   messageSentSoundSelector,
   micModeSelector,
+  mobileDrawerSelector,
   modViewOpenSelector,
   modViewUserIdSelector,
   notificationSoundsSelector,
@@ -39,6 +40,8 @@ export const useModViewOpen = () => {
 
   return useMemo(() => ({ isOpen, userId }), [isOpen, userId]);
 };
+
+export const useMobileDrawer = () => useSelector(mobileDrawerSelector);
 
 export const useThreadSidebar = () => useSelector(threadSidebarDataSelector);
 

@@ -1,4 +1,4 @@
-import { assertVoiceChatClose } from '@/features/app/actions';
+import { assertVoiceChatClose, setMobileDrawer } from '@/features/app/actions';
 import { store } from '@/features/store';
 import type { TChannel, TChannelUserPermissionsMap } from '@sharkord/shared';
 import { markChannelAsRead } from '../actions';
@@ -17,6 +17,8 @@ export const setSelectedChannelId = (channelId: number | undefined) => {
   if (!channelId) {
     return;
   }
+
+  setMobileDrawer(undefined);
 
   const state = store.getState();
   const unreadCount = channelReadStateByIdSelector(state, channelId);

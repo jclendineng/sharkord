@@ -18,6 +18,8 @@
   "getIosAppDesc": "Made for iPhone and iPad, free on TestFlight.",
   "swipeRightForChannels": "Swipe right to open the channel list",
   "swipeLeftForUsers": "Swipe left to open the user list",
+  "openChannelList": "Open the channel list",
+  "openMemberList": "Open the member list",
   "deleteMessageTitle": "Delete Message",
   "deleteMessageConfirm": "Are you sure you want to delete this message? This action is irreversible.",
   "deleteLabel": "Delete",

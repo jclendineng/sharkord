@@ -18,6 +18,8 @@
   "getIosAppDesc": "Pro iPhone a iPad, zdarma v TestFlightu.",
   "swipeRightForChannels": "Přejetím doprava otevřete seznam kanálů",
   "swipeLeftForUsers": "Přejetím doleva otevřete seznam uživatelů",
+  "openChannelList": "Otevřít seznam kanálů",
+  "openMemberList": "Otevřít seznam členů",
   "deleteMessageTitle": "Odstranit zprávu",
   "deleteMessageConfirm": "Opravdu chcete tuto zprávu odstranit? Tato akce je nevratná.",
   "deleteLabel": "Odstranit",

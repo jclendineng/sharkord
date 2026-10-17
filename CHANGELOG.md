@@ -259,6 +259,11 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - The sign in page stays still in Safari on an iPhone when everything fits on screen, rather than scrolling and jumping by the height of the address bar, and it no longer bounces past its edges or reloads on a pull down.
 - A sign in page a little taller than the screen, such as one opened from an invite, scrolls smoothly in Safari on an iPhone instead of stuttering as the address bar shrinks and grows.
 - The reset password and single sign-on screens are centred again.
+- On a phone the web app works without a mouse:
+  - A channel's top bar has buttons for the channel list and the member list, which before opened only with a swipe.
+  - Picking a channel or opening settings closes the channel list instead of leaving it over the chat.
+  - Tapping a message shows its actions, such as reply, edit and delete, which appeared only on hover.
+  - A member's profile card opens below their name and fits on the screen, instead of mostly off its left edge.
 - Dependencies with published security fixes are upgraded, among them the HTML sanitizer, the websocket server, the image size reader, the message editor and the database layer.
 - The web client joins its call again after a dropped connection comes back, instead of showing a call the server had already ended ([#849](https://github.com/Sharkord/sharkord/issues/849)).
 - Voice works in Firefox when `announcedAddress` is a hostname. The server sends the addresses it resolves the name to beside the hostname ([#756](https://github.com/Sharkord/sharkord/issues/756)).

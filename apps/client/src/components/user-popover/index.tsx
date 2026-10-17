@@ -38,7 +38,7 @@ import {
   UserX,
   type LucideIcon
 } from 'lucide-react';
-import { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useMemo, useSyncExternalStore } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Protect } from '../protect';
@@ -46,6 +46,20 @@ import { RoleBadge } from '../role-badge';
 import { UserAvatar } from '../user-avatar';
 import { UserStatusBadge } from '../user-status';
 import { UserNote } from './user-note';
+
+// a phone has no room beside a name for the card, so there it opens below, where it can slide
+// sideways to fit on the screen
+const narrowScreenQuery = window.matchMedia('(max-width: 639px)');
+
+const subscribeNarrowScreen = (onChange: () => void) => {
+  narrowScreenQuery.addEventListener('change', onChange);
+
+  return () => {
+    narrowScreenQuery.removeEventListener('change', onChange);
+  };
+};
+
+const getIsNarrowScreen = () => narrowScreenQuery.matches;
 
 type TUserPopoverProps = {
   userId: number;
@@ -58,6 +72,10 @@ const UserPopover = memo(({ userId, children }: TUserPopoverProps) => {
   const user = useUserById(userId);
   const roles = useUserRoles(userId);
   const settings = usePublicServerSettings();
+  const isNarrowScreen = useSyncExternalStore(
+    subscribeNarrowScreen,
+    getIsNarrowScreen
+  );
   const isOwnUser = useIsOwnUser(userId);
   const friendStatus = useFriendStatus(userId);
 
@@ -115,7 +133,12 @@ const UserPopover = memo(({ userId, children }: TUserPopoverProps) => {
   return (
     <Popover>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="start" side="right">
+      <PopoverContent
+        className="w-80 p-0"
+        align="start"
+        side={isNarrowScreen ? 'bottom' : 'right'}
+        collisionPadding={8}
+      >
         <div className="relative">
           {user.banned && (
             <div className="absolute right-2 top-2 bg-red-500 text-white text-xs px-2 py-1 rounded-md flex items-center gap-1">

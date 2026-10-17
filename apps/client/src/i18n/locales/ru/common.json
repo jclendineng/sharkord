@@ -18,6 +18,8 @@
   "getIosAppDesc": "Для iPhone и iPad, бесплатно в TestFlight.",
   "swipeRightForChannels": "Проведите вправо для открытия списка каналов",
   "swipeLeftForUsers": "Проведите влево для открытия списка пользователей",
+  "openChannelList": "Открыть список каналов",
+  "openMemberList": "Открыть список участников",
   "deleteMessageTitle": "Удалить сообщение",
   "deleteMessageConfirm": "Вы уверены, что хотите удалить это сообщение? Это действие необратимо.",
   "deleteLabel": "Удалить",

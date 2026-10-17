@@ -12,6 +12,10 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* hover on a tap too: tailwind 4 limits hover to devices that can hover, which left controls
+that only show on hover, like a message's actions, out of reach on a phone */
+@custom-variant hover (&:hover);
+
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);

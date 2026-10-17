@@ -5,7 +5,12 @@ import {
   getLocalStorageItemBool,
   LocalStorageKey
 } from '@/helpers/storage';
-import { MicMode, type TDevices, type TMessageJumpToTarget } from '@/types';
+import {
+  MicMode,
+  type MobileDrawer,
+  type TDevices,
+  type TMessageJumpToTarget
+} from '@/types';
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 export interface TAppState {
@@ -15,6 +20,7 @@ export interface TAppState {
   devices: TDevices | undefined;
   modViewOpen: boolean;
   modViewUserId: number | undefined;
+  mobileDrawer: MobileDrawer | undefined;
   threadSidebarOpen: boolean;
   threadParentMessageId: number | undefined;
   threadChannelId: number | undefined;
@@ -43,6 +49,7 @@ const initialState: TAppState = {
   devices: undefined,
   modViewOpen: false,
   modViewUserId: undefined,
+  mobileDrawer: undefined,
   threadSidebarOpen: false,
   threadParentMessageId: undefined,
   threadChannelId: undefined,
@@ -123,6 +130,12 @@ export const appSlice = createSlice({
     ) => {
       state.modViewOpen = action.payload.modViewOpen;
       state.modViewUserId = action.payload.userId;
+    },
+    setMobileDrawer: (
+      state,
+      action: PayloadAction<MobileDrawer | undefined>
+    ) => {
+      state.mobileDrawer = action.payload;
     },
     setThreadSidebarOpen: (
       state,

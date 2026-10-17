@@ -16,6 +16,9 @@ export const modViewUserIdSelector = (state: IRootState) =>
 export const loadingPluginsSelector = (state: IRootState) =>
   state.app.loadingPlugins;
 
+export const mobileDrawerSelector = (state: IRootState) =>
+  state.app.mobileDrawer;
+
 export const threadSidebarOpenSelector = (state: IRootState) =>
   state.app.threadSidebarOpen;
 

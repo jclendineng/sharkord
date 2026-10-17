@@ -18,6 +18,8 @@
   "getIosAppDesc": "专为 iPhone 和 iPad 打造，可在 TestFlight 免费获取。",
   "swipeRightForChannels": "向右滑动以打开频道列表",
   "swipeLeftForUsers": "向左滑动以打开用户列表",
+  "openChannelList": "打开频道列表",
+  "openMemberList": "打开成员列表",
   "deleteMessageTitle": "删除消息",
   "deleteMessageConfirm": "您确定要删除此消息吗？此操作不可撤销。",
   "deleteLabel": "删除",

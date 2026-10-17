@@ -6,7 +6,12 @@ import { ThreadSidebar } from '@/components/thread-sidebar';
 import { TopBar } from '@/components/top-bar';
 import { VoiceChatSidebar } from '@/components/voice-chat-sidebar';
 import { VoiceProvider } from '@/components/voice-provider';
-import { useSelectedDmChannelId, useThreadSidebar } from '@/features/app/hooks';
+import { setMobileDrawer } from '@/features/app/actions';
+import {
+  useMobileDrawer,
+  useSelectedDmChannelId,
+  useThreadSidebar
+} from '@/features/app/hooks';
 import { setDmsOpen } from '@/features/server/actions';
 import { setSelectedChannelId } from '@/features/server/channels/actions';
 import { useDmsOpen, usePublicServerSettings } from '@/features/server/hooks';
@@ -17,14 +22,16 @@ import {
 } from '@/helpers/storage';
 import { useSwipeGestures } from '@/hooks/use-swipe-gestures';
 import { cn } from '@/lib/utils';
+import { MobileDrawer } from '@/types';
 import { Permission, TestId } from '@sharkord/shared';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { ContentWrapper } from './content-wrapper';
 import { PreventBrowser } from './prevent-browser';
 
 const ServerView = memo(() => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isMobileUsersOpen, setIsMobileUsersOpen] = useState(false);
+  const mobileDrawer = useMobileDrawer();
+  const isMobileMenuOpen = mobileDrawer === MobileDrawer.CHANNELS;
+  const isMobileUsersOpen = mobileDrawer === MobileDrawer.MEMBERS;
   const [isDesktopRightSidebarOpen, setIsDesktopRightSidebarOpen] = useState(
     getLocalStorageItemBool(LocalStorageKey.RIGHT_SIDEBAR_STATE, true)
   );
@@ -43,25 +50,27 @@ const ServerView = memo(() => {
   }, [isDesktopRightSidebarOpen]);
 
   const handleSwipeRight = useCallback(() => {
-    if (isMobileMenuOpen || isMobileUsersOpen) {
-      setIsMobileMenuOpen(false);
-      setIsMobileUsersOpen(false);
+    if (mobileDrawer) {
+      setMobileDrawer(undefined);
       return;
     }
 
-    setIsMobileMenuOpen(true);
-  }, [isMobileMenuOpen, isMobileUsersOpen]);
+    setMobileDrawer(MobileDrawer.CHANNELS);
+  }, [mobileDrawer]);
 
   const handleSwipeLeft = useCallback(() => {
-    if (isMobileMenuOpen || isMobileUsersOpen) {
-      setIsMobileMenuOpen(false);
-      setIsMobileUsersOpen(false);
+    if (mobileDrawer) {
+      setMobileDrawer(undefined);
 
       return;
     }
 
-    setIsMobileUsersOpen(true);
-  }, [isMobileMenuOpen, isMobileUsersOpen]);
+    setMobileDrawer(MobileDrawer.MEMBERS);
+  }, [mobileDrawer]);
+
+  const closeMobileDrawer = useCallback(() => {
+    setMobileDrawer(undefined);
+  }, []);
 
   const swipeHandlers = useSwipeGestures({
     onSwipeRight: handleSwipeRight,
@@ -95,14 +104,14 @@ const ServerView = memo(() => {
           {isMobileMenuOpen && (
             <div
               className="md:hidden fixed inset-0 bg-black/50 z-30"
-              onClick={() => setIsMobileMenuOpen(false)}
+              onClick={closeMobileDrawer}
             />
           )}
 
           {isMobileUsersOpen && (
             <div
               className="lg:hidden fixed inset-0 bg-black/50 z-30"
-              onClick={() => setIsMobileUsersOpen(false)}
+              onClick={closeMobileDrawer}
             />
           )}
 

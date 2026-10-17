@@ -18,6 +18,8 @@
   "getIosAppDesc": "Conçue pour iPhone et iPad, gratuite sur TestFlight.",
   "swipeRightForChannels": "Balayez vers la droite pour ouvrir la liste des canneaux",
   "swipeLeftForUsers": "Balayez vers la gauche pour ouvrir la liste des utilisateurs",
+  "openChannelList": "Ouvrir la liste des salons",
+  "openMemberList": "Ouvrir la liste des membres",
   "deleteMessageTitle": "Supprimer le Message",
   "deleteMessageConfirm": "Êtes-vous sûr de vouloir supprimer ce message ? Cette action est irréversible.",
   "deleteLabel": "Supprimer",

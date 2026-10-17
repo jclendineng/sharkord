@@ -7,7 +7,7 @@ import {
   setLocalStorageItemBool
 } from '@/helpers/storage';
 import { i18n } from '@/i18n';
-import { MicMode, type TMessageJumpToTarget } from '@/types';
+import { MicMode, type MobileDrawer, type TMessageJumpToTarget } from '@/types';
 import type { TServerInfo } from '@sharkord/shared';
 import { toast } from 'sonner';
 import { markChannelAsRead, setInfo } from '../server/actions';
@@ -104,6 +104,9 @@ export const setModViewOpen = (isOpen: boolean, userId?: number) =>
     })
   );
 
+export const setMobileDrawer = (drawer: MobileDrawer | undefined) =>
+  store.dispatch(appSliceActions.setMobileDrawer(drawer));
+
 export const openThreadSidebar = (parentMessageId: number, channelId: number) =>
   store.dispatch(
     appSliceActions.setThreadSidebarOpen({
@@ -164,6 +167,7 @@ export const setSelectedDmChannelId = (channelId: number | undefined) => {
   store.dispatch(appSliceActions.setSelectedDmChannelId(channelId));
 
   if (channelId !== undefined) {
+    setMobileDrawer(undefined);
     markChannelAsRead(channelId);
   }
 };
