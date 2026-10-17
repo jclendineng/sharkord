@@ -12,7 +12,7 @@ test.describe('Auto Login', () => {
     await expect(autoLoginSwitch).toContainText('Login automatically');
   });
 
-  test('should have the auto-login switch checked by default', async ({
+  test('should have the auto-login switch unchecked by default', async ({
     page
   }) => {
     await page.goto('/');
@@ -20,7 +20,7 @@ test.describe('Auto Login', () => {
     const switchButton = page
       .getByTestId(TestId.CONNECT_AUTO_LOGIN_SWITCH)
       .locator('button[role="switch"]');
-    await expect(switchButton).toHaveAttribute('data-state', 'checked');
+    await expect(switchButton).toHaveAttribute('data-state', 'unchecked');
   });
 
   test('should toggle the auto-login switch', async ({ page }) => {
@@ -30,10 +30,10 @@ test.describe('Auto Login', () => {
     const switchButton = autoLoginSwitch.locator('button[role="switch"]');
 
     await autoLoginSwitch.click();
-    await expect(switchButton).toHaveAttribute('data-state', 'unchecked');
+    await expect(switchButton).toHaveAttribute('data-state', 'checked');
 
     await autoLoginSwitch.click();
-    await expect(switchButton).toHaveAttribute('data-state', 'checked');
+    await expect(switchButton).toHaveAttribute('data-state', 'unchecked');
   });
 
   test('should restore the auto-login switch state from localStorage', async ({
@@ -42,7 +42,7 @@ test.describe('Auto Login', () => {
     await page.goto('/');
 
     await page.evaluate(() => {
-      localStorage.setItem('sharkord-keep-signed-in', 'true');
+      localStorage.setItem('sharkord-auto-login', 'true');
     });
 
     await page.reload();
@@ -59,7 +59,7 @@ test.describe('Auto Login', () => {
     await page.goto('/');
 
     await page.evaluate(() => {
-      localStorage.setItem('sharkord-keep-signed-in', 'true');
+      localStorage.setItem('sharkord-auto-login', 'true');
       localStorage.removeItem('sharkord-auto-login-token');
     });
 
@@ -75,7 +75,7 @@ test.describe('Auto Login', () => {
     await page.goto('/');
 
     await page.evaluate(() => {
-      localStorage.setItem('sharkord-keep-signed-in', 'false');
+      localStorage.setItem('sharkord-auto-login', 'false');
       localStorage.setItem('sharkord-auto-login-token', 'some-token');
     });
 
@@ -91,7 +91,7 @@ test.describe('Auto Login', () => {
     await page.goto('/');
 
     await page.evaluate(() => {
-      localStorage.setItem('sharkord-keep-signed-in', 'true');
+      localStorage.setItem('sharkord-auto-login', 'true');
       localStorage.setItem('sharkord-auto-login-token', 'invalid-token');
     });
 
@@ -101,11 +101,11 @@ test.describe('Auto Login', () => {
     const connectButton = page.getByTestId(TestId.CONNECT_BUTTON);
     await expect(connectButton).toBeVisible({ timeout: 10_000 });
 
-    // the refused token is forgotten, but the preference stays for the next sign in
+    // auto-login state should be cleared after failure
     const autoLoginEnabled = await page.evaluate(() =>
-      localStorage.getItem('sharkord-keep-signed-in')
+      localStorage.getItem('sharkord-auto-login')
     );
-    expect(autoLoginEnabled).toBe('true');
+    expect(autoLoginEnabled).toBe('false');
 
     const savedToken = await page.evaluate(() =>
       localStorage.getItem('sharkord-auto-login-token')

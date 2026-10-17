@@ -274,7 +274,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   - Notifications drop in from the top instead of covering the message box or a call's controls.
   - Closing the keyboard in Safari on an iPhone puts the page back in place, instead of leaving it shifted up with its top cut off and a gap at the bottom.
 - A notification's close button shows its X; it was drawn dark on the dark notification.
-- Refreshing the web app keeps you signed in: Login automatically is on by default, so the session resumes until you sign out or it expires. Turn it off on a shared computer. An expired saved session no longer switches the setting off too.
+- Refreshing the web app keeps you signed in, whether or not Login automatically is on. That setting now only decides whether a new tab or a reopened browser stays signed in.
 - Only a message's author can edit it. Manage messages let anyone holding it change other people's messages; it still lets them delete one.
 - Dependencies with published security fixes are upgraded, among them the HTML sanitizer, the websocket server, the image size reader, the message editor and the database layer.
 - The web client joins its call again after a dropped connection comes back, instead of showing a call the server had already ended ([#849](https://github.com/Sharkord/sharkord/issues/849)).

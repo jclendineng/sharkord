@@ -5,9 +5,12 @@ import { useDisconnectInfo, useIsConnected } from '@/features/server/hooks';
 import {
   getLocalStorageItem,
   getLocalStorageItemBool,
+  getSessionStorageItem,
   LocalStorageKey,
   removeLocalStorageItem,
+  removeSessionStorageItem,
   SessionStorageKey,
+  setLocalStorageItemBool,
   setSessionStorageItem
 } from '@/helpers/storage';
 import { memo, useEffect, useRef } from 'react';
@@ -32,27 +35,33 @@ const AutoLoginController = memo(() => {
     }
 
     const autoLoginEnabled = getLocalStorageItemBool(
-      LocalStorageKey.AUTO_LOGIN,
-      true
+      LocalStorageKey.AUTO_LOGIN
     );
 
-    const savedToken = getLocalStorageItem(LocalStorageKey.AUTO_LOGIN_TOKEN);
+    // a refresh: the tab still holds the session it signed in with, kept whether or not login
+    // automatically is on, which only decides whether a new tab or browser stays signed in
+    let token = getSessionStorageItem(SessionStorageKey.TOKEN);
 
-    if (!autoLoginEnabled || !savedToken) {
-      // auto-login not enabled or no token saved, do nothing
+    if (!token && autoLoginEnabled) {
+      token = getLocalStorageItem(LocalStorageKey.AUTO_LOGIN_TOKEN);
+    }
+
+    if (!token) {
       return;
     }
 
     autoLoginAttempted.current = true;
 
     setIsAutoConnecting(true);
-    setSessionStorageItem(SessionStorageKey.TOKEN, savedToken);
+    setSessionStorageItem(SessionStorageKey.TOKEN, token);
 
     connect()
       .catch(() => {
-        // token expired or invalid: forget it so the user sees the connect screen and can log
-        // in manually. the preference stays, so the next sign in is kept across refreshes too
+        // token expired or invalid clear auto-login state so the user
+        // sees the connect screen and can log in manually
         removeLocalStorageItem(LocalStorageKey.AUTO_LOGIN_TOKEN);
+        removeSessionStorageItem(SessionStorageKey.TOKEN);
+        setLocalStorageItemBool(LocalStorageKey.AUTO_LOGIN, false);
       })
       .finally(() => {
         // reset auto-login attempt state so if the user logs out and back in they can try auto-login again

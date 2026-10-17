@@ -157,6 +157,9 @@ const cleanup = () => {
   if (!isNavigatingAway) {
     removeLocalStorageItem(LocalStorageKey.AUTO_LOGIN_TOKEN);
 
+    // the tab's own session too, which a refresh picks back up whatever login automatically says
+    removeSessionStorageItem(SessionStorageKey.TOKEN);
+
     // same reasoning, for a server that redirects straight to its identity provider
     suppressOidcAutoRedirect();
   }
@@ -165,8 +168,6 @@ const cleanup = () => {
   resetServerState();
   resetDialogs();
   resetApp();
-
-  removeSessionStorageItem(SessionStorageKey.TOKEN);
 
   // this should help Firefox users who report that auto login is not consistent
   setTimeout(() => {

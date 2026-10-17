@@ -56,9 +56,7 @@ const Connect = memo(() => {
     identity: getLocalStorageItem(LocalStorageKey.IDENTITY) || '',
     password: '',
     totp: '',
-    // on unless turned off: a refresh should not sign anyone out, and a session lasts until
-    // signing out or its expiry
-    autoLogin: getLocalStorageItemBool(LocalStorageKey.AUTO_LOGIN, true)
+    autoLogin: getLocalStorageItemBool(LocalStorageKey.AUTO_LOGIN)
   });
   // the password was right and the account has two-factor on, so the code field shows
   const [needsCode, setNeedsCode] = useState(false);
