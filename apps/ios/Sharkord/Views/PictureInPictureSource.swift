@@ -3,7 +3,7 @@ import SwiftUI
 import WebRTC
 
 // the call in picture in picture once the app goes to the background, showing the track it is
-// given. it sits behind the floating call tile, the view the window animates from and back to
+// given. it sits behind the call bar, the view the window animates from and back to
 struct PictureInPictureSource: UIViewRepresentable {
     let track: VideoTrackBox?
 

@@ -421,11 +421,12 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   one closes it.
 - A call joined with AirPods or another headset connected plays through the headset instead of
   staying on the speaker when Use Speaker by Default is on, with Hear Yourself or app audio.
-- On the phone and iPad a lowered call is a floating tile, dragged anywhere and let go
-  into the nearest corner, and tapped to open the call again. It replaces the voice bar above
-  the user bar, which stays on the Mac.
+- A lowered call is the voice bar above the user bar on the phone, iPad and Mac, with mute,
+  deafen and hang up. The call grows out of the bar when opened, joining from a voice
+  channel's sheet included, and shrinks back into it when lowered, by its button or a drag
+  down. A floating call tile tried on the phone and iPad is gone.
 - Whoever is talking gets a green ring, on the call screen and under the voice channel
-  in the channel list. The floating tile shows them without a ring.
+  in the channel list.
 - Lowering the call screen goes straight back to the channel list in one slide, instead of the
   voice channel sheet showing again on the way down.
 - Jumping to a message from search or pins highlights it again, rather than only scrolling to

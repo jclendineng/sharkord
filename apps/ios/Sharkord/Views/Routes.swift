@@ -32,9 +32,6 @@ extension EnvironmentValues {
     @Entry var showChannelList: (@MainActor () -> Void)?
     // the ipad's, sliding a chat beside the list over it to the full width for typing in
     @Entry var expandChat: (@MainActor () -> Void)?
-    // closes the call screen together with the voice channel sheet it was opened from, in one
-    // slide down rather than the sheet showing again on the way
-    @Entry var closeVoiceRoom: (@MainActor () -> Void)?
 }
 
 // a way into search: pushed on a phone, the whole screen on an ipad in landscape

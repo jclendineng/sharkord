@@ -152,8 +152,8 @@ starts rather than taken as upright until the first turn. Apple's rotation coord
 tile reports how many pixels tall it is drawn, and the app asks `voice.setConsumerQuality` for the
 lowest layer that fills the tallest tile (up to 270 lines the low one, up to 540 the middle, above
 that auto). A screen share always asks for its sharpest. Leaving the app with someone else's video
-in the call opens picture in picture (a screen share first, then the person in the floating
-tile, then anyone's camera), drawn through a sample buffer layer since WebRTC's Metal view
+in the call opens picture in picture (a screen share first, then whoever else is talking, then
+anyone's camera), started from the voice bar, drawn through a sample buffer layer since WebRTC's Metal view
 stays blank there. The call headers show signal bars from the connection's round trip and the
 packets lost in the last two seconds, with the numbers on a tap. The call sheet opens the
 system's Mic Mode panel and the app's own Video Effects sheet: the camera's preview, a grid of
@@ -164,7 +164,8 @@ the 1080p format supporting the most of reactions, Portrait and Studio Light. In
 camera may lower its frame rate to 24 so each exposure runs longer, with low light boost where
 the phone has it. A gear in the call header opens the call's settings: tiles for Deafen, Output
 and incoming video, then audio and video cards. Leaving a call lets its sheet slide away before the
-call is torn down, and the floating tile stays hidden meanwhile. Each person under a voice
+call is torn down. A lowered call is the voice bar above the user bar on every device, and the
+call zooms out of the bar and back into it, joining from a voice channel's sheet included. Each person under a voice
 channel is a row of its own: a tap opens their profile, a long press the member menu, which in a
 voice channel adds Move To for anyone with Move Members. The Voice & Video settings page follows
 the sections of Discord's, and its noise suppression footer says whether the system's Voice

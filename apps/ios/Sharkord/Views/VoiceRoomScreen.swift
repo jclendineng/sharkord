@@ -3,14 +3,9 @@ import SwiftUI
 // the call itself: screen shares across the top, a tile per person with their camera or
 // avatar, the controls along the bottom
 struct VoiceRoomScreen: View {
-    // the voice sheet grows into the call while the join is still under way, so it names the
-    // channel itself and follows the connection on its own
-    var channelId: Int?
-
     @Environment(SessionStore.self) private var session
     @Environment(ServerListStore.self) private var servers
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.closeVoiceRoom) private var closeVoiceRoom
 
     @State private var isReactionBarShown = false
     @State private var isSoundboardPresented = false
@@ -21,7 +16,7 @@ struct VoiceRoomScreen: View {
     @State private var gridSize = CGSize.zero
 
     private var shownChannelId: Int? {
-        channelId ?? session.currentVoiceChannelId
+        session.currentVoiceChannelId
     }
 
     private var channelName: String {
@@ -97,7 +92,7 @@ struct VoiceRoomScreen: View {
         }
         .animation(.snappy, value: session.toastMessage)
         .onChange(of: session.currentVoiceChannelId) { _, currentId in
-            if currentId == nil, channelId == nil {
+            if currentId == nil {
                 close()
             }
         }
@@ -312,11 +307,7 @@ struct VoiceRoomScreen: View {
     }
 
     private func close() {
-        if let closeVoiceRoom {
-            closeVoiceRoom()
-        } else {
-            dismiss()
-        }
+        dismiss()
     }
 
     private func leave() {

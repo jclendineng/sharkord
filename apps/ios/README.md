@@ -170,8 +170,10 @@ Who is talking comes from webrtc's own stats: four times a second `audioLevels()
 moment after they stop. The app mixes everyone into one playback device, so it cannot measure
 each person's sound the way the web client's analysers do.
 
-A lowered call on a phone or an iPad is `FloatingCallTile`, dragged by offset and let go into
-the nearest corner. The Mac keeps `VoiceBar` above the user bar instead.
+A lowered call is `VoiceBar` above the user bar on every device. It alone presents the call,
+through `ServerListStore.isCallPresented`, with a zoom transition whose source is the bar, so
+the call always grows out of it and shrinks back into it. A voice channel's sheet joins, puts
+itself away and then sets the flag, since the bar cannot present while the sheet is up.
 
 ## Debug launch
 

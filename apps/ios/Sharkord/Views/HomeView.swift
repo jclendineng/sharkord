@@ -90,16 +90,6 @@ struct HomeView: View {
         }
         .environment(session)
         .coordinateSpace(.named(Self.coordinateSpace))
-        // a lowered call on a phone or an ipad, discord's floating tile. a mac keeps the bar
-        // above the user bar, as discord's desktop app has
-        .overlay {
-            if !ProcessInfo.processInfo.isiOSAppOnMac, !servers.isVoiceSheetShown, let voiceSession = servers.voiceSession, !voiceSession.isLeavingVoice {
-                FloatingCallTile()
-                    .environment(voiceSession)
-                    .transition(.scale(scale: 0.6).combined(with: .opacity))
-            }
-        }
-        .animation(.spring(response: 0.3, dampingFraction: 0.85), value: servers.voiceSession == nil)
         .overlay {
             if let menu = servers.railMenu {
                 ServerRailMenu(menu: menu)
@@ -465,7 +455,8 @@ struct HomeView: View {
 
     private var bottomBars: some View {
         VStack(spacing: 6) {
-            if ProcessInfo.processInfo.isiOSAppOnMac, let voiceSession = servers.voiceSession {
+            // a lowered call sits above the user bar on every device, the way a mac always had it
+            if let voiceSession = servers.voiceSession {
                 VoiceBar()
                     .environment(voiceSession)
             }
