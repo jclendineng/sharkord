@@ -268,6 +268,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 #### iOS app
 
+- An empty channel's chat fills the screen, instead of leaving black strips down both sides.
 - An invite link opened while the app shows its welcome screen goes straight to making an account on that server, instead of being dropped.
 - Coming back to the app while it was reconnecting no longer signs you out with "Invalid handshake hash".
 - A call is heard both ways: whoever joined after the app, or started talking or sharing a camera after it joined, was never heard or seen.

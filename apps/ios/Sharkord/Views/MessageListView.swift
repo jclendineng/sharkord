@@ -128,6 +128,9 @@ struct MessageListView<Header: View>: View {
                     }
                 }
             }
+            // the full width even with nothing but the welcome in it: an empty channel's list was
+            // only as wide as that text, and the chat shrank to it with black down both sides
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.bottom, 12)
         }
         .scrollPosition($scrollPosition)
