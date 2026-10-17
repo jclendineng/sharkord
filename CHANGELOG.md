@@ -133,6 +133,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - Signed file links refresh while the page is open.
 - A new microphone or camera, or changed mic processing, applies to the call as soon as Devices settings are saved ([#530](https://github.com/Sharkord/sharkord/issues/530)).
 - Mute Stream Audio in Devices settings: screen shares with sound start muted ([#749](https://github.com/Sharkord/sharkord/issues/749)).
+- On an iPhone or iPad browser, the server's welcome screen offers the Sharkord app in place of the mobile warning. Other phones get a gentler warning.
 
 #### iOS app
 

@@ -10,10 +10,18 @@ import {
   useServerName
 } from '@/features/server/hooks';
 import { ChannelType, PluginSlot } from '@sharkord/shared';
-import { Alert, AlertDescription } from '@sharkord/ui';
+import { Alert, AlertDescription, Button } from '@sharkord/ui';
 import { AlertTriangle, ArrowLeft, ArrowRight } from 'lucide-react';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
+
+// the public beta until the app is on the app store
+const IOS_APP_URL = 'https://testflight.apple.com/join/svXFDNEK';
+
+// an ipad's safari asks for the desktop site and says it is a mac, only its touch screen gives it away
+const isIosDevice =
+  /iPhone|iPad|iPod/.test(navigator.userAgent) ||
+  (navigator.userAgent.includes('Macintosh') && navigator.maxTouchPoints > 1);
 
 type TContentWrapperProps = {
   isDmMode: boolean;
@@ -77,6 +85,28 @@ const ContentWrapper = memo(
         );
       }
     } else {
+      let mobileNotice = (
+        <Alert variant="destructive" className="max-w-md">
+          <AlertTriangle />
+          <AlertDescription>{t('mobileNotOptimized')}</AlertDescription>
+        </Alert>
+      );
+
+      if (isIosDevice) {
+        mobileNotice = (
+          <div className="flex flex-col items-center gap-2">
+            <Button asChild>
+              <a href={IOS_APP_URL} target="_blank" rel="noopener noreferrer">
+                {t('getIosApp')}
+              </a>
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              {t('getIosAppDesc')}
+            </span>
+          </div>
+        );
+      }
+
       content = (
         <>
           <div className="flex-col gap-2 h-full w-full hidden lg:flex overflow-auto">
@@ -88,10 +118,7 @@ const ContentWrapper = memo(
                 {t('welcomeToServer', { name: serverName })}
               </h2>
             </div>
-            <Alert variant="destructive" className="max-w-md">
-              <AlertTriangle />
-              <AlertDescription>{t('mobileNotOptimized')}</AlertDescription>
-            </Alert>
+            {mobileNotice}
             <div className="flex flex-col gap-3 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <span className="text-lg">
