@@ -291,7 +291,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - On an iPad, joining or opening a call opens the full-screen call instead of a phone's sheet
   fading into it, the floating call tile no longer shows beside the voice channel's sheet, and
   someone alone in a call fills it rather than sitting in half a row and jumping when tapped.
-- In the app, a call's tiles fit the screen in landscape, as many to a row as there is room for.
+- In the app, a call's tiles grow to fill the screen in either orientation, as large as the
+  people in it allow, instead of two columns that ran past the bottom in landscape.
 - In the app, the camera's picture is turned the right way up from the camera's own position,
   so an iPad held upright no longer sends and shows it on its side.
 - In the app, the mic test is processed the way a call is: with Echo Cancellation on it uses

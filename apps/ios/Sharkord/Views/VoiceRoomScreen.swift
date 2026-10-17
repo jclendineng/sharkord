@@ -17,6 +17,8 @@ struct VoiceRoomScreen: View {
     @State private var isSettingsPresented = false
     // the tile tapped to fill the call, with everyone else in a strip under it
     @State private var focused: FocusTarget?
+    // the room the tiles have between the header and the controls
+    @State private var gridSize = CGSize.zero
 
     private var shownChannelId: Int? {
         channelId ?? session.currentVoiceChannelId
@@ -75,6 +77,8 @@ struct VoiceRoomScreen: View {
                 ParticipantTile(user: alone.user, state: alone.state, fills: true)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding(12)
+            } else if screenShares.isEmpty, !session.isSharingScreen {
+                fittedGrid
             } else {
                 grid
             }
@@ -182,17 +186,37 @@ struct VoiceRoomScreen: View {
                     // as many columns as fit: two halves of a landscape ipad made each tile taller than
                     // the screen
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 150, maximum: 240), spacing: 10)], spacing: 10) {
-                        ForEach(participants, id: \.user?.id) { participant in
-                            ParticipantTile(user: participant.user, state: participant.state)
-                                .onTapGesture {
-                                    if let userId = participant.user?.id {
-                                        setFocus(.person(userId))
-                                    }
-                                }
-                        }
+                        ForEach(participants, id: \.user?.id, content: participantTile)
                     }
                 }
                 .padding(12)
+            }
+    }
+
+    // everyone as big as the room allows, without scrolling: the column count that gives each
+    // tile the most room, the tiles centred in what is left over
+    private var fittedGrid: some View {
+        let layout = TileLayout(count: participants.count, in: gridSize, spacing: Self.tileSpacing)
+        let columns = Array(repeating: GridItem(.fixed(layout.tileWidth), spacing: Self.tileSpacing), count: layout.columns)
+
+        return LazyVGrid(columns: columns, spacing: Self.tileSpacing) {
+            ForEach(participants, id: \.user?.id, content: participantTile)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onGeometryChange(for: CGSize.self, of: \.size) { size in
+            gridSize = size
+        }
+        .padding(12)
+    }
+
+    private static let tileSpacing: CGFloat = 10
+
+    private func participantTile(_ participant: (user: PublicUser?, state: VoiceUserState)) -> some View {
+        ParticipantTile(user: participant.user, state: participant.state)
+            .onTapGesture {
+                if let userId = participant.user?.id {
+                    setFocus(.person(userId))
+                }
             }
     }
 
@@ -592,4 +616,29 @@ private struct CallSettingsSheet: View {
 private enum FocusTarget: Hashable {
     case person(Int)
     case screen(Int)
+}
+
+// how a call's 3:4 tiles fill a space: each column count is tried, and the one whose tiles come
+// out widest without running past the bottom wins
+private struct TileLayout {
+    let columns: Int
+    let tileWidth: CGFloat
+
+    init(count: Int, in size: CGSize, spacing: CGFloat) {
+        var best = (columns: 1, width: CGFloat(0))
+
+        for columns in 1...max(count, 1) {
+            let rows = CGFloat((count + columns - 1) / columns)
+            let widthByRow = (size.width - spacing * CGFloat(columns - 1)) / CGFloat(columns)
+            let widthByHeight = (size.height - spacing * (rows - 1)) / rows * 3 / 4
+            let width = min(widthByRow, widthByHeight)
+
+            if width > best.width {
+                best = (columns, width)
+            }
+        }
+
+        columns = best.columns
+        tileWidth = max(best.width, 1)
+    }
 }
