@@ -50,6 +50,14 @@ struct VoiceRoomScreen: View {
         }
     }
 
+    private var alone: (user: PublicUser?, state: VoiceUserState)? {
+        guard participants.count == 1, screenShares.isEmpty, !session.isSharingScreen else {
+            return nil
+        }
+
+        return participants.first
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             header
@@ -61,6 +69,12 @@ struct VoiceRoomScreen: View {
 
             if let shownFocus {
                 focusedLayout(shownFocus)
+            } else if let alone {
+                // the only one there fills the call. a grid put them in half a row in the corner,
+                // and a tap swapped that for the focused tile and back, the tile jumping about
+                ParticipantTile(user: alone.user, state: alone.state, fills: true)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(12)
             } else {
                 grid
             }
@@ -165,7 +179,9 @@ struct VoiceRoomScreen: View {
                             }
                     }
 
-                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                    // as many columns as fit: two halves of a landscape ipad made each tile taller than
+                    // the screen
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 150, maximum: 240), spacing: 10)], spacing: 10) {
                         ForEach(participants, id: \.user?.id) { participant in
                             ParticipantTile(user: participant.user, state: participant.state)
                                 .onTapGesture {

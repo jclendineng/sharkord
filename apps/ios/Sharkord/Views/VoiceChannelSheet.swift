@@ -10,7 +10,6 @@ struct VoiceChannelSheet: View {
     @Environment(SessionStore.self) private var session
     @Environment(ServerListStore.self) private var servers
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     @State private var isRoomPresented = false
     @State private var isSettingsPresented = false
@@ -33,10 +32,11 @@ struct VoiceChannelSheet: View {
 
     // discord's on a phone: a short sheet that a swipe grows into the settings, the join box
     // becoming the sheet as it rises. the system drags the sheet, the contents only follow its
-    // height, so nothing fights the finger. a mac and a wide ipad draw the sheet as a form in
-    // the middle with no heights to move between, so there it stays one list
+    // height, so nothing fights the finger. a mac and an ipad draw the sheet as a form in the
+    // middle with no heights to move between, so there it stays one list. asked of the device,
+    // not the size class: inside that form an ipad is compact too, and got the phone's sheet
     private var growsIntoSettings: Bool {
-        horizontalSizeClass == .compact && !ProcessInfo.processInfo.isiOSAppOnMac
+        UIDevice.current.userInterfaceIdiom == .phone
     }
 
     var body: some View {
@@ -76,12 +76,22 @@ struct VoiceChannelSheet: View {
                 .environment(servers)
                 .environment(\.closeVoiceRoom, close)
         }
+        .onAppear(perform: markShown)
+        .onDisappear(perform: markHidden)
         // left from the call shown here, by another device, a moderator or a lost connection
         .onChange(of: session.currentVoiceChannelId) { previousId, currentId in
             if isCallShown, previousId == channel.id, currentId != channel.id {
                 close()
             }
         }
+    }
+
+    private func markShown() {
+        servers.isVoiceSheetShown = true
+    }
+
+    private func markHidden() {
+        servers.isVoiceSheetShown = false
     }
 
     private var listLayout: some View {

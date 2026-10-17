@@ -93,7 +93,7 @@ struct HomeView: View {
         // a lowered call on a phone or an ipad, discord's floating tile. a mac keeps the bar
         // above the user bar, as discord's desktop app has
         .overlay {
-            if !ProcessInfo.processInfo.isiOSAppOnMac, let voiceSession = servers.voiceSession, !voiceSession.isLeavingVoice {
+            if !ProcessInfo.processInfo.isiOSAppOnMac, !servers.isVoiceSheetShown, let voiceSession = servers.voiceSession, !voiceSession.isLeavingVoice {
                 FloatingCallTile()
                     .environment(voiceSession)
                     .transition(.scale(scale: 0.6).combined(with: .opacity))

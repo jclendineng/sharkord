@@ -51,6 +51,9 @@ final class ServerListStore {
     // it away, as one anywhere puts the search card away, which the chat's own catcher cannot reach
     var isChatDropdownOpen = false
     var chatDropdownDismissals = 0
+    // a voice channel's sheet is up, the call in it, so the floating call tile stands aside. on
+    // an ipad the sheet is a card in the middle and the tile showed beside it
+    var isVoiceSheetShown = false
 
     var searchDropdown: SearchDropdown? {
         didSet {

@@ -1,6 +1,7 @@
 import AVFoundation
 import Foundation
 import Mediasoup
+import os
 import WebRTC
 
 // the webrtc side of a voice channel: one send transport carrying the microphone and camera,
@@ -44,6 +45,8 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
     private var microphone: RTCAudioTrack?
     private var consumers: [VoiceStreamKey: Consumer] = [:]
     private var camera: RTCCameraVideoCapturer?
+    // held here, the capturer only keeps a weak reference to its delegate
+    private var cameraRotation: CameraRotation?
     private var cameraTrack: RTCVideoTrack?
     private var cameraProducer: Producer?
     private var cameraPosition = AVCaptureDevice.Position.front
@@ -174,6 +177,7 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
             self.cameraProducer = nil
             self.camera?.stopCapture()
             self.camera = nil
+            self.cameraRotation = nil
             self.cameraTrack = nil
             self.cameraDevice = nil
         }
@@ -239,6 +243,7 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
             self.cameraPosition = self.cameraPosition == .front ? .back : .front
 
             if let device = Self.captureDevice(self.cameraPosition) {
+                self.cameraRotation?.follow(device)
                 Self.startCapture(camera, device: device)
                 self.cameraDevice = device
             }
@@ -296,6 +301,7 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
             self.cameraProducer?.close()
             self.camera?.stopCapture()
             self.camera = nil
+            self.cameraRotation = nil
             self.cameraTrack = nil
             self.cameraProducer = nil
             self.screenProducer?.close()
@@ -487,7 +493,8 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
         }
 
         let source = factory.videoSource()
-        let capturer = RTCCameraVideoCapturer(delegate: source)
+        let rotation = CameraRotation(source: source, device: device)
+        let capturer = RTCCameraVideoCapturer(delegate: rotation)
         let track = factory.videoTrack(with: source, trackId: "camera")
 
         Self.startCapture(capturer, device: device)
@@ -515,6 +522,7 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
         }
 
         camera = capturer
+        cameraRotation = rotation
         cameraTrack = track
         cameraProducer = producer
 
@@ -849,6 +857,54 @@ nonisolated final class ScreenFrameSink: @unchecked Sendable {
         )
 
         source.capturer(capturer, didCapture: frame)
+    }
+}
+
+// between the camera and its track, turning each frame by apple's rotation coordinator. webrtc's
+// capturer works the turn out from the device orientation for an iphone's camera, which put the
+// picture on its side on an ipad held upright, whose camera sits on another edge
+nonisolated private final class CameraRotation: NSObject, RTCVideoCapturerDelegate, @unchecked Sendable {
+    private let source: RTCVideoSource
+    private let rotation = OSAllocatedUnfairLock(initialState: RTCVideoRotation._0)
+    private var coordinator: AVCaptureDevice.RotationCoordinator?
+    private var observation: NSKeyValueObservation?
+
+    init(source: RTCVideoSource, device: AVCaptureDevice) {
+        self.source = source
+        super.init()
+        follow(device)
+    }
+
+    // a flip to the other camera, which can sit another way round
+    func follow(_ device: AVCaptureDevice) {
+        let coordinator = AVCaptureDevice.RotationCoordinator(device: device, previewLayer: nil)
+
+        self.coordinator = coordinator
+        observation = coordinator.observe(\.videoRotationAngleForHorizonLevelCapture, options: [.initial, .new]) { [weak self] coordinator, _ in
+            let rotation = Self.turn(degrees: coordinator.videoRotationAngleForHorizonLevelCapture)
+
+            self?.rotation.withLock { $0 = rotation }
+        }
+    }
+
+    func capturer(_ capturer: RTCVideoCapturer, didCapture frame: RTCVideoFrame) {
+        let rotation = rotation.withLock { $0 }
+        let turned = RTCVideoFrame(buffer: frame.buffer, rotation: rotation, timeStampNs: frame.timeStampNs)
+
+        source.capturer(capturer, didCapture: turned)
+    }
+
+    private static func turn(degrees: CGFloat) -> RTCVideoRotation {
+        switch Int(degrees.rounded()) {
+        case 90:
+            return ._90
+        case 180:
+            return ._180
+        case 270:
+            return ._270
+        default:
+            return ._0
+        }
     }
 }
 
