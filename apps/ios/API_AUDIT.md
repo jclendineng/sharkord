@@ -19,7 +19,10 @@ environment values use `@Entry`, and the app already uses `onGeometryChange`,
 - [ ] **Drag to reorder with `reorderable()` / `reorderContainer`** (iOS 27). Channels
       (`Views/Admin/ChannelsAdminScreen.swift`) and roles (`Views/Admin/RolesScreen.swift`) use
       `onMove` in edit mode on iPhone and iPad and arrow buttons on the Mac, where edit mode does
-      nothing. One drag interaction on all three.
+      nothing. Tried 2026-10-17 on 27.1 and reverted: the drag works, but in an inset grouped list
+      the lifted row keeps its section's corners, sticks out of the card and leaves a notch, and
+      neither a `.dragPreview` content shape nor a rounded `listRowBackground` per row changes
+      that. Try again on a later SDK.
 - [ ] **`dismissalConfirmationDialog`** (iOS 27) on Edit Profile, so a swipe down with unsaved
       changes asks first. Then any other sheet that edits something.
 - [ ] **`AVSampleBufferDisplayLayer` deprecated in iOS 27** (`Views/PictureInPictureSource.swift:178`).
