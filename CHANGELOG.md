@@ -251,6 +251,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 #### Server and web client
 
+- Dependencies with published security fixes are upgraded, among them the HTML sanitizer, the websocket server, the image size reader, the message editor and the database layer.
 - The web client joins its call again after a dropped connection comes back, instead of showing a call the server had already ended ([#849](https://github.com/Sharkord/sharkord/issues/849)).
 - Voice works in Firefox when `announcedAddress` is a hostname. The server sends the addresses it resolves the name to beside the hostname ([#756](https://github.com/Sharkord/sharkord/issues/756)).
 - An invite works for SSO sign ups on a server closed to new users, as it does for password sign ups. Its role is given and its use counted ([#840](https://github.com/Sharkord/sharkord/issues/840)).

@@ -22,7 +22,7 @@
     "@sharkord/shared": "workspace:*",
     "@types/bun": "latest",
     "@types/react": "^19",
-    "drizzle-orm": "^0.44.5"
+    "drizzle-orm": "^0.45.4"
   },
   "peerDependencies": {
     "typescript": "^5",
