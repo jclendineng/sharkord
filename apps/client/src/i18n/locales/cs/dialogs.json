@@ -143,7 +143,11 @@
   "rulesSetupTitle": "Zpráva s pravidly",
   "rulesRoleLabel": "Reakce dává roli",
   "rulesRolePlaceholder": "Vyberte roli",
-  "rulesRoleHelp": "Potom v oprávněních každého kanálu otevřete kanály serveru této roli a skryjte je všem ostatním. Noví členové skončí zde, v jediném kanálu, který vidí, dokud nezareagují.",
+  "rulesRoleHelp": "Noví členové skončí zde, v jediném kanálu, který vidí, dokud nezareagují.",
+  "rulesCloseOthers": "Zavřít ostatní kanály novým členům",
+  "rulesCloseOthersHelp": "Všechny ostatní veřejné kanály se stanou soukromými a otevřenými každé roli kromě té, se kterou noví členové začínají. Kanály, které už jsou soukromé, si ponechají svá oprávnění.",
+  "rulesRemoveDefault": "Odebrat {{role}} po reakci",
+  "rulesRemoveDefaultHelp": "Pro roli, která jen znamená, že někdo ještě nepřijal pravidla. Nechte vypnuté, pokud {{role}} dává oprávnění, která členové potřebují.",
   "rulesGiveExisting": "Dát ji všem současným členům",
   "rulesGiveExistingHelp": "Bez toho přijdou členové, kteří se připojili před pravidly, o kanály, které zavřete."
 }

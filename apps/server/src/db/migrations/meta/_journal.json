@@ -498,6 +498,13 @@
       "when": 1792195280364,
       "tag": "0070_channel_pins",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "6",
+      "when": 1792196483460,
+      "tag": "0071_onboarding_removes_default_role",
+      "breakpoints": true
     }
   ]
 }

@@ -143,7 +143,11 @@
   "rulesSetupTitle": "Messaggio delle regole",
   "rulesRoleLabel": "Reagire assegna",
   "rulesRolePlaceholder": "Scegli un ruolo",
-  "rulesRoleHelp": "Poi apri i canali del server a questo ruolo nei permessi di ogni canale e nascondili a tutti gli altri. I nuovi membri arrivano qui, l'unico canale visibile, finché non reagiscono.",
+  "rulesRoleHelp": "I nuovi membri arrivano qui, l'unico canale visibile, finché non reagiscono.",
+  "rulesCloseOthers": "Chiudi gli altri canali ai nuovi membri",
+  "rulesCloseOthersHelp": "Rende privati tutti gli altri canali pubblici, aperti a ogni ruolo tranne quello con cui iniziano i nuovi membri. I canali già privati mantengono i loro permessi.",
+  "rulesRemoveDefault": "Togli {{role}} dopo la reazione",
+  "rulesRemoveDefaultHelp": "Per un ruolo che indica solo che qualcuno non ha ancora accettato le regole. Lascialo disattivato se {{role}} dà permessi di cui i membri hanno bisogno.",
   "rulesGiveExisting": "Assegnalo a tutti i membri attuali",
   "rulesGiveExistingHelp": "Senza questo, i membri entrati prima delle regole perdono i canali che chiudi."
 }

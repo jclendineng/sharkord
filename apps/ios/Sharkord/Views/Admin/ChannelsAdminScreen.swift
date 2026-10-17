@@ -323,7 +323,11 @@ struct ChannelEditor: View {
                     }
                 }
             } footer: {
-                Text("Only the roles and members given access in Permissions can see a private channel.")
+                if isPrivate {
+                    Text("Only the roles and members given access in Permissions can see a private channel.")
+                } else {
+                    Text("Everyone can see and use a public channel. Permissions only apply once it is private.")
+                }
             }
 
             Section {

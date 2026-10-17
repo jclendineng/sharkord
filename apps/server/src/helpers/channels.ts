@@ -2,19 +2,27 @@ import {
   ActivityLogType,
   CHANNEL_RETENTION_MAX_DAYS,
   CHANNEL_RETENTION_MIN_DAYS,
+  ChannelPermission,
   ChannelType,
+  OWNER_ROLE_ID,
   type TBeforeChannelCreatePayload,
   type TBeforeChannelCreateUpdate,
   type TBeforeChannelDeletePayload,
   type TChannel
 } from '@sharkord/shared';
-import { asc, desc, eq, inArray } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, ne } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../db';
 import { reorderPositions } from '../db/mutations/positions';
-import { publishChannel } from '../db/publishers';
+import { publishChannel, publishChannelAccessChange } from '../db/publishers';
+import { getAffectedOnlineUserIdsForChannel } from '../db/queries/channels';
 import { isDirectMessageChannel } from '../db/queries/dms';
-import { categories, channels } from '../db/schema';
+import {
+  categories,
+  channelRolePermissions,
+  channels,
+  roles
+} from '../db/schema';
 import { pluginManager } from '../plugins';
 import { eventBus } from '../plugins/event-bus';
 import { runHook } from '../plugins/run-hook';
@@ -376,7 +384,89 @@ const reorderChannels = async (
   }
 };
 
+// the new member lounge's other half: every public server channel but the rules one turns
+// private, open to every role except the default one, so a new member sees only the rules until
+// reacting. a channel already private was set up by hand and keeps its own permissions, as does
+// any rule a role already has on a channel that turns private
+const closeChannelsToDefaultRole = async (
+  exceptChannelId: number,
+  userId: number
+): Promise<number[]> => {
+  const publicChannelIds = (
+    await db
+      .select({ id: channels.id })
+      .from(channels)
+      .where(
+        and(
+          eq(channels.private, false),
+          eq(channels.isDm, false),
+          ne(channels.id, exceptChannelId)
+        )
+      )
+  ).map(({ id }) => id);
+
+  if (publicChannelIds.length === 0) {
+    return [];
+  }
+
+  const [openRoles, audiencesBefore] = await Promise.all([
+    db
+      .select({ id: roles.id })
+      .from(roles)
+      .where(and(eq(roles.isDefault, false), ne(roles.id, OWNER_ROLE_ID))),
+    Promise.all(
+      publicChannelIds.map((channelId) =>
+        getAffectedOnlineUserIdsForChannel(
+          channelId,
+          ChannelPermission.VIEW_CHANNEL
+        )
+      )
+    )
+  ]);
+
+  const now = Date.now();
+  const grants = publicChannelIds.flatMap((channelId) =>
+    openRoles.flatMap(({ id: roleId }) =>
+      Object.values(ChannelPermission).map((permission) => ({
+        channelId,
+        roleId,
+        permission,
+        allow: true,
+        createdAt: now
+      }))
+    )
+  );
+
+  db.transaction((tx) => {
+    tx.update(channels)
+      .set({ private: true })
+      .where(inArray(channels.id, publicChannelIds))
+      .run();
+
+    if (grants.length > 0) {
+      tx.insert(channelRolePermissions)
+        .values(grants)
+        .onConflictDoNothing()
+        .run();
+    }
+  });
+
+  for (const [index, channelId] of publicChannelIds.entries()) {
+    publishChannel(channelId, 'update', true);
+    await publishChannelAccessChange(channelId, audiencesBefore[index]!);
+
+    enqueueActivityLog({
+      type: ActivityLogType.UPDATED_CHANNEL,
+      userId,
+      details: { channelId, values: { private: true } }
+    });
+  }
+
+  return publicChannelIds;
+};
+
 export {
+  closeChannelsToDefaultRole,
   createChannel,
   deleteChannel,
   MAX_REORDERED_CHANNELS,

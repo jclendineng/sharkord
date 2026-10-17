@@ -125,13 +125,36 @@ struct ChannelPermissionsScreen: View {
             .map(\.0)
     }
 
+    private func makePrivate() {
+        struct PrivateInput: Encodable {
+            let channelId: Int
+            let `private`: Bool
+        }
+
+        errorMessage = nil
+
+        Task {
+            do {
+                try await session.perform("channels.update", PrivateInput(channelId: channelId, private: true))
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
     var body: some View {
         List {
+            // overrides on a public channel are saved but do nothing, which read as a bug when it
+            // was a grey line, so it warns and offers the fix in place
             if let channel, !channel.private {
                 Section {
-                    Label("This channel is public, so everyone can see and use it. Make it private in the channel's settings for these to apply.", systemImage: "info.circle")
+                    Label("This channel is public, so everyone can see and use it and nothing below applies. Make it private for these to take effect.", systemImage: "exclamationmark.triangle.fill")
                         .font(.subheadline)
-                        .foregroundStyle(Theme.muted)
+                        .foregroundStyle(Theme.yellow)
+
+                    if session.can(.manageChannels) {
+                        Button("Make Private", action: makePrivate)
+                    }
                 }
             }
 

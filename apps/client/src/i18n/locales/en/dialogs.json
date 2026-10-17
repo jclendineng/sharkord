@@ -143,7 +143,11 @@
   "rulesSetupTitle": "Rules Message",
   "rulesRoleLabel": "Reacting gives",
   "rulesRolePlaceholder": "Choose a role",
-  "rulesRoleHelp": "Then open the server's channels to this role in each channel's permissions, and hide them from everyone else. New members land here, the only channel they can see, until they react.",
+  "rulesRoleHelp": "New members land here, the only channel they can see, until they react.",
+  "rulesCloseOthers": "Close other channels to new members",
+  "rulesCloseOthersHelp": "Makes every other public channel private, open to every role except the one new members start with. Channels already private keep their own permissions.",
+  "rulesRemoveDefault": "Take away {{role}} once they react",
+  "rulesRemoveDefaultHelp": "For a role that only means someone has not accepted the rules yet. Leave it off if {{role}} gives permissions members need.",
   "rulesGiveExisting": "Give it to everyone already here",
   "rulesGiveExistingHelp": "Without it, members who joined before the rules lose the channels you close."
 }

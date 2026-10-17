@@ -143,7 +143,11 @@
   "rulesSetupTitle": "Mensagem de regras",
   "rulesRoleLabel": "Reagir concede",
   "rulesRolePlaceholder": "Escolha um cargo",
-  "rulesRoleHelp": "Depois abra os canais do servidor para este cargo nas permissões de cada canal e oculte-os dos demais. Novos membros chegam aqui, o único canal que veem, até reagirem.",
+  "rulesRoleHelp": "Novos membros chegam aqui, o único canal que veem, até reagirem.",
+  "rulesCloseOthers": "Fechar os outros canais para novos membros",
+  "rulesCloseOthersHelp": "Torna privados todos os outros canais públicos, abertos a todos os cargos exceto aquele com que os novos membros começam. Canais que já são privados mantêm suas permissões.",
+  "rulesRemoveDefault": "Remover {{role}} ao reagir",
+  "rulesRemoveDefaultHelp": "Para um cargo que só indica que alguém ainda não aceitou as regras. Deixe desligado se {{role}} dá permissões de que os membros precisam.",
   "rulesGiveExisting": "Dar a todos que já estão aqui",
   "rulesGiveExistingHelp": "Sem isso, membros que entraram antes das regras perdem os canais que você fechar."
 }

@@ -12,6 +12,9 @@ struct RulesSetupSheet: View {
     @State private var roles: [AdminRole] = []
     @State private var roleId: Int?
     @State private var givesExistingMembers = true
+    @State private var closesOtherChannels = true
+    @State private var removesDefaultRole = true
+    @State private var defaultRoleName: String?
     @State private var errorMessage: String?
     @State private var isSaving = false
 
@@ -29,7 +32,21 @@ struct RulesSetupSheet: View {
                 } header: {
                     Text("Reacting Gives")
                 } footer: {
-                    Text("Then open the server's channels to this role in each channel's permissions, and hide them from everyone else. New members land here, the only channel they can see, until they react.")
+                    Text("New members land here, the only channel they can see, until they react.")
+                }
+
+                Section {
+                    Toggle("Close Other Channels to New Members", isOn: $closesOtherChannels)
+                } footer: {
+                    Text("Makes every other public channel private, open to every role except the one new members start with. Channels already private keep their own permissions.")
+                }
+
+                if let defaultRoleName {
+                    Section {
+                        Toggle("Take Away \(defaultRoleName) Once They React", isOn: $removesDefaultRole)
+                    } footer: {
+                        Text("For a role that only means someone has not accepted the rules yet. Leave it off if \(defaultRoleName) gives permissions members need.")
+                    }
                 }
 
                 Section {
@@ -78,6 +95,7 @@ struct RulesSetupSheet: View {
             let loaded: [AdminRole] = try await session.request("roles.getAll")
 
             roles = loaded.filter { $0.id != 1 && !$0.isDefault }
+            defaultRoleName = loaded.first { $0.isDefault }?.name
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -92,6 +110,8 @@ struct RulesSetupSheet: View {
             let messageId: Int
             let roleId: Int
             let giveExistingMembers: Bool
+            let closeOtherChannels: Bool
+            let removeDefaultRole: Bool
         }
 
         isSaving = true
@@ -101,7 +121,13 @@ struct RulesSetupSheet: View {
             do {
                 try await session.perform(
                     "others.setOnboarding",
-                    OnboardingInput(messageId: messageId, roleId: roleId, giveExistingMembers: givesExistingMembers)
+                    OnboardingInput(
+                        messageId: messageId,
+                        roleId: roleId,
+                        giveExistingMembers: givesExistingMembers,
+                        closeOtherChannels: closesOtherChannels,
+                        removeDefaultRole: removesDefaultRole && defaultRoleName != nil
+                    )
                 )
                 isSaving = false
                 dismiss()

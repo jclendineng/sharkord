@@ -526,6 +526,14 @@ channel, the only one they see, and the rest appears as soon as they react. Taki
 back keeps the role. The rules message says what reacting does, the owner's role and the default
 role cannot be the one given, and deleting the message turns the lounge off.
 
+The setup can do the channel work too. **Close other channels to new members** makes every
+other public channel private, open to every role except the default one (a channel already
+private keeps its permissions), so the default role sees only the rules. **Take away the
+default role once they react** swaps it for the given role, for a default role that only means
+"not in yet" (`onboardingRemovesDefaultRole`, off unless chosen, since a default role can carry
+everyday permissions). A public channel's Permissions page in the app warns that nothing there
+applies until it is private, with a Make Private button.
+
 Notes, as Discord's: on someone else's profile, **Note (only visible to you)** keeps whatever you
 want to remember about them (`users.setNote`, up to 256 characters, empty clears it), read back
 with `users.getNote`. Only its author ever sees a note, and it goes when either person does.

@@ -1,10 +1,14 @@
-import { Permission } from '@sharkord/shared';
-import { describe, expect, test } from 'bun:test';
+import { ChannelPermission, Permission } from '@sharkord/shared';
+import { describe, expect, spyOn, test } from 'bun:test';
 import { and, eq } from 'drizzle-orm';
 import { initTest } from '../../__tests__/helpers';
 import { tdb } from '../../__tests__/setup';
+import * as publishers from '../../db/publishers';
+import { getChannelsForUser } from '../../db/queries/channels';
 import { getPublicSettings, getSettings } from '../../db/queries/server';
 import {
+  channelRolePermissions,
+  channels,
   messageReactions,
   messages,
   rolePermissions,
@@ -16,6 +20,7 @@ import {
 // role 2 (Member) is the default role and role 1 the owner's
 const RULES_MESSAGE_ID = 1;
 const ONBOARDING_ROLE_ID = 3;
+const DEFAULT_ROLE_ID = 2;
 
 const hasRole = async (userId: number, roleId: number) => {
   const row = await tdb
@@ -109,6 +114,114 @@ describe('others.setOnboarding', () => {
         roleId: ONBOARDING_ROLE_ID
       })
     ).rejects.toThrow('Insufficient permissions');
+  });
+
+  test('should close every other public channel to the default role when asked', async () => {
+    const { caller } = await initTest(1);
+    const accessChange = spyOn(publishers, 'publishChannelAccessChange');
+
+    await caller.others.setOnboarding({
+      messageId: RULES_MESSAGE_ID,
+      roleId: ONBOARDING_ROLE_ID,
+      closeOtherChannels: true
+    });
+
+    const privacy = await tdb
+      .select({ id: channels.id, private: channels.private })
+      .from(channels);
+    const isPrivate = Object.fromEntries(
+      privacy.map(({ id, private: value }) => [id, value])
+    );
+
+    // the rules stay in the open, voice (2) closes, the private ones (4, 5) are left alone
+    expect(isPrivate[1]).toBe(false);
+    expect(isPrivate[2]).toBe(true);
+    expect(isPrivate[4]).toBe(true);
+    expect(isPrivate[5]).toBe(true);
+
+    const grants = await tdb
+      .select({
+        roleId: channelRolePermissions.roleId,
+        permission: channelRolePermissions.permission
+      })
+      .from(channelRolePermissions)
+      .where(eq(channelRolePermissions.channelId, 2));
+
+    // every role but the owner's and the default one gets everything a public channel gave
+    expect(new Set(grants.map(({ roleId }) => roleId))).toEqual(
+      new Set([3, 4])
+    );
+    expect(
+      grants
+        .filter(({ roleId }) => roleId === 3)
+        .map(({ permission }) => permission)
+    ).toEqual(expect.arrayContaining(Object.values(ChannelPermission)));
+
+    // user 3 only has the default role, so only the rules channel is left to them
+    const visibleToNewcomer = (await getChannelsForUser(3)).map(({ id }) => id);
+
+    expect(visibleToNewcomer).toContain(1);
+    expect(visibleToNewcomer).not.toContain(2);
+
+    expect(accessChange).toHaveBeenCalledWith(2, expect.any(Array));
+  });
+
+  test('should leave the channels alone unless asked', async () => {
+    await setUpRules();
+
+    const voice = await tdb
+      .select({ private: channels.private })
+      .from(channels)
+      .where(eq(channels.id, 2))
+      .get();
+
+    expect(voice!.private).toBe(false);
+  });
+
+  test('should refuse to close channels without the channel permissions', async () => {
+    const { caller } = await initTest(2);
+
+    await tdb.insert(rolePermissions).values({
+      roleId: 2,
+      permission: Permission.MANAGE_SETTINGS,
+      createdAt: Date.now()
+    });
+
+    await expect(
+      caller.others.setOnboarding({
+        messageId: RULES_MESSAGE_ID,
+        roleId: ONBOARDING_ROLE_ID,
+        closeOtherChannels: true
+      })
+    ).rejects.toThrow('Insufficient permissions');
+
+    const [settings, voice] = await Promise.all([
+      getSettings(),
+      tdb
+        .select({ private: channels.private })
+        .from(channels)
+        .where(eq(channels.id, 2))
+        .get()
+    ]);
+
+    expect(settings.onboardingMessageId).toBeNull();
+    expect(voice!.private).toBe(false);
+  });
+
+  test('should keep whether reacting takes the default role, and forget it when cleared', async () => {
+    const { caller } = await initTest(1);
+
+    await caller.others.setOnboarding({
+      messageId: RULES_MESSAGE_ID,
+      roleId: ONBOARDING_ROLE_ID,
+      removeDefaultRole: true
+    });
+
+    expect((await getSettings()).onboardingRemovesDefaultRole).toBe(true);
+
+    await caller.others.setOnboarding({ messageId: null, roleId: null });
+
+    expect((await getSettings()).onboardingRemovesDefaultRole).toBe(false);
   });
 
   test('should refuse only one of the two', async () => {
@@ -234,6 +347,30 @@ describe('reacting to the rules message', () => {
     });
 
     expect(await hasRole(3, ONBOARDING_ROLE_ID)).toBe(true);
+    // the default role stays unless the rules were set to take it
+    expect(await hasRole(3, DEFAULT_ROLE_ID)).toBe(true);
+  });
+
+  test('should take the default role away when the rules say so', async () => {
+    const { caller: owner } = await initTest(1);
+
+    await owner.others.setOnboarding({
+      messageId: RULES_MESSAGE_ID,
+      roleId: ONBOARDING_ROLE_ID,
+      removeDefaultRole: true
+    });
+
+    await letMembersReact();
+
+    const { caller } = await initTest(3);
+
+    await caller.messages.toggleReaction({
+      messageId: RULES_MESSAGE_ID,
+      emoji: 'white_check_mark'
+    });
+
+    expect(await hasRole(3, ONBOARDING_ROLE_ID)).toBe(true);
+    expect(await hasRole(3, DEFAULT_ROLE_ID)).toBe(false);
   });
 
   test('should keep the role when the reaction is taken back', async () => {

@@ -34,12 +34,19 @@ const RulesSetupDialog = memo(
     const roles = useRoles();
     const [roleId, setRoleId] = useState<string>();
     const [giveExistingMembers, setGiveExistingMembers] = useState(true);
+    const [closeOtherChannels, setCloseOtherChannels] = useState(true);
+    const [removeDefaultRole, setRemoveDefaultRole] = useState(true);
     const [saving, setSaving] = useState(false);
 
     // the owner's role and the one every member starts with would gate nothing
     const choices = useMemo(
       () =>
         roles.filter((role) => role.id !== OWNER_ROLE_ID && !role.isDefault),
+      [roles]
+    );
+
+    const defaultRole = useMemo(
+      () => roles.find((role) => role.isDefault),
       [roles]
     );
 
@@ -56,7 +63,9 @@ const RulesSetupDialog = memo(
         await trpc.others.setOnboarding.mutate({
           messageId,
           roleId: Number(roleId),
-          giveExistingMembers
+          giveExistingMembers,
+          closeOtherChannels,
+          removeDefaultRole: removeDefaultRole && !!defaultRole
         });
 
         close();
@@ -65,7 +74,16 @@ const RulesSetupDialog = memo(
       } finally {
         setSaving(false);
       }
-    }, [close, giveExistingMembers, messageId, roleId, t]);
+    }, [
+      close,
+      closeOtherChannels,
+      defaultRole,
+      giveExistingMembers,
+      messageId,
+      removeDefaultRole,
+      roleId,
+      t
+    ]);
 
     return (
       <Dialog open={isOpen}>
@@ -89,6 +107,30 @@ const RulesSetupDialog = memo(
               </SelectContent>
             </Select>
           </Group>
+
+          <Group
+            label={t('rulesCloseOthers')}
+            description={t('rulesCloseOthersHelp')}
+          >
+            <Switch
+              checked={closeOtherChannels}
+              onCheckedChange={setCloseOtherChannels}
+            />
+          </Group>
+
+          {defaultRole && (
+            <Group
+              label={t('rulesRemoveDefault', { role: defaultRole.name })}
+              description={t('rulesRemoveDefaultHelp', {
+                role: defaultRole.name
+              })}
+            >
+              <Switch
+                checked={removeDefaultRole}
+                onCheckedChange={setRemoveDefaultRole}
+              />
+            </Group>
+          )}
 
           <Group
             label={t('rulesGiveExisting')}

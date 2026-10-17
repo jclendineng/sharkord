@@ -1,11 +1,15 @@
-import { getRole, getUserRoleIds } from '../db/queries/roles';
+import { getDefaultRole, getRole, getUserRoleIds } from '../db/queries/roles';
 import { getSettings } from '../db/queries/server';
-import { assignRole } from './user-roles';
+import { assignRole, removeRole } from './user-roles';
 
 // a reaction to the rules message gives the onboarding role, once. taking the reaction back
 // leaves it, accepting the rules is not undone by tidying up a reaction
 const grantOnboardingRole = async (userId: number, messageId: number) => {
-  const { onboardingMessageId, onboardingRoleId } = await getSettings();
+  const {
+    onboardingMessageId,
+    onboardingRoleId,
+    onboardingRemovesDefaultRole
+  } = await getSettings();
 
   if (onboardingMessageId !== messageId || !onboardingRoleId) {
     return;
@@ -24,6 +28,27 @@ const grantOnboardingRole = async (userId: number, messageId: number) => {
     await assignRole(userId, role);
   } catch {
     // a second reaction landing at the same moment already gave it
+    return;
+  }
+
+  if (!onboardingRemovesDefaultRole) {
+    return;
+  }
+
+  const defaultRole = await getDefaultRole();
+
+  if (!defaultRole || !roleIds.includes(defaultRole.id)) {
+    return;
+  }
+
+  const joinedDefaultRole = await getRole(defaultRole.id);
+
+  if (joinedDefaultRole) {
+    try {
+      await removeRole(userId, joinedDefaultRole);
+    } catch {
+      // already gone, taken by an admin or a reaction at the same moment
+    }
   }
 };
 

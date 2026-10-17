@@ -143,7 +143,11 @@
   "rulesSetupTitle": "Message des règles",
   "rulesRoleLabel": "Réagir donne",
   "rulesRolePlaceholder": "Choisissez un rôle",
-  "rulesRoleHelp": "Ouvrez ensuite les salons du serveur à ce rôle dans les permissions de chaque salon et masquez-les aux autres. Les nouveaux membres arrivent ici, le seul salon visible, jusqu'à ce qu'ils réagissent.",
+  "rulesRoleHelp": "Les nouveaux membres arrivent ici, le seul salon visible, jusqu'à ce qu'ils réagissent.",
+  "rulesCloseOthers": "Fermer les autres salons aux nouveaux membres",
+  "rulesCloseOthersHelp": "Rend privés tous les autres salons publics, ouverts à chaque rôle sauf celui des nouveaux membres à leur arrivée. Les salons déjà privés gardent leurs permissions.",
+  "rulesRemoveDefault": "Retirer {{role}} après la réaction",
+  "rulesRemoveDefaultHelp": "Pour un rôle qui signifie seulement que quelqu'un n'a pas encore accepté les règles. Laissez désactivé si {{role}} donne des permissions dont les membres ont besoin.",
   "rulesGiveExisting": "Le donner à tous les membres actuels",
   "rulesGiveExistingHelp": "Sans cela, les membres arrivés avant les règles perdent les salons que vous fermez."
 }

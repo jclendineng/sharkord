@@ -12,6 +12,7 @@ import { isDirectMessageChannel } from '../../db/queries/dms';
 import { getReaction } from '../../db/queries/messages';
 import { getRole } from '../../db/queries/roles';
 import { messageReactions } from '../../db/schema';
+import { closeChannelsToDefaultRole } from '../../helpers/channels';
 import { loadMessageForWrite } from '../../helpers/load-message-for-write';
 import { resolveKnownEmojiFileId } from '../../helpers/resolve-known-emoji-file-id';
 import { enqueueActivityLog } from '../../queues/activity-log';
@@ -30,7 +31,12 @@ const setOnboardingRoute = protectedProcedure
         messageId: z.number().int().positive().nullable(),
         roleId: z.number().int().positive().nullable(),
         // without it, closing the channels to everyone else locks out the members already here
-        giveExistingMembers: z.boolean().default(false)
+        giveExistingMembers: z.boolean().default(false),
+        // turns every other public channel private to all but the default role, the setup the
+        // lounge needs, rather than leaving it to be done channel by channel
+        closeOtherChannels: z.boolean().default(false),
+        // the default role goes once someone reacts, for a server where it means "not in yet"
+        removeDefaultRole: z.boolean().default(false)
       })
       .refine(
         ({ messageId, roleId }) => (messageId === null) === (roleId === null),
@@ -40,10 +46,19 @@ const setOnboardingRoute = protectedProcedure
   .mutation(async ({ ctx, input }) => {
     await ctx.needsPermission(Permission.MANAGE_SETTINGS);
 
+    // it changes channels, so it asks what changing them by hand would
+    if (input.closeOtherChannels) {
+      await Promise.all([
+        ctx.needsPermission(Permission.MANAGE_CHANNELS),
+        ctx.needsPermission(Permission.MANAGE_CHANNEL_PERMISSIONS)
+      ]);
+    }
+
     if (input.messageId === null || input.roleId === null) {
       await updateSettings({
         onboardingMessageId: null,
-        onboardingRoleId: null
+        onboardingRoleId: null,
+        onboardingRemovesDefaultRole: false
       });
       publishSettings();
 
@@ -85,7 +100,8 @@ const setOnboardingRoute = protectedProcedure
 
     await updateSettings({
       onboardingMessageId: message.id,
-      onboardingRoleId: role.id
+      onboardingRoleId: role.id,
+      onboardingRemovesDefaultRole: input.removeDefaultRole
     });
 
     const existingReaction = await getReaction(
@@ -114,13 +130,21 @@ const setOnboardingRoute = protectedProcedure
       }
     }
 
+    if (input.closeOtherChannels) {
+      await closeChannelsToDefaultRole(message.channelId, ctx.userId);
+    }
+
     publishSettings();
 
     enqueueActivityLog({
       type: ActivityLogType.EDIT_SERVER_SETTINGS,
       userId: ctx.userId,
       details: {
-        values: { onboardingMessageId: message.id, onboardingRoleId: role.id }
+        values: {
+          onboardingMessageId: message.id,
+          onboardingRoleId: role.id,
+          onboardingRemovesDefaultRole: input.removeDefaultRole
+        }
       }
     });
   });

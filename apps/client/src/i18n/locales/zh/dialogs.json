@@ -143,7 +143,11 @@
   "rulesSetupTitle": "规则消息",
   "rulesRoleLabel": "回应后获得",
   "rulesRolePlaceholder": "选择角色",
-  "rulesRoleHelp": "然后在每个频道的权限中向此角色开放服务器频道，并对其他人隐藏。新成员会来到这里，这是他们唯一能看到的频道，直到他们回应。",
+  "rulesRoleHelp": "新成员会来到这里，这是他们唯一能看到的频道，直到他们回应。",
+  "rulesCloseOthers": "对新成员关闭其他频道",
+  "rulesCloseOthersHelp": "将其他所有公开频道设为私密，向除新成员初始角色外的所有角色开放。已是私密的频道保留各自的权限。",
+  "rulesRemoveDefault": "回应后移除 {{role}}",
+  "rulesRemoveDefaultHelp": "适用于仅表示尚未接受规则的角色。如果 {{role}} 提供成员需要的权限，请保持关闭。",
   "rulesGiveExisting": "授予所有现有成员",
   "rulesGiveExistingHelp": "否则，在规则之前加入的成员将失去你关闭的频道。"
 }

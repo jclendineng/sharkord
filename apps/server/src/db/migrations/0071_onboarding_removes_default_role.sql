@@ -1,0 +1,1 @@
+ALTER TABLE `settings` ADD `onboarding_removes_default_role` integer DEFAULT false NOT NULL;

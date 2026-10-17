@@ -138,7 +138,14 @@ const settings = sqliteTable(
     onboardingRoleId: integer('onboarding_role_id').references(
       (): AnySQLiteColumn => roles.id,
       { onDelete: 'set null' }
-    )
+    ),
+    // reacting also takes away the role new members start with, when that role only stands for
+    // not having accepted yet. off, since a default role can carry everyday permissions too
+    onboardingRemovesDefaultRole: integer('onboarding_removes_default_role', {
+      mode: 'boolean'
+    })
+      .notNull()
+      .default(false)
   },
   (t) => [
     index('settings_server_idx').on(t.serverId),

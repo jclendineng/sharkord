@@ -143,7 +143,11 @@
   "rulesSetupTitle": "Mensaje de reglas",
   "rulesRoleLabel": "Reaccionar otorga",
   "rulesRolePlaceholder": "Elige un rol",
-  "rulesRoleHelp": "Después abre los canales del servidor a este rol en los permisos de cada canal y ocúltalos a los demás. Los nuevos miembros llegan aquí, el único canal que ven, hasta que reaccionen.",
+  "rulesRoleHelp": "Los nuevos miembros llegan aquí, el único canal que ven, hasta que reaccionen.",
+  "rulesCloseOthers": "Cerrar los demás canales a los nuevos miembros",
+  "rulesCloseOthersHelp": "Hace privados todos los demás canales públicos, abiertos a todos los roles menos al que tienen los nuevos miembros al llegar. Los canales que ya son privados conservan sus permisos.",
+  "rulesRemoveDefault": "Quitar {{role}} al reaccionar",
+  "rulesRemoveDefaultHelp": "Para un rol que solo indica que alguien aún no aceptó las reglas. Déjalo desactivado si {{role}} da permisos que los miembros necesitan.",
   "rulesGiveExisting": "Dárselo a todos los que ya están",
   "rulesGiveExistingHelp": "Sin esto, los miembros que se unieron antes de las reglas pierden los canales que cierres."
 }
