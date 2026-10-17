@@ -267,6 +267,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   - Threads and a call's chat open full screen, where before they opened out of sight.
   - Editing a message has Cancel and Save buttons, since there is no Esc key to cancel with.
   - The home screen, an empty direct messages screen and a call have a way to the channel list besides a swipe.
+  - The pinned messages panel fits on the screen instead of running off its right edge.
+  - Leaving a call opens the channel list instead of the welcome screen.
 - Only a message's author can edit it. Manage messages let anyone holding it change other people's messages; it still lets them delete one.
 - Dependencies with published security fixes are upgraded, among them the HTML sanitizer, the websocket server, the image size reader, the message editor and the database layer.
 - The web client joins its call again after a dropped connection comes back, instead of showing a call the server had already ended ([#849](https://github.com/Sharkord/sharkord/issues/849)).

@@ -164,7 +164,8 @@ const PinnedMessagesPopover = memo(
         <PopoverContent
           align="end"
           side="bottom"
-          className="w-120 max-h-120 overflow-auto"
+          className="w-120 max-w-[calc(100vw-1rem)] max-h-120 overflow-auto"
+          collisionPadding={8}
         >
           <div className="px-4 py-2 font-semibold">
             {t('pinnedMessagesTitle')}
