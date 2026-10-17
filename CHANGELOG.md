@@ -57,7 +57,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 ### Added
 
-- Roles have an order, as Discord's: drag them in the web client's Roles list, or use Reorder in
+- Roles have an order: drag them in the web client's Roles list, or use Reorder in
   the apps (arrows on a Mac). The owner's role stays on top and the default one at the bottom.
   A member shows as their highest role with a colour, and the member list groups by it
   (`roles.reorder`).
@@ -73,10 +73,10 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 - A native iOS and iPad app, signing in to any server by its address, with push
   notifications, SSO and server passwords.
-- Discord's layout: server rail, channel list and a floating user bar. On iPad the channel
+- A new layout: server rail, channel list and a floating user bar. On iPad the channel
   list and the chat sit side by side as two rounded cards in both orientations, and a handle
   slides the chat over the list to full width. Typing slides it over by itself.
-- Discord's sign in screen over a night sky. Register only shows where the server takes new
+- A sign in screen over a night sky. Register only shows where the server takes new
   members.
 - Sign in without typing a password by QR code, both ways:
   - A signed in device shows a code, and the new device scans it.
@@ -84,9 +84,9 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
     on the welcome screen, and a signed in phone scans and approves it.
 - Alerts on your other devices when a new device signs in, opening the Devices screen.
 - Invite links open the app on any server, through `sharkord://`.
-- Message actions and composer like Discord's: reply, edit, react, forward, pin, mark unread
+- Message actions and composer: reply, edit, react, forward, pin, mark unread
   and report.
-- Discord's attachment panel, with a recent photos grid that trades places with the keyboard.
+- An attachment panel, with a recent photos grid that trades places with the keyboard.
 - An expression panel with emoji, GIFs and stickers. Animated GIFs and stickers play in
   messages.
 - Voice channels with video, screen sharing from the phone (game audio included), voice
@@ -105,7 +105,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - Polls.
 - Voice messages that play in place, in the app and on the web.
 - Server stickers and Klipy GIFs, in the app and the web client's picker.
-- A soundboard like Discord's, in the app and the web client. Anyone in a call plays a sound
+- A soundboard, in the app and the web client. Anyone in a call plays a sound
   for everyone there, and each person sets their own soundboard volume. Managers upload sounds
   or pick them from a library of free CC0 sounds by Kenney that comes with the server, and set
   each one's name, emoji and volume. Two new permissions, Use Soundboard and Manage
@@ -114,7 +114,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   app and the web client. Only sounds free to reuse are shown, and a sound that asks for
   credit keeps it.
 - Link previews for bare domains, previews from the server's own network when the admin
-  allows it, and Discord style link cards.
+  allows it, and richer link cards.
 - A new member lounge: reacting to the rules message gives the role that opens the server.
 
 #### Direct messages and friends
@@ -128,7 +128,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 #### Search
 
-- Discord's search: filters (from, in, has, mentions, dates), and tabs for recent, members,
+- Search with filters (from, in, has, mentions, dates), and tabs for recent, members,
   media, pins, links and files.
 - Search inside direct messages, with results that open at their message.
 - `has:` video, poll and sticker.
@@ -169,7 +169,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   account with a password confirms with it, and you choose whether your messages stay as
   Deleted User or go too. The server owner can't delete theirs
   ([#49](https://github.com/Sharkord/sharkord/issues/49)).
-- An AFK channel, like Discord's: members silent in a call for the server's timeout (1 to
+- An AFK channel: members silent in a call for the server's timeout (1 to
   60 minutes) are moved into it. Set in server settings on the web and in the app.
 - A ban can also ban the person's IP addresses, chosen each time on the web and in the app.
   Their public sign in addresses are blocked from signing in, signing up and joining, and
@@ -179,7 +179,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   text to, shown under the webhook's name on the web and in the app
   ([#293](https://github.com/Sharkord/sharkord/issues/293)).
 - Basic Markdown: strikethrough, underline, lists and quotes now survive sending instead of
-  becoming plain lines. The app turns Discord style Markdown (`**bold**`, `*italic*`,
+  becoming plain lines. The app turns Markdown (`**bold**`, `*italic*`,
   `__underline__`, `~~strike~~`, `` `code` ``, code blocks, `- ` lists, `> ` quotes) into
   formatting when sending, shows all of it, and keeps it when editing
   ([#401](https://github.com/Sharkord/sharkord/issues/401)).
@@ -224,7 +224,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   (⌘[ and ⌘]), the member list groups people under their role, Voice & Video has push to talk
   and an input volume where the mic allows it, and clicking the message box no longer pushes the
   channel list aside.
-- On a Mac the app is laid out like Discord's: the server's menu drops down under its name,
+- On a Mac the app has a desktop layout: the server's menu drops down under its name,
   server settings fill the window with their pages down the side, a thread opens in a panel
   beside the chat, the plus by the message box opens a short menu, the emoji picker keeps to
   its own width, and the member list grows with the window. Voice & Video picks the mic and
@@ -234,12 +234,12 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - In the app, the invite sheet reuses your last link while it works, until you generate a new
   one or delete it, instead of making a fresh one every time.
 - In the app on a phone, joining a voice channel, or Open Call, grows the voice sheet into the
-  call in one motion, starting at the tap, as Discord's does. Before, a second screen slid up
+  call in one motion, starting at the tap. Before, a second screen slid up
   over the sheet after the join. A swipe down puts the call away and it goes on.
 - On a Mac, whatever can be picked lights up under the pointer: search results, tabs, cards
   and filters, direct messages, the emoji, GIF and sticker panel, reactions, poll options,
   soundboard sounds, the rows of every sheet and list, and the user bar. Server icons square off
-  with a short pill, as Discord's do.
+  with a short pill.
 - Pinning in direct messages has its own permission, Pin Messages in Direct Messages. Roles
   that could pin keep it in direct messages
   ([#481](https://github.com/Sharkord/sharkord/issues/481)).
@@ -287,7 +287,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - On a Mac, the server menu's rows light up under the pointer.
 - On a Mac, a sheet's X closes it on the first click. Sheets there have no grabber, whose strip
   took the clicks.
-- On a Mac, right clicking a member in the member list opens Discord's menu: Profile,
+- On a Mac, right clicking a member in the member list opens a menu: Profile,
   Mention, Message, Add Note, and Roles for someone who manages them.
 - On a Mac, the chat's search is a box in its top bar, with the filter menu beside it, and
   the results drop down under it. The server search above the channel list opens the same
@@ -342,13 +342,13 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   requests after joining a server go out together instead of one after another.
 - In the iOS app's server Overview, a new or removed icon shows as a preview and is only applied
   with Save, along with the other fields.
-- On a Mac, the header's search opens Discord's dropdown under it, filters and results inside,
+- On a Mac, the header's search opens a dropdown under it, filters and results inside,
   and a result opens in the window as the dropdown closes.
 - On a Mac, a server channel shows the member list down the right, online then offline, with a
   header button to hide it. A member opens their profile beside the list.
 - Starting a screen share on the phone no longer crashes the app once something is picked to
   share, and the share keeps going after switching to another app instead of stopping.
-- Joining voice from another device takes the seat over, as in Discord, instead of failing with
+- Joining voice from another device takes the seat over instead of failing with
   "User already in a voice channel". The device that had it ends its call, and the iOS app
   shows a bar offering to reconnect there. A phone coming back from the background rejoins
   instead of being locked out, and a device that crashes or loses its connection leaves voice
@@ -358,16 +358,16 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - Hear Yourself in calls plays your mic back to you, in the voice channel sheet's new Voice &
   Video settings (pulled up under Join Voice, with Deafen, audio output and noise suppression)
   and in Voice & Video settings.
-- On the phone the voice channel sheet is Discord's: a short sheet with the channel and the
+- On the phone the voice channel sheet is a short sheet with the channel and the
   join box, which a swipe up grows into the voice settings, the box becoming the sheet as it
   rises. A swipe down from there goes back to the short sheet, and only a swipe from the short
   one closes it.
 - A call joined with AirPods or another headset connected plays through the headset instead of
   staying on the speaker when Use Speaker by Default is on, with Hear Yourself or app audio.
-- On the phone and iPad a lowered call is Discord's floating tile, dragged anywhere and let go
+- On the phone and iPad a lowered call is a floating tile, dragged anywhere and let go
   into the nearest corner, and tapped to open the call again. It replaces the voice bar above
   the user bar, which stays on the Mac.
-- Whoever is talking gets Discord's green ring, on the call screen and under the voice channel
+- Whoever is talking gets a green ring, on the call screen and under the voice channel
   in the channel list. The floating tile shows them without a ring.
 - Lowering the call screen goes straight back to the channel list in one slide, instead of the
   voice channel sheet showing again on the way down.
@@ -379,12 +379,12 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   another channel was opened.
 - On an iPad, the message bar sits level with the user bar beside it, and the top bar's pins
   and search stay in place while the chat slides over the list and back.
-- On a Mac, the right click menus are Discord's: compact rows with an icon, opened at the pointer
+- On a Mac, the right click menus are compact rows with an icon, opened at the pointer
   and moved there by the next right click, closed by a click anywhere else. Rows with more
   choices (Mute Channel, Notification Settings, Add Reaction) open them beside the menu as the
   pointer reaches them. Add Reaction and the reactions along the top lead with the emoji you
   use most, named as the pointer passes over them.
-- On a Mac, hovering a message shows Discord's bar of quick reactions, Reply and More, and a
+- On a Mac, hovering a message shows a bar of quick reactions, Reply and More, and a
   channel lights up under the pointer.
 - On a Mac, a server channel's top bar has a bell to mute the channel or pick which messages
   notify. Pins and search slide down from under the top bar instead of rising from the bottom,
