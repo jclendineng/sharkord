@@ -356,7 +356,7 @@ const Connect = memo(() => {
       <div className="flex justify-center items-center gap-2 text-xs text-muted-foreground select-none">
         <span>v{VITE_APP_VERSION}</span>
         <a
-          href="https://github.com/sharkord/sharkord"
+          href="https://github.com/jclendineng/sharkord"
           target="_blank"
           rel="noopener noreferrer"
         >

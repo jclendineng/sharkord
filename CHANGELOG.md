@@ -192,6 +192,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 ### Changed
 
+- The sign in page's GitHub link, the crash screen's report link and the developer console point to this fork rather than upstream.
 - File links are always signed, and uploads are stored under random names rather than their original ones.
 - Link previews skip error pages and use only pictures the page itself declares.
 - Pinning in direct messages has its own permission, Pin Messages in Direct Messages. Roles that could pin keep it there ([#481](https://github.com/Sharkord/sharkord/issues/481)).
