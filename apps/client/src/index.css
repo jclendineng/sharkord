@@ -142,6 +142,17 @@ body,
   height: 100%;
 }
 
+/* the sign in page, which scrolls as a whole page so safari can show it under its toolbar */
+html.document-scroll,
+html.document-scroll body {
+  height: auto;
+  overflow: visible;
+}
+
+html.document-scroll #root {
+  height: auto;
+}
+
 /* Define CSS variables for light and dark themes */
 :root {
   --scrollbar-width: 12px;

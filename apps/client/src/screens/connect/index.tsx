@@ -31,7 +31,14 @@ import {
   Spinner,
   Switch
 } from '@sharkord/ui';
-import { memo, useCallback, useMemo, useState, type FormEvent } from 'react';
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type FormEvent
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useOidcLogin } from './hooks/use-oidc-login';
@@ -208,6 +215,16 @@ const Connect = memo(() => {
     [t, inviteCode]
   );
 
+  // the page itself scrolls here, not a box inside it: safari only runs a page under its glass
+  // toolbar when the document scrolls, and an invite makes the card taller than a phone
+  useEffect(() => {
+    document.documentElement.classList.add('document-scroll');
+
+    return () => {
+      document.documentElement.classList.remove('document-scroll');
+    };
+  }, []);
+
   if (resetToken) {
     return <ResetPassword token={resetToken} onDone={clearResetToken} />;
   }
@@ -222,12 +239,11 @@ const Connect = memo(() => {
   }
 
   return (
-    // scrolls rather than clipping when an invite makes the card taller than a phone's screen
-    <div className="h-full overflow-y-auto relative">
+    <div className="relative">
       <div className="hidden md:block fixed bottom-6 right-6 z-50">
         <LanguageSwitcher variant="icon" />
       </div>
-      <div className="flex flex-col gap-2 justify-center items-center min-h-full px-4 py-6">
+      <div className="flex flex-col gap-2 justify-center items-center min-h-dvh px-4 py-6">
         <Card className="w-full max-w-sm shrink-0">
           <CardHeader>
             <CardTitle className="flex flex-col items-center gap-2 text-center">
