@@ -1,3 +1,4 @@
+import { AppBanner } from '@/components/app-banner';
 import { LeftSidebar } from '@/components/left-sidebar';
 import { ModViewSheet } from '@/components/mod-view-sheet';
 import { Protect } from '@/components/protect';
@@ -94,6 +95,7 @@ const ServerView = memo(() => {
         className="flex h-dvh flex-col bg-background text-foreground dark"
         {...swipeHandlers}
       >
+        <AppBanner />
         <TopBar
           onToggleRightSidebar={handleDesktopRightSidebarToggle}
           isOpen={isDesktopRightSidebarOpen}

@@ -636,3 +636,11 @@ it but never collect it. Requests last two minutes, only hashes are stored, and 
 swept away with each new one. The server address is still typed on the new device, since without
 it there is nothing to ask. Code `apps/server/src/helpers/login-requests.ts`.
 
+
+## App banner on iPhone and iPad browsers
+
+The web app opened in a browser on an iPhone or iPad shows a slim banner across the top pointing to
+the app. Open jumps to the channel on screen in the app, with the same `sharkord://channel` link
+the app copies for a channel, and shows only while a channel is open. Get opens the TestFlight
+beta. The X hides the banner in that browser until its site data is cleared. Other phones and
+computers never see it. Code `apps/client/src/components/app-banner`.

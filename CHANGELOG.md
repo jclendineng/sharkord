@@ -134,6 +134,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - A new microphone or camera, or changed mic processing, applies to the call as soon as Devices settings are saved ([#530](https://github.com/Sharkord/sharkord/issues/530)).
 - Mute Stream Audio in Devices settings: screen shares with sound start muted ([#749](https://github.com/Sharkord/sharkord/issues/749)).
 - On an iPhone or iPad browser, the server's welcome screen offers the Sharkord app in place of the mobile warning. Other phones get a gentler warning.
+- On an iPhone or iPad browser, a banner across the top of the app offers to open the current channel in the Sharkord app or get it from TestFlight, until it is hidden in that browser.
 
 #### iOS app
 

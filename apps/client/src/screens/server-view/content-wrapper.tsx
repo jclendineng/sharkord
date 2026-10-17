@@ -10,20 +10,13 @@ import {
   useActiveFullscreenPluginId,
   useServerName
 } from '@/features/server/hooks';
+import { IOS_APP_URL, isIosDevice } from '@/helpers/ios-app';
 import { MobileDrawer } from '@/types';
 import { ChannelType, PluginSlot } from '@sharkord/shared';
 import { Alert, AlertDescription, Button } from '@sharkord/ui';
 import { AlertTriangle, ArrowLeft, ArrowRight, Menu } from 'lucide-react';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-
-// the public beta until the app is on the app store
-const IOS_APP_URL = 'https://testflight.apple.com/join/svXFDNEK';
-
-// an ipad's safari asks for the desktop site and says it is a mac, only its touch screen gives it away
-const isIosDevice =
-  /iPhone|iPad|iPod/.test(navigator.userAgent) ||
-  (navigator.userAgent.includes('Macintosh') && navigator.maxTouchPoints > 1);
 
 type TContentWrapperProps = {
   isDmMode: boolean;
