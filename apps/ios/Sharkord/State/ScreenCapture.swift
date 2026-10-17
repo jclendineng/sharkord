@@ -14,6 +14,7 @@ nonisolated final class ScreenCapture: NSObject, @unchecked Sendable {
 
     private let onPicked: @Sendable () -> Void
     private let onStopped: @Sendable () -> Void
+    private let onFailed: @Sendable (Error) -> Void
     private let queue = DispatchQueue(label: "com.sharkord.screen-capture")
     // SCStream is not marked sendable, but every touch of it is under this lock
     private let state = OSAllocatedUnfairLock(uncheckedState: State())
@@ -32,9 +33,14 @@ nonisolated final class ScreenCapture: NSObject, @unchecked Sendable {
         var lastFrameTime: CFTimeInterval = 0
     }
 
-    init(onPicked: @escaping @Sendable () -> Void, onStopped: @escaping @Sendable () -> Void) {
+    init(
+        onPicked: @escaping @Sendable () -> Void,
+        onStopped: @escaping @Sendable () -> Void,
+        onFailed: @escaping @Sendable (Error) -> Void
+    ) {
         self.onPicked = onPicked
         self.onStopped = onStopped
+        self.onFailed = onFailed
         super.init()
     }
 
@@ -50,7 +56,14 @@ nonisolated final class ScreenCapture: NSObject, @unchecked Sendable {
         picker.defaultConfiguration = configuration
         picker.add(self)
         picker.isActive = true
-        picker.present(using: .display)
+
+        // a mac's control centre turns the display only picker down for an ipad app, its own
+        // picker of a screen or a window opens
+        if ProcessInfo.processInfo.isiOSAppOnMac {
+            picker.present()
+        } else {
+            picker.present(using: .display)
+        }
     }
 
     func start(
@@ -271,7 +284,9 @@ nonisolated extension ScreenCapture: SCContentSharingPickerObserver {
 
     func contentSharingPicker(_ picker: SCContentSharingPicker, didCancelFor stream: SCStream?) {}
 
-    func contentSharingPickerStartDidFailWithError(_ error: any Error) {}
+    func contentSharingPickerStartDidFailWithError(_ error: any Error) {
+        onFailed(error)
+    }
 }
 
 nonisolated extension ScreenCapture: SCStreamDelegate, SCStreamOutput {
@@ -297,7 +312,11 @@ nonisolated extension ScreenCapture: SCStreamDelegate, SCStreamOutput {
 nonisolated final class ScreenCapture: NSObject, @unchecked Sendable {
     typealias AudioHandler = @Sendable (UnsafeBufferPointer<Float>) -> Void
 
-    init(onPicked: @escaping @Sendable () -> Void, onStopped: @escaping @Sendable () -> Void) {
+    init(
+        onPicked: @escaping @Sendable () -> Void,
+        onStopped: @escaping @Sendable () -> Void,
+        onFailed: @escaping @Sendable (Error) -> Void
+    ) {
         super.init()
     }
 

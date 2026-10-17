@@ -87,6 +87,15 @@ struct VoiceRoomScreen: View {
         }
         .background(Color.black)
         .preferredColorScheme(.dark)
+        // the home screen's toast sits under this cover, so a camera or share failing in the call
+        // said nothing
+        .overlay(alignment: .top) {
+            if let toastMessage = session.toastMessage {
+                ErrorToast(message: toastMessage)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.snappy, value: session.toastMessage)
         .onChange(of: session.currentVoiceChannelId) { _, currentId in
             if currentId == nil, channelId == nil {
                 close()

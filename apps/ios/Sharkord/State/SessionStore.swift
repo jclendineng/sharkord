@@ -1143,6 +1143,12 @@ final class SessionStore {
                 Task { @MainActor in
                     await self?.stopScreenShare()
                 }
+            },
+            // the system's picker fails on its own side and says nothing on screen
+            onFailed: { [weak self] _ in
+                Task { @MainActor in
+                    self?.showError(VoiceConnection.VoiceError(message: "Could not open the screen share picker."))
+                }
             }
         )
 
