@@ -8,6 +8,7 @@
   "connectBtn": "Connect",
   "registrationDisabled": "New user registrations are currently disabled. If you do not have an account yet, you need to be invited by an existing user to join this server.",
   "invitedTitle": "You were invited to join this server",
+  "invitedHowTo": "New here? Choose an identity and a password below, then press Connect to create your account.",
   "inviteCode": "Invite code: {{code}}",
   "connectError": "Could not connect: {{message}}",
   "oidcBtn": "Sign in with SSO",

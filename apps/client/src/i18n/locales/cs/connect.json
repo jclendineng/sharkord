@@ -8,6 +8,7 @@
   "connectBtn": "Připojit se",
   "registrationDisabled": "Registrace nových uživatelů je v současné době vypnutá. Pokud ještě nemáte účet, musíte být pozváni existujícím uživatelem.",
   "invitedTitle": "K připojení k tomuto serveru jste byli pozváni",
+  "invitedHowTo": "Jste tu poprvé? Zvolte si níže identitu a heslo a stiskněte Připojit se, tím si vytvoříte účet.",
   "inviteCode": "Kód pozvánky: {{code}}",
   "connectError": "K serveru se připojit nepodařilo: {{message}}",
   "oidcBtn": "Přihlásit se přes SSO",

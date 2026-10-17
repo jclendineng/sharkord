@@ -8,6 +8,7 @@
   "connectBtn": "Conectar",
   "registrationDisabled": "El registro de nuevos usuarios está actualmente deshabilitado. Si aún no tienes una cuenta, necesitas ser invitado por un usuario existente para unirte a este servidor.",
   "invitedTitle": "Has sido invitado a unirte a este servidor",
+  "invitedHowTo": "¿Eres nuevo? Elige una identidad y una contraseña abajo y pulsa Conectar para crear tu cuenta.",
   "inviteCode": "Código de invitación: {{code}}",
   "connectError": "No se pudo conectar: {{message}}",
   "oidcBtn": "Iniciar sesión con SSO",

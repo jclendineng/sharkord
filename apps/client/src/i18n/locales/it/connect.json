@@ -8,6 +8,7 @@
   "connectBtn": "Connetti",
   "registrationDisabled": "Le nuove registrazioni utenti sono attualmente disabilitate. Se non hai ancora un account, devi essere invitato da un utente esistente per entrare in questo server.",
   "invitedTitle": "Sei stato invitato a entrare in questo server",
+  "invitedHowTo": "Sei nuovo? Scegli un'identità e una password qui sotto, poi premi Connetti per creare il tuo account.",
   "inviteCode": "Codice invito: {{code}}",
   "connectError": "Impossibile connettersi: {{message}}",
   "oidcBtn": "Accedi con SSO",

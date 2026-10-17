@@ -22,8 +22,11 @@ struct RootView: View {
     @ViewBuilder
     private var app: some View {
         if let session = servers.signingInSession {
+            // a new sign in, such as an invite link opened while the welcome screen showed, starts
+            // the screen over so it picks up the link instead of keeping the old screen's state
             ConnectView(canCancel: !servers.sessions.isEmpty)
                 .environment(session)
+                .id(ObjectIdentifier(session))
         } else if let session = servers.selectedSession {
             HomeView(session: session)
         }

@@ -197,6 +197,7 @@ const Connect = memo(() => {
       <Alert variant="info">
         <AlertTitle>{t('invitedTitle')}</AlertTitle>
         <AlertDescription>
+          <span>{t('invitedHowTo')}</span>
           <span className="font-mono text-xs">
             {t('inviteCode', { code: inviteCode })}
           </span>

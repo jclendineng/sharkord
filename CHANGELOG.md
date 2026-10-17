@@ -252,6 +252,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 #### Server and web client
 
+- The web invite page says how to make an account: choose an identity and a password, then press Connect.
 - Dependencies with published security fixes are upgraded, among them the HTML sanitizer, the websocket server, the image size reader, the message editor and the database layer.
 - The web client joins its call again after a dropped connection comes back, instead of showing a call the server had already ended ([#849](https://github.com/Sharkord/sharkord/issues/849)).
 - Voice works in Firefox when `announcedAddress` is a hostname. The server sends the addresses it resolves the name to beside the hostname ([#756](https://github.com/Sharkord/sharkord/issues/756)).
@@ -264,6 +265,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 #### iOS app
 
+- An invite link opened while the app shows its welcome screen goes straight to making an account on that server, instead of being dropped.
 - Coming back to the app while it was reconnecting no longer signs you out with "Invalid handshake hash".
 - A call is heard both ways: whoever joined after the app, or started talking or sharing a camera after it joined, was never heard or seen.
 - Cameras and screen shares from a browser show. The app could only take H264 baseline, and browsers send VP8 or VP9.

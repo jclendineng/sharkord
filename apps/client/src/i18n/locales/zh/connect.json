@@ -8,6 +8,7 @@
   "connectBtn": "连接",
   "registrationDisabled": "当前已禁止新用户注册。如果您还没有账户，需要由现有用户邀请才能加入此服务器。",
   "invitedTitle": "您受邀加入此服务器",
+  "invitedHowTo": "第一次来？在下方设置身份和密码，然后点击“连接”即可创建账户。",
   "inviteCode": "邀请码：{{code}}",
   "connectError": "连接失败：{{message}}",
   "oidcBtn": "使用 SSO 登录",
