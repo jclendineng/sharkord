@@ -32,6 +32,7 @@ struct MessageListView<Header: View>: View {
     // the jump button's way down. a scrollTo through the reader's proxy was dropped when tapped
     // while the list still coasted or settled from a bounce, and stopped short of the padding
     @State private var scrollPosition = ScrollPosition()
+    @State private var isPinnedToBottom = true
     // a tap's putting the keyboard away, held back long enough to see whether it is the first
     // half of a double tap
     @State private var keyboardDismissal: Task<Void, Never>?
@@ -132,6 +133,26 @@ struct MessageListView<Header: View>: View {
         .scrollPosition($scrollPosition)
         .defaultScrollAnchor(.bottom)
         .defaultScrollAnchor(.bottom, for: .sizeChanges)
+        // a chat opened with its messages already loaded lays them out at the bottom before the
+        // screen has its final size. the message bar then takes its room and the scroll view kept
+        // the old top, landing 266 points short of the newest message. so the list holds to the
+        // bottom until the first touch or a jump to a message
+        .onScrollGeometryChange(for: CGFloat.self) { geometry in
+            guard geometry.contentSize.height > geometry.containerSize.height else {
+                return 0
+            }
+
+            return geometry.contentSize.height + geometry.contentInsets.bottom - geometry.contentOffset.y - geometry.containerSize.height
+        } action: { _, distance in
+            if isPinnedToBottom, distance > 1, store.focusedMessageId == nil, !store.hasNewer {
+                scrollPosition.scrollTo(edge: .bottom)
+            }
+        }
+        .onScrollPhaseChange { _, phase in
+            if phase == .interacting {
+                isPinnedToBottom = false
+            }
+        }
         .onScrollGeometryChange(for: Bool.self) { geometry in
             let distance = geometry.contentSize.height - geometry.contentOffset.y - geometry.containerSize.height
 
