@@ -6,7 +6,10 @@ struct ChannelsAdminScreen: View {
     @Environment(SessionStore.self) private var session
     @Environment(ServerListStore.self) private var servers
 
-    @State private var editMode = EditMode.inactive
+    @State private var isReordering = false
+    // a category's order as last moved here, shown until the server's channel updates catch up,
+    // so a dropped row stays put rather than snapping back first
+    @State private var movedOrder: [Int: [Int]] = [:]
     @State private var creating: ChannelType?
     @State private var isNewCategoryPresented = false
     @State private var isCategoryOrderPresented = false
@@ -28,11 +31,14 @@ struct ChannelsAdminScreen: View {
             ForEach(sortedCategories) { category in
                 Section {
                     ForEach(channels(in: category.id)) { channel in
-                        NavigationLink {
-                            ChannelEditor(channel: channel)
-                        } label: {
-                            Label(channel.name, systemImage: icon(for: channel))
-                                .foregroundStyle(Theme.header)
+                        if isReordering {
+                            reorderRow(channel, in: category)
+                        } else {
+                            NavigationLink {
+                                ChannelEditor(channel: channel)
+                            } label: {
+                                channelLabel(channel)
+                            }
                         }
                     }
                     .onMove { from, to in
@@ -63,14 +69,16 @@ struct ChannelsAdminScreen: View {
             }
         }
         .settingsListStyle()
-        .environment(\.editMode, $editMode)
+        // the phone drags by the handles edit mode shows. on a mac edit mode blanked the rows and
+        // its handles never moved, so there the rows get arrows instead
+        .environment(\.editMode, .constant(isReordering && !isOnMac ? .active : .inactive))
         .navigationTitle("Channels")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             // out in the bar rather than in the menu, where nobody found it
             if session.can(.manageChannels) {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(editMode.isEditing ? "Done" : "Reorder", action: toggleReordering)
+                    Button(isReordering ? "Done" : "Reorder", action: toggleReordering)
                 }
             }
 
@@ -122,10 +130,44 @@ struct ChannelsAdminScreen: View {
         }
     }
 
+    private let isOnMac = ProcessInfo.processInfo.isiOSAppOnMac
+
     private func toggleReordering() {
         withAnimation {
-            editMode = editMode.isEditing ? .inactive : .active
+            isReordering.toggle()
         }
+    }
+
+    private func channelLabel(_ channel: Channel) -> some View {
+        Label(channel.name, systemImage: icon(for: channel))
+            .labelStyle(.titleAndIcon)
+            .foregroundStyle(Theme.header)
+    }
+
+    // a plain row while reordering, a link would light up under the drag
+    private func reorderRow(_ channel: Channel, in category: ChannelCategory) -> some View {
+        let siblings = channels(in: category.id)
+        let index = siblings.firstIndex { $0.id == channel.id } ?? 0
+
+        return HStack {
+            channelLabel(channel)
+
+            Spacer()
+
+            if isOnMac {
+                Button("Move Up", systemImage: "arrow.up") {
+                    move(in: category, from: IndexSet(integer: index), to: index - 1)
+                }
+                .disabled(index == 0)
+
+                Button("Move Down", systemImage: "arrow.down") {
+                    move(in: category, from: IndexSet(integer: index), to: index + 2)
+                }
+                .disabled(index == siblings.count - 1)
+            }
+        }
+        .labelStyle(.iconOnly)
+        .buttonStyle(.borderless)
     }
 
     private func icon(for channel: Channel) -> String {
@@ -144,9 +186,15 @@ struct ChannelsAdminScreen: View {
     }
 
     private func channels(in categoryId: Int) -> [Channel] {
-        session.channels
+        let inCategory = session.channels
             .filter { !$0.isDm && $0.categoryId == categoryId }
             .sorted { $0.position < $1.position }
+
+        guard let order = movedOrder[categoryId], Set(order) == Set(inCategory.map(\.id)) else {
+            return inCategory
+        }
+
+        return inCategory.sorted { (order.firstIndex(of: $0.id) ?? 0) < (order.firstIndex(of: $1.id) ?? 0) }
     }
 
     // the server takes the whole new order of a category
@@ -160,8 +208,18 @@ struct ChannelsAdminScreen: View {
             let channelIds: [Int]
         }
 
-        run {
-            try await session.perform("channels.reorder", OrderInput(categoryId: category.id, channelIds: ordered.map(\.id)))
+        let channelIds = ordered.map(\.id)
+
+        movedOrder[category.id] = channelIds
+        errorMessage = nil
+
+        Task {
+            do {
+                try await session.perform("channels.reorder", OrderInput(categoryId: category.id, channelIds: channelIds))
+            } catch {
+                movedOrder[category.id] = nil
+                errorMessage = error.localizedDescription
+            }
         }
     }
 
