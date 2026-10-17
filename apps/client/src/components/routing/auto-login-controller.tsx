@@ -8,7 +8,6 @@ import {
   LocalStorageKey,
   removeLocalStorageItem,
   SessionStorageKey,
-  setLocalStorageItemBool,
   setSessionStorageItem
 } from '@/helpers/storage';
 import { memo, useEffect, useRef } from 'react';
@@ -33,7 +32,8 @@ const AutoLoginController = memo(() => {
     }
 
     const autoLoginEnabled = getLocalStorageItemBool(
-      LocalStorageKey.AUTO_LOGIN
+      LocalStorageKey.AUTO_LOGIN,
+      true
     );
 
     const savedToken = getLocalStorageItem(LocalStorageKey.AUTO_LOGIN_TOKEN);
@@ -50,10 +50,9 @@ const AutoLoginController = memo(() => {
 
     connect()
       .catch(() => {
-        // token expired or invalid clear auto-login state so the user
-        // sees the connect screen and can log in manually
+        // token expired or invalid: forget it so the user sees the connect screen and can log
+        // in manually. the preference stays, so the next sign in is kept across refreshes too
         removeLocalStorageItem(LocalStorageKey.AUTO_LOGIN_TOKEN);
-        setLocalStorageItemBool(LocalStorageKey.AUTO_LOGIN, false);
       })
       .finally(() => {
         // reset auto-login attempt state so if the user logs out and back in they can try auto-login again

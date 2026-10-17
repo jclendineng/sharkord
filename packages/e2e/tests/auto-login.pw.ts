@@ -12,7 +12,7 @@ test.describe('Auto Login', () => {
     await expect(autoLoginSwitch).toContainText('Login automatically');
   });
 
-  test('should have the auto-login switch unchecked by default', async ({
+  test('should have the auto-login switch checked by default', async ({
     page
   }) => {
     await page.goto('/');
@@ -20,7 +20,7 @@ test.describe('Auto Login', () => {
     const switchButton = page
       .getByTestId(TestId.CONNECT_AUTO_LOGIN_SWITCH)
       .locator('button[role="switch"]');
-    await expect(switchButton).toHaveAttribute('data-state', 'unchecked');
+    await expect(switchButton).toHaveAttribute('data-state', 'checked');
   });
 
   test('should toggle the auto-login switch', async ({ page }) => {
@@ -30,10 +30,10 @@ test.describe('Auto Login', () => {
     const switchButton = autoLoginSwitch.locator('button[role="switch"]');
 
     await autoLoginSwitch.click();
-    await expect(switchButton).toHaveAttribute('data-state', 'checked');
+    await expect(switchButton).toHaveAttribute('data-state', 'unchecked');
 
     await autoLoginSwitch.click();
-    await expect(switchButton).toHaveAttribute('data-state', 'unchecked');
+    await expect(switchButton).toHaveAttribute('data-state', 'checked');
   });
 
   test('should restore the auto-login switch state from localStorage', async ({
@@ -101,11 +101,11 @@ test.describe('Auto Login', () => {
     const connectButton = page.getByTestId(TestId.CONNECT_BUTTON);
     await expect(connectButton).toBeVisible({ timeout: 10_000 });
 
-    // auto-login state should be cleared after failure
+    // the refused token is forgotten, but the preference stays for the next sign in
     const autoLoginEnabled = await page.evaluate(() =>
       localStorage.getItem('sharkord-auto-login')
     );
-    expect(autoLoginEnabled).toBe('false');
+    expect(autoLoginEnabled).toBe('true');
 
     const savedToken = await page.evaluate(() =>
       localStorage.getItem('sharkord-auto-login-token')

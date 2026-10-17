@@ -108,7 +108,6 @@ test.describe('a kicked user', () => {
       const saved = await savedContext.newPage();
 
       await saved.goto('/');
-      await saved.getByTestId(TestId.CONNECT_AUTO_LOGIN_SWITCH).click();
       await saved
         .getByTestId(TestId.CONNECT_IDENTITY_INPUT)
         .fill(KICKED.identity);
@@ -148,11 +147,12 @@ test.describe('a kicked user', () => {
       await expect(
         reopened.getByTestId(TestId.CONNECT_IDENTITY_INPUT)
       ).toHaveValue(KICKED.identity);
+      // the refused token is forgotten but the preference stays, so the next sign in is kept
       await expect(
         reopened
           .getByTestId(TestId.CONNECT_AUTO_LOGIN_SWITCH)
           .locator('button[role="switch"]')
-      ).toHaveAttribute('data-state', 'unchecked');
+      ).toHaveAttribute('data-state', 'checked');
 
       const savedToken = await reopened.evaluate(() =>
         localStorage.getItem('sharkord-auto-login-token')
@@ -285,7 +285,6 @@ test('disconnecting from the server menu logs out and clears the saved token', a
     const page = await context.newPage();
 
     await page.goto('/');
-    await page.getByTestId(TestId.CONNECT_AUTO_LOGIN_SWITCH).click();
     await page.getByTestId(TestId.CONNECT_IDENTITY_INPUT).fill('testuser');
     await page.getByTestId(TestId.CONNECT_PASSWORD_INPUT).fill('password123');
     await page.getByTestId(TestId.CONNECT_BUTTON).click();
@@ -318,7 +317,6 @@ test('a refresh resumes an auto-login session without asking again', async ({
     const page = await context.newPage();
 
     await page.goto('/');
-    await page.getByTestId(TestId.CONNECT_AUTO_LOGIN_SWITCH).click();
     await page.getByTestId(TestId.CONNECT_IDENTITY_INPUT).fill('userb');
     await page.getByTestId(TestId.CONNECT_PASSWORD_INPUT).fill('password123');
     await page.getByTestId(TestId.CONNECT_BUTTON).click();
