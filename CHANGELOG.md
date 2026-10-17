@@ -288,6 +288,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 ### Fixed
 
+- In the app, Edit Profile keeps unsaved edits: a swipe down springs back, and Cancel asks
+  before discarding them.
 - On an iPad, joining or opening a call opens the full-screen call instead of a phone's sheet
   fading into it, the floating call tile no longer shows beside the voice channel's sheet, and
   someone alone in a call fills it rather than sitting in half a row and jumping when tapped.

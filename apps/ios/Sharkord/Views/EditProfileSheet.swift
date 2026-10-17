@@ -17,9 +17,23 @@ struct EditProfileSheet: View {
     @State private var bannerItem: PhotosPickerItem?
     @State private var errorMessage: String?
     @State private var isSaving = false
+    // saved or discarded, so closing does not ask again
+    @State private var isLeaving = false
+    @State private var isConfirmingDiscard = false
 
     private var canSave: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty && bio.count <= Self.bioLimit && !isSaving
+    }
+
+    // the pictures upload as soon as they are picked, only the fields wait for Save
+    private var hasUnsavedChanges: Bool {
+        guard let user = session.ownUser, !isLeaving else {
+            return false
+        }
+
+        return name != user.name
+            || bio != (user.bio ?? "")
+            || color.hexString != Color(hex: user.profileColor).hexString
     }
 
     var body: some View {
@@ -109,7 +123,11 @@ struct EditProfileSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
+                    // on the button, which the question points at as it opens
                     Button("Cancel", action: close)
+                        .confirmationDialog("Discard your changes?", isPresented: $isConfirmingDiscard, titleVisibility: .visible) {
+                            Button("Discard Changes", role: .destructive, action: discard)
+                        }
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
@@ -134,6 +152,9 @@ struct EditProfileSheet: View {
             }
         }
         .presentationBackground(Theme.deepBackground)
+        // edits are not dropped by a stray swipe: it springs back, and Cancel asks first. ios 27's
+        // dismissalConfirmationDialog would ask on the swipe too, but never showed on 27.1
+        .interactiveDismissDisabled(hasUnsavedChanges)
     }
 
     private func fill() {
@@ -157,6 +178,7 @@ struct EditProfileSheet: View {
                     bio: bio,
                     profileColor: color.hexString
                 )
+                isLeaving = true
                 dismiss()
             } catch {
                 errorMessage = error.localizedDescription
@@ -224,7 +246,17 @@ struct EditProfileSheet: View {
         }
     }
 
+    private func discard() {
+        isLeaving = true
+        dismiss()
+    }
+
     private func close() {
+        if hasUnsavedChanges {
+            isConfirmingDiscard = true
+            return
+        }
+
         dismiss()
     }
 }

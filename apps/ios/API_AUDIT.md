@@ -23,8 +23,10 @@ environment values use `@Entry`, and the app already uses `onGeometryChange`,
       the lifted row keeps its section's corners, sticks out of the card and leaves a notch, and
       neither a `.dragPreview` content shape nor a rounded `listRowBackground` per row changes
       that. Try again on a later SDK.
-- [ ] **`dismissalConfirmationDialog`** (iOS 27) on Edit Profile, so a swipe down with unsaved
-      changes asks first. Then any other sheet that edits something.
+- [x] **`dismissalConfirmationDialog`** (iOS 27) on Edit Profile. It never showed on 27.1,
+      neither inside the sheet's navigation stack nor on the sheet itself, so Edit Profile uses
+      `interactiveDismissDisabled` while there are edits and a confirmation on Cancel instead.
+      Try the iOS 27 one again on a later SDK, it would also ask on the swipe.
 - [ ] **`AVSampleBufferDisplayLayer` deprecated in iOS 27** (`Views/PictureInPictureSource.swift:178`).
       `status`, `flush()` and `enqueue` give way to an `AVSampleBufferRenderSynchronizer` with
       `sampleBufferReceiver(adding:)`. Needs a live call with picture in picture to verify.
