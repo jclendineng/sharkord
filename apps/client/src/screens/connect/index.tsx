@@ -42,6 +42,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useOidcLogin } from './hooks/use-oidc-login';
+import { useOverflowsScreen } from './hooks/use-overflows-screen';
 import { ResetPassword } from './reset-password';
 
 const Connect = memo(() => {
@@ -215,6 +216,8 @@ const Connect = memo(() => {
     [t, inviteCode]
   );
 
+  const { contentRef, overflows } = useOverflowsScreen();
+
   // the page itself scrolls here, not a box inside it: safari only runs a page under its glass
   // toolbar when the document scrolls, and an invite makes the card taller than a phone
   useEffect(() => {
@@ -238,162 +241,176 @@ const Connect = memo(() => {
     );
   }
 
+  // a page a little taller than the screen stutters in safari: scrolling tucks the toolbar
+  // away, the screen grows past the end of the page, the page snaps back and the toolbar
+  // returns. one that overflows at all gets a toolbar's height more, so it keeps scrolling
+  let pageClassName = 'flex flex-col justify-center items-center min-h-svh';
+
+  if (overflows) {
+    pageClassName = 'flex flex-col items-center min-h-[calc(200lvh-100svh)]';
+  }
+
   return (
     <div className="relative">
       <div className="hidden md:block fixed bottom-6 right-6 z-50">
         <LanguageSwitcher variant="icon" />
       </div>
-      <div className="flex flex-col gap-2 justify-center items-center min-h-svh px-4 py-6">
-        <Card className="w-full max-w-sm shrink-0">
-          <CardHeader>
-            <CardTitle className="flex flex-col items-center gap-2 text-center">
-              <img
-                src={logoSrc}
-                alt="Sharkord"
-                className="block max-h-32 max-w-full rounded-[5px]"
-              />
-              {info?.name && (
-                <span className="text-xl font-bold leading-tight">
-                  {info.name}
+      <div className={pageClassName}>
+        <div
+          ref={contentRef}
+          className="flex flex-col gap-2 items-center w-full px-4 py-6"
+        >
+          <Card className="w-full max-w-sm shrink-0">
+            <CardHeader>
+              <CardTitle className="flex flex-col items-center gap-2 text-center">
+                <img
+                  src={logoSrc}
+                  alt="Sharkord"
+                  className="block max-h-32 max-w-full rounded-[5px]"
+                />
+                {info?.name && (
+                  <span className="text-xl font-bold leading-tight">
+                    {info.name}
+                  </span>
+                )}
+              </CardTitle>
+              <PluginSlotRenderer slotId={PluginSlot.CONNECT_SCREEN} />
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              {info?.description && (
+                <span className="text-sm text-muted-foreground">
+                  {info?.description}
                 </span>
               )}
-            </CardTitle>
-            <PluginSlotRenderer slotId={PluginSlot.CONNECT_SCREEN} />
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            {info?.description && (
-              <span className="text-sm text-muted-foreground">
-                {info?.description}
-              </span>
-            )}
 
-            {appInviteLink && (
-              <div className="flex flex-col gap-2">
-                {inviteAlert}
-                <Button asChild>
-                  <a href={appInviteLink}>{t('openInApp')}</a>
-                </Button>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Separator className="w-auto flex-1" />
-                  {t('continueInBrowser')}
-                  <Separator className="w-auto flex-1" />
+              {appInviteLink && (
+                <div className="flex flex-col gap-2">
+                  {inviteAlert}
+                  <Button asChild>
+                    <a href={appInviteLink}>{t('openInApp')}</a>
+                  </Button>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Separator className="w-auto flex-1" />
+                    {t('continueInBrowser')}
+                    <Separator className="w-auto flex-1" />
+                  </div>
                 </div>
-              </div>
-            )}
-
-            {oidc.isLocalLoginAllowed && (
-              <form
-                className="flex flex-col gap-2"
-                onSubmit={onFormSubmit}
-                data-testid={TestId.CONNECT_FORM}
-              >
-                <Group label={t('identityLabel')} help={t('identityHelp')}>
-                  <Input
-                    {...r('identity')}
-                    autoComplete="username"
-                    data-testid={TestId.CONNECT_IDENTITY_INPUT}
-                  />
-                </Group>
-                <Group label={t('passwordLabel')}>
-                  <Input
-                    {...r('password')}
-                    type="password"
-                    autoComplete="current-password"
-                    onEnter={onConnectClick}
-                    data-testid={TestId.CONNECT_PASSWORD_INPUT}
-                  />
-                </Group>
-                {needsCode && (
-                  <Group label={t('totpLabel')} help={t('totpHelp')}>
-                    <Input
-                      {...r('totp')}
-                      autoComplete="one-time-code"
-                      inputMode="numeric"
-                      autoFocus
-                      onEnter={onConnectClick}
-                    />
-                  </Group>
-                )}
-              </form>
-            )}
-
-            <div
-              className="flex items-center gap-2 w-fit cursor-pointer"
-              data-testid={TestId.CONNECT_AUTO_LOGIN_SWITCH}
-              onClick={onAutoLoginToggle}
-            >
-              <Switch checked={values.autoLogin} />
-              <Label className="text-sm cursor-pointer">
-                {t('autoLoginLabel')}
-              </Label>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              {!window.isSecureContext && (
-                <Alert variant="destructive">
-                  <AlertTitle>{t('insecureTitle')}</AlertTitle>
-                  <AlertDescription>{t('insecureDesc')}</AlertDescription>
-                </Alert>
               )}
 
               {oidc.isLocalLoginAllowed && (
-                <Button
-                  className="w-full"
-                  variant="outline"
-                  onClick={onConnectClick}
-                  disabled={loading || !values.identity || !values.password}
-                  data-testid={TestId.CONNECT_BUTTON}
+                <form
+                  className="flex flex-col gap-2"
+                  onSubmit={onFormSubmit}
+                  data-testid={TestId.CONNECT_FORM}
                 >
-                  {t('connectBtn')}
-                </Button>
+                  <Group label={t('identityLabel')} help={t('identityHelp')}>
+                    <Input
+                      {...r('identity')}
+                      autoComplete="username"
+                      data-testid={TestId.CONNECT_IDENTITY_INPUT}
+                    />
+                  </Group>
+                  <Group label={t('passwordLabel')}>
+                    <Input
+                      {...r('password')}
+                      type="password"
+                      autoComplete="current-password"
+                      onEnter={onConnectClick}
+                      data-testid={TestId.CONNECT_PASSWORD_INPUT}
+                    />
+                  </Group>
+                  {needsCode && (
+                    <Group label={t('totpLabel')} help={t('totpHelp')}>
+                      <Input
+                        {...r('totp')}
+                        autoComplete="one-time-code"
+                        inputMode="numeric"
+                        autoFocus
+                        onEnter={onConnectClick}
+                      />
+                    </Group>
+                  )}
+                </form>
               )}
 
-              {oidc.isEnabled && (
-                <Button
-                  className="w-full"
-                  variant="secondary"
-                  onClick={oidc.startLogin}
-                  disabled={loading}
-                  data-testid={TestId.CONNECT_OIDC_BUTTON}
-                >
-                  {t('oidcBtn')}
-                </Button>
-              )}
+              <div
+                className="flex items-center gap-2 w-fit cursor-pointer"
+                data-testid={TestId.CONNECT_AUTO_LOGIN_SWITCH}
+                onClick={onAutoLoginToggle}
+              >
+                <Switch checked={values.autoLogin} />
+                <Label className="text-sm cursor-pointer">
+                  {t('autoLoginLabel')}
+                </Label>
+              </div>
 
-              {oidc.isLocalLoginAllowed &&
-                !info?.allowNewUsers &&
-                !inviteCode && (
-                  <span className="text-xs text-muted-foreground text-center">
-                    {t('registrationDisabled')}
-                  </span>
+              <div className="flex flex-col gap-2">
+                {!window.isSecureContext && (
+                  <Alert variant="destructive">
+                    <AlertTitle>{t('insecureTitle')}</AlertTitle>
+                    <AlertDescription>{t('insecureDesc')}</AlertDescription>
+                  </Alert>
                 )}
 
-              {inviteCode && !appInviteLink && inviteAlert}
-            </div>
-          </CardContent>
-        </Card>
+                {oidc.isLocalLoginAllowed && (
+                  <Button
+                    className="w-full"
+                    variant="outline"
+                    onClick={onConnectClick}
+                    disabled={loading || !values.identity || !values.password}
+                    data-testid={TestId.CONNECT_BUTTON}
+                  >
+                    {t('connectBtn')}
+                  </Button>
+                )}
 
-        <div className="flex justify-center items-center gap-2 text-xs text-muted-foreground select-none">
-          <span>v{VITE_APP_VERSION}</span>
-          <a
-            href="https://github.com/jclendineng/sharkord"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            GitHub
-          </a>
+                {oidc.isEnabled && (
+                  <Button
+                    className="w-full"
+                    variant="secondary"
+                    onClick={oidc.startLogin}
+                    disabled={loading}
+                    data-testid={TestId.CONNECT_OIDC_BUTTON}
+                  >
+                    {t('oidcBtn')}
+                  </Button>
+                )}
 
-          <a
-            className="text-xs"
-            href="https://sharkord.com"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Sharkord
-          </a>
-        </div>
-        <div className="md:hidden">
-          <LanguageSwitcher variant="icon" />
+                {oidc.isLocalLoginAllowed &&
+                  !info?.allowNewUsers &&
+                  !inviteCode && (
+                    <span className="text-xs text-muted-foreground text-center">
+                      {t('registrationDisabled')}
+                    </span>
+                  )}
+
+                {inviteCode && !appInviteLink && inviteAlert}
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="flex justify-center items-center gap-2 text-xs text-muted-foreground select-none">
+            <span>v{VITE_APP_VERSION}</span>
+            <a
+              href="https://github.com/jclendineng/sharkord"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              GitHub
+            </a>
+
+            <a
+              className="text-xs"
+              href="https://sharkord.com"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Sharkord
+            </a>
+          </div>
+          <div className="md:hidden">
+            <LanguageSwitcher variant="icon" />
+          </div>
         </div>
       </div>
     </div>
