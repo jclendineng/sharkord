@@ -183,6 +183,7 @@
   "selectRoleToEdit": "Selecione um cargo para editar ou crie um novo",
   "roleCreated": "Cargo criado",
   "roleCreateFailed": "Não foi possível criar o cargo",
+  "roleReorderFailed": "Não foi possível reordenar os cargos",
   "editRoleTitle": "Editar Cargo",
   "setAsDefaultRoleTooltip": "Definir como Cargo Padrão",
   "defaultRoleInfo": "Este é o cargo padrão. Novos membros receberão este cargo ao entrar.",

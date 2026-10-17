@@ -79,6 +79,17 @@ struct Role: Decodable, Hashable, Identifiable {
     let color: String
     // optional so a role from an event without them still decodes
     let permissions: [String]?
+    // missing on a server from before roles had an order
+    let position: Int?
+    let isDefault: Bool?
+
+    // discord's order: the owner's role first, the default one last, the rest as arranged
+    static func ranksAbove(_ lhs: Role, _ rhs: Role) -> Bool {
+        let lhsKey = (lhs.isDefault == true ? 1 : 0, lhs.id == 1 ? 0 : 1, lhs.position ?? lhs.id, lhs.id)
+        let rhsKey = (rhs.isDefault == true ? 1 : 0, rhs.id == 1 ? 0 : 1, rhs.position ?? rhs.id, rhs.id)
+
+        return lhsKey < rhsKey
+    }
 }
 
 struct CustomEmoji: Decodable, Hashable, Identifiable {

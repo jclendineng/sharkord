@@ -154,21 +154,28 @@ const settings = sqliteTable(
   ]
 );
 
-const roles = sqliteTable('roles', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  name: text('name').notNull(),
-  color: text('color').notNull().default('#ffffff'),
-  isPersistent: integer('is_persistent', { mode: 'boolean' }).notNull(),
-  isDefault: integer('is_default', { mode: 'boolean' }).notNull(),
-  storageQuotaOverrideEnabled: integer('storage_quota_override_enabled', {
-    mode: 'boolean'
-  })
-    .notNull()
-    .default(false),
-  storageSpaceQuota: integer('storage_space_quota').notNull().default(0),
-  createdAt: integer('created_at').notNull(),
-  updatedAt: integer('updated_at')
-});
+const roles = sqliteTable(
+  'roles',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    name: text('name').notNull(),
+    color: text('color').notNull().default('#ffffff'),
+    isPersistent: integer('is_persistent', { mode: 'boolean' }).notNull(),
+    isDefault: integer('is_default', { mode: 'boolean' }).notNull(),
+    storageQuotaOverrideEnabled: integer('storage_quota_override_enabled', {
+      mode: 'boolean'
+    })
+      .notNull()
+      .default(false),
+    storageSpaceQuota: integer('storage_space_quota').notNull().default(0),
+    // discord's role order, lowest first: it picks the role a member shows as and heads the
+    // member list. the owner's role stays on top and the default one at the bottom
+    position: integer('position').notNull().default(0),
+    createdAt: integer('created_at').notNull(),
+    updatedAt: integer('updated_at')
+  },
+  (t) => [index('roles_position_idx').on(t.position)]
+);
 
 const categories = sqliteTable(
   'categories',

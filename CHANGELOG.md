@@ -18,6 +18,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   group direct messages, private notes, the new member lounge, QR sign in and the soundboard.
   Upstream's plugin storage migrations run as this fork's `0060_plugin_storage`, after the
   fork's own, so a database that already ran `0059` still gets them.
+- `0072_role_positions` gives roles an order, starting from the order they were made in.
 - `0071_onboarding_removes_default_role` adds the rules setting that takes the default role
   away on reacting, off for a lounge already set up.
 - `0070_channel_pins` adds the table of channels each account pinned. The apps hand their own
@@ -56,6 +57,10 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 ### Added
 
+- Roles have an order, as Discord's: drag them in the web client's Roles list, or use Reorder in
+  the apps (arrows on a Mac). The owner's role stays on top and the default one at the bottom.
+  A member shows as their highest role with a colour, and the member list groups by it
+  (`roles.reorder`).
 - The rules message setup can close every other channel to new members and take their
   starting role away once they react, instead of channel by channel permissions by hand.
 - Pinned channels follow the account: pinning on the Mac shows on the phone straight away

@@ -181,6 +181,7 @@
   "selectRoleToEdit": "Selecciona un rol para editar o crea uno nuevo",
   "roleCreated": "Rol creado",
   "roleCreateFailed": "No se pudo crear el rol",
+  "roleReorderFailed": "No se pudieron reordenar los roles",
   "editRoleTitle": "Editar rol",
   "setAsDefaultRoleTooltip": "Establecer como rol por defecto",
   "defaultRoleInfo": "Este es el rol por defecto. Los nuevos miembros tendrán este rol asignado al unirse.",

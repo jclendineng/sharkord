@@ -291,6 +291,14 @@ Server Settings, Overview, Report Email. The apps' Report action on a server or 
 opens an email to this address, with the server, channel and message filled in. It is
 published in `/info` so a report can be sent without an account. Setting `reportEmail`.
 
+## Role order
+
+Roles are ordered as Discord's: the owner's role on top, the default role at the bottom, and
+the ones between in the order an admin with Manage Roles arranges them (`roles.reorder`, a
+`position` on each role). The web client's Roles list drags; the apps have Reorder, with arrows
+on a Mac. A new role starts at the bottom. A member's roles are listed in that order, the first
+with a colour colours their name, and the apps' member list groups people under it in that order.
+
 ## Pinned channels
 
 Pin Channel to Top on a channel or a conversation in the apps puts it in a Pinned group above

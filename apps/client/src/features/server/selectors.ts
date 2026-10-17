@@ -145,7 +145,10 @@ export const userRolesSelector = createCachedSelector(
   (roles, user) => {
     if (!user?.roleIds) return DEFAULT_ARRAY as TJoinedRole[];
 
-    return roles.filter((role) => user.roleIds.includes(role.id));
+    // in the server's role order, as discord lists a member's roles
+    return roles
+      .filter((role) => user.roleIds.includes(role.id))
+      .sort((a, b) => a.position - b.position || a.id - b.id);
   }
 )((_, userId: number) => userId);
 

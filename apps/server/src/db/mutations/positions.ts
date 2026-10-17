@@ -1,8 +1,8 @@
 import { inArray, sql } from 'drizzle-orm';
 import { db } from '..';
-import { categories, channels } from '../schema';
+import { categories, channels, roles } from '../schema';
 
-type TPositionedTable = typeof categories | typeof channels;
+type TPositionedTable = typeof categories | typeof channels | typeof roles;
 
 const mergeOrder = (existingIds: number[], requestedIds: number[]) => {
   const existing = new Set(existingIds);

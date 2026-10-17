@@ -7,6 +7,23 @@ struct RolesScreen: View {
     @State private var roles: [AdminRole] = []
     @State private var errorMessage: String?
     @State private var isLoading = true
+    @State private var isReordering = false
+
+    private let isOnMac = ProcessInfo.processInfo.isiOSAppOnMac
+
+    // the owner's role stays on top and the default one at the bottom, as discord's do, and the
+    // roles between them are what moves. the server sends them in order
+    private var ownerRole: AdminRole? {
+        roles.first { $0.id == 1 }
+    }
+
+    private var defaultRole: AdminRole? {
+        roles.first(where: \.isDefault)
+    }
+
+    private var movableRoles: [AdminRole] {
+        roles.filter { $0.id != 1 && !$0.isDefault }
+    }
 
     var body: some View {
         List {
@@ -16,33 +33,30 @@ struct RolesScreen: View {
             }
 
             Section {
-                ForEach(roles) { role in
-                    NavigationLink {
-                        RoleEditor(role: role, onChange: reload)
-                    } label: {
-                        HStack(spacing: 12) {
-                            Circle()
-                                .fill(Color(hex: role.color))
-                                .frame(width: 14, height: 14)
+                if let ownerRole {
+                    row(for: ownerRole)
+                }
 
-                            Text(role.name)
-                                .foregroundStyle(Theme.header)
-
-                            Spacer()
-
-                            if role.isDefault {
-                                Text("Default")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(Theme.muted)
-                            }
-                        }
+                ForEach(movableRoles) { role in
+                    if isReordering {
+                        reorderRow(for: role)
+                    } else {
+                        row(for: role)
                     }
                 }
+                .onMove(perform: move)
+
+                if let defaultRole {
+                    row(for: defaultRole)
+                }
             } footer: {
-                Text("The default role is given to everyone who joins.")
+                Text("A member shows as their highest role with a color, and the member list groups them under it. The default role is given to everyone who joins.")
             }
         }
         .settingsListStyle()
+        // the phone drags by edit mode's handles, a mac gets arrows: there edit mode blanked the
+        // rows and its handles never moved
+        .environment(\.editMode, .constant(isReordering && !isOnMac ? .active : .inactive))
         .overlay {
             if isLoading {
                 ProgressView()
@@ -51,6 +65,12 @@ struct RolesScreen: View {
         .navigationTitle("Roles")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            if movableRoles.count > 1 {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(isReordering ? "Done" : "Reorder", action: toggleReordering)
+                }
+            }
+
             ToolbarItem(placement: .topBarTrailing) {
                 Button("New Role", systemImage: "plus", action: addRole)
             }
@@ -77,6 +97,88 @@ struct RolesScreen: View {
     private func reload() {
         Task {
             await load()
+        }
+    }
+
+    private func roleLabel(for role: AdminRole) -> some View {
+        HStack(spacing: 12) {
+            Circle()
+                .fill(Color(hex: role.color))
+                .frame(width: 14, height: 14)
+
+            Text(role.name)
+                .foregroundStyle(Theme.header)
+
+            Spacer()
+
+            if role.isDefault {
+                Text("Default")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Theme.muted)
+            }
+        }
+    }
+
+    private func row(for role: AdminRole) -> some View {
+        NavigationLink {
+            RoleEditor(role: role, onChange: reload)
+        } label: {
+            roleLabel(for: role)
+        }
+    }
+
+    // a plain row while reordering, a link would light up under the drag
+    private func reorderRow(for role: AdminRole) -> some View {
+        let index = movableRoles.firstIndex { $0.id == role.id } ?? 0
+
+        return HStack {
+            roleLabel(for: role)
+
+            if isOnMac {
+                Button("Move Up", systemImage: "arrow.up") {
+                    move(from: IndexSet(integer: index), to: index - 1)
+                }
+                .disabled(index == 0)
+
+                Button("Move Down", systemImage: "arrow.down") {
+                    move(from: IndexSet(integer: index), to: index + 2)
+                }
+                .disabled(index == movableRoles.count - 1)
+            }
+        }
+        .labelStyle(.iconOnly)
+        .buttonStyle(.borderless)
+    }
+
+    private func toggleReordering() {
+        withAnimation {
+            isReordering.toggle()
+        }
+    }
+
+    // the new order shows straight away, the server's comes back with the reload
+    private func move(from source: IndexSet, to destination: Int) {
+        var moved = movableRoles
+
+        moved.move(fromOffsets: source, toOffset: destination)
+
+        let previous = roles
+
+        roles = [ownerRole].compactMap { $0 } + moved + [defaultRole].compactMap { $0 }
+        errorMessage = nil
+
+        struct OrderInput: Encodable {
+            let roleIds: [Int]
+        }
+
+        Task {
+            do {
+                try await session.perform("roles.reorder", OrderInput(roleIds: moved.map(\.id)))
+                await load()
+            } catch {
+                roles = previous
+                errorMessage = error.localizedDescription
+            }
         }
     }
 

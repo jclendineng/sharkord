@@ -20,6 +20,7 @@ export enum ActivityLogType {
   DELETED_ROLE = 'DELETED_ROLE',
   UPDATED_ROLE = 'UPDATED_ROLE',
   UPDATED_DEFAULT_ROLE = 'UPDATED_DEFAULT_ROLE',
+  REORDERED_ROLES = 'REORDERED_ROLES',
   // -------------------- CHANNELS --------------------
   CREATED_CHANNEL = 'CREATED_CHANNEL',
   DELETED_CHANNEL = 'DELETED_CHANNEL',
@@ -115,6 +116,9 @@ export type TActivityLogDetailsMap = {
     oldRoleId: number;
     newRoleName: string;
     oldRoleName: string;
+  };
+  [ActivityLogType.REORDERED_ROLES]: {
+    roleIds: number[];
   };
   // -------------------- CHANNELS --------------------
   [ActivityLogType.CREATED_CHANNEL]: {

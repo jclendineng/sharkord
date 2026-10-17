@@ -181,6 +181,7 @@
   "selectRoleToEdit": "选择角色进行编辑或创建新角色",
   "roleCreated": "角色已创建",
   "roleCreateFailed": "创建角色失败",
+  "roleReorderFailed": "无法调整角色顺序",
   "editRoleTitle": "编辑角色",
   "setAsDefaultRoleTooltip": "设为默认角色",
   "defaultRoleInfo": "这是默认角色，新成员加入时将被分配此角色。",

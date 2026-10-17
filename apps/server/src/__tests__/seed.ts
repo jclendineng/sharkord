@@ -179,6 +179,7 @@ const seedTestDb = async (
     isDefault: false,
     storageQuotaOverrideEnabled: false,
     storageSpaceQuota: 0,
+    position: 1,
     createdAt: firstStart
   };
 
@@ -199,6 +200,7 @@ const seedTestDb = async (
     isDefault: true,
     storageQuotaOverrideEnabled: false,
     storageSpaceQuota: 0,
+    position: 2,
     createdAt: firstStart
   };
 
@@ -222,6 +224,7 @@ const seedTestDb = async (
     isDefault: false,
     storageQuotaOverrideEnabled: false,
     storageSpaceQuota: 0,
+    position: 3,
     createdAt: firstStart
   };
 
@@ -370,6 +373,7 @@ const seedTestDb = async (
     isDefault: false,
     storageQuotaOverrideEnabled: false,
     storageSpaceQuota: 0,
+    position: 4,
     createdAt: firstStart
   };
 

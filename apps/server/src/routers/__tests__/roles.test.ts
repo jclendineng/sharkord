@@ -1,6 +1,7 @@
 import { Permission } from '@sharkord/shared';
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, spyOn, test } from 'bun:test';
 import { initTest } from '../../__tests__/helpers';
+import * as publishers from '../../db/publishers';
 
 describe('roles router', () => {
   test('should throw when user lacks permissions (getAll)', async () => {
@@ -375,5 +376,78 @@ describe('roles router', () => {
         storageSpaceQuota: 0
       })
     ).rejects.toThrow('Role not found');
+  });
+});
+
+// seeded order: Owner (1), Member (2, the default), Guest (3), Moderator (4)
+describe('roles.reorder', () => {
+  const roleOrder = async (
+    caller: Awaited<ReturnType<typeof initTest>>['caller']
+  ) => (await caller.roles.getAll()).map(({ id }) => id);
+
+  test('should move the roles between the owner and the default one', async () => {
+    const { caller } = await initTest(1);
+
+    await caller.roles.reorder({ roleIds: [4, 3] });
+
+    const order = await roleOrder(caller);
+
+    expect(order.indexOf(4)).toBeLessThan(order.indexOf(3));
+    expect(order[0]).toBe(1);
+  });
+
+  test('should ignore the owner and the default role', async () => {
+    const { caller } = await initTest(1);
+
+    await caller.roles.reorder({ roleIds: [2, 1, 4, 3] });
+
+    const roles = await caller.roles.getAll();
+    const position = (id: number) =>
+      roles.find((role) => role.id === id)!.position;
+
+    expect(position(1)).toBe(1);
+    expect(position(2)).toBe(2);
+    expect(position(4)).toBeLessThan(position(3));
+  });
+
+  test('should tell everyone about each moved role', async () => {
+    const { caller } = await initTest(1);
+    const publishRole = spyOn(publishers, 'publishRole');
+
+    await caller.roles.reorder({ roleIds: [4, 3] });
+
+    expect(publishRole).toHaveBeenCalledWith(4, 'update');
+    expect(publishRole).toHaveBeenCalledWith(3, 'update');
+  });
+
+  test('should put a new role at the bottom', async () => {
+    const { caller } = await initTest(1);
+
+    await caller.roles.add();
+
+    const roles = await caller.roles.getAll();
+    const newest = roles.reduce((a, b) => (a.id > b.id ? a : b));
+
+    expect(newest.position).toBeGreaterThan(
+      Math.max(
+        ...roles
+          .filter(({ id }) => id !== newest.id)
+          .map(({ position }) => position)
+      )
+    );
+  });
+
+  test('should refuse without the manage roles permission', async () => {
+    const { caller } = await initTest(2);
+
+    await expect(caller.roles.reorder({ roleIds: [4, 3] })).rejects.toThrow(
+      'Insufficient permissions'
+    );
+  });
+
+  test('should refuse an id that is not positive', async () => {
+    const { caller } = await initTest(1);
+
+    await expect(caller.roles.reorder({ roleIds: [0] })).rejects.toThrow();
   });
 });

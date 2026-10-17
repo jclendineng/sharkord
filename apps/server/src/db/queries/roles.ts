@@ -4,7 +4,7 @@ import {
   type TJoinedRole,
   type TRole
 } from '@sharkord/shared';
-import { and, eq, getTableColumns, inArray, sql } from 'drizzle-orm';
+import { and, asc, eq, getTableColumns, inArray, sql } from 'drizzle-orm';
 import { db } from '..';
 import { rolePermissions, roles, userRoles } from '../schema';
 type TQueryResult = TRole & {
@@ -48,7 +48,8 @@ const getRoles = async (): Promise<TJoinedRole[]> => {
     .select(roleSelectFields)
     .from(roles)
     .leftJoin(rolePermissions, sql`${roles.id} = ${rolePermissions.roleId}`)
-    .groupBy(roles.id);
+    .groupBy(roles.id)
+    .orderBy(asc(roles.position), asc(roles.id));
 
   return results.map(parseRole);
 };

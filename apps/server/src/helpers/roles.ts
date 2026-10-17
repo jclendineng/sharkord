@@ -7,7 +7,7 @@ import {
   STORAGE_MIN_QUOTA_PER_USER,
   type TJoinedRole
 } from '@sharkord/shared';
-import { count, eq } from 'drizzle-orm';
+import { count, eq, max } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../db';
 import { syncRolePermissions } from '../db/mutations/roles';
@@ -62,7 +62,10 @@ const createRole = async (
 ): Promise<TJoinedRole> => {
   const values = zCreateRole.parse(input);
 
-  const existing = await db.select({ total: count() }).from(roles).get();
+  const existing = await db
+    .select({ total: count(), lastPosition: max(roles.position) })
+    .from(roles)
+    .get();
 
   invariant((existing?.total ?? 0) < MAX_ROLES, {
     code: 'BAD_REQUEST',
@@ -78,6 +81,8 @@ const createRole = async (
       isPersistent: false,
       storageQuotaOverrideEnabled: false,
       storageSpaceQuota: 0,
+      // a new role goes to the bottom of the order, above the default one
+      position: (existing?.lastPosition ?? 0) + 1,
       createdAt: Date.now()
     })
     .returning()
@@ -140,5 +145,5 @@ const updateRole = async (
   return updatedRole;
 };
 
-export { createRole, loadRole, updateRole };
+export { createRole, loadRole, MAX_ROLES, updateRole };
 export type { TCreateRole, TUpdateRole };

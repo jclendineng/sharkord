@@ -40,7 +40,7 @@ struct MembersColumn: View {
 
         let roleSections = byRole.keys
             .compactMap { $0 }
-            .sorted { $0.id < $1.id }
+            .sorted(by: Role.ranksAbove)
             .map { role in (title: role.name, users: byRole[role] ?? []) }
 
         let plain = byRole[nil] ?? []

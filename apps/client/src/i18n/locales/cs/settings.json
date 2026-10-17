@@ -181,6 +181,7 @@
   "selectRoleToEdit": "Vyberte roli k úpravě nebo vytvořte novou",
   "roleCreated": "Role byla vytvořena",
   "roleCreateFailed": "Roli se vytvořit nepodařilo",
+  "roleReorderFailed": "Role se nepodařilo přeřadit",
   "editRoleTitle": "Upravit roli",
   "setAsDefaultRoleTooltip": "Nastavit jako výchozí roli",
   "defaultRoleInfo": "Toto je výchozí role. Novým členům bude tato role přidělena při připojení.",

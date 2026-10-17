@@ -617,6 +617,7 @@ final class SessionStore {
 
         return user.roleIds
             .compactMap { rolesById[$0] }
+            .sorted(by: Role.ranksAbove)
             .first { $0.color.lowercased() != "#ffffff" }
     }
 
