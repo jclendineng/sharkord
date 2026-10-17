@@ -510,6 +510,8 @@ private struct CategoryOrderSheet: View {
     @State private var ordered: [ChannelCategory]
     @State private var errorMessage: String?
 
+    private let isOnMac = ProcessInfo.processInfo.isiOSAppOnMac
+
     init(categories: [ChannelCategory]) {
         _ordered = State(initialValue: categories)
     }
@@ -522,16 +524,35 @@ private struct CategoryOrderSheet: View {
                         .foregroundStyle(Theme.red)
                 }
 
-                ForEach(ordered) { category in
-                    Text(category.name)
-                        .foregroundStyle(Theme.header)
+                ForEach(Array(ordered.enumerated()), id: \.element.id) { index, category in
+                    HStack {
+                        Text(category.name)
+                            .foregroundStyle(Theme.header)
+
+                        Spacer()
+
+                        if isOnMac {
+                            Button("Move Up", systemImage: "arrow.up") {
+                                ordered.move(fromOffsets: IndexSet(integer: index), toOffset: index - 1)
+                            }
+                            .disabled(index == 0)
+
+                            Button("Move Down", systemImage: "arrow.down") {
+                                ordered.move(fromOffsets: IndexSet(integer: index), toOffset: index + 2)
+                            }
+                            .disabled(index == ordered.count - 1)
+                        }
+                    }
+                    .labelStyle(.iconOnly)
+                    .buttonStyle(.borderless)
                 }
                 .onMove { from, to in
                     ordered.move(fromOffsets: from, toOffset: to)
                 }
             }
             .settingsListStyle()
-            .environment(\.editMode, .constant(.active))
+            // as the channels: a mac's edit mode blanked the rows and never dragged
+            .environment(\.editMode, .constant(isOnMac ? .inactive : .active))
             .navigationTitle("Reorder Categories")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
