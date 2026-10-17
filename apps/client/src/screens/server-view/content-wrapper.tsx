@@ -10,11 +10,10 @@ import {
   useActiveFullscreenPluginId,
   useServerName
 } from '@/features/server/hooks';
-import { IOS_APP_URL, isIosDevice } from '@/helpers/ios-app';
 import { MobileDrawer } from '@/types';
 import { ChannelType, PluginSlot } from '@sharkord/shared';
-import { Alert, AlertDescription, Button } from '@sharkord/ui';
-import { AlertTriangle, ArrowLeft, ArrowRight, Menu } from 'lucide-react';
+import { Button } from '@sharkord/ui';
+import { Menu } from 'lucide-react';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -33,10 +32,6 @@ const ContentWrapper = memo(
 
     const onOpenChannelsClick = useCallback(() => {
       setMobileDrawer(MobileDrawer.CHANNELS);
-    }, []);
-
-    const onOpenMembersClick = useCallback(() => {
-      setMobileDrawer(MobileDrawer.MEMBERS);
     }, []);
 
     if (activeFullscreenPluginId) {
@@ -96,28 +91,6 @@ const ContentWrapper = memo(
         );
       }
     } else {
-      let mobileNotice = (
-        <Alert variant="destructive" className="max-w-md">
-          <AlertTriangle />
-          <AlertDescription>{t('mobileNotOptimized')}</AlertDescription>
-        </Alert>
-      );
-
-      if (isIosDevice) {
-        mobileNotice = (
-          <div className="flex flex-col items-center gap-2">
-            <Button asChild>
-              <a href={IOS_APP_URL} target="_blank" rel="noopener noreferrer">
-                {t('getIosApp')}
-              </a>
-            </Button>
-            <span className="text-sm text-muted-foreground">
-              {t('getIosAppDesc')}
-            </span>
-          </div>
-        );
-      }
-
       content = (
         <>
           <div className="flex-col gap-2 h-full w-full hidden lg:flex overflow-auto">
@@ -129,29 +102,10 @@ const ContentWrapper = memo(
                 {t('welcomeToServer', { name: serverName })}
               </h2>
             </div>
-            {mobileNotice}
-            <div className="flex flex-col gap-3 text-sm text-muted-foreground">
-              <button
-                type="button"
-                className="flex items-center gap-2"
-                onClick={onOpenChannelsClick}
-              >
-                <span className="text-lg">
-                  <ArrowRight />
-                </span>
-                <span>{t('swipeRightForChannels')}</span>
-              </button>
-              <button
-                type="button"
-                className="flex items-center gap-2"
-                onClick={onOpenMembersClick}
-              >
-                <span className="text-lg">
-                  <ArrowLeft />
-                </span>
-                <span>{t('swipeLeftForUsers')}</span>
-              </button>
-            </div>
+            <Button variant="outline" onClick={onOpenChannelsClick}>
+              <Menu />
+              {t('openChannelList')}
+            </Button>
           </div>
         </>
       );

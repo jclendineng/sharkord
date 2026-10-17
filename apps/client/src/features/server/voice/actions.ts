@@ -1,5 +1,5 @@
 import type { TPinnedCard } from '@/components/channel-view/voice/hooks/use-pin-card-controller';
-import { openVoiceChatSidebar, setMobileDrawer } from '@/features/app/actions';
+import { openVoiceChatSidebar } from '@/features/app/actions';
 import {
   pushToTalkSelectedSelector,
   voiceChatSidebarDataSelector
@@ -14,7 +14,6 @@ import {
 } from '@/helpers/storage';
 import { i18n } from '@/i18n';
 import { getTRPCClient } from '@/lib/trpc';
-import { MobileDrawer } from '@/types';
 import {
   getTrpcError,
   type TExternalStream,
@@ -124,14 +123,6 @@ const clearLocalVoiceSession = (): void => {
 
   if (selectedChannelId === currentVoiceChannelId) {
     setSelectedChannelId(undefined);
-
-    // on a phone the call filled the screen, so leaving it opens the channel list to pick
-    // where to go rather than landing on the welcome screen
-    const phoneQuery = window.matchMedia('(max-width: 767px)');
-
-    if (phoneQuery.matches) {
-      setMobileDrawer(MobileDrawer.CHANNELS);
-    }
   }
 
   setCurrentVoiceChannelId(undefined);

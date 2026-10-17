@@ -15,6 +15,7 @@ import {
 } from '@/features/app/hooks';
 import { setDmsOpen } from '@/features/server/actions';
 import { setSelectedChannelId } from '@/features/server/channels/actions';
+import { useSelectedChannelId } from '@/features/server/channels/hooks';
 import { useDmsOpen, usePublicServerSettings } from '@/features/server/hooks';
 import {
   getLocalStorageItemBool,
@@ -41,6 +42,13 @@ const ServerView = memo(() => {
   const publicSettings = usePublicServerSettings();
   const previousServerChannelIdRef = useRef<number | undefined>(undefined);
   const { isOpen: isThreadSidebarOpen } = useThreadSidebar();
+  const selectedChannelId = useSelectedChannelId();
+
+  let hasOpenChannel = !!selectedChannelId;
+
+  if (dmsOpen) {
+    hasOpenChannel = !!selectedDmChannelId;
+  }
 
   const handleDesktopRightSidebarToggle = useCallback(() => {
     setIsDesktopRightSidebarOpen((prev) => !prev);
@@ -77,6 +85,16 @@ const ServerView = memo(() => {
     onSwipeRight: handleSwipeRight,
     onSwipeLeft: handleSwipeLeft
   });
+
+  // a phone has no home screen worth landing on, so with nothing open, such as after signing in
+  // or leaving a call, the channel list opens to pick from
+  useEffect(() => {
+    const phoneQuery = window.matchMedia('(max-width: 767px)');
+
+    if (!hasOpenChannel && phoneQuery.matches) {
+      setMobileDrawer(MobileDrawer.CHANNELS);
+    }
+  }, [hasOpenChannel]);
 
   // ios safari scrolls the page up to keep a field above the keyboard and can leave it there
   // once the keyboard closes, though this layout never scrolls, cutting off its top and leaving
