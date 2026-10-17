@@ -261,6 +261,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 #### iOS app
 
+- Coming back to the app while it was reconnecting no longer signs you out with "Invalid handshake hash".
 - A call is heard both ways: whoever joined after the app, or started talking or sharing a camera after it joined, was never heard or seen.
 - Cameras and screen shares from a browser show. The app could only take H264 baseline, and browsers send VP8 or VP9.
 - The camera reaches the others in the call again. It had been sending layers that never carried a frame, so only you could see your picture.

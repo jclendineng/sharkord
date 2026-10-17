@@ -800,14 +800,14 @@ final class SessionStore {
     }
 
     func submitServerPassword(_ password: String) async {
-        guard let handshakeHash else {
+        guard let handshakeHash, let client else {
             return
         }
 
         errorMessage = nil
 
         do {
-            try await join(handshakeHash: handshakeHash, password: password)
+            try await join(handshakeHash: handshakeHash, password: password, on: client)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -1485,8 +1485,14 @@ final class SessionStore {
                 return
             }
 
-            try await join(handshakeHash: handshake.handshakeHash, password: nil)
+            try await join(handshakeHash: handshake.handshakeHash, password: nil, on: client)
         } catch let error as TRPCError where error.code != nil {
+            // a connection replaced meanwhile, coming back to the app while reconnecting, is
+            // not a reason to sign out of the one that took over
+            guard client === self.client else {
+                return
+            }
+
             // the server answered and refused, retrying with the same token will not help
             signOut(message: error.message)
         } catch {
@@ -1498,8 +1504,10 @@ final class SessionStore {
         }
     }
 
-    private func join(handshakeHash: String, password: String?) async throws {
-        guard let client else {
+    // on the socket the handshake ran on: the server keeps the hash per socket, and a newer
+    // connection started meanwhile refused it as invalid
+    private func join(handshakeHash: String, password: String?, on client: TRPCClient) async throws {
+        guard client === self.client else {
             return
         }
 
@@ -1512,6 +1520,11 @@ final class SessionStore {
             "others.joinServer",
             input: JoinInput(handshakeHash: handshakeHash, password: password)
         )
+
+        guard client === self.client else {
+            return
+        }
+
         let result = try JSONDecoder().decode(JoinResult.self, from: data)
 
         apply(result)
