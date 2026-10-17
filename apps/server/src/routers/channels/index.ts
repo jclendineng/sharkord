@@ -6,6 +6,7 @@ import {
   onChannelCreateRoute,
   onChannelDeleteRoute,
   onChannelPermissionsUpdateRoute,
+  onChannelPinsUpdateRoute,
   onChannelReadStatesDeltaRoute,
   onChannelReadStatesUpdateRoute,
   onChannelUpdateRoute
@@ -14,10 +15,12 @@ import { getActivityRoute } from './get-activity';
 import { getChannelRoute } from './get-channel';
 import { getMembersRoute } from './get-members';
 import { getPermissionsRoute } from './get-permissions';
+import { getPinsRoute } from './get-pins';
 import { getRetentionPreviewRoute } from './get-retention-preview';
 import { markAsReadRoute } from './mark-as-read';
 import { markAsUnreadRoute } from './mark-as-unread';
 import { reorderChannelsRoute } from './reorder-channels';
+import { setPinnedRoute } from './set-pinned';
 import { updateChannelRoute } from './update-channel';
 import { updatePermissionsRoute } from './update-permission';
 
@@ -35,10 +38,13 @@ export const channelsRouter = t.router({
   reorder: reorderChannelsRoute,
   markAsRead: markAsReadRoute,
   markAsUnread: markAsUnreadRoute,
+  getPins: getPinsRoute,
+  setPinned: setPinnedRoute,
   onCreate: onChannelCreateRoute,
   onDelete: onChannelDeleteRoute,
   onUpdate: onChannelUpdateRoute,
   onPermissionsUpdate: onChannelPermissionsUpdateRoute,
   onReadStateUpdate: onChannelReadStatesUpdateRoute,
-  onReadStateDelta: onChannelReadStatesDeltaRoute
+  onReadStateDelta: onChannelReadStatesDeltaRoute,
+  onPinsUpdate: onChannelPinsUpdateRoute
 });

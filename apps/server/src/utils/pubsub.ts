@@ -64,6 +64,8 @@ type Events = {
     channelId: number;
     delta: number;
   };
+  // the account's pinned channel ids, oldest pin first
+  [ServerEvents.CHANNEL_PINS_UPDATE]: number[];
 
   [ServerEvents.USER_JOIN_VOICE]: {
     channelId: number;

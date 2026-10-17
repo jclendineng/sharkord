@@ -18,6 +18,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   group direct messages, private notes, the new member lounge, QR sign in and the soundboard.
   Upstream's plugin storage migrations run as this fork's `0060_plugin_storage`, after the
   fork's own, so a database that already ran `0059` still gets them.
+- `0070_channel_pins` adds the table of channels each account pinned. The apps hand their own
+  pins over the first time they connect, so nobody loses the ones pinned before.
 - `0069_drop_manage_updates_permission` takes Manage Updates off every role, since the self
   updater it ran is gone.
 - `0068_user_totp` adds the table that holds two-factor secrets, apart from users.
@@ -52,6 +54,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 ### Added
 
+- Pinned channels follow the account: pinning on the Mac shows on the phone straight away
+  (`channels.setPinned`, `channels.getPins`, `channels.onPinsUpdate`).
 - An About page in user settings, in the web client and the apps: versions, the server's
   contact (its report email) and links to the source and to report a problem.
 - `messages.getThreads`: a channel's threads, the one replied to last first, for the apps'
@@ -200,6 +204,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 ### Changed
 
+- The app's Channels settings page has a Reorder button in its top bar, where it was hidden in
+  the + menu before.
 - The web invite page on an iPhone, iPad or Mac puts **Open in the Sharkord app** first, as the
   main button, with the browser sign in below it.
 - On a Mac: the user bar has mute, deafen and settings, user settings fill the window with a

@@ -1555,3 +1555,85 @@ describe('channels.getMembers', () => {
     ).rejects.toThrow();
   });
 });
+
+describe('channels.setPinned', () => {
+  test('should pin channels in the order pinned and unpin them', async () => {
+    const { caller } = await initTest(1);
+
+    await caller.channels.setPinned({ channelId: 2, pinned: true });
+    await caller.channels.setPinned({ channelId: 1, pinned: true });
+
+    expect(await caller.channels.getPins()).toEqual([2, 1]);
+
+    await caller.channels.setPinned({ channelId: 2, pinned: false });
+
+    expect(await caller.channels.getPins()).toEqual([1]);
+  });
+
+  test('should keep a pin in its place when pinned again', async () => {
+    const { caller } = await initTest(1);
+
+    await caller.channels.setPinned({ channelId: 1, pinned: true });
+    await caller.channels.setPinned({ channelId: 2, pinned: true });
+    await caller.channels.setPinned({ channelId: 1, pinned: true });
+
+    expect(await caller.channels.getPins()).toEqual([1, 2]);
+  });
+
+  test("should only list the caller's own pins", async () => {
+    const { caller: owner } = await initTest(1);
+    const { caller: member } = await initTest(2);
+
+    await owner.channels.setPinned({ channelId: 1, pinned: true });
+
+    expect(await member.channels.getPins()).toEqual([]);
+  });
+
+  test("should tell the caller's other devices", async () => {
+    const { caller } = await initTest(1);
+    const publishFor = spyOn(pubsub, 'publishFor');
+
+    await caller.channels.setPinned({ channelId: 1, pinned: true });
+
+    expect(publishFor).toHaveBeenCalledWith(
+      1,
+      ServerEvents.CHANNEL_PINS_UPDATE,
+      [1]
+    );
+  });
+
+  test('should drop the pin with its channel', async () => {
+    const { caller } = await initTest(1);
+
+    await caller.channels.setPinned({ channelId: 1, pinned: true });
+    await caller.channels.delete({ channelId: 1 });
+
+    expect(await caller.channels.getPins()).toEqual([]);
+  });
+
+  test('should refuse a channel the caller cannot see', async () => {
+    const { caller } = await initTest(2);
+
+    // user 2 is denied viewing channel 5
+    await expect(
+      caller.channels.setPinned({ channelId: 5, pinned: true })
+    ).rejects.toThrow('Insufficient channel permissions');
+  });
+
+  test('should refuse a direct message the caller is not in', async () => {
+    const { caller } = await initTest(5);
+
+    // channel 3 is the dm between users 3 and 4
+    await expect(
+      caller.channels.setPinned({ channelId: 3, pinned: true })
+    ).rejects.toThrow();
+  });
+
+  test('should refuse a channel id that is not positive', async () => {
+    const { caller } = await initTest(1);
+
+    await expect(
+      caller.channels.setPinned({ channelId: 0, pinned: true })
+    ).rejects.toThrow();
+  });
+});

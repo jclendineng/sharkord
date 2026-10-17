@@ -963,6 +963,25 @@ const channelNotificationSettings = sqliteTable(
   ]
 );
 
+// channels and conversations a user pinned to the top of their list, in the order pinned. kept on
+// the server so every device of the account shows the same ones
+const channelPins = sqliteTable(
+  'channel_pins',
+  {
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    channelId: integer('channel_id')
+      .notNull()
+      .references(() => channels.id, { onDelete: 'cascade' }),
+    createdAt: integer('created_at').notNull()
+  },
+  (t) => [
+    primaryKey({ columns: [t.userId, t.channelId] }),
+    index('channel_pins_user_created_idx').on(t.userId, t.createdAt)
+  ]
+);
+
 const pushDevices = sqliteTable(
   'push_devices',
   {
@@ -1063,6 +1082,7 @@ export {
   activityLog,
   categories,
   channelNotificationSettings,
+  channelPins,
   channelReadStates,
   channelRolePermissions,
   channels,

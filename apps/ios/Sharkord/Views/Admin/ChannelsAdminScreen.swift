@@ -67,6 +67,13 @@ struct ChannelsAdminScreen: View {
         .navigationTitle("Channels")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            // out in the bar rather than in the menu, where nobody found it
+            if session.can(.manageChannels) {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(editMode.isEditing ? "Done" : "Reorder", action: toggleReordering)
+                }
+            }
+
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                     if session.can(.manageChannels) {
@@ -82,14 +89,6 @@ struct ChannelsAdminScreen: View {
 
                         Button("Reorder Categories", systemImage: "arrow.up.arrow.down") {
                             isCategoryOrderPresented = true
-                        }
-                    }
-
-                    if session.can(.manageChannels) {
-                        Button(editMode.isEditing ? "Done Reordering" : "Reorder Channels", systemImage: "line.3.horizontal") {
-                            withAnimation {
-                                editMode = editMode.isEditing ? .inactive : .active
-                            }
                         }
                     }
                 } label: {
@@ -120,6 +119,12 @@ struct ChannelsAdminScreen: View {
             TextField("Name", text: $newName)
             Button("Save", action: renameCategory)
             Button("Cancel", role: .cancel) {}
+        }
+    }
+
+    private func toggleReordering() {
+        withAnimation {
+            editMode = editMode.isEditing ? .inactive : .active
         }
     }
 

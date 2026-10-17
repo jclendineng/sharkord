@@ -291,6 +291,13 @@ Server Settings, Overview, Report Email. The apps' Report action on a server or 
 opens an email to this address, with the server, channel and message filled in. It is
 published in `/info` so a report can be sent without an account. Setting `reportEmail`.
 
+## Pinned channels
+
+Pin Channel to Top on a channel or a conversation in the apps puts it in a Pinned group above
+the rest, in the order pinned. Pins belong to the account (`channel_pins`), so every device shows
+the same ones, and the others move as soon as one pins or unpins (`channels.onPinsUpdate`). A
+deleted channel takes its pins with it. Against a server from before this, pins stay on the device.
+
 ## About
 
 User Settings, About, in the web client and the apps: the version, the server's name, the

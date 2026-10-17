@@ -46,10 +46,20 @@ const onChannelReadStatesDeltaRoute = protectedProcedure.subscription(
   }
 );
 
+const onChannelPinsUpdateRoute = protectedProcedure.subscription(
+  async ({ ctx }) => {
+    return ctx.pubsub.subscribeFor(
+      ctx.userId,
+      ServerEvents.CHANNEL_PINS_UPDATE
+    );
+  }
+);
+
 export {
   onChannelCreateRoute,
   onChannelDeleteRoute,
   onChannelPermissionsUpdateRoute,
+  onChannelPinsUpdateRoute,
   onChannelReadStatesDeltaRoute,
   onChannelReadStatesUpdateRoute,
   onChannelUpdateRoute

@@ -53,6 +53,7 @@ final class SessionStore {
     // when a mute for a while ends, by channel, in milliseconds
     private(set) var mutedUntil: [Int: Int] = [:]
     private(set) var pinnedChannelIds: [Int] = []
+    private var serverKeepsPins = false
     private(set) var hidesMutedChannels = false
     private(set) var allowsDirectMessages = true
     private(set) var friendLists = FriendLists()
@@ -310,13 +311,71 @@ final class SessionStore {
             return
         }
 
-        if isPinned(channelId) {
-            pinnedChannelIds.removeAll { $0 == channelId }
-        } else {
+        let pinned = !isPinned(channelId)
+        let previous = pinnedChannelIds
+
+        if pinned {
             pinnedChannelIds.append(channelId)
+        } else {
+            pinnedChannelIds.removeAll { $0 == channelId }
         }
 
         CredentialStore.setPinnedChannelIds(pinnedChannelIds, for: address)
+
+        // a server from before it kept pins leaves them on this device alone
+        guard let client, serverKeepsPins else {
+            return
+        }
+
+        Task {
+            do {
+                try await client.mutation("channels.setPinned", input: PinInput(channelId: channelId, pinned: pinned))
+            } catch {
+                pinnedChannelIds = previous
+                CredentialStore.setPinnedChannelIds(previous, for: address)
+                showError(error)
+            }
+        }
+    }
+
+    private struct PinInput: Encodable {
+        let channelId: Int
+        let pinned: Bool
+    }
+
+    private func applyPins(_ channelIds: [Int]) {
+        pinnedChannelIds = channelIds
+
+        if let address {
+            CredentialStore.setPinnedChannelIds(channelIds, for: address)
+        }
+    }
+
+    // the server's pins win, except the first time, when this device's own go up to it so the
+    // ones pinned before it kept them are not lost
+    private func loadPins() async {
+        guard let client, let address, let serverPins: [Int] = try? await client.query("channels.getPins") else {
+            return
+        }
+
+        serverKeepsPins = true
+
+        guard !CredentialStore.hasUploadedPins(for: address) else {
+            applyPins(serverPins)
+            return
+        }
+
+        let devicePins = pinnedChannelIds.filter { !serverPins.contains($0) }
+
+        for channelId in devicePins {
+            try? await client.mutation("channels.setPinned", input: PinInput(channelId: channelId, pinned: true))
+        }
+
+        CredentialStore.setHasUploadedPins(for: address)
+
+        if let merged: [Int] = try? await client.query("channels.getPins") {
+            applyPins(merged)
+        }
     }
 
     func setHidesMutedChannels(_ hides: Bool) {
@@ -393,6 +452,8 @@ final class SessionStore {
                 setting.mutedUntil.map { (setting.channelId, $0) }
             })
         }
+
+        await loadPins()
 
         if let privacy: PrivacySettings = try? await client.query("users.getPrivacy") {
             allowsDirectMessages = privacy.allowDirectMessages
@@ -2079,6 +2140,11 @@ final class SessionStore {
 
         client.subscribe("channels.onReadStateUpdate") { [weak self] (update: ReadStateUpdate) in
             self?.unreadCounts[update.channelId] = update.count
+        }
+
+        // pinned or unpinned on another device of this account
+        client.subscribe("channels.onPinsUpdate") { [weak self] (channelIds: [Int]) in
+            self?.applyPins(channelIds)
         }
 
         client.subscribe("channels.onReadStateDelta") { [weak self] (delta: ReadStateDelta) in
