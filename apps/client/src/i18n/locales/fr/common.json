@@ -43,6 +43,7 @@
   "messageEdited": "Message modifié",
   "failedEditMessage": "Échec lors de la modification du message",
   "pressEnterToSave": "Appuyez sur Entrée pour enregistrer, sur Échap pour annuler",
+  "save": "Enregistrer",
   "failedSendMessage": "Échec lors de l'envoi du message",
   "failedLoadPluginUi": "Échec du chargement de l’interface du plugin « {{pluginId}} »",
   "failedLoadSearchResults": "Impossible de charger les résultats de recherche",

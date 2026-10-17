@@ -43,6 +43,7 @@
   "messageEdited": "Zpráva byla aktualizována",
   "failedEditMessage": "Zprávu se upravit nepodařilo",
   "pressEnterToSave": "Stiskněte Enter pro uložení, Esc pro zrušení",
+  "save": "Uložit",
   "failedSendMessage": "Zprávu se poslat nepodařilo",
   "failedLoadPluginUi": "Načtení rozhraní pluginu „{{pluginId}}“ se nezdařilo",
   "failedLoadSearchResults": "Nepodařilo se načíst výsledky vyhledávání",

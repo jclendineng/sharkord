@@ -43,6 +43,7 @@
   "messageEdited": "Mensagem editada",
   "failedEditMessage": "Falha ao editar a mensagem",
   "pressEnterToSave": "Pressione Enter para salvar, Esc para cancelar",
+  "save": "Salvar",
   "failedSendMessage": "Falha ao enviar mensagem",
   "failedLoadPluginUi": "Falha ao carregar a interface do plugin \"{{pluginId}}\"",
   "failedLoadSearchResults": "Não foi possível carregar os resultados da busca",

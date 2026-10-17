@@ -1,6 +1,7 @@
 import { TextChannel } from '@/components/channel-view/text';
 import { VoiceChannel } from '@/components/channel-view/voice';
 import { PluginSlotRenderer } from '@/components/plugin-slot-renderer';
+import { setMobileDrawer } from '@/features/app/actions';
 import {
   useSelectedChannelId,
   useSelectedChannelType
@@ -9,10 +10,11 @@ import {
   useActiveFullscreenPluginId,
   useServerName
 } from '@/features/server/hooks';
+import { MobileDrawer } from '@/types';
 import { ChannelType, PluginSlot } from '@sharkord/shared';
 import { Alert, AlertDescription, Button } from '@sharkord/ui';
-import { AlertTriangle, ArrowLeft, ArrowRight } from 'lucide-react';
-import { memo } from 'react';
+import { AlertTriangle, ArrowLeft, ArrowRight, Menu } from 'lucide-react';
+import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
 // the public beta until the app is on the app store
@@ -35,6 +37,14 @@ const ContentWrapper = memo(
     const selectedChannelType = useSelectedChannelType();
     const serverName = useServerName();
     const activeFullscreenPluginId = useActiveFullscreenPluginId();
+
+    const onOpenChannelsClick = useCallback(() => {
+      setMobileDrawer(MobileDrawer.CHANNELS);
+    }, []);
+
+    const onOpenMembersClick = useCallback(() => {
+      setMobileDrawer(MobileDrawer.MEMBERS);
+    }, []);
 
     if (activeFullscreenPluginId) {
       return (
@@ -61,8 +71,16 @@ const ContentWrapper = memo(
         );
       } else {
         content = (
-          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+          <div className="flex flex-col gap-4 h-full items-center justify-center text-sm text-muted-foreground">
             {t('selectDmPrompt')}
+            <Button
+              variant="outline"
+              className="md:hidden"
+              onClick={onOpenChannelsClick}
+            >
+              <Menu />
+              {t('openChannelList')}
+            </Button>
           </div>
         );
       }
@@ -120,18 +138,26 @@ const ContentWrapper = memo(
             </div>
             {mobileNotice}
             <div className="flex flex-col gap-3 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className="flex items-center gap-2"
+                onClick={onOpenChannelsClick}
+              >
                 <span className="text-lg">
                   <ArrowRight />
                 </span>
                 <span>{t('swipeRightForChannels')}</span>
-              </div>
-              <div className="flex items-center gap-2">
+              </button>
+              <button
+                type="button"
+                className="flex items-center gap-2"
+                onClick={onOpenMembersClick}
+              >
                 <span className="text-lg">
                   <ArrowLeft />
                 </span>
                 <span>{t('swipeLeftForUsers')}</span>
-              </div>
+              </button>
             </div>
           </div>
         </>

@@ -1,3 +1,4 @@
+import { setMobileDrawer } from '@/features/app/actions';
 import { useVoiceUsersByChannelId } from '@/features/server/hooks';
 import { useOwnUserId } from '@/features/server/users/hooks';
 import {
@@ -5,7 +6,11 @@ import {
   useHideOwnScreenShare,
   useVoiceChannelExternalStreamsList
 } from '@/features/server/voice/hooks';
-import { memo, useMemo } from 'react';
+import { MobileDrawer } from '@/types';
+import { IconButton } from '@sharkord/ui';
+import { Menu } from 'lucide-react';
+import { memo, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ControlsBar } from './controls-bar';
 import { ExternalStreamCard } from './external-stream-card';
 import { usePinCardController } from './hooks/use-pin-card-controller';
@@ -18,6 +23,7 @@ type TChannelProps = {
 };
 
 const VoiceChannel = memo(({ channelId }: TChannelProps) => {
+  const { t } = useTranslation();
   const voiceUsers = useVoiceUsersByChannelId(channelId);
   const externalStreams = useVoiceChannelExternalStreamsList(channelId);
   const { pinnedCard, pinCard, unpinCard, isPinned } = usePinCardController();
@@ -25,6 +31,10 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
   const hideOwnScreenShare = useHideOwnScreenShare();
   const ownUserId = useOwnUserId();
   const isAnyCardPinned = pinnedCard !== undefined;
+
+  const onOpenChannelsClick = useCallback(() => {
+    setMobileDrawer(MobileDrawer.CHANNELS);
+  }, []);
 
   const cards = useMemo(() => {
     const cards: React.ReactNode[] = [];
@@ -116,9 +126,21 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
     isAnyCardPinned
   ]);
 
+  // a call has no top bar, so on a phone this is the way back to the channel list besides a swipe
+  const menuButton = (
+    <IconButton
+      onClick={onOpenChannelsClick}
+      icon={Menu}
+      variant="ghost"
+      className="md:hidden absolute top-3 left-3 z-20 size-9 rounded-md bg-card/80 border border-border/50"
+      aria-label={t('openChannelList')}
+    />
+  );
+
   if (voiceUsers.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center relative">
+        {menuButton}
         <div className="text-center">
           <p className="text-muted-foreground text-lg mb-2">
             No one in the voice channel
@@ -133,6 +155,7 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
 
   return (
     <div className="flex flex-col size-full relative bg-background overflow-hidden group/voice-stage">
+      {menuButton}
       <VoiceGrid pinnedCardId={pinnedCard?.id}>{cards}</VoiceGrid>
       <ControlsBar channelId={channelId} />
     </div>

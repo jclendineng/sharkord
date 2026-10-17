@@ -43,6 +43,7 @@
   "messageEdited": "消息已编辑",
   "failedEditMessage": "编辑消息失败",
   "pressEnterToSave": "按 Enter 保存，按 Esc 取消",
+  "save": "保存",
   "failedSendMessage": "发送消息失败",
   "failedLoadPluginUi": "加载插件“{{pluginId}}”的界面失败",
   "failedLoadSearchResults": "无法加载搜索结果",

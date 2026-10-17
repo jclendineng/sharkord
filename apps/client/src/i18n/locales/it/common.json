@@ -43,6 +43,7 @@
   "messageEdited": "Messaggio modificato",
   "failedEditMessage": "Impossibile modificare il messaggio",
   "pressEnterToSave": "Premi Invio per salvare, Esc per annullare",
+  "save": "Salva",
   "failedSendMessage": "Impossibile inviare il messaggio",
   "failedLoadPluginUi": "Impossibile caricare l’interfaccia del plugin \"{{pluginId}}\"",
   "failedLoadSearchResults": "Impossibile caricare i risultati della ricerca",

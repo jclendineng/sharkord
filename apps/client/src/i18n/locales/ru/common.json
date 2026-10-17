@@ -43,6 +43,7 @@
   "messageEdited": "Сообщение отредактировано",
   "failedEditMessage": "Не удалось отредактировать сообщение",
   "pressEnterToSave": "Нажмите Enter чтобы сохранить, Esc чтобы отменить",
+  "save": "Сохранить",
   "failedSendMessage": "Не удалось отправить сообщение",
   "failedLoadPluginUi": "Не удалось загрузить интерфейс плагина «{{pluginId}}»",
   "failedLoadSearchResults": "Не удалось загрузить результаты поиска",

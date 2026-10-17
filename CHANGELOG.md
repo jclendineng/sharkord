@@ -264,6 +264,9 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   - Picking a channel or opening settings closes the channel list instead of leaving it over the chat.
   - Tapping a message shows its actions, such as reply, edit and delete, which appeared only on hover.
   - A member's profile card opens below their name and fits on the screen, instead of mostly off its left edge.
+  - Threads and a call's chat open full screen, where before they opened out of sight.
+  - Editing a message has Cancel and Save buttons, since there is no Esc key to cancel with.
+  - The home screen, an empty direct messages screen and a call have a way to the channel list besides a swipe.
 - Dependencies with published security fixes are upgraded, among them the HTML sanitizer, the websocket server, the image size reader, the message editor and the database layer.
 - The web client joins its call again after a dropped connection comes back, instead of showing a call the server had already ended ([#849](https://github.com/Sharkord/sharkord/issues/849)).
 - Voice works in Firefox when `announcedAddress` is a hostname. The server sends the addresses it resolves the name to beside the hostname ([#756](https://github.com/Sharkord/sharkord/issues/756)).

@@ -60,7 +60,23 @@ const MessageEditInline = memo(
             onCancel={onBlur}
           />
         </AutoFocus>
-        <span className="text-xs text-primary/60">{t('pressEnterToSave')}</span>
+        <div className="flex items-center gap-4 text-xs text-primary/60">
+          <span className="pointer-coarse:hidden">{t('pressEnterToSave')}</span>
+          <button
+            type="button"
+            className="hidden pointer-coarse:inline"
+            onClick={onBlur}
+          >
+            {t('cancel')}
+          </button>
+          <button
+            type="button"
+            className="hidden pointer-coarse:inline font-semibold"
+            onClick={handleSubmit}
+          >
+            {t('save')}
+          </button>
+        </div>
       </div>
     );
   }
