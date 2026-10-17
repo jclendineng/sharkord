@@ -4,7 +4,7 @@ name: Publish Fork Image
 # the workflow token can push packages to the repository owner's namespace
 on:
   push:
-    branches: [push]
+    branches: [development]
   workflow_dispatch:
 
 concurrency:
