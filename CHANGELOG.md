@@ -253,6 +253,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 #### Server and web client
 
 - The web invite page says how to make an account: choose an identity and a password, then press Connect.
+- The sign in page scrolls on a phone instead of cutting off its top and bottom, and the language picker sits below it there rather than over the Connect button.
 - Dependencies with published security fixes are upgraded, among them the HTML sanitizer, the websocket server, the image size reader, the message editor and the database layer.
 - The web client joins its call again after a dropped connection comes back, instead of showing a call the server had already ended ([#849](https://github.com/Sharkord/sharkord/issues/849)).
 - Voice works in Firefox when `announcedAddress` is a hostname. The server sends the addresses it resolves the name to beside the hostname ([#756](https://github.com/Sharkord/sharkord/issues/756)).
