@@ -153,7 +153,7 @@ struct InviteSheet: View {
         }
         .sheetDetents([.medium, .large])
         .presentationBackground(Theme.listBackground)
-        .confirmationDialog("Replace this link?", isPresented: $isReplaceConfirmPresented, titleVisibility: .visible) {
+        .alert("Replace this link?", isPresented: $isReplaceConfirmPresented) {
             Button("Replace Link", role: .destructive, action: regenerate)
             Button("Cancel", role: .cancel, action: restoreSettings)
         } message: {
