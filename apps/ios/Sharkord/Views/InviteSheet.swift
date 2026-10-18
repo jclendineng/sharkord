@@ -48,7 +48,9 @@ struct InviteSheet: View {
         var expires = "never expires"
 
         if let expiresAt {
-            expires = "expires \(RelativeDateTimeFormatter().localizedString(for: expiresAt, relativeTo: .now))"
+            // the invite list's wording, which rounds 3 days and 23 hours to 4 days where
+            // RelativeDateTimeFormatter said 3
+            expires = "expires \(expiresAt.formatted(.relative(presentation: .named)))"
         }
 
         return "Your invite link. \(usesText), \(expires)."
@@ -153,7 +155,7 @@ struct InviteSheet: View {
         }
         .sheetDetents([.medium, .large])
         .presentationBackground(Theme.listBackground)
-        .confirmationDialog("Replace this link?", isPresented: $isReplaceConfirmPresented, titleVisibility: .visible) {
+        .alert("Replace this link?", isPresented: $isReplaceConfirmPresented) {
             Button("Replace Link", role: .destructive, action: regenerate)
             Button("Cancel", role: .cancel, action: restoreSettings)
         } message: {
