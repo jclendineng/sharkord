@@ -2,7 +2,6 @@ import SwiftUI
 
 // discord's server sheet, opened from the server name above the channels
 struct ServerSheet: View {
-    let onInvite: () -> Void
     // the mac's dropdown hands what it opens to the channel list, so it closes first: a sheet
     // shown from the dropdown left it open behind
     var onOpen: ((ServerMenuSheet) -> Void)?
@@ -117,9 +116,9 @@ struct ServerSheet: View {
         }
     }
 
+    // over this sheet like the inbox and settings, so closing it comes back here
     private func invite() {
-        dismiss()
-        onInvite()
+        open(.invite)
     }
 
     private func markAllAsRead() {
@@ -296,6 +295,7 @@ private struct ServerEmojiGrid: View {
 }
 
 enum ServerMenuSheet: Identifiable {
+    case invite
     case inbox
     case notifications
     case editProfile
@@ -358,6 +358,8 @@ private struct ServerMenuSheetPresentation: ViewModifier {
     private func screen(for sheet: ServerMenuSheet) -> some View {
         Group {
             switch sheet {
+            case .invite:
+                InviteSheet()
             case .inbox:
                 InboxSheet()
             case .notifications:

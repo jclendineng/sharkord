@@ -7,7 +7,6 @@ struct ChannelListPanel: View {
     @State private var collapsedCategoryIds: Set<Int> = []
     @State private var isInvitePresented = false
     @State private var isServerSheetPresented = false
-    @State private var isInviteQueued = false
     // what the mac's server dropdown opened, shown here once it has closed
     @State private var menuSheet: ServerMenuSheet?
 
@@ -72,8 +71,8 @@ struct ChannelListPanel: View {
                 .environment(servers)
                 .appSheet()
         }
-        .sheet(isPresented: isServerSheetShown, onDismiss: showQueuedInvite) {
-            ServerSheet(onInvite: queueInvite)
+        .sheet(isPresented: isServerSheetShown) {
+            ServerSheet()
                 .environment(session)
                 .environment(servers)
                 .appSheet(addsClose: true)
@@ -103,7 +102,7 @@ struct ChannelListPanel: View {
             }
             .buttonStyle(.plain)
             .popover(isPresented: isServerMenuShown, arrowEdge: .top) {
-                ServerSheet(onInvite: queueInvite, onOpen: openFromMenu)
+                ServerSheet(onOpen: openFromMenu)
                     .frame(width: 360, height: 600)
                     .macPopover()
                     .environment(session)
@@ -140,26 +139,9 @@ struct ChannelListPanel: View {
         isServerSheetPresented = true
     }
 
-    // a sheet cannot open while another one is still closing. the mac's dropdown is no sheet,
-    // and has no closing to wait for
-    private func queueInvite() {
-        if isOnMac {
-            isInvitePresented = true
-        } else {
-            isInviteQueued = true
-        }
-    }
-
     private func openFromMenu(_ sheet: ServerMenuSheet) {
         isServerSheetPresented = false
         menuSheet = sheet
-    }
-
-    private func showQueuedInvite() {
-        if isInviteQueued {
-            isInviteQueued = false
-            isInvitePresented = true
-        }
     }
 
     private func showInvite() {
