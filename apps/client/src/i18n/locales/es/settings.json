@@ -350,7 +350,7 @@
   "inviteDeleted": "Eliminada",
   "copyInviteLink": "Copiar enlace de invitación",
   "deleteInviteTitle": "Eliminar invitación",
-  "deleteInviteMsg": "¿Estás seguro de que quieres eliminar esta invitación? Esta acción no se puede deshacer.",
+  "deleteInviteMsg": "El enlace dejará de funcionar y nadie más podrá unirse con él. Seguirá en la lista como eliminada, con quién se unió con ella. Esta acción no se puede deshacer.",
   "inviteDeletedSuccess": "Invitación eliminada",
   "failedDeleteInvite": "Error al eliminar la invitación",
   "inviteDefault": "Por defecto",

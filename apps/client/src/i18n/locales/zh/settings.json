@@ -324,7 +324,7 @@
   "inviteDeleted": "已删除",
   "copyInviteLink": "复制邀请链接",
   "deleteInviteTitle": "删除邀请",
-  "deleteInviteMsg": "您确定要删除此邀请吗？此操作无法撤销。",
+  "deleteInviteMsg": "链接将失效，其他人无法再通过它加入。它会作为已删除的邀请保留在列表中，并显示通过它加入的人。此操作无法撤销。",
   "inviteDeletedSuccess": "邀请已删除",
   "failedDeleteInvite": "删除邀请失败",
   "inviteDefault": "默认",

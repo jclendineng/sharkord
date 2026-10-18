@@ -352,7 +352,7 @@
   "inviteDeleted": "Excluído",
   "copyInviteLink": "Copiar Link de Convite",
   "deleteInviteTitle": "Excluir Convite",
-  "deleteInviteMsg": "Tem certeza de que deseja excluir este convite? Esta ação não pode ser desfeita.",
+  "deleteInviteMsg": "O link deixa de funcionar e mais ninguém poderá entrar com ele. Ele fica na lista como excluído, com quem entrou por ele. Esta ação não pode ser desfeita.",
   "inviteDeletedSuccess": "Convite excluído",
   "failedDeleteInvite": "Falha ao excluir convite",
   "inviteDefault": "Padrão",

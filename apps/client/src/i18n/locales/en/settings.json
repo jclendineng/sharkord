@@ -352,7 +352,7 @@
   "inviteDeleted": "Deleted",
   "copyInviteLink": "Copy Invite Link",
   "deleteInviteTitle": "Delete Invite",
-  "deleteInviteMsg": "Are you sure you want to delete this invite? This action cannot be undone.",
+  "deleteInviteMsg": "The link stops working and nobody else can join with it. It stays in the list as deleted, with who joined with it. This can't be undone.",
   "inviteDeletedSuccess": "Invite deleted",
   "failedDeleteInvite": "Failed to delete invite",
   "inviteDefault": "Default",

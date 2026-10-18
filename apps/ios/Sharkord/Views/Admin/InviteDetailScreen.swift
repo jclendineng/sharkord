@@ -96,7 +96,7 @@ struct InviteDetailScreen: View {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive, action: delete)
         } message: {
-            Text("The link stops working. It stays in the list as deleted, with who joined with it.")
+            Text(AdminInvite.deleteMessage)
         }
         // handed over by hand: on a mac a sheet's background is worked out before it inherits
         // anything, so a sheet reading a store it was not given crashed on opening

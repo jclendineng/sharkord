@@ -350,7 +350,7 @@
   "inviteDeleted": "Eliminato",
   "copyInviteLink": "Copia link invito",
   "deleteInviteTitle": "Elimina invito",
-  "deleteInviteMsg": "Sei sicuro di voler eliminare questo invito? Questa azione non puo essere annullata.",
+  "deleteInviteMsg": "Il link smetterà di funzionare e nessun altro potrà unirsi con esso. Resterà nell'elenco come eliminato, con chi si è unito tramite esso. Questa azione non può essere annullata.",
   "inviteDeletedSuccess": "Invito eliminato",
   "failedDeleteInvite": "Impossibile eliminare invito",
   "inviteDefault": "Predefinito",

@@ -350,7 +350,7 @@
   "inviteDeleted": "Smazaná",
   "copyInviteLink": "Kopírovat odkaz pozvánky",
   "deleteInviteTitle": "Odstranit pozvánku",
-  "deleteInviteMsg": "Opravdu chcete odstranit tuto pozvánku? Tuto akci nelze vrátit zpět.",
+  "deleteInviteMsg": "Odkaz přestane fungovat a nikdo další se s ním nepřipojí. Zůstane v seznamu jako smazaný, i s tím, kdo se s ním připojil. Tuto akci nelze vrátit zpět.",
   "inviteDeletedSuccess": "Pozvánka byla odstraněna",
   "failedDeleteInvite": "Pozvánku se odstranit nepodařilo",
   "inviteDefault": "Výchozí",

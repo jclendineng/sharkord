@@ -9,6 +9,7 @@ struct InvitesScreen: View {
     @State private var errorMessage: String?
     @State private var isLoading = true
     @State private var isCreatePresented = false
+    @State private var pendingDelete: AdminInvite?
 
     private var liveInvites: [AdminInvite] {
         invites
@@ -38,7 +39,7 @@ struct InvitesScreen: View {
                     }
                     .swipeActions {
                         Button("Delete", systemImage: "trash", role: .destructive) {
-                            delete(invite)
+                            pendingDelete = invite
                         }
                     }
                 }
@@ -66,6 +67,14 @@ struct InvitesScreen: View {
                 ContentUnavailableView("No invites", systemImage: "link", description: Text("Create one to let people join."))
             }
         }
+        .alert("Delete this invite?", isPresented: isDeleteConfirmPresented, presenting: pendingDelete) { invite in
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
+                delete(invite)
+            }
+        } message: { _ in
+            Text(AdminInvite.deleteMessage)
+        }
         .navigationTitle("Invites")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -86,6 +95,16 @@ struct InvitesScreen: View {
         }
         .refreshable {
             await load()
+        }
+    }
+
+    private var isDeleteConfirmPresented: Binding<Bool> {
+        Binding {
+            pendingDelete != nil
+        } set: { isPresented in
+            if !isPresented {
+                pendingDelete = nil
+            }
         }
     }
 
@@ -123,6 +142,9 @@ struct InvitesScreen: View {
 }
 
 extension AdminInvite {
+    // what deleting does, asked before the swipe in the list and the button on an invite's page
+    static let deleteMessage = "The link stops working and nobody else can join with it. It stays in the list as deleted, with who joined with it. This can't be undone."
+
     var usesText: String {
         if let maxUses, maxUses > 0 {
             return "\(uses)/\(maxUses) uses"

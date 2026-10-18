@@ -350,7 +350,7 @@
   "inviteDeleted": "Supprimée",
   "copyInviteLink": "Copier le lien d'invitation",
   "deleteInviteTitle": "Supprimer l'invitation",
-  "deleteInviteMsg": "Êtes-vous sûr de vouloir supprimer cette invitation ? Cette action est irréversible.",
+  "deleteInviteMsg": "Le lien cessera de fonctionner et personne d'autre ne pourra rejoindre avec. L'invitation reste dans la liste comme supprimée, avec les personnes qui l'ont utilisée. Cette action est irréversible.",
   "inviteDeletedSuccess": "Invitation supprimée",
   "failedDeleteInvite": "Échec de la suppression de l'invitation",
   "inviteDefault": "Par défaut",
