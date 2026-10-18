@@ -112,6 +112,7 @@
 				A60000000000000000000001 /* Sources */,
 				A30000000000000000000001 /* Frameworks */,
 				A60000000000000000000002 /* Resources */,
+				AE0000000000000000000001 /* Package dSYMs */,
 			);
 			buildRules = (
 			);
@@ -227,6 +228,32 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		AE0000000000000000000001 /* Package dSYMs */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/Mediasoup.framework/Mediasoup",
+				"$(BUILT_PRODUCTS_DIR)/WebRTC.framework/WebRTC",
+			);
+			name = "Package dSYMs";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DWARF_DSYM_FOLDER_PATH)/Mediasoup.framework.dSYM",
+				"$(DWARF_DSYM_FOLDER_PATH)/WebRTC.framework.dSYM",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# the mediasoup and webrtc frameworks ship without dsyms, so app store connect warned on every\n# upload and their crash frames had no names. mediasoup keeps its symbol table, which dsymutil\n# copies over, webrtc only its exported one\n[ \"$ACTION\" = install ] || exit 0\n\nfor name in Mediasoup WebRTC; do\n  dsymutil \"$BUILT_PRODUCTS_DIR/$name.framework/$name\" -o \"$DWARF_DSYM_FOLDER_PATH/$name.framework.dSYM\" 2>&1 | grep -v \"no debug symbols\" || true\ndone\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		A60000000000000000000001 /* Sources */ = {
