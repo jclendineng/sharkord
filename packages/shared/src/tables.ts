@@ -184,7 +184,13 @@ export type TJoinedSettings = TSettings & {
   logo: TFile | null;
 };
 
+export type TInviteJoin = {
+  userId: number;
+  createdAt: number;
+};
+
 export type TJoinedInvite = TInvite & {
   creator: TJoinedPublicUser;
   role: { id: number; name: string; color: string } | null;
+  joins: TInviteJoin[];
 };

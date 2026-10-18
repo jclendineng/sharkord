@@ -15,6 +15,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - Database migrations run by themselves at startup.
   - This release adds tables for friends, group direct messages, private notes, the new member lounge, QR sign in and the soundboard.
   - Upstream's plugin storage migrations run as this fork's `0060_plugin_storage`, after the fork's own, so a database that already ran `0059` still gets them.
+  - `0073_invite_uses` adds the table of who signed up with which invite, and marks deleted invites instead of removing them. Sign ups from before it have only the count.
   - `0072_role_positions` gives roles an order, starting from the order they were made in.
   - `0071_onboarding_removes_default_role` adds the rules setting that takes the default role away on reacting, off for a lounge already set up.
   - `0070_channel_pins` adds the table of channels each account pinned. The apps hand their own pins over the first time they connect, so nobody loses the ones pinned before.
@@ -47,6 +48,11 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 #### Server, web and apps
 
+- The server keeps who signed up with each invite.
+  - Deleting an invite stops it working but keeps it in the list, marked deleted.
+  - In the app, tapping an invite in server settings shows its details and who joined with it.
+  - People who manage invites see "Joined with an invite from" on a member's profile.
+  - The web invite table shows deleted invites as deleted.
 - Roles have an order (`roles.reorder`).
   - Drag them in the web client's Roles list, or use Reorder in the apps (arrows on a Mac).
   - The owner's role stays on top and the default one at the bottom.

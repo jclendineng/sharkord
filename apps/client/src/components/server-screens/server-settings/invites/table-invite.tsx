@@ -31,6 +31,7 @@ const TableInvite = memo(({ invite, refetch }: TTableInviteProps) => {
   const dateLocale = useDateLocale();
   const isExpired = invite.expiresAt && invite.expiresAt < Date.now();
   const isMaxUsesReached = invite.maxUses && invite.uses >= invite.maxUses;
+  const isDeleted = !!invite.deletedAt;
 
   const handleCopyCode = useCallback(() => {
     const inviteUrl = `${getUrlFromServer()}/?invite=${invite.code}`;
@@ -79,6 +80,13 @@ const TableInvite = memo(({ invite, refetch }: TTableInviteProps) => {
   }, [invite.expiresAt, isExpired, t, dateLocale]);
 
   const statusBadge = useMemo(() => {
+    if (isDeleted) {
+      return (
+        <Badge variant="outline" className="text-xs">
+          {t('inviteDeleted')}
+        </Badge>
+      );
+    }
     if (isExpired) {
       return (
         <Badge variant="destructive" className="text-xs">
@@ -98,7 +106,7 @@ const TableInvite = memo(({ invite, refetch }: TTableInviteProps) => {
         {t('inviteActive')}
       </Badge>
     );
-  }, [isExpired, isMaxUsesReached, t]);
+  }, [isDeleted, isExpired, isMaxUsesReached, t]);
 
   return (
     <div
@@ -110,14 +118,16 @@ const TableInvite = memo(({ invite, refetch }: TTableInviteProps) => {
           <code className="text-xs font-mono bg-muted px-2 py-1 rounded truncate">
             {invite.code}
           </code>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6 shrink-0"
-            onClick={handleCopyCode}
-          >
-            <Copy className="h-3 w-3" />
-          </Button>
+          {!isDeleted && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 shrink-0"
+              onClick={handleCopyCode}
+            >
+              <Copy className="h-3 w-3" />
+            </Button>
+          )}
         </div>
       </div>
 
@@ -169,30 +179,32 @@ const TableInvite = memo(({ invite, refetch }: TTableInviteProps) => {
       <div className="flex items-center">{statusBadge}</div>
 
       <div className="flex items-center justify-center">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground"
-            >
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={handleCopyCode}>
-              <Copy className="h-4 w-4" />
-              {t('copyInviteLink')}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={handleDelete}
-              className="text-destructive focus:text-destructive"
-            >
-              <Trash2 className="h-4 w-4" />
-              {t('deleteBtn')}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {!isDeleted && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              >
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleCopyCode}>
+                <Copy className="h-4 w-4" />
+                {t('copyInviteLink')}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={handleDelete}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="h-4 w-4" />
+                {t('deleteBtn')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
     </div>
   );

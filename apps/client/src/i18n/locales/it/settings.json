@@ -347,6 +347,7 @@
   "inviteExpired": "Scaduto",
   "inviteMaxUses": "Utilizzi max",
   "inviteActive": "Attivo",
+  "inviteDeleted": "Eliminato",
   "copyInviteLink": "Copia link invito",
   "deleteInviteTitle": "Elimina invito",
   "deleteInviteMsg": "Sei sicuro di voler eliminare questo invito? Questa azione non puo essere annullata.",

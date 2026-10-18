@@ -1,5 +1,5 @@
 import { ActivityLogType, Permission } from '@sharkord/shared';
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../../db';
 import { invites } from '../../db/schema';
@@ -16,9 +16,11 @@ const deleteInviteRoute = protectedProcedure
   .mutation(async ({ input, ctx }) => {
     await ctx.needsPermission(Permission.MANAGE_INVITES);
 
+    // marked rather than removed, so the list keeps who joined with it
     const removedInvite = await db
-      .delete(invites)
-      .where(eq(invites.id, input.inviteId))
+      .update(invites)
+      .set({ deletedAt: Date.now() })
+      .where(and(eq(invites.id, input.inviteId), isNull(invites.deletedAt)))
       .returning()
       .get();
 

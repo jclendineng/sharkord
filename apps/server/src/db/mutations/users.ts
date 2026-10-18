@@ -9,6 +9,7 @@ import {
   channelReadStates,
   channels,
   invites,
+  inviteUses,
   messages,
   userRoles,
   users
@@ -46,6 +47,8 @@ const createUser = async ({
   const username = name && !isNameTaken ? name : `SharkordUser${randomNum}`;
 
   const userId = db.transaction((tx) => {
+    let consumedInviteId: number | undefined;
+
     if (inviteCode) {
       const consumed = tx
         .update(invites)
@@ -53,6 +56,7 @@ const createUser = async ({
         .where(
           and(
             eq(invites.code, inviteCode),
+            isNull(invites.deletedAt),
             or(isNull(invites.maxUses), lt(invites.uses, invites.maxUses))
           )
         )
@@ -65,6 +69,8 @@ const createUser = async ({
           'This invite code has reached its maximum uses'
         );
       }
+
+      consumedInviteId = consumed[0]?.id;
     }
 
     const user = tx
@@ -90,6 +96,16 @@ const createUser = async ({
         createdAt: Date.now()
       })
       .run();
+
+    if (consumedInviteId) {
+      tx.insert(inviteUses)
+        .values({
+          inviteId: consumedInviteId,
+          userId: user.id,
+          createdAt: Date.now()
+        })
+        .run();
+    }
 
     // if the invite has a specific role and it's different from the default, assign it too
     if (inviteRoleId && inviteRoleId !== defaultRole.id) {

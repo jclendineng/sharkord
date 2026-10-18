@@ -243,6 +243,15 @@ times it can be used. Changing either, or Replace Link, makes a new link and del
 after asking first once the old one has been used. People with Manage Invites get a Manage All
 Invites row that opens the server's invite list.
 
+The server keeps who signed up with each invite, by password or single sign on, in
+`invite_uses` (one row per account, written with the account). Deleting an invite sets its
+`deletedAt` instead of removing it, so the link stops working but the invite and who joined with
+it stay. `invites.getAll` returns each invite's `joins` and `deletedAt`. In the app, an invite in
+server settings opens a page with its details, Copy Link and Delete, and who joined with it;
+deleted invites are listed apart. Uses from before this have only the count. People with Manage
+Invites see "Joined with an invite from" on a member's profile. The web invite table shows
+deleted invites as deleted, without copy or delete.
+
 Uploaded files are stored under a random name (a uuid and the file's extension), never the
 name they were uploaded with, which is kept for display and downloads, and served from
 `/public/<name>`. Files uploaded before this are moved to random names when the server starts

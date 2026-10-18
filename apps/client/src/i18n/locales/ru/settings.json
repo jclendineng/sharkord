@@ -303,6 +303,7 @@
   "inviteExpired": "Истекло",
   "inviteMaxUses": "Макс. кол-во использований",
   "inviteActive": "Активный",
+  "inviteDeleted": "Удалено",
   "copyInviteLink": "Копировать ссылку для приглашения",
   "deleteInviteTitle": "Удалить приглашение",
   "deleteInviteMsg": "Вы уверены, что хотите удалить это приглашение? Это действие невозможно отменить.",

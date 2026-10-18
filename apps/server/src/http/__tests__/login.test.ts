@@ -11,6 +11,7 @@ import {
   channelReadStates,
   channels,
   invites,
+  inviteUses,
   messages,
   roles,
   settings,
@@ -260,6 +261,63 @@ describe('/login', () => {
       .get();
 
     expect(updatedInvite?.uses).toBe(1);
+  });
+
+  test('should record who registered with an invite', async () => {
+    await tdb.update(settings).set({ allowNewUsers: false });
+
+    const invite = await tdb
+      .insert(invites)
+      .values({
+        code: 'RECORDINVITE',
+        creatorId: 1,
+        uses: 0,
+        createdAt: Date.now()
+      })
+      .returning()
+      .get();
+
+    const response = await login('recorduser', 'password123', 'RECORDINVITE');
+
+    expect(response.status).toBe(200);
+
+    const user = await tdb
+      .select()
+      .from(users)
+      .where(eq(users.identity, 'recorduser'))
+      .get();
+
+    const use = await tdb
+      .select()
+      .from(inviteUses)
+      .where(eq(inviteUses.userId, user!.id))
+      .get();
+
+    expect(use?.inviteId).toBe(invite.id);
+  });
+
+  test('should fail with deleted invite', async () => {
+    await tdb.update(settings).set({ allowNewUsers: false });
+
+    await tdb.insert(invites).values({
+      code: 'DELETEDINVITE',
+      creatorId: 1,
+      uses: 0,
+      createdAt: Date.now(),
+      deletedAt: Date.now()
+    });
+
+    const response = await login(
+      'deletedinviteuser',
+      'password123',
+      'DELETEDINVITE'
+    );
+
+    expect(response.status).toBe(400);
+
+    const data: any = await response.json();
+
+    expect(data.errors).toHaveProperty('identity');
   });
 
   test('should announce the invite a new user registered with', async () => {

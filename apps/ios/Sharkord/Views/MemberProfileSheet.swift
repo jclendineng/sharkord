@@ -9,6 +9,9 @@ struct MemberProfileSheet: View {
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
 
+    // who made the invite they signed up with, for people who manage invites
+    @State private var inviterName: String?
+
     private var isOwn: Bool {
         user.id == session.ownUserId
     }
@@ -76,8 +79,14 @@ struct MemberProfileSheet: View {
 
                     if let memberSince = user.memberSince {
                         ProfileCard(title: "Member Since") {
-                            Label(memberSince.formatted(date: .abbreviated, time: .omitted), systemImage: "calendar")
-                                .foregroundStyle(Theme.text)
+                            VStack(alignment: .leading, spacing: 8) {
+                                Label(memberSince.formatted(date: .abbreviated, time: .omitted), systemImage: "calendar")
+
+                                if let inviterName {
+                                    Label("Joined with an invite from \(inviterName)", systemImage: "link")
+                                }
+                            }
+                            .foregroundStyle(Theme.text)
                         }
                     }
 
@@ -89,6 +98,9 @@ struct MemberProfileSheet: View {
             }
         }
         .background(Theme.deepBackground)
+        .task {
+            await loadInviter()
+        }
         .sheetDetents([.large])
         .presentationDragIndicator(.visible)
         .presentationBackground(Theme.deepBackground)
@@ -149,6 +161,18 @@ struct MemberProfileSheet: View {
 
     // the sheet goes first, then the direct message opens in its place: a navigation started
     // while the sheet is still closing is dropped
+    private func loadInviter() async {
+        guard session.can(.manageInvites), let invites: [AdminInvite] = try? await session.request("invites.getAll") else {
+            return
+        }
+
+        let invite = invites.first { invite in
+            (invite.joins ?? []).contains { $0.userId == user.id }
+        }
+
+        inviterName = invite?.creator?.name
+    }
+
     private func message() {
         dismiss()
 

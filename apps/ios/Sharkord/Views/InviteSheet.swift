@@ -197,7 +197,7 @@ struct InviteSheet: View {
         let usable = (all ?? []).filter { candidate in
             let hasUsesLeft = (candidate.maxUses ?? 0) == 0 || candidate.uses < (candidate.maxUses ?? 0)
 
-            return candidate.creator?.id == session.ownUserId && candidate.role == nil && !candidate.isExpired && hasUsesLeft
+            return candidate.creator?.id == session.ownUserId && candidate.role == nil && !candidate.isExpired && !candidate.isDeleted && hasUsesLeft
         }
 
         guard let reused = usable.max(by: { $0.createdAt < $1.createdAt }), let address = session.address else {

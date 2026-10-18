@@ -347,6 +347,7 @@
   "inviteExpired": "Vypršela",
   "inviteMaxUses": "Maximální počet použití",
   "inviteActive": "Aktivní",
+  "inviteDeleted": "Smazaná",
   "copyInviteLink": "Kopírovat odkaz pozvánky",
   "deleteInviteTitle": "Odstranit pozvánku",
   "deleteInviteMsg": "Opravdu chcete odstranit tuto pozvánku? Tuto akci nelze vrátit zpět.",

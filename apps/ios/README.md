@@ -27,7 +27,7 @@ there is no camera), server password, channel list with unread counts, an iPad l
 sending, live new/edited/deleted messages, auto reconnect, DMs, threads, reactions with emoji
 picker, uploads, files opened in Quick Look with a preview of their first page, rich message rendering, push notifications, voice with webcams and watching
 screen shares, sharing your own screen, profile editing, settings (account, devices, voice and
-video, notifications, about with the server's contact), the full server settings, polls, voice messages, and Discord's
+video, notifications, about with the server's contact), the full server settings (with who joined with each invite), polls, voice messages, and Discord's
 attachment and expression panels (emoji, GIFs, stickers), typing indicators, pinning messages
 and a channel's pinned list, a channel screen from its name (members, media, pins, links, files),
 search in the expression panel at full height, a double tap reaction you pick, friends and friend requests, group direct messages, direct message menus (close, pin, mute for a while), profile banners, voice reactions, the soundboard (playing in calls, your own soundboard volume, and managing sounds with uploads and the server's library), moving people between voice

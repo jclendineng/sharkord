@@ -349,6 +349,7 @@
   "inviteExpired": "Expirado",
   "inviteMaxUses": "Usos Máximos",
   "inviteActive": "Ativo",
+  "inviteDeleted": "Excluído",
   "copyInviteLink": "Copiar Link de Convite",
   "deleteInviteTitle": "Excluir Convite",
   "deleteInviteMsg": "Tem certeza de que deseja excluir este convite? Esta ação não pode ser desfeita.",

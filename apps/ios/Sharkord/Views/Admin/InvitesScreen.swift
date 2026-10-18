@@ -1,6 +1,6 @@
 import SwiftUI
 
-// invites.getAll, add and delete
+// invites.getAll, add and delete. deleted invites are kept apart below, with who joined with them
 struct InvitesScreen: View {
     @Environment(SessionStore.self) private var session
     @Environment(ServerListStore.self) private var servers
@@ -9,7 +9,18 @@ struct InvitesScreen: View {
     @State private var errorMessage: String?
     @State private var isLoading = true
     @State private var isCreatePresented = false
-    @State private var copiedId: Int?
+
+    private var liveInvites: [AdminInvite] {
+        invites
+            .filter { !$0.isDeleted }
+            .sorted { $0.createdAt > $1.createdAt }
+    }
+
+    private var deletedInvites: [AdminInvite] {
+        invites
+            .filter(\.isDeleted)
+            .sorted { ($0.deletedAt ?? 0) > ($1.deletedAt ?? 0) }
+    }
 
     var body: some View {
         List {
@@ -19,25 +30,39 @@ struct InvitesScreen: View {
             }
 
             Section {
-                ForEach(invites) { invite in
-                    InviteRow(invite: invite, isCopied: copiedId == invite.id)
-                        .contentShape(.rect)
-                        .onTapGesture { copy(invite) }
-                        .swipeActions {
-                            Button("Delete", systemImage: "trash", role: .destructive) {
-                                delete(invite)
-                            }
+                ForEach(liveInvites) { invite in
+                    NavigationLink {
+                        InviteDetailScreen(invite: invite, onDeleted: reload)
+                    } label: {
+                        InviteRow(invite: invite)
+                    }
+                    .swipeActions {
+                        Button("Delete", systemImage: "trash", role: .destructive) {
+                            delete(invite)
                         }
+                    }
                 }
             } footer: {
-                Text("Tap an invite to copy its link, swipe to delete it.")
+                Text("Tap an invite to see who joined with it, swipe to delete it.")
+            }
+
+            if !deletedInvites.isEmpty {
+                Section("Deleted") {
+                    ForEach(deletedInvites) { invite in
+                        NavigationLink {
+                            InviteDetailScreen(invite: invite, onDeleted: reload)
+                        } label: {
+                            InviteRow(invite: invite)
+                        }
+                    }
+                }
             }
         }
         .settingsListStyle()
         .overlay {
             if isLoading {
                 ProgressView()
-            } else if invites.isEmpty && errorMessage == nil {
+            } else if liveInvites.isEmpty && deletedInvites.isEmpty && errorMessage == nil {
                 ContentUnavailableView("No invites", systemImage: "link", description: Text("Create one to let people join."))
             }
         }
@@ -85,21 +110,11 @@ struct InvitesScreen: View {
         isCreatePresented = true
     }
 
-    private func copy(_ invite: AdminInvite) {
-        guard let address = session.address else {
-            return
-        }
-
-        // the web client's invite link, see table-invite.tsx
-        UIPasteboard.general.string = "\(address.baseURL.absoluteString)/?invite=\(invite.code)"
-        copiedId = invite.id
-    }
-
     private func delete(_ invite: AdminInvite) {
         Task {
             do {
                 try await session.perform("invites.delete", ["inviteId": invite.id])
-                invites.removeAll { $0.id == invite.id }
+                await load()
             } catch {
                 errorMessage = error.localizedDescription
             }
@@ -107,46 +122,43 @@ struct InvitesScreen: View {
     }
 }
 
-private struct InviteRow: View {
-    let invite: AdminInvite
-    let isCopied: Bool
-
-    private var usesText: String {
-        if let maxUses = invite.maxUses, maxUses > 0 {
-            return "\(invite.uses)/\(maxUses) uses"
+extension AdminInvite {
+    var usesText: String {
+        if let maxUses, maxUses > 0 {
+            return "\(uses)/\(maxUses) uses"
         }
 
-        return "\(invite.uses) \(invite.uses == 1 ? "use" : "uses")"
+        return "\(uses) \(uses == 1 ? "use" : "uses")"
     }
 
-    private var expiryText: String {
-        guard let expiresAt = invite.expiresAt else {
+    var expiryText: String {
+        if let deletedAt {
+            return "Deleted \(Self.date(deletedAt).formatted(date: .abbreviated, time: .omitted))"
+        }
+
+        guard let expiresAt else {
             return "Never expires"
         }
 
-        let date = Date(timeIntervalSince1970: TimeInterval(expiresAt) / 1000)
-
-        return invite.isExpired ? "Expired" : "Expires in \(InviteExpiry.timeLeft(until: date))"
+        return isExpired ? "Expired" : "Expires in \(InviteExpiry.timeLeft(until: Self.date(expiresAt)))"
     }
+
+    static func date(_ milliseconds: Int) -> Date {
+        Date(timeIntervalSince1970: TimeInterval(milliseconds) / 1000)
+    }
+}
+
+private struct InviteRow: View {
+    let invite: AdminInvite
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(invite.code)
-                    .font(.body.monospaced())
-                    .foregroundStyle(invite.isExpired ? Theme.muted : Theme.header)
-                    .lineLimit(1)
+            Text(invite.code)
+                .font(.body.monospaced())
+                .foregroundStyle(invite.isExpired || invite.isDeleted ? Theme.muted : Theme.header)
+                .lineLimit(1)
 
-                Spacer()
-
-                if isCopied {
-                    Label("Copied", systemImage: "checkmark")
-                        .font(.caption)
-                        .foregroundStyle(Theme.green)
-                }
-            }
-
-            Text([usesText, expiryText, invite.creator.map { "by \($0.name)" }, invite.role.map { "gives \($0.name)" }].compactMap { $0 }.joined(separator: " · "))
+            Text([invite.usesText, invite.expiryText, invite.creator.map { "by \($0.name)" }, invite.role.map { "gives \($0.name)" }].compactMap { $0 }.joined(separator: " · "))
                 .font(.caption)
                 .foregroundStyle(Theme.muted)
         }

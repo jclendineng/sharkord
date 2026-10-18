@@ -142,6 +142,12 @@ struct AdminInvite: Decodable, Identifiable, Hashable {
         let color: String
     }
 
+    // someone who signed up with the invite
+    struct Join: Decodable, Hashable {
+        let userId: Int
+        let createdAt: Int
+    }
+
     let id: Int
     let code: String
     let uses: Int
@@ -150,9 +156,17 @@ struct AdminInvite: Decodable, Identifiable, Hashable {
     let createdAt: Int
     let creator: Creator?
     let role: InviteRole?
+    // a deleted invite stays in the list, no longer working, for who joined with it
+    let deletedAt: Int?
+    // nil from a server older than the record of who joined
+    let joins: [Join]?
 
     var isExpired: Bool {
         expiresAt.map { Date(timeIntervalSince1970: TimeInterval($0) / 1000) < .now } ?? false
+    }
+
+    var isDeleted: Bool {
+        deletedAt != nil
     }
 }
 

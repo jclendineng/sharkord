@@ -321,6 +321,7 @@
   "inviteExpired": "已过期",
   "inviteMaxUses": "已达上限",
   "inviteActive": "有效",
+  "inviteDeleted": "已删除",
   "copyInviteLink": "复制邀请链接",
   "deleteInviteTitle": "删除邀请",
   "deleteInviteMsg": "您确定要删除此邀请吗？此操作无法撤销。",

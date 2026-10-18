@@ -2,7 +2,7 @@ import { OWNER_ROLE_ID, Permission } from '@sharkord/shared';
 import { describe, expect, test } from 'bun:test';
 import { initTest } from '../../__tests__/helpers';
 import { tdb } from '../../__tests__/setup';
-import { invites, rolePermissions } from '../../db/schema';
+import { invites, inviteUses, rolePermissions } from '../../db/schema';
 import { eventBus } from '../../plugins/event-bus';
 
 describe('invites router', () => {
@@ -140,7 +140,36 @@ describe('invites router', () => {
     const invitesAfter = await caller.invites.getAll();
     const deletedInvite = invitesAfter.find((i) => i.code === 'to-be-deleted');
 
-    expect(deletedInvite).toBeUndefined();
+    // kept as history, marked deleted
+    expect(deletedInvite).toBeDefined();
+    expect(deletedInvite!.deletedAt).toBeNumber();
+  });
+
+  test('should throw when deleting an invite that is already deleted', async () => {
+    const { caller } = await initTest();
+
+    const invite = await caller.invites.add({ code: 'deleted-twice' });
+
+    await caller.invites.delete({ inviteId: invite.id });
+
+    await expect(
+      caller.invites.delete({ inviteId: invite.id })
+    ).rejects.toThrow('Invite not found');
+  });
+
+  test('should list who joined with an invite', async () => {
+    const { caller } = await initTest();
+
+    const invite = await caller.invites.add({ code: 'joined-with' });
+
+    await tdb
+      .insert(inviteUses)
+      .values({ inviteId: invite.id, userId: 2, createdAt: 1000 });
+
+    const all = await caller.invites.getAll();
+    const listed = all.find((i) => i.id === invite.id);
+
+    expect(listed!.joins).toEqual([{ userId: 2, createdAt: 1000 }]);
   });
 
   test('should throw error when deleting non-existing invite', async () => {

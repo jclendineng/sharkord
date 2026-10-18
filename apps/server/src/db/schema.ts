@@ -647,12 +647,33 @@ const invites = sqliteTable(
     maxUses: integer('max_uses'),
     uses: integer('uses').notNull().default(0),
     expiresAt: integer('expires_at'),
-    createdAt: integer('created_at').notNull()
+    createdAt: integer('created_at').notNull(),
+    // a deleted invite stops working but stays, so who joined with it is still known
+    deletedAt: integer('deleted_at')
   },
   (t) => [
     uniqueIndex('invites_code_idx').on(t.code),
     index('invites_creator_idx').on(t.creatorId),
     index('invites_expires_idx').on(t.expiresAt)
+  ]
+);
+
+// who signed up with which invite. one row per account, written with the account
+const inviteUses = sqliteTable(
+  'invite_uses',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    inviteId: integer('invite_id')
+      .notNull()
+      .references(() => invites.id, { onDelete: 'cascade' }),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: integer('created_at').notNull()
+  },
+  (t) => [
+    index('invite_uses_invite_created_idx').on(t.inviteId, t.createdAt),
+    uniqueIndex('invite_uses_user_idx').on(t.userId)
   ]
 );
 
@@ -1109,6 +1130,7 @@ export {
   groupDmMembers,
   groupDms,
   invites,
+  inviteUses,
   ipBans,
   loginLinks,
   loginRequests,

@@ -1,9 +1,9 @@
-import type { TInvite, TJoinedInvite } from '@sharkord/shared';
-import { eq } from 'drizzle-orm';
+import type { TInvite, TInviteJoin, TJoinedInvite } from '@sharkord/shared';
+import { asc, eq, inArray } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/sqlite-core';
 import { db } from '..';
 import { signFile } from '../../helpers/files-crypto';
-import { files, invites, roles, userRoles, users } from '../schema';
+import { files, invites, inviteUses, roles, userRoles, users } from '../schema';
 import { getSettings } from './server';
 
 const isInviteValid = async (
@@ -19,7 +19,8 @@ const isInviteValid = async (
     .where(eq(invites.code, code))
     .get();
 
-  if (!invite) {
+  // a deleted invite reads as one that never existed
+  if (!invite || invite.deletedAt) {
     return { error: 'Invite code not found' };
   }
 
@@ -65,16 +66,38 @@ const getInvites = async (): Promise<TJoinedInvite[]> => {
     .leftJoin(bannerFiles, eq(users.bannerId, bannerFiles.id))
     .leftJoin(roles, eq(invites.roleId, roles.id));
 
-  const [rolesByUser, { storageSignedUrlsTtlSeconds }] = await Promise.all([
-    db
-      .select({
-        userId: userRoles.userId,
-        roleId: userRoles.roleId
-      })
-      .from(userRoles)
-      .all(),
-    getSettings()
-  ]);
+  const inviteIds = rows.map((row) => row.invite.id);
+
+  const [rolesByUser, { storageSignedUrlsTtlSeconds }, uses] =
+    await Promise.all([
+      db
+        .select({
+          userId: userRoles.userId,
+          roleId: userRoles.roleId
+        })
+        .from(userRoles)
+        .all(),
+      getSettings(),
+      db
+        .select({
+          inviteId: inviteUses.inviteId,
+          userId: inviteUses.userId,
+          createdAt: inviteUses.createdAt
+        })
+        .from(inviteUses)
+        .where(inArray(inviteUses.inviteId, inviteIds))
+        .orderBy(asc(inviteUses.createdAt))
+        .all()
+    ]);
+
+  const joinsByInvite = uses.reduce(
+    (acc, { inviteId, userId, createdAt }) => {
+      if (!acc[inviteId]) acc[inviteId] = [];
+      acc[inviteId].push({ userId, createdAt });
+      return acc;
+    },
+    {} as Record<number, TInviteJoin[]>
+  );
 
   const rolesMap = rolesByUser.reduce(
     (acc, { userId, roleId }) => {
@@ -93,7 +116,8 @@ const getInvites = async (): Promise<TJoinedInvite[]> => {
       banner: signFile(row.banner, storageSignedUrlsTtlSeconds),
       roleIds: rolesMap[row.creator.id] || []
     },
-    role: row.role?.id ? row.role : null
+    role: row.role?.id ? row.role : null,
+    joins: joinsByInvite[row.invite.id] || []
   }));
 };
 
