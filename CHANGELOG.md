@@ -220,6 +220,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - In the app, the invite sheet reuses your last link while it works, until you generate a new one or delete it.
   - The sheet says how many times the link has been used and when it expires, and links to the full invite list for people who manage invites.
   - Replace Link asks before the old link stops working, as does changing a setting once the link has been used.
+  - With no link to reuse, the sheet shows Create Link instead of making one as it opens.
 - Long presses on channels and messages open their menu after the same 0.3 seconds as servers and conversations.
 - Joining voice from another device takes the seat over instead of failing with "User already in a voice channel".
   - The device that had it ends its call, and the iOS app shows a bar offering to reconnect there.

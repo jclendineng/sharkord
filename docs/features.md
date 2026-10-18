@@ -238,7 +238,8 @@ self signed certificates and hosts without a domain (`http://nas:8080`). Every r
 again, so a public page cannot send the server inward.
 
 The app's invite sheet shows your newest link that still works, how many times it has been used
-and when it expires. It sets how long a link lasts (1 hour, 1 day, 7 days or never) and how many
+and when it expires. With none to reuse it shows a Create Link button instead of making
+one, so opening the sheet never adds an invite. It sets how long a link lasts (1 hour, 1 day, 7 days or never) and how many
 times it can be used. Changing either, or Replace Link, makes a new link and deletes the old one,
 after asking first once the old one has been used. People with Manage Invites get a Manage All
 Invites row that opens the server's invite list.

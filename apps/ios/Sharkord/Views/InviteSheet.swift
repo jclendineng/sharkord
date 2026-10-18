@@ -6,7 +6,8 @@ private struct InviteSettings: Equatable {
     var maxUses = 0
 }
 
-// your last link while it still works, with its expire after and max uses. a new one only when a
+// your last link while it still works, with its expire after and max uses. with none, a link is
+// made only when asked for, so opening the sheet never adds an invite. a new one only when a
 // setting changes or one is asked for, after asking once the link has been used, since someone
 // may be holding it. invites.add and getAll need MANAGE_INVITES, anyone without it sees the
 // server's refusal
@@ -31,6 +32,8 @@ struct InviteSheet: View {
     @State private var errorMessage: String?
     @State private var isCopied = false
     @State private var isReplaceConfirmPresented = false
+    // none of your links can be reused, and none is made until asked for
+    @State private var hasNoLink = false
 
     private var usesText: String {
         if usesLimit > 0 {
@@ -45,6 +48,10 @@ struct InviteSheet: View {
     }
 
     private var summary: String {
+        if hasNoLink {
+            return "You don't have an invite link yet. Choose how long it lasts and how many times it can be used, then create one."
+        }
+
         var expires = "never expires"
 
         if let expiresAt {
@@ -100,6 +107,13 @@ struct InviteSheet: View {
                 } else if let errorMessage {
                     Text(errorMessage)
                         .foregroundStyle(Theme.red)
+                } else if hasNoLink {
+                    Button(action: regenerate) {
+                        Label("Create Link", systemImage: "link")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
                 } else {
                     ProgressView()
                         .frame(maxWidth: .infinity)
@@ -201,7 +215,7 @@ struct InviteSheet: View {
         }
 
         guard let reused = usable.max(by: { $0.createdAt < $1.createdAt }), let address = session.address else {
-            await createInvite()
+            hasNoLink = true
             return
         }
 
@@ -258,6 +272,7 @@ struct InviteSheet: View {
         let previous = invite
 
         shownSettings = settings
+        hasNoLink = false
         inviteURL = nil
         errorMessage = nil
         isCopied = false
