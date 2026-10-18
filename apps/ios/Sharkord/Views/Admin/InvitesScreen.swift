@@ -126,7 +126,7 @@ private struct InviteRow: View {
 
         let date = Date(timeIntervalSince1970: TimeInterval(expiresAt) / 1000)
 
-        return invite.isExpired ? "Expired" : "Expires \(date.formatted(.relative(presentation: .named)))"
+        return invite.isExpired ? "Expired" : "Expires in \(InviteExpiry.timeLeft(until: date))"
     }
 
     var body: some View {
@@ -267,6 +267,22 @@ enum InviteExpiry: String, CaseIterable {
     case day = "1 day"
     case week = "7 days"
     case never = "Never"
+
+    private static let timeLeftFormatter: DateComponentsFormatter = {
+        let formatter = DateComponentsFormatter()
+
+        formatter.allowedUnits = [.day, .hour, .minute]
+        formatter.unitsStyle = .full
+        formatter.maximumUnitCount = 2
+
+        return formatter
+    }()
+
+    // "3 days, 23 hours", where a relative date rounded the same link to 3 days in one place and
+    // 4 in another
+    static func timeLeft(until date: Date) -> String {
+        timeLeftFormatter.string(from: .now, to: date) ?? ""
+    }
 
     var interval: TimeInterval? {
         switch self {
