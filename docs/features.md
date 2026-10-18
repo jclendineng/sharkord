@@ -237,8 +237,11 @@ it on does not add previews to older messages. When it is on, devices on that ne
 self signed certificates and hosts without a domain (`http://nas:8080`). Every redirect is checked
 again, so a public page cannot send the server inward.
 
-The app's invite sheet sets how long a link lasts (1 hour, 1 day, 7 days or never) and how many
-times it can be used, replacing the link it showed before.
+The app's invite sheet shows your newest link that still works, how many times it has been used
+and when it expires. It sets how long a link lasts (1 hour, 1 day, 7 days or never) and how many
+times it can be used. Changing either, or Replace Link, makes a new link and deletes the old one,
+after asking first once the old one has been used. People with Manage Invites get a Manage All
+Invites row that opens the server's invite list.
 
 Uploaded files are stored under a random name (a uuid and the file's extension), never the
 name they were uploaded with, which is kept for display and downloads, and served from

@@ -212,6 +212,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - The app's Channels settings page has a Reorder button in its top bar, where it was hidden in the + menu before.
 - In the app, the server's search leaves direct messages to the messages panel's own search.
 - In the app, the invite sheet reuses your last link while it works, until you generate a new one or delete it.
+  - The sheet says how many times the link has been used and when it expires, and links to the full invite list for people who manage invites.
+  - Replace Link asks before the old link stops working, as does changing a setting once the link has been used.
 - Long presses on channels and messages open their menu after the same 0.3 seconds as servers and conversations.
 - Joining voice from another device takes the seat over instead of failing with "User already in a voice channel".
   - The device that had it ends its call, and the iOS app shows a bar offering to reconnect there.
@@ -289,6 +291,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 #### iOS app
 
 - An empty channel's chat fills the screen, instead of leaving black strips down both sides.
+- The app's invite list says "1 use", not "1 uses".
 - An invite link opened while the app shows its welcome screen goes straight to making an account on that server, instead of being dropped.
 - Coming back to the app while it was reconnecting no longer signs you out with "Invalid handshake hash".
 - A call is heard both ways: whoever joined after the app, or started talking or sharing a camera after it joined, was never heard or seen.

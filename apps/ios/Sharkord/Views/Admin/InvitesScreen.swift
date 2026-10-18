@@ -116,7 +116,7 @@ private struct InviteRow: View {
             return "\(invite.uses)/\(maxUses) uses"
         }
 
-        return "\(invite.uses) uses"
+        return "\(invite.uses) \(invite.uses == 1 ? "use" : "uses")"
     }
 
     private var expiryText: String {
