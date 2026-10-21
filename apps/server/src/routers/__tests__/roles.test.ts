@@ -1,4 +1,4 @@
-import { Permission } from '@sharkord/shared';
+import { OWNER_ROLE_ID, Permission } from '@sharkord/shared';
 import { describe, expect, spyOn, test } from 'bun:test';
 import { initTest } from '../../__tests__/helpers';
 import * as publishers from '../../db/publishers';
@@ -241,6 +241,21 @@ describe('roles router', () => {
         roleId: 999999
       })
     ).rejects.toThrow('Role not found');
+  });
+
+  test('should refuse the owner role as the default role', async () => {
+    const { caller } = await initTest();
+
+    await expect(
+      caller.roles.setDefault({
+        roleId: OWNER_ROLE_ID
+      })
+    ).rejects.toThrow('The owner role cannot be the default role');
+
+    const roles = await caller.roles.getAll();
+    const ownerRole = roles.find((r) => r.id === OWNER_ROLE_ID);
+
+    expect(ownerRole!.isDefault).toBe(false);
   });
 
   test('should create multiple roles', async () => {

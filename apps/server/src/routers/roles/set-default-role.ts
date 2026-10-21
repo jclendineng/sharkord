@@ -1,4 +1,4 @@
-import { ActivityLogType, Permission } from '@sharkord/shared';
+import { ActivityLogType, OWNER_ROLE_ID, Permission } from '@sharkord/shared';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../../db';
@@ -32,6 +32,13 @@ const setDefaultRoleRoute = protectedProcedure
     invariant(newDefaultRole, {
       code: 'NOT_FOUND',
       message: 'Role not found'
+    });
+
+    // everyone who joins gets the default role, so making the owner role default handed every
+    // new account the owner's permissions
+    invariant(input.roleId !== OWNER_ROLE_ID, {
+      code: 'FORBIDDEN',
+      message: 'The owner role cannot be the default role'
     });
 
     db.transaction((tx) => {
