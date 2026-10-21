@@ -77,6 +77,9 @@ actor AnimatedImageLoader {
 
     init() {
         cache.countLimit = 120
+        // a count alone let a handful of long gifs keep every decoded frame, hundreds of
+        // megabytes with the app in the background. costs are the frames' own bytes
+        cache.totalCostLimit = 128 * 1024 * 1024
     }
 
     private nonisolated static func key(_ url: URL, _ maxPixelSize: CGFloat) -> NSString {
@@ -101,9 +104,25 @@ actor AnimatedImageLoader {
             return nil
         }
 
-        cache.setObject(image, forKey: key)
+        cache.setObject(image, forKey: key, cost: Self.cost(of: image))
 
         return image
+    }
+
+    private static func cost(of image: UIImage) -> Int {
+        if let frames = image.images {
+            return frames.reduce(0) { $0 + bytes(of: $1) }
+        }
+
+        return bytes(of: image)
+    }
+
+    private static func bytes(of image: UIImage) -> Int {
+        guard let frame = image.cgImage else {
+            return 0
+        }
+
+        return frame.bytesPerRow * frame.height
     }
 
     // every frame of an animated image at the given size, with its own frame durations
@@ -127,13 +146,18 @@ actor AnimatedImageLoader {
         var frames: [UIImage] = []
         var duration: Double = 0
 
-        for index in 0..<count {
-            guard let frame = CGImageSourceCreateThumbnailAtIndex(source, index, options as CFDictionary) else {
-                continue
-            }
+        frames.reserveCapacity(count)
 
-            frames.append(UIImage(cgImage: frame))
-            duration += frameDuration(source, at: index)
+        for index in 0..<count {
+            // drains image io's temporary objects each frame instead of at the end of the decode
+            autoreleasepool {
+                guard let frame = CGImageSourceCreateThumbnailAtIndex(source, index, options as CFDictionary) else {
+                    return
+                }
+
+                frames.append(UIImage(cgImage: frame))
+                duration += frameDuration(source, at: index)
+            }
         }
 
         return UIImage.animatedImage(with: frames, duration: max(duration, 0.1))

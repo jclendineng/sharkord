@@ -568,7 +568,15 @@ extension UIApplication {
 final class AttachPanelModel {
     // exactly the keyboard's height, so the two trade places without the composer moving
     static var restingHeight: CGFloat {
-        KeyboardMetrics.heightAboveSafeArea
+        let keyboardHeight = KeyboardMetrics.heightAboveSafeArea
+
+        // a rotation keeps the last height, measured in the other orientation, and a portrait
+        // keyboard's 300pt covered most of a landscape phone. cap it against its own window
+        guard let window = UIApplication.shared.topViewController?.view.window else {
+            return keyboardHeight
+        }
+
+        return min(keyboardHeight, window.bounds.height * 0.55)
     }
 
     // the composer has two panels in the keyboard's place, they share this one position

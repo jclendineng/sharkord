@@ -57,9 +57,10 @@ struct ChatScreen: View {
         return channel?.isDm != true || settings.storageFileSharingInDirectMessages
     }
 
-    // a mac window with room for it beside the conversation, never a direct message
+    // a wide window with room for it beside the conversation, never a direct message. an ipad
+    // in landscape has the same room a mac window does, and used to be left out entirely
     private var canShowMembers: Bool {
-        ProcessInfo.processInfo.isiOSAppOnMac
+        (ProcessInfo.processInfo.isiOSAppOnMac || UIDevice.current.userInterfaceIdiom == .pad)
             && channel?.isDm == false
             && hasRoomForMembers
     }
@@ -619,7 +620,10 @@ private struct ChatTitle: View {
                 }
             }
         }
-        .fixedSize()
+        // a fixed slot rather than a fixed-size title: .fixedSize() forced the whole name into
+        // the bar and pushed search and pins off, while an unbounded text collapsed to a couple
+        // of characters under the toolbar's minimum width. a slot truncates a long name instead
+        .frame(width: UIDevice.current.userInterfaceIdiom == .pad ? 220 : 160, alignment: .leading)
     }
 }
 

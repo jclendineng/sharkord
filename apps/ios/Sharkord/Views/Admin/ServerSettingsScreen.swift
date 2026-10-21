@@ -53,6 +53,8 @@ struct ServerSettingsScreen: View {
                 }
             }
         }
+        // a page on ipad, the same size user settings opens at, rather than a narrow card
+        .presentationSizing(.page)
         .presentationBackground(Theme.deepBackground)
     }
 

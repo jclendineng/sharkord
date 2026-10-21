@@ -225,13 +225,14 @@ private struct UnreadsList: View {
                         ForEach(server.unreadChannels) { channel in
                             UnreadRow(channel: channel, onOpen: { onOpen(channel.id, server) })
                                 .environment(server)
+                                .listRowBackground(Theme.listBackground)
                         }
                     }
                 }
             }
             .listRowBackground(Theme.listBackground)
         }
-        .listStyle(.insetGrouped)
+        .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .listHoverHighlight()
         .overlay {

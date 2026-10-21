@@ -23,6 +23,9 @@ final class TRPCClient {
     private let decoder = JSONDecoder()
     private var nextId = 0
     private var pending: [Int: CheckedContinuation<Data, Error>] = [:]
+    // one per request, asleep until its deadline, so a reply that never arrives cannot leave a
+    // caller waiting forever and a channel stuck on its spinner
+    private var timeouts: [Int: Task<Void, Never>] = [:]
     private var subscriptions: [Int: (Data) -> Void] = [:]
     private var receiveTask: Task<Void, Never>?
     private var keepAliveTask: Task<Void, Never>?
@@ -142,17 +145,51 @@ final class TRPCClient {
             params["input"] = input
         }
 
-        return try await withCheckedThrowingContinuation { continuation in
-            pending[id] = continuation
+        // copied before the escaping send task: a var captured there would need a heap box
+        let request = params
 
-            Task {
-                do {
-                    try await sendJSON(["id": id, "method": method, "params": params])
-                } catch {
-                    pending.removeValue(forKey: id)?.resume(throwing: error)
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                pending[id] = continuation
+
+                timeouts[id] = Task { [weak self] in
+                    try? await Task.sleep(for: .seconds(30))
+
+                    guard !Task.isCancelled else {
+                        return
+                    }
+
+                    self?.resolve(id, with: .failure(TRPCError(
+                        message: "The server took too long to respond.",
+                        code: "TIMEOUT"
+                    )))
+                }
+
+                Task { [weak self] in
+                    do {
+                        try await self?.sendJSON(["id": id, "method": method, "params": request])
+                    } catch {
+                        self?.resolve(id, with: .failure(error))
+                    }
                 }
             }
+        } onCancel: {
+            // the caller went away, a screen closing or a task(id:) re-firing, so its entry
+            // must go too rather than wait for a reply nobody is listening for
+            Task { @MainActor [weak self] in
+                self?.resolve(id, with: .failure(CancellationError()))
+            }
         }
+    }
+
+    private func resolve(_ id: Int, with result: Result<Data, Error>) {
+        timeouts.removeValue(forKey: id)?.cancel()
+
+        guard let continuation = pending.removeValue(forKey: id) else {
+            return
+        }
+
+        continuation.resume(with: result)
     }
 
     private func receiveLoop() async {
@@ -212,8 +249,8 @@ final class TRPCClient {
                 : error["message"] as? String ?? "Unknown error"
             let trpcError = TRPCError(message: message, code: code)
 
-            if let continuation = pending.removeValue(forKey: id) {
-                continuation.resume(throwing: trpcError)
+            if pending[id] != nil {
+                resolve(id, with: .failure(trpcError))
             } else if subscriptions.removeValue(forKey: id) != nil {
                 print("[trpc] subscription \(id) failed: \(trpcError.message)")
             }
@@ -234,10 +271,10 @@ final class TRPCClient {
             return
         }
 
-        if let continuation = pending.removeValue(forKey: id) {
-            continuation.resume(returning: data)
-        } else if let onData = subscriptions[id] {
+        if let onData = subscriptions[id] {
             onData(data)
+        } else {
+            resolve(id, with: .success(data))
         }
     }
 
@@ -251,6 +288,12 @@ final class TRPCClient {
         keepAliveTask?.cancel()
 
         let error = TRPCError(message: "Disconnected from the server.", code: nil)
+
+        for timeout in timeouts.values {
+            timeout.cancel()
+        }
+
+        timeouts.removeAll()
 
         for continuation in pending.values {
             continuation.resume(throwing: error)

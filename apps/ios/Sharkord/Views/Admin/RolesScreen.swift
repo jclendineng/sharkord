@@ -163,6 +163,8 @@ struct RolesScreen: View {
         moved.move(fromOffsets: source, toOffset: destination)
 
         let previous = roles
+        // copied out before the task: a var captured there would need a heap box
+        let roleIds = moved.map(\.id)
 
         roles = [ownerRole].compactMap { $0 } + moved + [defaultRole].compactMap { $0 }
         errorMessage = nil
@@ -173,7 +175,7 @@ struct RolesScreen: View {
 
         Task {
             do {
-                try await session.perform("roles.reorder", OrderInput(roleIds: moved.map(\.id)))
+                try await session.perform("roles.reorder", OrderInput(roleIds: roleIds))
                 await load()
             } catch {
                 roles = previous

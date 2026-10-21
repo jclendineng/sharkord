@@ -205,12 +205,15 @@ final class ChannelMessagesStore {
         replyingTo = nil
     }
 
+    // built once, rather than for every message sent
+    private static let emojiPattern = try? NSRegularExpression(pattern: ":([A-Za-z0-9_]+):")
+
     // the server's own emoji are picked as :name:, the web client stores them as spans it can
     // draw, so a name that matches one becomes that span. other colons stay text
     private func customEmojiSpans(in html: String) -> String {
         guard
             !session.customEmojis.isEmpty,
-            let pattern = try? NSRegularExpression(pattern: ":([A-Za-z0-9_]+):")
+            let pattern = Self.emojiPattern
         else {
             return html
         }
@@ -306,7 +309,21 @@ final class ChannelMessagesStore {
     }
 
     func insert(_ message: Message) {
-        guard hasLoaded, !hasNewer, belongs(message), !messages.contains(where: { $0.id == message.id }) else {
+        guard hasLoaded, !hasNewer, belongs(message) else {
+            return
+        }
+
+        // live messages arrive in order, so appending is the common case. sorting the whole
+        // page on every message made a busy channel re-order fifty rows per event
+        if let last = messages.last,
+           last.id != message.id,
+           (last.createdAt, last.id) < (message.createdAt, message.id) {
+            messages.append(message)
+
+            return
+        }
+
+        guard !messages.contains(where: { $0.id == message.id }) else {
             return
         }
 

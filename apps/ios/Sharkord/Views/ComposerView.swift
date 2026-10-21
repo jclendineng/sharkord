@@ -307,6 +307,8 @@ struct ComposerView: View {
                         .foregroundStyle(Theme.text)
                         .frame(width: 38, height: 38)
                         .background(Theme.inputBackground, in: .circle)
+                        .frame(width: 44, height: 44)
+                        .contentShape(.rect)
                         .hoverPop()
                 }
                 .menuStyle(.button)
@@ -322,6 +324,8 @@ struct ComposerView: View {
                         .foregroundStyle(Theme.text)
                         .frame(width: 38, height: 38)
                         .background(Theme.inputBackground, in: .circle)
+                        .frame(width: 44, height: 44)
+                        .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(showsCloseAttachments ? "Close Attachments" : "Attach")
@@ -366,7 +370,8 @@ struct ComposerView: View {
                         .labelStyle(.iconOnly)
                         .font(.title3)
                         .foregroundStyle(Theme.muted)
-                        .padding(.bottom, 7)
+                        .frame(width: 44, height: 44)
+                        .contentShape(.rect)
                 }
 
                 if canRecord {
@@ -374,7 +379,8 @@ struct ComposerView: View {
                         .labelStyle(.iconOnly)
                         .font(.title3)
                         .foregroundStyle(Theme.muted)
-                        .padding(.bottom, 7)
+                        .frame(width: 44, height: 44)
+                        .contentShape(.rect)
                 }
             }
             .padding(.leading, 14)
@@ -388,6 +394,8 @@ struct ComposerView: View {
                     .foregroundStyle(.white)
                     .frame(width: 38, height: 38)
                     .background(Theme.blurple, in: .circle)
+                    .frame(width: 44, height: 44)
+                    .contentShape(.rect)
                     .transition(.scale.combined(with: .opacity))
             }
         }
@@ -686,9 +694,11 @@ struct ComposerView: View {
             return
         }
 
-        var attachment = PendingAttachment(name: asset.mediaType == .video ? "Video" : "Photo")
+        let attachment = PendingAttachment(
+            name: asset.mediaType == .video ? "Video" : "Photo",
+            assetId: asset.localIdentifier
+        )
 
-        attachment.assetId = asset.localIdentifier
         attachments.append(attachment)
 
         Task {

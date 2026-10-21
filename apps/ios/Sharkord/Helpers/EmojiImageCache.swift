@@ -6,39 +6,49 @@ import UIKit
 final class EmojiImageCache {
     static let shared = EmojiImageCache()
 
-    private(set) var images: [URL: UIImage] = [:]
+    // the point size is part of the key: a 14pt render reused at 44pt in the picker was blurry,
+    // and a 44pt one reused in a message was needlessly heavy
+    private struct Key: Hashable {
+        let url: URL
+        let pointSize: CGFloat
+    }
 
-    @ObservationIgnored private var requested: Set<URL> = []
+    private var images: [Key: UIImage] = [:]
+
+    @ObservationIgnored private var requested: Set<Key> = []
 
     func image(for url: URL, pointSize: CGFloat) -> UIImage? {
-        if let image = images[url] {
+        let key = Key(url: url, pointSize: pointSize)
+
+        if let image = images[key] {
             return image
         }
 
-        if !requested.contains(url) {
-            requested.insert(url)
-
+        if requested.insert(key).inserted {
             // deferred so the state change never happens during the view update that asked
             Task {
-                await load(url, pointSize: pointSize)
+                await load(key)
             }
         }
 
         return nil
     }
 
-    private func load(_ url: URL, pointSize: CGFloat) async {
+    private func load(_ key: Key) async {
         guard
-            let (data, _) = try? await URLSession.shared.data(from: url),
+            let (data, _) = try? await URLSession.shared.data(from: key.url),
             let image = UIImage(data: data)
         else {
+            // a failed fetch used to stay requested forever, so it was never tried again
+            requested.remove(key)
+
             return
         }
 
-        let scale = pointSize / max(image.size.width, image.size.height)
+        let scale = key.pointSize / max(image.size.width, image.size.height)
         let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
 
-        images[url] = UIGraphicsImageRenderer(size: size).image { _ in
+        images[key] = UIGraphicsImageRenderer(size: size).image { _ in
             image.draw(in: CGRect(origin: .zero, size: size))
         }
     }

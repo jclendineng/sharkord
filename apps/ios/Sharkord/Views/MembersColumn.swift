@@ -133,8 +133,9 @@ private struct MemberColumnRow: View {
 
                 Spacer(minLength: 0)
             }
-            // discord dims who is away, the row stays readable
-            .opacity(isOffline && !isHovered ? 0.45 : 1)
+            // discord dims who is away, but only enough to tell them apart: 0.45 left the name
+            // under the contrast a dark theme needs to stay readable
+            .opacity(isOffline && !isHovered ? 0.6 : 1)
             .padding(.horizontal, 8)
             .padding(.vertical, 5 * scale)
             .background(isHovered || isMenuPresented ? Theme.hover : .clear, in: .rect(cornerRadius: 6))

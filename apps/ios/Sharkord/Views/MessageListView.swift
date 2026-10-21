@@ -80,7 +80,11 @@ struct MessageListView<Header: View>: View {
     }
 
     private var messageList: some View {
-        ScrollView {
+        // read once, not once per row: the lookup is a scan of every loaded message, and the
+        // list asked for it twice in each of fifty rows
+        let unreadId = store.firstUnreadMessage?.id
+
+        return ScrollView {
             // every loaded message is laid out, not only the ones on screen: a lazy stack guessed the
             // height of the rest, and with pictures and previews its guesses were hundreds of points
             // out, the list jumping as it corrected them mid scroll. a page is fifty messages
@@ -98,11 +102,11 @@ struct MessageListView<Header: View>: View {
                         DaySeparator(date: message.createdDate)
                     }
 
-                    if message.id == firstUnreadId {
+                    if message.id == unreadId {
                         NewMessagesDivider()
                     }
 
-                    let showsHeader = showsHeader(at: index) || message.id == firstUnreadId
+                    let showsHeader = showsHeader(at: index) || message.id == unreadId
 
                     MessageRow(
                         message: message,

@@ -40,7 +40,15 @@ enum MessageHTML {
         }
     }
 
-    private static let cache = NSCache<NSString, Box>()
+    // only recently drawn messages are kept: without a limit this grew with every channel
+    // visited, since a parsed message was never evicted until the system was low on memory
+    private static let cache: NSCache<NSString, Box> = {
+        let cache = NSCache<NSString, Box>()
+
+        cache.countLimit = 500
+
+        return cache
+    }()
 
     static func blocks(for html: String) -> [MessageBlock] {
         if let cached = cache.object(forKey: html as NSString) {

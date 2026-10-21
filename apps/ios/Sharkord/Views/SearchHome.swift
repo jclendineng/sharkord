@@ -293,7 +293,7 @@ private struct SearchTabBar: View {
                     VStack(spacing: 10) {
                         // the fill reaches past the title without moving it, the strip still fits
                         Text(tab.title(inDirectMessages: inDirectMessages))
-                            .font(.system(size: 17, weight: .medium))
+                            .font(.body.weight(.medium))
                             .foregroundStyle(selection == tab ? Theme.blurple : Theme.muted)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
@@ -457,14 +457,14 @@ private struct SectionTitle: View {
     var body: some View {
         HStack {
             Text(title)
-                .font(.system(size: 17, weight: .medium))
+                .font(.body.weight(.medium))
                 .foregroundStyle(Theme.muted)
 
             Spacer()
 
             if let actionTitle, let action {
                 Button(actionTitle, action: action)
-                    .font(.system(size: 17, weight: .medium))
+                    .font(.body.weight(.medium))
                     .foregroundStyle(Theme.link)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
@@ -539,19 +539,19 @@ private struct ChannelRow: View {
         Button(action: onOpen) {
             HStack(spacing: 18) {
                 Image(systemName: "number")
-                    .font(.system(size: 24, weight: .medium))
+                    .font(.title2.weight(.medium))
                     .foregroundStyle(Theme.muted)
                     .frame(width: 30)
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(channel.name)
-                        .font(.system(size: 18, weight: .medium))
+                        .font(.title3.weight(.medium))
                         .foregroundStyle(Theme.header)
                         .lineLimit(1)
 
                     if let activity {
                         Text(ChannelActivityText.text(activity))
-                            .font(.system(size: 16))
+                            .font(.callout)
                             .foregroundStyle(Theme.muted)
                     }
                 }
@@ -748,7 +748,7 @@ private struct MemberRow: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(user.name)
-                        .font(.system(size: 17, weight: .semibold))
+                        .font(.body.weight(.semibold))
                         .foregroundStyle(Color(hex: session.roleColor(for: user) ?? "#F2F3F5"))
                         .lineLimit(1)
 
@@ -963,7 +963,7 @@ struct PinnedMessageRow: View {
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
                         Text(author?.name ?? "Unknown")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(.callout.weight(.semibold))
                             .foregroundStyle(Color(hex: session.roleColor(for: author) ?? "#F2F3F5"))
 
                         Text(MessageDate.timestamp(message.createdDate))

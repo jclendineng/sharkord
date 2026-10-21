@@ -54,6 +54,14 @@ private struct AttachmentImage: View {
 
     @State private var image: UIImage?
 
+    @Environment(\.displayScale) private var displayScale
+
+    // a picture in a message is drawn at 300 points at most, so decoding the whole 12 megapixel
+    // upload for it held tens of megabytes per attachment in memory
+    private var maxPixelSize: CGFloat {
+        300 * displayScale
+    }
+
     var body: some View {
         if let image = image ?? FileImageCache.cached(file, at: url) {
             Image(uiImage: image)
@@ -62,8 +70,8 @@ private struct AttachmentImage: View {
         } else {
             Theme.listBackground
                 .frame(width: 240, height: 160)
-                .task(id: file.id) {
-                    image = await FileImageCache.load(file, from: url)
+                .task(id: [CGFloat(file.id), maxPixelSize]) {
+                    image = await FileImageCache.load(file, from: url, maxPixelSize: maxPixelSize)
                 }
         }
     }

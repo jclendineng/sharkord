@@ -670,17 +670,29 @@ final class SessionStore {
         displayRole(for: user)?.color
     }
 
-    // the role someone shows as, their first with a colour of its own: it colours their name and
-    // heads their group in the member list
+    // the role someone shows as, their highest ranked one with a colour of its own: it colours
+    // their name and heads their group in the member list. picked directly rather than sorting
+    // the list, which ran for every member and every message row
     func displayRole(for user: PublicUser?) -> Role? {
         guard let user else {
             return nil
         }
 
-        return user.roleIds
-            .compactMap { rolesById[$0] }
-            .sorted(by: Role.ranksAbove)
-            .first { $0.color.lowercased() != "#ffffff" }
+        var display: Role?
+
+        for roleId in user.roleIds {
+            guard let role = rolesById[roleId], role.color.lowercased() != "#ffffff" else {
+                continue
+            }
+
+            if let current = display, !Role.ranksAbove(role, current) {
+                continue
+            }
+
+            display = role
+        }
+
+        return display
     }
 
     func customEmoji(named name: String) -> CustomEmoji? {
@@ -2383,24 +2395,20 @@ final class SessionStore {
             return
         }
 
-        // keeps the conversation list sorted by latest activity without refetching it
-        if directMessages.contains(where: { $0.channelId == message.channelId }) {
-            directMessages = directMessages
-                .map { conversation in
-                    guard conversation.channelId == message.channelId else {
-                        return conversation
-                    }
+        // keeps the conversation list sorted by latest activity without refetching it. mutated
+        // in place, so a message does not rebuild the whole list and copy it on assignment
+        if let index = directMessages.firstIndex(where: { $0.channelId == message.channelId }) {
+            let conversation = directMessages[index]
 
-                    return DirectMessageConversation(
-                        channelId: conversation.channelId,
-                        userId: conversation.userId,
-                        lastMessageAt: message.createdAt,
-                        lastMessagePreview: HTMLText.plainText(from: message.content ?? ""),
-                        lastMessageUserId: message.userId,
-                        group: conversation.group
-                    )
-                }
-                .sorted { $0.lastMessageAt > $1.lastMessageAt }
+            directMessages[index] = DirectMessageConversation(
+                channelId: conversation.channelId,
+                userId: conversation.userId,
+                lastMessageAt: message.createdAt,
+                lastMessagePreview: HTMLText.plainText(from: message.content ?? ""),
+                lastMessageUserId: message.userId,
+                group: conversation.group
+            )
+            directMessages.sort { $0.lastMessageAt > $1.lastMessageAt }
         } else {
             Task { await loadDirectMessages() }
         }
