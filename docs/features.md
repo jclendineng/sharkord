@@ -587,8 +587,20 @@ web client.
 
 ## Running the fork
 
-The fork's server image is built from the `push` branch on every push and published as
-`ghcr.io/jclendineng/sharkord:push` (`.github/workflows/fork-image.yml`).
+The fork's server image is published to `ghcr.io/jclendineng/sharkord` by
+`.github/workflows/fork-image.yml`, with these tags:
+
+| Tag | Built from | Use it for |
+| --- | --- | --- |
+| `latest` (or no tag) | every push to `main` | the stable server, what most installs should run |
+| `development` | every push to `development` | trying changes before they reach `main` |
+| `sha-<commit>` (e.g. `sha-7f99652`) | every build | pinning one exact build, or rolling back to it |
+| `<version>`, `<major>.<minor>` | a pushed `v*` git tag | a numbered release |
+
+`latest` and `development` move with every build; a `sha-` or version tag never changes. A
+`v*` tag pushed by the release workflow doesn't start this one (GitHub doesn't run workflows
+from the workflow token's pushes), so version tags come from a tag pushed by hand. The old
+`push` tag is gone: point a container still on it at `development`.
 
 A new member lounge, as Discord's rules screening: an admin picks a message with the rules
 (**Use as Rules Message** on a message, needing Manage Settings) and the role reacting to it
