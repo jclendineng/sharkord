@@ -231,9 +231,12 @@ const ItemWrapper = memo(
     onDragLeave,
     onDrop
   }: TItemWrapperProps) => {
+    // aria-disabled after the drag handle's own, which says whether the item can be dragged and
+    // so read every channel out as disabled to anyone who cannot reorder them
     return (
       <div
         {...dragHandleProps}
+        aria-disabled={disabled || undefined}
         data-testid={TestId.CHANNEL_ITEM}
         style={style}
         onDragOver={onDragOver}
