@@ -30,10 +30,12 @@ import {
   messages,
   rolePermissions,
   roles,
+  sessions,
   settings,
   userRoles,
   users
 } from '../../db/schema';
+import { createSessionToken } from '../../helpers/sessions';
 import { pubsub } from '../../utils/pubsub';
 
 describe('users router', () => {
@@ -1757,6 +1759,27 @@ describe('users router', () => {
     expect(secondTab.closes).toEqual([closed]);
   });
 
+  test('should revoke every token a banned user held, so an unban does not revive them', async () => {
+    const { tokenVersion } = (await tdb
+      .select({ tokenVersion: users.tokenVersion })
+      .from(users)
+      .where(eq(users.id, 2))
+      .get())!;
+    const token = await createSessionToken(2, tokenVersion, undefined);
+    const { caller } = await initTest();
+
+    await caller.users.ban({ userId: 2 });
+    await caller.users.unban({ userId: 2 });
+
+    const remainingSessions = await tdb
+      .select()
+      .from(sessions)
+      .where(eq(sessions.userId, 2));
+
+    expect(await getUserByToken(token)).toBeUndefined();
+    expect(remainingSessions).toEqual([]);
+  });
+
   test('should close every session of a deleted user', async () => {
     const firstTab = createFakeSocket();
     const secondTab = createFakeSocket();
@@ -1972,6 +1995,29 @@ describe('users router', () => {
     const [owner] = await tdb.select().from(users).where(eq(users.id, 1));
 
     expect(owner!.banned).toBeFalsy();
+  });
+
+  test('should not let a moderator unban the owner', async () => {
+    await tdb.update(users).set({ banned: true }).where(eq(users.id, 1));
+
+    const { caller } = await initTest(5);
+
+    await expect(caller.users.unban({ userId: 1 })).rejects.toThrow(
+      'Only users with the owner role can act on the server'
+    );
+
+    const [owner] = await tdb.select().from(users).where(eq(users.id, 1));
+
+    expect(owner!.banned).toBe(true);
+  });
+
+  test('should throw when adding a role to a user that does not exist', async () => {
+    const { caller } = await initTest();
+    const roleId = await caller.roles.add();
+
+    await expect(
+      caller.users.addRole({ userId: 9999, roleId })
+    ).rejects.toThrow('User not found.');
   });
 
   test('should not let a moderator kick the owner', async () => {

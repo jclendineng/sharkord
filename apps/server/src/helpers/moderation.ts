@@ -1,10 +1,10 @@
 import { ActivityLogType, DisconnectCode } from '@sharkord/shared';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { db } from '../db';
 import { invalidateUserSessions } from '../db/mutations/users';
 import { publishUser } from '../db/publishers';
 import { getLoginIpsForUser } from '../db/queries/ip-bans';
-import { ipBans, users } from '../db/schema';
+import { ipBans, sessions as sessionRows, users } from '../db/schema';
 import { eventBus } from '../plugins/event-bus';
 import { enqueueActivityLog } from '../queues/activity-log';
 import { invariant } from '../utils/invariant';
@@ -72,14 +72,18 @@ const banUser = async (
   const now = Date.now();
 
   db.transaction((tx) => {
+    // the tokens go too, or every one issued before the ban works again after an unban
     tx.update(users)
       .set({
         banned: true,
         banReason: reason ?? null,
-        bannedAt: now
+        bannedAt: now,
+        tokenVersion: sql`${users.tokenVersion} + 1`
       })
       .where(eq(users.id, userId))
       .run();
+
+    tx.delete(sessionRows).where(eq(sessionRows.userId, userId)).run();
 
     if (ipsToBan.length > 0) {
       tx.insert(ipBans)
@@ -158,5 +162,12 @@ const kickUser = async (
   });
 };
 
-export { banUser, ctxUserSessions, kickUser, serverUserSessions, unbanUser };
+export {
+  assertUserExists,
+  banUser,
+  ctxUserSessions,
+  kickUser,
+  serverUserSessions,
+  unbanUser
+};
 export type { TUserSessions };

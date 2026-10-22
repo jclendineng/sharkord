@@ -58,6 +58,19 @@ describe('password resets', () => {
     expect((await redeem(expiring.token, 'late-password')).status).toBe(400);
   });
 
+  test('should let only one of two simultaneous redemptions of a link through', async () => {
+    const { caller } = await initTest(1);
+    const { token } = await caller.users.createPasswordReset({ userId: 2 });
+
+    const responses = await Promise.all([
+      redeem(token, 'first-password'),
+      redeem(token, 'second-password')
+    ]);
+    const statuses = responses.map((response) => response.status).sort();
+
+    expect(statuses).toEqual([200, 400]);
+  });
+
   test('should refuse a password that is too short', async () => {
     const { caller } = await initTest(1);
     const { token } = await caller.users.createPasswordReset({ userId: 2 });

@@ -49,7 +49,22 @@ const redeemPasswordReset = async (
 
   const hashedPassword = (await Bun.password.hash(newPassword)).toString();
 
-  db.transaction((tx) => {
+  // the link is spent inside the transaction, since hashing takes long enough for a second
+  // request with the same link to pass the read above. only the one that deletes it goes on
+  const spent = db.transaction((tx) => {
+    const spentReset = tx
+      .delete(passwordResets)
+      .where(
+        and(
+          eq(passwordResets.tokenHash, tokenHash),
+          gt(passwordResets.expiresAt, Date.now())
+        )
+      )
+      .returning({ userId: passwordResets.userId })
+      .get();
+
+    if (!spentReset) return false;
+
     tx.update(users)
       .set({
         password: hashedPassword,
@@ -66,7 +81,11 @@ const redeemPasswordReset = async (
     tx.delete(passwordResets)
       .where(eq(passwordResets.userId, reset.userId))
       .run();
+
+    return true;
   });
+
+  if (!spent) return false;
 
   disconnectUser(
     reset.userId,
