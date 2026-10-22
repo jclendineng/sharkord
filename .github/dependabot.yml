@@ -1,0 +1,15 @@
+version: 2
+updates:
+  # the workflows pin actions by commit sha, so this is what moves them forward
+  - package-ecosystem: github-actions
+    directories:
+      - /
+      - /.github/actions/*
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        patterns:
+          - '*'
+    commit-message:
+      prefix: ci
