@@ -42,6 +42,11 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   - `freesoundApiKey` under `[sounds]`, for sound search.
   - `basePath` under `[server]` (env `SHARKORD_BASE_PATH`), for running under a subpath. Set the proxy to forward that path and its WebSocket upgrades; it may strip the prefix or not.
   - `listenIp` under `[webRtc]` (env `SHARKORD_WEBRTC_LISTEN_IP`), the address voice listens on. Set `::` for IPv6 as well as IPv4 ([#522](https://github.com/Sharkord/sharkord/issues/522)).
+- Security defaults:
+  - `server.trustedProxies` now defaults to loopback only on new installs. An existing `config.ini` keeps its list, so narrow it to your reverse proxy's address to stop other machines on the network passing forwarded addresses.
+  - New rate limits in `config.ini`, added by themselves: `loginIdentity` (sign in attempts per account), `messageAction` (pins, ending polls, deleting files) and `pluginManage` (plugin toggle and settings).
+  - A database first made by a development build had the access token `dev`. It is replaced once at startup with a new one printed to the console, which signs everyone out on that server.
+  - Emoji uploads have to be images of 2 MB or less.
 - The server image is published to `ghcr.io/jclendineng/sharkord`.
 
 ### Added
@@ -294,6 +299,25 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - Sticker images are no longer swept up as orphaned files.
 - Search names a direct message after its person or group, not "DM - 2:5".
 - Signing out many devices in a row no longer hits a rate limit.
+
+#### Security
+
+- The owner role can no longer be made the default role, which would have made every new account an owner.
+- Development builds seed a random access token instead of `dev`, and warn when they listen on the network with rate limiting off.
+- Channel permissions can only be read or changed by someone who can see the channel, and only for permissions they hold, deleting a row included.
+- Who is in a voice channel, and what they are doing there, only reaches people who can see that channel.
+- An upload that is cut off part way no longer leaves its file behind, and stale upload files are swept every 15 minutes.
+- Sign in attempts are limited per account as well as per address.
+- Plugin capability access can't be opened past the permission its plugin asks for, except by the owner.
+- A role manager can't edit the owner role or take away permissions they don't hold.
+- A ban signs the account out everywhere, so its old sessions don't come back after an unban.
+- A password reset link works once even when two requests use it at the same moment.
+- A moderator can't unban the owner, and adding a role to an account that doesn't exist says so.
+- Invite codes come from a secure random source.
+- Upload, avatar and banner size settings are capped at what the server supports.
+- Link preview pictures must be http or https and load without a referrer, external links open with `noopener`, and the web app sends HSTS over https.
+- Pinning, ending polls, deleting files and plugin settings are rate limited, and one connection can keep at most 200 subscriptions open.
+- Debug output leaves secrets out, the plugin marketplace fetch has a timeout and size cap, an SSO avatar is fetched from the address that was checked, and uploads no longer report where the file sits on the server.
 
 #### iOS app
 
