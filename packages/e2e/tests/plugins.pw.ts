@@ -236,13 +236,18 @@ test('a plugin stores and reloads data for the user viewing it', async ({
 
   await expect(storedNote(page)).toHaveText('saved');
 
-  // a full page load rather than a refresh: only auto-login sessions resume one,
-  // and signing in again rebuilds the store from nothing, so the value can only
-  // come back from the database
-  await loginAs(page, OWNER.identity, OWNER.password);
-  await openPluginUserSettings(page);
+  // a new browser signing in from nothing, since a reload of this tab resumes its session.
+  // the store is rebuilt from scratch there, so the value can only come back from the database
+  await withSecondClient(
+    browser,
+    OWNER.identity,
+    OWNER.password,
+    async (ownerPage) => {
+      await openPluginUserSettings(ownerPage);
 
-  await expect(storedNote(page)).toHaveText('saved');
+      await expect(storedNote(ownerPage)).toHaveText('saved');
+    }
+  );
 
   // the row is keyed by plugin and user, so another user sees their own nothing
   await withSecondClient(
