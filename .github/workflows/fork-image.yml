@@ -1,14 +1,15 @@
 name: Publish Fork Image
 
 # the fork's own server image on ghcr.io, for the unraid container. no secrets needed,
-# the workflow token can push packages to the repository owner's namespace
+# the workflow token can push packages to the repository owner's namespace.
+# main publishes :latest, development publishes :development (and the older :push)
 on:
   push:
-    branches: [development]
+    branches: [main, development]
   workflow_dispatch:
 
 concurrency:
-  group: fork-image
+  group: fork-image-${{ github.ref_name }}
   cancel-in-progress: true
 
 permissions:
@@ -26,6 +27,25 @@ jobs:
       - name: Build project artifacts
         uses: ./.github/actions/build-sharkord
 
+      - name: Pick image tags
+        id: tags
+        run: |
+          image=ghcr.io/${{ github.repository_owner }}/sharkord
+
+          if [ "${{ github.ref_name }}" = main ]; then
+            channel=latest
+          else
+            channel=development
+          fi
+
+          {
+            echo 'list<<EOF'
+            echo "$image:$channel"
+            echo "$image:$channel-${{ github.sha }}"
+            if [ "$channel" = development ]; then echo "$image:push"; fi
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
@@ -42,13 +62,9 @@ jobs:
           context: .
           platforms: linux/amd64
           push: true
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/sharkord:latest
-            ghcr.io/${{ github.repository_owner }}/sharkord:development
-            ghcr.io/${{ github.repository_owner }}/sharkord:push
-            ghcr.io/${{ github.repository_owner }}/sharkord:push-${{ github.sha }}
+          tags: ${{ steps.tags.outputs.list }}
           labels: |
             org.opencontainers.image.title=Sharkord
-            org.opencontainers.image.description=Sharkord Server (push fork)
+            org.opencontainers.image.description=Sharkord Server (fork)
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
