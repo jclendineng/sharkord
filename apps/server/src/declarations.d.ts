@@ -8,6 +8,8 @@ declare module 'ws' {
     sessionId?: string;
     // the socket that joined voice, which leaves it when it closes even if other tabs stay
     inVoice?: boolean;
+    // subscriptions open on this socket, capped so one client cannot pile up listeners
+    activeSubscriptions?: number;
   }
 }
 

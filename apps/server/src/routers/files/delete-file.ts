@@ -1,5 +1,6 @@
 import { isEmptyMessage } from '@sharkord/shared';
 import { z } from 'zod';
+import { config } from '../../config';
 import { removeFile } from '../../db/mutations/files';
 import { deleteMessage } from '../../db/mutations/messages';
 import { publishMessage } from '../../db/publishers';
@@ -8,9 +9,13 @@ import { getMessageByFileId } from '../../db/queries/messages';
 import { assertChannelAccess } from '../../helpers/assert-channel-access';
 import { assertCanModifyMessage } from '../../helpers/load-message-for-write';
 import { invariant } from '../../utils/invariant';
-import { protectedProcedure } from '../../utils/trpc';
+import { protectedProcedure, rateLimitedProcedure } from '../../utils/trpc';
 
-const deleteFileRoute = protectedProcedure
+const deleteFileRoute = rateLimitedProcedure(protectedProcedure, {
+  maxRequests: config.rateLimiters.messageAction.maxRequests,
+  windowMs: config.rateLimiters.messageAction.windowMs,
+  logLabel: 'deleteFile'
+})
   .input(z.object({ fileId: z.number() }))
   .mutation(async ({ input, ctx }) => {
     const message = await getMessageByFileId(input.fileId);

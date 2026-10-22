@@ -1,10 +1,15 @@
 import { ActivityLogType, Permission, zPluginId } from '@sharkord/shared';
 import z from 'zod';
+import { config } from '../../config';
 import { pluginManager } from '../../plugins';
 import { enqueueActivityLog } from '../../queues/activity-log';
-import { protectedProcedure } from '../../utils/trpc';
+import { protectedProcedure, rateLimitedProcedure } from '../../utils/trpc';
 
-const updateSettingRoute = protectedProcedure
+const updateSettingRoute = rateLimitedProcedure(protectedProcedure, {
+  maxRequests: config.rateLimiters.pluginManage.maxRequests,
+  windowMs: config.rateLimiters.pluginManage.windowMs,
+  logLabel: 'updatePluginSetting'
+})
   .input(
     z.object({
       pluginId: zPluginId,

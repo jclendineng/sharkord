@@ -119,6 +119,8 @@ const zConfig = z.object({
     useSecretToken: zRateLimiter,
     pluginExecute: zRateLimiter,
     pluginInstall: zRateLimiter,
+    pluginManage: zRateLimiter,
+    messageAction: zRateLimiter,
     pluginRoute: zRateLimiter,
     oidc: zRateLimiter,
     pushDevice: zRateLimiter
@@ -277,6 +279,16 @@ const defaultConfig: TConfig = {
     },
     pluginInstall: {
       maxRequests: 10,
+      windowMs: 60_000
+    },
+    // the web app saves a plugin's settings one key per call, so this is roomy
+    pluginManage: {
+      maxRequests: 120,
+      windowMs: 60_000
+    },
+    // pinning, ending a poll and deleting an attachment, each limited on its own
+    messageAction: {
+      maxRequests: 60,
       windowMs: 60_000
     },
     pluginRoute: {

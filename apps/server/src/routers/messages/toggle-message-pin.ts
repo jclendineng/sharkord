@@ -1,11 +1,16 @@
 import { Permission } from '@sharkord/shared';
 import { z } from 'zod';
+import { config } from '../../config';
 import { isDirectMessageChannel } from '../../db/queries/dms';
 import { loadMessageForWrite } from '../../helpers/load-message-for-write';
 import { setMessagePinned } from '../../helpers/message-pin';
-import { protectedProcedure } from '../../utils/trpc';
+import { protectedProcedure, rateLimitedProcedure } from '../../utils/trpc';
 
-const toggleMessagePinRoute = protectedProcedure
+const toggleMessagePinRoute = rateLimitedProcedure(protectedProcedure, {
+  maxRequests: config.rateLimiters.messageAction.maxRequests,
+  windowMs: config.rateLimiters.messageAction.windowMs,
+  logLabel: 'toggleMessagePin'
+})
   .input(z.object({ messageId: z.number() }))
   .mutation(async ({ ctx, input }) => {
     // which permission applies depends on the message's channel, so it is loaded first. the

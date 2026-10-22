@@ -6,6 +6,7 @@ import {
   type TUser
 } from '@sharkord/shared';
 import { initTRPC, TRPCError } from '@trpc/server';
+import { observable, type Observable } from '@trpc/server/observable';
 import chalk from 'chalk';
 import type WebSocket from 'ws';
 import { config } from '../config';
@@ -80,6 +81,49 @@ const authMiddleware = t.middleware(async ({ ctx, next }) => {
   return next();
 });
 
+// the apps open a few dozen, plugins add some more. each one is a listener the server keeps
+// until the client stops it, so without a ceiling one socket could open them without end
+const MAX_SUBSCRIPTIONS_PER_SOCKET = 200;
+
+const subscriptionLimitMiddleware = t.middleware(
+  async ({ ctx, type, next }) => {
+    if (type !== 'subscription') return next();
+
+    const ws = ctx.getOwnWs();
+
+    if (!ws) return next();
+
+    invariant((ws.activeSubscriptions ?? 0) < MAX_SUBSCRIPTIONS_PER_SOCKET, {
+      code: 'TOO_MANY_REQUESTS',
+      message: 'Too many open subscriptions on this connection.'
+    });
+
+    const result = await next();
+
+    if (!result.ok) return result;
+
+    const source = result.data as Observable<unknown, unknown>;
+
+    // counted while the client is subscribed, released when it stops or the socket closes
+    return {
+      ...result,
+      data: observable((observer) => {
+        ws.activeSubscriptions = (ws.activeSubscriptions ?? 0) + 1;
+
+        const subscription = source.subscribe(observer);
+
+        return () => {
+          ws.activeSubscriptions = Math.max(
+            (ws.activeSubscriptions ?? 1) - 1,
+            0
+          );
+          subscription.unsubscribe();
+        };
+      })
+    };
+  }
+);
+
 type TRateLimitedProcedureOptions = {
   maxRequests: number;
   windowMs: number;
@@ -136,7 +180,8 @@ const rateLimitedProcedure = (
 // it prevents users that only are connected to the wss but did not join the server from accessing protected procedures
 const protectedProcedure = t.procedure
   .use(timingMiddleware)
-  .use(authMiddleware);
+  .use(authMiddleware)
+  .use(subscriptionLimitMiddleware);
 
 const publicProcedure = t.procedure.use(timingMiddleware);
 

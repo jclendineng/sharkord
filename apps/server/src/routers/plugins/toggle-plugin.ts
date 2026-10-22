@@ -1,11 +1,16 @@
 import { ActivityLogType, Permission, zPluginId } from '@sharkord/shared';
 import { z } from 'zod';
+import { config } from '../../config';
 import { publishCapabilityAccess } from '../../db/publishers';
 import { pluginManager } from '../../plugins';
 import { enqueueActivityLog } from '../../queues/activity-log';
-import { protectedProcedure } from '../../utils/trpc';
+import { protectedProcedure, rateLimitedProcedure } from '../../utils/trpc';
 
-const togglePluginRoute = protectedProcedure
+const togglePluginRoute = rateLimitedProcedure(protectedProcedure, {
+  maxRequests: config.rateLimiters.pluginManage.maxRequests,
+  windowMs: config.rateLimiters.pluginManage.windowMs,
+  logLabel: 'togglePlugin'
+})
   .input(
     z.object({
       pluginId: zPluginId,
