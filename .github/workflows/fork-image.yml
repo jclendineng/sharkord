@@ -43,6 +43,8 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
+            ghcr.io/${{ github.repository_owner }}/sharkord:latest
+            ghcr.io/${{ github.repository_owner }}/sharkord:development
             ghcr.io/${{ github.repository_owner }}/sharkord:push
             ghcr.io/${{ github.repository_owner }}/sharkord:push-${{ github.sha }}
           labels: |
