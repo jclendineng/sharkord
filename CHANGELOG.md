@@ -340,6 +340,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - A call's tiles grow to fill the screen in either orientation, and someone alone in a call fills it.
 - On an iPad, joining or opening a call opens the full-screen call instead of a phone's sheet.
 - Starting a screen share on the phone no longer crashes the app, and the share keeps going after switching to another app.
+- A screen share from an older iPhone, like an iPhone SE, keeps going after leaving the app instead of freezing. It blinks once as it moves to a software encoder.
+- A screen share no longer stays on its last frame after the person sharing leaves the call.
 - The mic test is processed the way a call is.
   - With Echo Cancellation on it uses Apple's voice processing, so noise suppression, gain control and Voice Isolation apply.
   - Mic Mode can be opened while the test runs, and hearing yourself plays at the output volume.

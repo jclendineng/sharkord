@@ -55,6 +55,10 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
     private var cameraDevice: AVCaptureDevice?
     private var screenProducer: Producer?
     private var screenTrack: RTCVideoTrack?
+    private var screenSink: ScreenFrameSink?
+    // the share started again on vp8, see checkScreenEncoder
+    private var screenOnVP8 = false
+    private var backgroundObserver: NSObjectProtocol?
     private var rtpCapabilities = "{}"
     private var sendVideoCodec: String?
     private var soundMuted = false
@@ -94,6 +98,16 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
             decoderFactory: RTCDefaultVideoDecoderFactory()
         )
         self.device = Device(pcFactory: factory)
+        self.backgroundObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.didEnterBackgroundNotification,
+            object: nil,
+            queue: nil
+        ) { [weak self] _ in
+            // a second in, so frames already with the encoder when it went are counted by then
+            self?.queue.asyncAfter(deadline: .now() + 1) {
+                self?.checkScreenEncoder()
+            }
+        }
     }
 
     func start(routerRtpCapabilities: String, micMuted: Bool, soundMuted: Bool, canSpeak: Bool) async throws {
@@ -161,6 +175,27 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
         }
     }
 
+    // someone leaving the call. the server closes what was taken in of theirs without sending a
+    // producer closed for it, so their screen share would stay on its last frame
+    func closeConsumers(of remoteId: Int) {
+        queue.async {
+            let keys = self.consumers.keys.filter { $0.remoteId == remoteId }
+
+            for key in keys {
+                self.consumers.removeValue(forKey: key)?.close()
+            }
+
+            let onVideo = self.onVideo
+            let videoKeys = keys.filter(\.kind.isVideo)
+
+            Task { @MainActor in
+                for key in videoKeys {
+                    onVideo(key, nil)
+                }
+            }
+        }
+    }
+
     // the local preview comes back through the handler under the caller's own id
     func startCamera(ownUserId: Int) async throws {
         try await onQueue {
@@ -199,6 +234,7 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
             self.screenProducer?.close()
             self.screenProducer = nil
             self.screenTrack = nil
+            self.screenSink = nil
         }
 
         let json = Data("{\"kind\":\"screen\"}".utf8)
@@ -304,6 +340,9 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
             self.screenProducer?.close()
             self.screenProducer = nil
             self.screenTrack = nil
+            self.screenSink = nil
+            self.backgroundObserver.map(NotificationCenter.default.removeObserver)
+            self.backgroundObserver = nil
             self.sendTransport?.close()
             self.receiveTransport?.close()
             self.producer = nil
@@ -468,10 +507,73 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
             appData: "{\"kind\":\"screen\"}"
         )
 
+        let sink = ScreenFrameSink(source: source, capturer: capturer)
+
         screenTrack = track
         screenProducer = producer
+        screenSink = sink
+        screenOnVP8 = false
 
-        return ScreenFrameSink(source: source, capturer: capturer)
+        return sink
+    }
+
+    // some phones, an iphone se among them, lose the hardware h264 encoder the moment the app is
+    // in the background, and it stays lost on coming back. webrtc can only fall back to a codec
+    // the producer negotiated, which is h264 alone, so viewers are left on the last frame. a share
+    // whose frames keep coming while none get encoded starts again on vp8, encoded in software,
+    // for as long as it lasts. phones that keep encoding are left on h264
+    private func checkScreenEncoder() {
+        guard !screenOnVP8, let before = screenProgress() else {
+            return
+        }
+
+        queue.asyncAfter(deadline: .now() + 1) {
+            guard let after = self.screenProgress(), after.producer === before.producer else {
+                return
+            }
+
+            // a working encoder gets through several a second even when it drops some for
+            // bandwidth
+            if after.pushed - before.pushed >= 10, after.encoded - before.encoded <= 1 {
+                self.produceScreenOnVP8()
+            }
+        }
+    }
+
+    private func screenProgress() -> (producer: Producer, pushed: Int, encoded: Int)? {
+        guard let screenProducer, let screenSink else {
+            return nil
+        }
+
+        let outbound = Self.entries(in: screenProducer.stats).first { $0["type"] as? String == "outbound-rtp" }
+
+        guard let encoded = outbound?["framesEncoded"] as? Int else {
+            return nil
+        }
+
+        return (screenProducer, screenSink.framesPushed, encoded)
+    }
+
+    // the same track again, so the frames keep flowing in. the server swaps it in for the old
+    // producer and viewers pick the new one up
+    private func produceScreenOnVP8() {
+        let vp8 = Self.codec(in: rtpCapabilities) { mimeType, _ in
+            mimeType == "video/vp8"
+        }
+
+        guard let sendTransport, let screenTrack, let vp8 else {
+            return
+        }
+
+        screenProducer?.close()
+        screenProducer = try? sendTransport.createProducer(
+            for: screenTrack,
+            encodings: nil,
+            codecOptions: nil,
+            codec: vp8,
+            appData: "{\"kind\":\"screen\"}"
+        )
+        screenOnVP8 = true
     }
 
     private func produceCamera(ownUserId: Int) throws {
@@ -810,6 +912,8 @@ nonisolated struct VoiceStreamKey: Hashable, Sendable, CustomStringConvertible {
 nonisolated final class ScreenFrameSink: @unchecked Sendable {
     private let source: RTCVideoSource
     private let capturer: RTCVideoCapturer
+    // counted so a stalled encoder can be told apart from a screen with nothing new on it
+    private let pushed = OSAllocatedUnfairLock(initialState: 0)
 
     init(source: RTCVideoSource, capturer: RTCVideoCapturer) {
         self.source = source
@@ -817,6 +921,8 @@ nonisolated final class ScreenFrameSink: @unchecked Sendable {
     }
 
     func push(_ pixelBuffer: CVPixelBuffer, rotation: RTCVideoRotation) {
+        pushed.withLock { $0 += 1 }
+
         let buffer = RTCCVPixelBuffer(pixelBuffer: pixelBuffer)
         let frame = RTCVideoFrame(
             buffer: buffer,
@@ -825,6 +931,10 @@ nonisolated final class ScreenFrameSink: @unchecked Sendable {
         )
 
         source.capturer(capturer, didCapture: frame)
+    }
+
+    var framesPushed: Int {
+        pushed.withLock { $0 }
     }
 }
 

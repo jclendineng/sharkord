@@ -2312,6 +2312,10 @@ final class SessionStore {
 
             self.setVoiceUser(event.userId, in: event.channelId, state: nil)
 
+            if event.userId != self.ownUserId, event.channelId == self.currentVoiceChannelId {
+                self.voice?.closeConsumers(of: event.userId)
+            }
+
             // removed by the server, from another device or by a moderator
             if event.userId == self.ownUserId, event.channelId == self.currentVoiceChannelId, !self.isJoiningVoice {
                 self.stopVoice()
