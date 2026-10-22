@@ -378,6 +378,101 @@ describe('roles router', () => {
     expect(role!.permissions).toContain(Permission.MANAGE_SETTINGS);
   });
 
+  const createRoleWith = async (permissions: Permission[]) => {
+    const { caller: owner } = await initTest();
+    const roleId = await owner.roles.add();
+
+    await owner.roles.update({
+      roleId,
+      name: 'Higher Role',
+      color: '#00ff00',
+      permissions,
+      storageQuotaOverrideEnabled: false,
+      storageSpaceQuota: 0
+    });
+
+    return { owner, roleId };
+  };
+
+  test('should not let a role manager strip a permission they lack', async () => {
+    const { owner, roleId } = await createRoleWith([
+      Permission.MANAGE_SETTINGS
+    ]);
+    const { caller } = await initTest(5);
+
+    await expect(
+      caller.roles.update({
+        roleId,
+        name: 'Higher Role',
+        color: '#00ff00',
+        permissions: [],
+        storageQuotaOverrideEnabled: false,
+        storageSpaceQuota: 0
+      })
+    ).rejects.toThrow('You cannot remove permissions that you do not have.');
+
+    const roles = await owner.roles.getAll();
+
+    expect(roles.find((r) => r.id === roleId)!.permissions).toContain(
+      Permission.MANAGE_SETTINGS
+    );
+  });
+
+  test('should let a role manager remove a permission they hold', async () => {
+    const { owner, roleId } = await createRoleWith([Permission.MANAGE_USERS]);
+    const { caller } = await initTest(5);
+
+    await caller.roles.update({
+      roleId,
+      name: 'Higher Role',
+      color: '#00ff00',
+      permissions: [],
+      storageQuotaOverrideEnabled: false,
+      storageSpaceQuota: 0
+    });
+
+    const roles = await owner.roles.getAll();
+
+    expect(roles.find((r) => r.id === roleId)!.permissions).toEqual([]);
+  });
+
+  test('should not let a role manager edit the owner role', async () => {
+    const { caller } = await initTest(5);
+
+    await expect(
+      caller.roles.update({
+        roleId: OWNER_ROLE_ID,
+        name: 'Not The Owner',
+        color: '#ff0000',
+        permissions: [],
+        storageQuotaOverrideEnabled: false,
+        storageSpaceQuota: 0
+      })
+    ).rejects.toThrow('Only users with the owner role can edit the owner role');
+
+    const { caller: owner } = await initTest();
+    const roles = await owner.roles.getAll();
+
+    expect(roles.find((r) => r.id === OWNER_ROLE_ID)!.name).toBe('Owner');
+  });
+
+  test('should let the owner rename the owner role', async () => {
+    const { caller: owner } = await initTest();
+
+    await owner.roles.update({
+      roleId: OWNER_ROLE_ID,
+      name: 'Admins',
+      color: '#ff0000',
+      permissions: [],
+      storageQuotaOverrideEnabled: false,
+      storageSpaceQuota: 0
+    });
+
+    const roles = await owner.roles.getAll();
+
+    expect(roles.find((r) => r.id === OWNER_ROLE_ID)!.name).toBe('Admins');
+  });
+
   test('should throw when updating a non-existing role', async () => {
     const { caller } = await initTest();
 
