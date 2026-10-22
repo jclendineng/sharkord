@@ -3835,8 +3835,8 @@ describe('plugins router', () => {
       ).rejects.toThrow('Insufficient permissions');
     });
 
-    // plugin-b declares admin-sum as needing MANAGE_MESSAGES, which the moderator lacks, and
-    // admin-multiply as needing MANAGE_USERS, which it holds
+    // plugin-b declares the admin-sum command as needing MANAGE_MESSAGES, which the moderator
+    // lacks, and the admin-multiply action as needing MANAGE_USERS, which it holds
     describe('managing access to a declared capability', () => {
       const NOT_HELD_MESSAGE =
         'You cannot change access to something that needs a permission you do not have.';
@@ -3849,12 +3849,12 @@ describe('plugins router', () => {
         });
       });
 
-      const setPublic = async (name: string) => {
+      const setPublic = async (type: PluginCapabilityType, name: string) => {
         const { caller } = await initTest(MODERATOR_USER);
 
         return caller.plugins.setCapabilityAccess({
           pluginId: 'plugin-b',
-          type: PluginCapabilityType.COMMAND,
+          type,
           name,
           mode: PluginCapabilityMode.PUBLIC,
           roleIds: []
@@ -3862,26 +3862,33 @@ describe('plugins router', () => {
       };
 
       test('should not open up a capability gated by a permission the caller lacks', async () => {
-        await expect(setPublic('admin-sum')).rejects.toThrow(NOT_HELD_MESSAGE);
+        await expect(
+          setPublic(PluginCapabilityType.COMMAND, 'admin-sum')
+        ).rejects.toThrow(NOT_HELD_MESSAGE);
 
         const { caller: owner } = await initTest();
         const { capabilities } = await owner.plugins.getCapabilities({
           pluginId: 'plugin-b'
         });
-        const adminSum = capabilities.find((c) => c.name === 'admin-sum');
+        const adminSum = capabilities.find(
+          (c) =>
+            c.type === PluginCapabilityType.COMMAND && c.name === 'admin-sum'
+        );
 
         expect(adminSum!.mode).not.toBe(PluginCapabilityMode.PUBLIC);
       });
 
       test('should let the caller manage a capability gated by a permission they hold', async () => {
-        await setPublic('admin-multiply');
+        await setPublic(PluginCapabilityType.ACTION, 'admin-multiply');
 
         const { caller: owner } = await initTest();
         const { capabilities } = await owner.plugins.getCapabilities({
           pluginId: 'plugin-b'
         });
         const adminMultiply = capabilities.find(
-          (c) => c.name === 'admin-multiply'
+          (c) =>
+            c.type === PluginCapabilityType.ACTION &&
+            c.name === 'admin-multiply'
         );
 
         expect(adminMultiply!.mode).toBe(PluginCapabilityMode.PUBLIC);
@@ -4053,7 +4060,10 @@ describe('plugins router', () => {
           pluginId: 'plugin-b'
         });
 
-        const adminSum = capabilities.find((c) => c.name === 'admin-sum');
+        const adminSum = capabilities.find(
+          (c) =>
+            c.type === PluginCapabilityType.COMMAND && c.name === 'admin-sum'
+        );
 
         expect(adminSum!.requires).toBe(Permission.MANAGE_MESSAGES);
         expect(adminSum!.configured).toBe(false);
@@ -4061,7 +4071,9 @@ describe('plugins router', () => {
         expect(adminSum!.roleIds).toEqual([]);
 
         const adminMultiply = capabilities.find(
-          (c) => c.name === 'admin-multiply'
+          (c) =>
+            c.type === PluginCapabilityType.ACTION &&
+            c.name === 'admin-multiply'
         );
 
         expect(adminMultiply!.requires).toBe(Permission.MANAGE_USERS);
@@ -4083,7 +4095,10 @@ describe('plugins router', () => {
           pluginId: 'plugin-b'
         });
 
-        const adminSum = capabilities.find((c) => c.name === 'admin-sum');
+        const adminSum = capabilities.find(
+          (c) =>
+            c.type === PluginCapabilityType.COMMAND && c.name === 'admin-sum'
+        );
 
         expect(adminSum!.configured).toBe(true);
         expect(adminSum!.mode).toBe(PluginCapabilityMode.PUBLIC);

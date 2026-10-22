@@ -9,18 +9,12 @@ import { applyEnvOverrides } from '../helpers/apply-env-overrides';
 const applyOverrides = () =>
   zConfig.parse(applyEnvOverrides(defaultConfig, envOverridesMap));
 
-// the default is what almost every deployment runs, and widening it by one entry is how a
-// forwarded header from a public client silently becomes trusted
+// the default is what almost every new deployment runs, and widening it by one entry is how a
+// forwarded header from a public client silently becomes trusted. the private ranges were in it
+// once, which let any machine on the lan claim any address
 describe('trustedProxies default', () => {
-  test('should trust the addresses a reverse proxy reaches us from', () => {
-    expect(defaultConfig.server.trustedProxies).toEqual([
-      '127.0.0.1',
-      '::1',
-      '10.0.0.0/8',
-      '172.16.0.0/12',
-      '192.168.0.0/16',
-      'fc00::/7'
-    ]);
+  test('should trust only a proxy on the same host', () => {
+    expect(defaultConfig.server.trustedProxies).toEqual(['127.0.0.1', '::1']);
   });
 
   test('should not trust a public address', () => {
