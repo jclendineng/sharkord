@@ -351,16 +351,29 @@ describe('invites router', () => {
     test('should allow a role whose permissions the creator holds', async () => {
       await grant(MODERATOR_ROLE_ID, Permission.MANAGE_INVITES);
 
+      // a new role ranks below the moderator's own, which the role order would refuse
+      const { caller: owner } = await initTest(1);
+      const roleId = await owner.roles.add();
+
+      await owner.roles.update({
+        roleId,
+        name: 'Helper',
+        color: '#123456',
+        permissions: [Permission.MANAGE_ROLES],
+        storageQuotaOverrideEnabled: false,
+        storageSpaceQuota: 0
+      });
+
       const { caller } = await initTest(MODERATOR_USER_ID);
 
-      const invite = await caller.invites.add({ roleId: MODERATOR_ROLE_ID });
+      const invite = await caller.invites.add({ roleId });
 
-      expect(invite.roleId).toBe(MODERATOR_ROLE_ID);
+      expect(invite.roleId).toBe(roleId);
     });
   });
 });
 
-// role 3 (Guest) ranks above role 4 (Moderator), user 5's. a new role goes below both
+// role 3 (Guest) ranks above role 4 (Moderator), user 5's
 describe('invite roles and the role order', () => {
   const letModeratorInvite = () =>
     tdb.insert(rolePermissions).values({
@@ -384,17 +397,5 @@ describe('invite roles and the role order', () => {
     const all = await tdb.select().from(invites);
 
     expect(all.some(({ roleId }) => roleId === 3 || roleId === 4)).toBe(false);
-  });
-
-  test('should let a member attach a role ranked below their own', async () => {
-    await letModeratorInvite();
-
-    const { caller: owner } = await initTest(1);
-    const roleId = await owner.roles.add();
-    const { caller } = await initTest(5);
-
-    const invite = await caller.invites.add({ roleId });
-
-    expect(invite.roleId).toBe(roleId);
   });
 });
