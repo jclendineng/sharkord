@@ -216,7 +216,12 @@ const Connect = memo(() => {
     [t, inviteCode]
   );
 
-  const { contentRef, overflows } = useOverflowsScreen();
+  const { contentRef, overflows, toolbarHeight } = useOverflowsScreen();
+
+  const pageStyle = useMemo(
+    () => (overflows ? { paddingBottom: toolbarHeight } : undefined),
+    [overflows, toolbarHeight]
+  );
 
   // the page itself scrolls here, not a box inside it: safari only runs a page under its glass
   // toolbar when the document scrolls, and an invite makes the card taller than a phone
@@ -243,12 +248,12 @@ const Connect = memo(() => {
 
   // a page a little taller than the screen stutters in safari: scrolling tucks the toolbar
   // away, the screen grows past the end of the page, the page snaps back and the toolbar
-  // returns. one that overflows at all gets more room than the toolbar takes up. a fixed
-  // amount, since ios 26 safari changes svh as the toolbar moves
+  // returns. one that overflows at all gets the toolbar's height more below it, in pixels,
+  // since ios 26 safari changes svh as the toolbar moves
   let pageClassName = 'flex flex-col justify-center items-center min-h-svh';
 
   if (overflows) {
-    pageClassName = 'flex flex-col items-center min-h-svh pb-32';
+    pageClassName = 'flex flex-col items-center min-h-svh';
   }
 
   return (
@@ -256,7 +261,7 @@ const Connect = memo(() => {
       <div className="hidden md:block fixed bottom-6 right-6 z-50">
         <LanguageSwitcher variant="icon" />
       </div>
-      <div className={pageClassName}>
+      <div className={pageClassName} style={pageStyle}>
         <div
           ref={contentRef}
           className="flex flex-col gap-2 items-center w-full px-4 py-6"
