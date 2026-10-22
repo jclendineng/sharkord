@@ -13,6 +13,7 @@ import {
   conversationTitleSelector,
   disconnectInfoSelector,
   dmsOpenSelector,
+  firstTextChannelIdSelector,
   hasSharingScreenUsersSelector,
   hasUnreadMentionsSelector,
   hasVisibleChannelsInCategorySelector,
@@ -72,6 +73,9 @@ export const useIsOwnUserOwner = () => useSelector(isOwnUserOwnerSelector);
 
 export const useReferenceableChannels = () =>
   useSelector(referenceableChannelsSelector);
+
+export const useFirstTextChannelId = () =>
+  useSelector(firstTextChannelIdSelector);
 
 export const usePluginsEnabled = () => useSelector(pluginsEnabledSelector);
 

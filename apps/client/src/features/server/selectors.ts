@@ -1,5 +1,6 @@
 import { createSelector } from '@reduxjs/toolkit';
 import {
+  ChannelType,
   DEFAULT_MESSAGES_LIMIT,
   OWNER_ROLE_ID,
   PluginCapabilityType,
@@ -196,6 +197,23 @@ export const referenceableChannelsSelector = createSelector(
           )
       )
       .sort((a, b) => a.position - b.position || a.id - b.id)
+);
+
+// the first text channel in the sidebar's order, categories first and then channels in each
+export const firstTextChannelIdSelector = createSelector(
+  [categoriesSelector, referenceableChannelsSelector],
+  (categories, channels) => {
+    for (const category of categories) {
+      const channel = channels.find(
+        ({ categoryId, type }) =>
+          categoryId === category.id && type === ChannelType.TEXT
+      );
+
+      if (channel) return channel.id;
+    }
+
+    return undefined;
+  }
 );
 
 const DEFAULT_ARRAY: unknown[] = [];

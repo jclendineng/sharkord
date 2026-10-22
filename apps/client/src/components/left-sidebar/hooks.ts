@@ -1,8 +1,11 @@
 import { useAutoJoinLastChannel } from '@/features/app/hooks';
 import { setSelectedChannelId } from '@/features/server/channels/actions';
 import { useChannelsMap } from '@/features/server/channels/hooks';
+import { selectedChannelIdSelector } from '@/features/server/channels/selectors';
+import { useDmsOpen, useFirstTextChannelId } from '@/features/server/hooks';
 import { setVoiceMoveTargetChannelId } from '@/features/server/voice/actions';
 import { useVoiceMoveTargetChannelId } from '@/features/server/voice/hooks';
+import { store } from '@/features/store';
 import {
   getLocalStorageItem,
   getLocalStorageItemAsJSON,
@@ -84,6 +87,25 @@ const useRestoreLastSelectedChannel = () => {
   }, [channelsMap, autoJoinLastChannel]);
 };
 
+// nothing open after joining left a computer on an empty page, so it opens the first text channel.
+// never a voice one, which would join the call. a phone opens the channel list instead, see
+// ServerView. read from the store here, since restoring the last channel may have just set one
+const useOpenFirstChannel = () => {
+  const firstTextChannelId = useFirstTextChannelId();
+  const dmsOpen = useDmsOpen();
+
+  useEffect(() => {
+    if (firstTextChannelId === undefined || dmsOpen) return;
+
+    const selectedChannelId = selectedChannelIdSelector(store.getState());
+    const isPhone = window.matchMedia('(max-width: 767px)').matches;
+
+    if (selectedChannelId !== undefined || isPhone) return;
+
+    setSelectedChannelId(firstTextChannelId);
+  }, [firstTextChannelId, dmsOpen]);
+};
+
 const useFollowVoiceMove = () => {
   const selectChannel = useSelectChannel();
   const voiceMoveTargetChannelId = useVoiceMoveTargetChannelId();
@@ -99,5 +121,6 @@ const useFollowVoiceMove = () => {
 export {
   useCategoryExpanded,
   useFollowVoiceMove,
+  useOpenFirstChannel,
   useRestoreLastSelectedChannel
 };
