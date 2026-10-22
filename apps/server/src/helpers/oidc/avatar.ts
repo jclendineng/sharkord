@@ -1,6 +1,7 @@
 import { getErrorMessage } from '@sharkord/shared';
 import dns from 'dns/promises';
 import fs from 'fs/promises';
+import { isIP } from 'net';
 import { getSettings } from '../../db/queries/server';
 import { logger } from '../../logger';
 import { readBodyWithLimit } from '../../utils/read-body-with-limit';
@@ -19,12 +20,16 @@ const EXTENSIONS_BY_MIME_TYPE: Record<string, string> = {
   'image/avif': '.avif'
 };
 
-const assertFetchableAvatarUrl = async (url: URL) => {
+// the address checked here is the one connected to: letting fetch resolve the name again would
+// let a short lived dns answer swap in a private address after the check
+const assertFetchableAvatarUrl = async (
+  url: URL
+): Promise<string | undefined> => {
   if (url.protocol !== 'https:' && url.protocol !== 'http:') {
     throw new Error(`unsupported protocol "${url.protocol}"`);
   }
 
-  if (url.origin === oidcManager.getIssuerUrl().origin) return;
+  if (url.origin === oidcManager.getIssuerUrl().origin) return undefined;
 
   if (url.protocol !== 'https:') {
     throw new Error('a picture outside the provider origin must use https');
@@ -41,10 +46,27 @@ const assertFetchableAvatarUrl = async (url: URL) => {
       throw new Error(`"${url.hostname}" resolves to the private address`);
     }
   }
+
+  return addresses[0]!.address;
 };
 
-const downloadAvatar = async (url: URL, maxBytes: number) => {
-  const response = await fetch(url, {
+const downloadAvatar = async (
+  url: URL,
+  pinnedAddress: string | undefined,
+  maxBytes: number
+) => {
+  let target = url;
+
+  if (pinnedAddress) {
+    target = new URL(url);
+    target.hostname =
+      isIP(pinnedAddress) === 6 ? `[${pinnedAddress}]` : pinnedAddress;
+  }
+
+  // when pinned, the certificate is still checked against the real name through serverName
+  const response = await fetch(target, {
+    headers: pinnedAddress ? { host: url.host } : undefined,
+    tls: pinnedAddress ? { serverName: url.hostname } : undefined,
     redirect: 'error', // redirects should not be followed
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS)
   });
@@ -79,10 +101,11 @@ const importOidcAvatar = async (userId: number, picture: string) => {
 
     const url = new URL(picture);
 
-    await assertFetchableAvatarUrl(url);
+    const pinnedAddress = await assertFetchableAvatarUrl(url);
 
     const { bytes, extension } = await downloadAvatar(
       url,
+      pinnedAddress,
       settings.storageMaxAvatarSize
     );
 

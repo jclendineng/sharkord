@@ -1,4 +1,4 @@
-import { UploadHeaders, type TTempFile } from '@sharkord/shared';
+import { UploadHeaders, type TUploadedFile } from '@sharkord/shared';
 import i18next from 'i18next';
 import { toast } from 'sonner';
 import { getUrlFromServer } from './get-file-url';
@@ -9,7 +9,7 @@ import { getSessionStorageItem, SessionStorageKey } from './storage';
 // before sanitizing
 const encodeFileName = (name: string) => encodeURIComponent(name.trim());
 
-const uploadImage = async (file: File): Promise<TTempFile | undefined> => {
+const uploadImage = async (file: File): Promise<TUploadedFile | undefined> => {
   if (!file.type.startsWith('image/')) {
     throw new Error(i18next.t('onlyImageFilesAllowed', { ns: 'common' }));
   }
@@ -30,7 +30,7 @@ type TUploadFileOptions = {
 const uploadFile = async (file: File, options?: TUploadFileOptions) => {
   const url = getUrlFromServer();
 
-  return new Promise<TTempFile | undefined>((resolve) => {
+  return new Promise<TUploadedFile | undefined>((resolve) => {
     const xhr = new XMLHttpRequest();
 
     xhr.open('POST', `${url}/upload`);
@@ -60,7 +60,7 @@ const uploadFile = async (file: File, options?: TUploadFileOptions) => {
 
     xhr.addEventListener('load', () => {
       if (xhr.status >= 200 && xhr.status < 300) {
-        const tempFile: TTempFile = JSON.parse(xhr.responseText);
+        const tempFile: TUploadedFile = JSON.parse(xhr.responseText);
 
         resolve(tempFile);
       } else {
@@ -100,7 +100,7 @@ const uploadFiles = async (
     )
   );
 
-  return results.filter((file): file is TTempFile => !!file);
+  return results.filter((file): file is TUploadedFile => !!file);
 };
 
 export { uploadFile, uploadFiles, uploadImage, type TUploadProgress };

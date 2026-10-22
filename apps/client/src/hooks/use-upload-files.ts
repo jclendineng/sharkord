@@ -1,7 +1,11 @@
 import { useChannelById } from '@/features/server/channels/hooks';
 import { useCan, usePublicServerSettings } from '@/features/server/hooks';
 import { uploadFile, type TUploadProgress } from '@/helpers/upload-file';
-import { isPreviewable, Permission, type TTempFile } from '@sharkord/shared';
+import {
+  isPreviewable,
+  Permission,
+  type TUploadedFile
+} from '@sharkord/shared';
 import {
   useCallback,
   useEffect,
@@ -20,7 +24,7 @@ type TDisplayItem = {
   extension: string;
   previewUrl?: string;
   progress?: number;
-  file?: TTempFile;
+  file?: TUploadedFile;
 };
 
 const useUploadFiles = (
@@ -30,8 +34,8 @@ const useUploadFiles = (
 ) => {
   const { t } = useTranslation('common');
 
-  const [files, setFiles] = useState<TTempFile[]>([]);
-  const filesRef = useRef<TTempFile[]>([]);
+  const [files, setFiles] = useState<TUploadedFile[]>([]);
+  const filesRef = useRef<TUploadedFile[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadingSize, setUploadingSize] = useState(0);
   const [uploadSpeed, setUploadSpeed] = useState(0);
@@ -405,7 +409,7 @@ const useUploadFiles = (
   }, [pendingUploads]);
 
   const filesMap = useMemo(() => {
-    const map = new Map<string, TTempFile>();
+    const map = new Map<string, TUploadedFile>();
 
     for (const f of files) {
       map.set(f.id, f);

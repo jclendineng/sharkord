@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import * as yauzl from 'yauzl';
 import * as yazl from 'yazl';
+import { isPathInside } from '../helpers/is-path-inside';
 
 const zipDirectory = (srcDir: string, outPath: string): Promise<void> => {
   return new Promise((resolve, reject) => {
@@ -54,8 +55,8 @@ const unzipBlobToDirectory = async (
       zipfile.on('entry', (entry) => {
         const entryPath = path.join(outDir, entry.fileName);
 
-        // Prevent ZipSlip vulnerability
-        if (!entryPath.startsWith(path.resolve(outDir))) {
+        // a bare prefix check lets "out-evil/x" through for an outDir of "out"
+        if (!isPathInside(path.resolve(outDir), path.resolve(entryPath))) {
           return reject(
             new Error('Illegal file path in zip: ' + entry.fileName)
           );

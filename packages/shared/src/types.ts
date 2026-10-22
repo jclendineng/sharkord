@@ -159,6 +159,9 @@ export type TTempFile = {
   userId: number | null;
 };
 
+// what POST /upload answers with, the temporary file without where it sits on disk
+export type TUploadedFile = Omit<TTempFile, 'path'>;
+
 export type TServerInfo = Pick<
   TSettings,
   'serverId' | 'name' | 'description' | 'allowNewUsers' | 'reportEmail'

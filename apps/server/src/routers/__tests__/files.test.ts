@@ -1,4 +1,4 @@
-import type { TTempFile } from '@sharkord/shared';
+import type { TTempFile, TUploadedFile } from '@sharkord/shared';
 import { beforeEach, describe, expect, test } from 'bun:test';
 import fs from 'fs/promises';
 import {
@@ -23,7 +23,10 @@ describe('files router', () => {
       data.token
     );
 
-    tempFile = (await res.json()) as TTempFile;
+    const uploaded = (await res.json()) as TUploadedFile;
+
+    // the upload answer leaves out the path on disk, which these tests look at
+    tempFile = fileManager.getTemporaryFile(uploaded.id)!;
   });
 
   test('should clean up inline replies when removing the last file deletes the message', async () => {

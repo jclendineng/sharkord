@@ -25,14 +25,18 @@ const entry = (id: string, version: string = '1.0.0') => ({
   ]
 });
 
-const serveRegistry = (body: unknown, ok: boolean = true) => {
+const serveRegistry = (
+  body: unknown,
+  ok: boolean = true,
+  headers: Record<string, string> = {}
+) => {
   globalThis.fetch = (async (input: Parameters<typeof fetch>[0]) => {
     expect(String(input)).toBe(MARKETPLACE_REGISTRY_URL);
 
-    return {
-      ok,
-      json: async () => body
-    } as Response;
+    return new Response(JSON.stringify(body), {
+      status: ok ? 200 : 500,
+      headers
+    });
   }) as typeof fetch;
 };
 
@@ -84,6 +88,16 @@ describe('fetchMarketplaceVersion', () => {
     await expect(
       fetchMarketplaceVersion('plugin-example', '2.0.0')
     ).rejects.toThrow("Version '2.0.0' not found for plugin 'plugin-example'");
+  });
+
+  test('should refuse a registry larger than the size limit', async () => {
+    serveRegistry([entry('plugin-example')], true, {
+      'content-length': String(6 * 1024 * 1024)
+    });
+
+    await expect(
+      fetchMarketplaceVersion('plugin-example', '1.0.0')
+    ).rejects.toThrow('The marketplace registry is larger than expected');
   });
 
   test('should refuse a registry the host did not serve', async () => {

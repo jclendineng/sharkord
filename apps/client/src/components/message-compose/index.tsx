@@ -22,7 +22,7 @@ import type {
   TGif,
   TJoinedPublicUser,
   TJoinedSticker,
-  TTempFile
+  TUploadedFile
 } from '@sharkord/shared';
 import {
   ChannelPermission,
@@ -59,7 +59,7 @@ type TMessageComposeProps = {
   channelId: number;
   message: string;
   onMessageChange: (value: string) => void;
-  onSend: (message: string, files: TTempFile[]) => Promise<boolean>;
+  onSend: (message: string, files: TUploadedFile[]) => Promise<boolean>;
   onTyping: () => void;
   typingUsers: TJoinedPublicUser[];
   showPluginSlot?: boolean;

@@ -3,6 +3,16 @@ import { config, SERVER_PRIVATE_IP, SERVER_PUBLIC_IP } from '../config';
 import * as serverPaths from '../helpers/paths';
 import * as envVars from './env';
 
+// debug output ends up in logs people paste into issues, so anything that reads like a secret
+// is left out of the config dump
+const SECRET_KEY_PATTERN =
+  /secret|password|token|apikey|api_key|privatekey|private_key/i;
+
+const redactSecrets = (key: string, value: unknown) =>
+  SECRET_KEY_PATTERN.test(key) && typeof value === 'string' && value.length > 0
+    ? '[redacted]'
+    : value;
+
 const printDebug = () => {
   if (!config.server.debug) return;
 
@@ -21,7 +31,7 @@ const printDebug = () => {
       )
     )}`,
     `${chalk.blue('Config:')} ${chalk.bold(
-      String(JSON.stringify(config, null, 2))
+      String(JSON.stringify(config, redactSecrets, 2))
     )}`,
     `${chalk.blue('Environment Variables:')} ${chalk.bold(
       String(

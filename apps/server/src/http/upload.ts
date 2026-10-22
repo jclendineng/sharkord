@@ -1,4 +1,8 @@
-import { getErrorMessage, UploadHeaders } from '@sharkord/shared';
+import {
+  getErrorMessage,
+  UploadHeaders,
+  type TUploadedFile
+} from '@sharkord/shared';
 import fs from 'fs';
 import http from 'http';
 import z from 'zod';
@@ -153,8 +157,18 @@ const uploadFileRouteHandler = async (
         userId: user.id
       });
 
+      // the path on disk stays on the server
+      const uploadedFile: TUploadedFile = {
+        id: tempFile.id,
+        originalName: tempFile.originalName,
+        size: tempFile.size,
+        md5: tempFile.md5,
+        extension: tempFile.extension,
+        userId: tempFile.userId
+      };
+
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(tempFile));
+      res.end(JSON.stringify(uploadedFile));
     } catch (error) {
       logger.error(
         'Error processing uploaded file: %s',

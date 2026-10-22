@@ -1,4 +1,9 @@
-import { Permission, UploadHeaders, type TTempFile } from '@sharkord/shared';
+import {
+  Permission,
+  UploadHeaders,
+  type TTempFile,
+  type TUploadedFile
+} from '@sharkord/shared';
 import { afterAll, beforeEach, describe, expect, test } from 'bun:test';
 import { and, eq } from 'drizzle-orm';
 import fs from 'fs/promises';
@@ -8,9 +13,14 @@ import { initTest, login, uploadFile } from '../../__tests__/helpers';
 import { tdb, testsBaseUrl } from '../../__tests__/setup';
 import { config } from '../../config';
 import { rolePermissions, settings, users } from '../../db/schema';
+import { fileManager } from '../../helpers/file-manager';
 import { TMP_PATH, UPLOADS_PATH } from '../../helpers/paths';
 import { createSessionToken } from '../../helpers/sessions';
 import { sanitizeFileName } from '../helpers';
+
+// the upload answer leaves out where the file sits on disk, the file manager still knows
+const tempPathOf = (file: TUploadedFile) =>
+  fileManager.getTemporaryFile(file.id)!.path;
 
 const getMockFile = (content: string): File => {
   const blob = new Blob([content], { type: 'text/plain' });
@@ -53,7 +63,8 @@ describe('/upload', () => {
     expect(data.md5).toBeDefined();
     expect(data.extension).toBe('.txt');
     expect(data.userId).toBe(1);
-    expect(data.path).toBe(expectedPath);
+    expect(data).not.toHaveProperty('path');
+    expect(tempPathOf(data)).toBe(expectedPath);
 
     expect(await fs.exists(expectedPath)).toBe(true);
     expect(await fs.readFile(expectedPath, 'utf-8')).toBe(
@@ -214,7 +225,7 @@ describe('/upload', () => {
     const data = (await response.json()) as TTempFile;
 
     expect(data.originalName).toBe('test file (1) [copy].txt');
-    expect(await fs.exists(data.path)).toBe(true);
+    expect(await fs.exists(tempPathOf(data))).toBe(true);
   });
 
   test('should handle empty files', async () => {
@@ -228,7 +239,7 @@ describe('/upload', () => {
     const data = (await response.json()) as TTempFile;
 
     expect(data.size).toBe(0);
-    expect(await fs.exists(data.path)).toBe(true);
+    expect(await fs.exists(tempPathOf(data))).toBe(true);
   });
 
   test('should handle different file types', async () => {
@@ -247,7 +258,7 @@ describe('/upload', () => {
 
     expect(data.extension).toBe('.json');
     expect(data.originalName).toBe('data.json');
-    expect(await fs.exists(data.path)).toBe(true);
+    expect(await fs.exists(tempPathOf(data))).toBe(true);
   });
 
   test('should handle files with no extension', async () => {
@@ -261,7 +272,7 @@ describe('/upload', () => {
     const data = (await response.json()) as TTempFile;
 
     expect(data.originalName).toBe('Makefile');
-    expect(await fs.exists(data.path)).toBe(true);
+    expect(await fs.exists(tempPathOf(data))).toBe(true);
   });
 
   test('should handle files with multiple dots in name', async () => {
@@ -292,7 +303,7 @@ describe('/upload', () => {
     const data = (await response.json()) as TTempFile;
 
     expect(data.originalName).toBe(longName);
-    expect(await fs.exists(data.path)).toBe(true);
+    expect(await fs.exists(tempPathOf(data))).toBe(true);
   });
 
   test('should upload multiple files sequentially', async () => {
@@ -308,8 +319,8 @@ describe('/upload', () => {
     const data2 = (await response2.json()) as TTempFile;
 
     expect(data1.id).not.toBe(data2.id);
-    expect(await fs.exists(data1.path)).toBe(true);
-    expect(await fs.exists(data2.path)).toBe(true);
+    expect(await fs.exists(tempPathOf(data1))).toBe(true);
+    expect(await fs.exists(tempPathOf(data2))).toBe(true);
   });
 
   test('should generate unique MD5 hashes for different files', async () => {
@@ -352,7 +363,7 @@ describe('/upload', () => {
 
     expect(data.extension).toBe('.png');
     expect(data.size).toBe(8);
-    expect(await fs.exists(data.path)).toBe(true);
+    expect(await fs.exists(tempPathOf(data))).toBe(true);
   });
 
   test('should refuse a body longer than the declared content-length', async () => {
@@ -488,7 +499,7 @@ describe('/upload', () => {
 
     // path traversal should be stripped, leaving just 'passwd'
     expect(data.originalName).toBe('passwd');
-    expect(data.path.startsWith(TMP_PATH)).toBe(true);
+    expect(tempPathOf(data).startsWith(TMP_PATH)).toBe(true);
   });
 
   test('should reject filenames with absolute paths', async () => {
@@ -514,7 +525,7 @@ describe('/upload', () => {
 
     // absolute path should be stripped to just the basename
     expect(data.originalName).toBe('shadow');
-    expect(data.path.startsWith(TMP_PATH)).toBe(true);
+    expect(tempPathOf(data).startsWith(TMP_PATH)).toBe(true);
   });
 
   test('should reject filenames with null bytes at the HTTP client level', async () => {
@@ -591,7 +602,7 @@ describe('/upload', () => {
     expect(data.originalName).toBe('config.txt');
     expect(data.originalName).not.toContain('..');
     expect(data.originalName).not.toContain('\\');
-    expect(data.path.startsWith(TMP_PATH)).toBe(true);
+    expect(tempPathOf(data).startsWith(TMP_PATH)).toBe(true);
   });
 
   test('should ensure uploaded file stays within upload directory', async () => {
@@ -623,7 +634,7 @@ describe('/upload', () => {
 
       const data = (await response.json()) as TTempFile;
 
-      expect(data.path.startsWith(TMP_PATH)).toBe(true);
+      expect(tempPathOf(data).startsWith(TMP_PATH)).toBe(true);
       expect(data.originalName).not.toContain('..');
       expect(data.originalName).not.toContain('/');
     }
