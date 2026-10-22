@@ -2,11 +2,13 @@ name: Publish Fork Image
 
 # the fork's own server image on ghcr.io, for the unraid container. no secrets needed,
 # the workflow token can push packages to the repository owner's namespace.
-# main publishes :main, development publishes :development (and the older :push), and
-# :latest follows whichever branch built last, so a pull with no tag gets the newest build
+# :latest (and a pull with no tag) is main, :development is the development branch, every
+# build gets an immutable :sha-<short> tag to pin or roll back to, and a v* git tag adds
+# :<version> and :<major>.<minor>. :push is the old development name, kept until unraid moves off it
 on:
   push:
     branches: [main, development]
+    tags: ['v*']
   workflow_dispatch:
 
 concurrency:
@@ -29,20 +31,22 @@ jobs:
         uses: ./.github/actions/build-sharkord
 
       - name: Pick image tags
-        id: tags
-        run: |
-          image=ghcr.io/${{ github.repository_owner }}/sharkord
-
-          channel=${{ github.ref_name }}
-
-          {
-            echo 'list<<EOF'
-            echo "$image:latest"
-            echo "$image:$channel"
-            echo "$image:$channel-${{ github.sha }}"
-            if [ "$channel" = development ]; then echo "$image:push"; fi
-            echo EOF
-          } >> "$GITHUB_OUTPUT"
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/sharkord
+          # latest is set by hand below, a version tag alone must not move it off main
+          flavor: latest=false
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=development,enable=${{ github.ref == 'refs/heads/development' }}
+            type=raw,value=push,enable=${{ github.ref == 'refs/heads/development' }}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+          labels: |
+            org.opencontainers.image.title=Sharkord
+            org.opencontainers.image.description=Sharkord Server (fork)
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
@@ -60,9 +64,5 @@ jobs:
           context: .
           platforms: linux/amd64
           push: true
-          tags: ${{ steps.tags.outputs.list }}
-          labels: |
-            org.opencontainers.image.title=Sharkord
-            org.opencontainers.image.description=Sharkord Server (fork)
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.revision=${{ github.sha }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
