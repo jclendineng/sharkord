@@ -2,6 +2,7 @@ import { Database } from 'bun:sqlite';
 import { BunSQLiteDatabase, drizzle } from 'drizzle-orm/bun-sqlite';
 import { DB_PATH, DRIZZLE_PATH } from '../helpers/paths';
 import { migrateDatabase } from './migrate';
+import { rotateDevSecretToken } from './rotate-dev-secret-token';
 import { seedDatabase } from './seed';
 
 let db: BunSQLiteDatabase;
@@ -17,6 +18,7 @@ const loadDb = async () => {
 
   await migrateDatabase(sqlite, db, DRIZZLE_PATH);
   await seedDatabase();
+  await rotateDevSecretToken();
 };
 
 export { db, loadDb };

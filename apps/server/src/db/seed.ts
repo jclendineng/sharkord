@@ -23,7 +23,6 @@ import {
 import { randomUUIDv7 } from 'bun';
 import chalk from 'chalk';
 import { logger } from '../logger';
-import { IS_DEVELOPMENT } from '../utils/env';
 import { db } from './index';
 import {
   categories,
@@ -44,7 +43,9 @@ const seedDatabase = async () => {
   logger.debug('Seeding initial database values...');
 
   const firstStart = Date.now();
-  const originalToken = IS_DEVELOPMENT ? 'dev' : randomUUIDv7();
+  // this is the jwt signing key as well as the ownership claim, so it is random in every
+  // build, development included, and printed once below
+  const originalToken = randomUUIDv7();
 
   const initialSettings: TISettings = {
     name: 'sharkord Server',

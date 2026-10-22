@@ -64,7 +64,8 @@ const DEV_DATA_PATH = path.resolve(import.meta.dir, '../data');
 const MIGRATIONS_PATH = path.resolve(import.meta.dir, '../src/db/migrations');
 
 const MOCK_PASSWORD = 'password123';
-const DEV_SECRET_TOKEN = 'dev';
+// signs every jwt as well, so a fixed value would let anyone on the network forge sessions
+const DEV_SECRET_TOKEN = randomUUIDv7();
 const DEFAULT_SEED = 1337;
 
 // the #counting channel is the same size whatever --size is, since its whole job is being

@@ -6,7 +6,7 @@ await ensureServerDirs();
 import { loadEmbeds } from './helpers/embeds';
 await loadEmbeds();
 // ----------------------------------------
-import { IS_PRODUCTION, SERVER_VERSION } from './utils/env';
+import { IS_DEVELOPMENT, IS_PRODUCTION, SERVER_VERSION } from './utils/env';
 // ----------------------------------------
 import { ActivityLogType } from '@sharkord/shared';
 import chalk from 'chalk';
@@ -33,6 +33,8 @@ await loadMediasoup();
 await initVoiceRuntimes();
 await loadCrons();
 
+const LOOPBACK_HOSTS = ['127.0.0.1', '::1', 'localhost'];
+
 const host = getHost(
   config.server.host,
   (IS_PRODUCTION && SERVER_PRIVATE_IP) || 'localhost'
@@ -47,6 +49,17 @@ const message = [
 ].join('\n');
 
 console.log('%s', message);
+
+// rate limiting is off in development, so a source run server reachable from other machines
+// has no brake on login or token guessing
+if (IS_DEVELOPMENT && !LOOPBACK_HOSTS.includes(config.server.host)) {
+  console.log(
+    '\n%s\n',
+    chalk.redBright.bold(
+      'This is a development build listening on the network with rate limiting turned off. Set server.host to 127.0.0.1 in config.ini, or run a production build, before exposing it.'
+    )
+  );
+}
 
 printDebug();
 
