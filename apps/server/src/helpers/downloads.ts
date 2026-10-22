@@ -87,6 +87,9 @@ const assertArchiveStaysInside = async (
   }
 };
 
+// bun drops link entries when it extracts and Bun.Archive does not list them, so they can be
+// neither refused up front nor followed. this stays as the backstop should a bun upgrade start
+// writing them, and the downloads test pins the current behaviour
 const assertNoLinks = async (extractPath: string) => {
   const entries = await fs.readdir(extractPath, {
     recursive: true,

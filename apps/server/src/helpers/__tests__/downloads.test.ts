@@ -53,6 +53,75 @@ const pluginArchive = (
 
 const archives = new Map<string, { bytes: Uint8Array; checksum: string }>();
 
+type TTarEntry =
+  | { name: string; type: 'file'; content: string }
+  | { name: string; type: 'symlink'; linkName: string };
+
+// a minimal ustar writer, enough for the link entries Bun.Archive will not create
+const buildTar = (entries: TTarEntry[]): Uint8Array => {
+  const encoder = new TextEncoder();
+  const blocks: Uint8Array[] = [];
+
+  const writeField = (
+    header: Uint8Array,
+    offset: number,
+    length: number,
+    value: string
+  ) => {
+    header.set(encoder.encode(value).subarray(0, length), offset);
+  };
+
+  const octal = (value: number, length: number) =>
+    `${value.toString(8).padStart(length - 1, '0')}\0`;
+
+  for (const entry of entries) {
+    const content =
+      entry.type === 'file' ? encoder.encode(entry.content) : new Uint8Array();
+    const header = new Uint8Array(512);
+
+    writeField(header, 0, 100, entry.name);
+    writeField(header, 100, 8, octal(entry.type === 'file' ? 0o644 : 0o777, 8));
+    writeField(header, 108, 8, octal(0, 8));
+    writeField(header, 116, 8, octal(0, 8));
+    writeField(header, 124, 12, octal(content.length, 12));
+    writeField(header, 136, 12, octal(0, 12));
+    writeField(header, 148, 8, '        ');
+    writeField(header, 156, 1, entry.type === 'file' ? '0' : '2');
+
+    if (entry.type === 'symlink') {
+      writeField(header, 157, 100, entry.linkName);
+    }
+
+    writeField(header, 257, 6, 'ustar\0');
+    writeField(header, 263, 2, '00');
+
+    const checksum = header.reduce((sum, byte) => sum + byte, 0);
+
+    writeField(header, 148, 8, `${checksum.toString(8).padStart(6, '0')}\0 `);
+
+    blocks.push(header);
+
+    if (content.length > 0) {
+      const padded = new Uint8Array(Math.ceil(content.length / 512) * 512);
+
+      padded.set(content);
+      blocks.push(padded);
+    }
+  }
+
+  blocks.push(new Uint8Array(1024));
+
+  const tar = new Uint8Array(blocks.reduce((size, b) => size + b.length, 0));
+  let offset = 0;
+
+  for (const block of blocks) {
+    tar.set(block, offset);
+    offset += block.length;
+  }
+
+  return tar;
+};
+
 const publishArchive = async (route: string, archive: Bun.Archive) => {
   const bytes = await archive.bytes();
   const checksum = new Bun.CryptoHasher('sha256').update(bytes).digest('hex');
@@ -230,6 +299,34 @@ describe('downloadPlugin', () => {
     );
 
     await fs.rm(extracted, { recursive: true, force: true });
+  });
+
+  // the escape the link check exists for: a link to outside the extraction directory, then a
+  // file written through it. bun drops link entries when it extracts and Bun.Archive cannot
+  // write them, so this builds the tar by hand and pins that nothing lands outside. it fails
+  // if a bun upgrade starts honouring links, which would make the check after extraction late
+  test('should not write through a link entry when extracting', async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'link-escape-'));
+    const outside = path.join(root, 'outside');
+    const extractPath = path.join(root, 'extract');
+
+    await Promise.all([fs.mkdir(outside), fs.mkdir(extractPath)]);
+
+    const archive = new Bun.Archive(
+      buildTar([
+        { name: 'escape', type: 'symlink', linkName: '../outside' },
+        { name: 'escape/evil.txt', type: 'file', content: 'pwned' }
+      ])
+    );
+
+    try {
+      await archive.extract(extractPath);
+
+      expect(await fs.readdir(outside)).toEqual([]);
+      await expect(assertNoLinks(extractPath)).resolves.toBeUndefined();
+    } finally {
+      await fs.rm(root, { recursive: true, force: true });
+    }
   });
 
   // a plugin the server could never load must not reach the plugins directory
