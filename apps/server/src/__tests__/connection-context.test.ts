@@ -118,27 +118,26 @@ describe('connection info through createContext', () => {
 });
 
 describe('rate limiting subject', () => {
-  const exhaustJoinServer = async (
+  // the handshake, since joining is only limited when it checks a server password
+  const exhaustHandshake = async (
     userId: number,
     remoteAddress: string,
     headers?: Record<string, string>
   ) => {
     const { caller } = await getCaller(userId, { remoteAddress, headers });
-    const { handshakeHash } = await caller.others.handshake();
 
-    // joinServer allows 5 per minute
-    for (let i = 0; i < 5; i++) {
-      await caller.others.joinServer({ handshakeHash });
+    // handshake allows 10 per minute
+    for (let i = 0; i < 10; i++) {
+      await caller.others.handshake();
     }
 
     return caller;
   };
 
   test('should follow the user across addresses rather than the address', async () => {
-    const offender = await exhaustJoinServer(1, CLIENT_ADDRESS);
-    const { handshakeHash } = await offender.others.handshake();
+    const offender = await exhaustHandshake(1, CLIENT_ADDRESS);
 
-    await expect(offender.others.joinServer({ handshakeHash })).rejects.toThrow(
+    await expect(offender.others.handshake()).rejects.toThrow(
       'Too many requests. Please try again shortly.'
     );
 
@@ -146,15 +145,14 @@ describe('rate limiting subject', () => {
     const { caller: moved } = await getCaller(1, {
       remoteAddress: '203.0.113.55'
     });
-    const movedHandshake = await moved.others.handshake();
 
-    await expect(
-      moved.others.joinServer({ handshakeHash: movedHandshake.handshakeHash })
-    ).rejects.toThrow('Too many requests. Please try again shortly.');
+    await expect(moved.others.handshake()).rejects.toThrow(
+      'Too many requests. Please try again shortly.'
+    );
   });
 
   test('should not punish a second user behind the same address', async () => {
-    await exhaustJoinServer(1, CLIENT_ADDRESS);
+    await exhaustHandshake(1, CLIENT_ADDRESS);
 
     // the point of keying on the user: one noisy account must not lock out everyone
     // sharing its NAT
