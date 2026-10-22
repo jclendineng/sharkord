@@ -9,7 +9,8 @@ import { db } from '../../db';
 import { publishChannelAccessChange } from '../../db/publishers';
 import {
   channelExists,
-  getAffectedOnlineUserIdsForChannel
+  getAffectedOnlineUserIdsForChannel,
+  getPermissionsGainedByClearingUserRow
 } from '../../db/queries/channels';
 import { isDirectMessageChannel } from '../../db/queries/dms';
 import {
@@ -52,6 +53,25 @@ const deletePermissionsRoute = protectedProcedure
     });
 
     await assertChannelAccess(ctx, input.channelId);
+
+    // removing a user's row hands them whatever their roles allow, so it is a grant like any
+    // other and needs the caller to hold what it grants
+    if (input.userId) {
+      const gained = await getPermissionsGainedByClearingUserRow(
+        input.channelId,
+        input.userId
+      );
+      const held = await Promise.all(
+        gained.map((permission) =>
+          ctx.hasChannelPermission(input.channelId, permission)
+        )
+      );
+
+      invariant(held.every(Boolean), {
+        code: 'FORBIDDEN',
+        message: 'You cannot grant channel permissions that you do not have.'
+      });
+    }
 
     const audienceBefore = await getAffectedOnlineUserIdsForChannel(
       input.channelId,

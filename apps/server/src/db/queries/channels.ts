@@ -170,6 +170,51 @@ const channelExists = async (channelId: number): Promise<boolean> => {
   return !!channel;
 };
 
+// the channel permissions a user would gain if their own row on the channel went away: the
+// ones that row denies and one of their roles allows. role rows are or'ed together and a
+// denying one adds nothing, so clearing a role row can never widen anyone's access
+const getPermissionsGainedByClearingUserRow = async (
+  channelId: number,
+  userId: number
+): Promise<ChannelPermission[]> => {
+  const [deniedRows, roleIds] = await Promise.all([
+    db
+      .select({ permission: channelUserPermissions.permission })
+      .from(channelUserPermissions)
+      .where(
+        and(
+          eq(channelUserPermissions.channelId, channelId),
+          eq(channelUserPermissions.userId, userId),
+          eq(channelUserPermissions.allow, false)
+        )
+      ),
+    getUserRoleIds(userId)
+  ]);
+
+  if (deniedRows.length === 0 || roleIds.length === 0) return [];
+
+  const allowedRows = await db
+    .select({ permission: channelRolePermissions.permission })
+    .from(channelRolePermissions)
+    .where(
+      and(
+        eq(channelRolePermissions.channelId, channelId),
+        inArray(channelRolePermissions.roleId, roleIds),
+        inArray(
+          channelRolePermissions.permission,
+          deniedRows.map(({ permission }) => permission)
+        ),
+        eq(channelRolePermissions.allow, true)
+      )
+    );
+
+  return [
+    ...new Set(
+      allowedRows.map(({ permission }) => permission as ChannelPermission)
+    )
+  ];
+};
+
 const getChannelsForUser = async (userId: number): Promise<TChannel[]> => {
   const roleIds = await getUserRoleIds(userId);
 
@@ -520,5 +565,6 @@ export {
   getAffectedUserIdsForChannel,
   getAllChannelUserPermissions,
   getChannelsForUser,
-  getChannelsReadStatesForUser
+  getChannelsReadStatesForUser,
+  getPermissionsGainedByClearingUserRow
 };

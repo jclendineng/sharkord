@@ -1402,6 +1402,73 @@ describe('channels router', () => {
       ).rejects.toThrow('Channel not found');
     });
 
+    // channel 5's default role row is widened here, and user 2's own row denies on top of it,
+    // so clearing that row is what would hand user 2 the role's permissions
+    const setUpRestrictedChannel = async (
+      memberRowAllows: ChannelPermission[]
+    ) => {
+      const { caller: owner } = await initTest();
+
+      await owner.channels.updatePermissions({
+        channelId: RESTRICTED_CHANNEL_ID,
+        roleId: 2,
+        permissions: [
+          ChannelPermission.VIEW_CHANNEL,
+          ChannelPermission.SEND_MESSAGES
+        ]
+      });
+      await owner.channels.updatePermissions({
+        channelId: RESTRICTED_CHANNEL_ID,
+        userId: 2,
+        permissions: memberRowAllows
+      });
+      await owner.channels.updatePermissions({
+        channelId: RESTRICTED_CHANNEL_ID,
+        userId: MODERATOR_ID,
+        permissions: [ChannelPermission.VIEW_CHANNEL]
+      });
+
+      return owner;
+    };
+
+    test('should not clear a row whose removal grants a permission the caller lacks', async () => {
+      const owner = await setUpRestrictedChannel([]);
+      const { caller } = await initTest(MODERATOR_ID);
+
+      await expect(
+        caller.channels.deletePermissions({
+          channelId: RESTRICTED_CHANNEL_ID,
+          userId: 2
+        })
+      ).rejects.toThrow(
+        'You cannot grant channel permissions that you do not have.'
+      );
+
+      const { userPermissions } = await owner.channels.getPermissions({
+        channelId: RESTRICTED_CHANNEL_ID
+      });
+
+      expect(userPermissions.some((row) => row.userId === 2)).toBe(true);
+    });
+
+    test('should clear a row whose removal only grants what the caller holds', async () => {
+      const owner = await setUpRestrictedChannel([
+        ChannelPermission.SEND_MESSAGES
+      ]);
+      const { caller } = await initTest(MODERATOR_ID);
+
+      await caller.channels.deletePermissions({
+        channelId: RESTRICTED_CHANNEL_ID,
+        userId: 2
+      });
+
+      const { userPermissions } = await owner.channels.getPermissions({
+        channelId: RESTRICTED_CHANNEL_ID
+      });
+
+      expect(userPermissions.some((row) => row.userId === 2)).toBe(false);
+    });
+
     test('should only let a caller grant channel permissions they hold', async () => {
       const { caller: owner } = await initTest();
 
