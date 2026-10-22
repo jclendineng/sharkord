@@ -4,7 +4,7 @@ name: Publish Fork Image
 # the workflow token can push packages to the repository owner's namespace.
 # :latest (and a pull with no tag) is main, :development is the development branch, every
 # build gets an immutable :sha-<short> tag to pin or roll back to, and a v* git tag adds
-# :<version> and :<major>.<minor>. :push is the old development name, kept until unraid moves off it
+# :<version> and :<major>.<minor>
 on:
   push:
     branches: [main, development]
@@ -40,7 +40,6 @@ jobs:
           tags: |
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
             type=raw,value=development,enable=${{ github.ref == 'refs/heads/development' }}
-            type=raw,value=push,enable=${{ github.ref == 'refs/heads/development' }}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha
