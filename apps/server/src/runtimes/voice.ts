@@ -21,6 +21,7 @@ import type {
   WebRtcTransport
 } from 'mediasoup/types';
 import { config } from '../config';
+import { publishVoiceEvent } from '../db/publishers';
 import { logger } from '../logger';
 import { eventBus } from '../plugins/event-bus';
 import {
@@ -396,17 +397,19 @@ class VoiceRuntime {
 
     this.state.users = [];
 
-    remainingUsers.forEach(({ userId }) => {
-      pubsub.publish(ServerEvents.USER_LEAVE_VOICE, {
-        channelId: this.id,
-        userId
-      });
+    await Promise.all(
+      remainingUsers.map(async ({ userId }) => {
+        await publishVoiceEvent(ServerEvents.USER_LEAVE_VOICE, {
+          channelId: this.id,
+          userId
+        });
 
-      eventBus.emit('user:left_voice', {
-        userId,
-        channelId: this.id
-      });
-    });
+        eventBus.emit('user:left_voice', {
+          userId,
+          channelId: this.id
+        });
+      })
+    );
 
     voiceRuntimes.delete(this.id);
 
@@ -971,10 +974,16 @@ class VoiceRuntime {
             video: !!internal.producers.videoProducer
           };
 
-          pubsub.publish(ServerEvents.VOICE_UPDATE_EXTERNAL_STREAM, {
+          publishVoiceEvent(ServerEvents.VOICE_UPDATE_EXTERNAL_STREAM, {
             channelId: this.id,
             streamId,
             stream: existingStream
+          }).catch((error) => {
+            logger.error(
+              'Failed to publish external stream %s update: %s',
+              streamId,
+              getErrorMessage(error)
+            );
           });
         }
       }
@@ -1004,9 +1013,15 @@ class VoiceRuntime {
     delete this.externalStreamsInternal[streamId];
     delete this.state.externalStreams[streamId];
 
-    pubsub.publish(ServerEvents.VOICE_REMOVE_EXTERNAL_STREAM, {
+    publishVoiceEvent(ServerEvents.VOICE_REMOVE_EXTERNAL_STREAM, {
       channelId: this.id,
       streamId
+    }).catch((error) => {
+      logger.error(
+        'Failed to publish external stream %s removal: %s',
+        streamId,
+        getErrorMessage(error)
+      );
     });
   };
 
@@ -1133,10 +1148,16 @@ class VoiceRuntime {
       );
     }
 
-    pubsub.publish(ServerEvents.VOICE_UPDATE_EXTERNAL_STREAM, {
+    publishVoiceEvent(ServerEvents.VOICE_UPDATE_EXTERNAL_STREAM, {
       channelId: this.id,
       streamId,
       stream: publicStream
+    }).catch((error) => {
+      logger.error(
+        'Failed to publish external stream %s update: %s',
+        streamId,
+        getErrorMessage(error)
+      );
     });
   };
 

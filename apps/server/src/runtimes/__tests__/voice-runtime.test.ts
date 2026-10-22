@@ -52,17 +52,20 @@ describe('VoiceRuntime destroy', () => {
 
     const left: number[] = [];
 
-    const subscription = pubsub
-      .subscribe(ServerEvents.USER_LEAVE_VOICE)
-      .subscribe({
+    // each departure reaches the user it is about, whatever else can see the channel
+    const subscriptions = [7, 8].map((watcherId) =>
+      pubsub.subscribeFor(watcherId, ServerEvents.USER_LEAVE_VOICE).subscribe({
         next: ({ userId, channelId }) => {
-          if (channelId === runtime.id) left.push(userId);
+          if (channelId === runtime.id && userId === watcherId) {
+            left.push(userId);
+          }
         }
-      });
+      })
+    );
 
     await runtime.destroy();
 
-    subscription.unsubscribe();
+    subscriptions.forEach((subscription) => subscription.unsubscribe());
 
     expect(left.sort()).toEqual([7, 8]);
     expect(runtime.getState().users).toEqual([]);

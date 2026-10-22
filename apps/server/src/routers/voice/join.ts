@@ -9,6 +9,7 @@ import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { config } from '../../config';
 import { db } from '../../db';
+import { publishVoiceEvent } from '../../db/publishers';
 import { channels } from '../../db/schema';
 import { takeOverVoiceSeat } from '../../helpers/take-over-voice-seat';
 import {
@@ -71,7 +72,7 @@ const joinVoiceRoute = rateLimitedProcedure(protectedProcedure, {
       message: 'Cannot join a direct message channel as a voice channel'
     });
 
-    takeOverVoiceSeat(ctx);
+    await takeOverVoiceSeat(ctx);
 
     const userAlreadyInVoiceChannel = VoiceRuntime.findRuntimeByUserId(
       ctx.user.id
@@ -110,7 +111,7 @@ const joinVoiceRoute = rateLimitedProcedure(protectedProcedure, {
 
     if (ws) ws.inVoice = true;
 
-    ctx.pubsub.publish(ServerEvents.USER_JOIN_VOICE, {
+    await publishVoiceEvent(ServerEvents.USER_JOIN_VOICE, {
       channelId: input.channelId,
       userId: ctx.user.id,
       state

@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { config } from '../../config';
 import { db } from '../../db';
+import { publishVoiceEvent } from '../../db/publishers';
 import { soundboardSounds } from '../../db/schema';
 import { getCurrentVoiceRuntime } from '../../helpers/get-current-voice-runtime';
 import { invariant } from '../../utils/invariant';
@@ -33,7 +34,7 @@ const playSoundRoute = rateLimitedProcedure(protectedProcedure, {
 
     const { channelId } = await getCurrentVoiceRuntime(ctx);
 
-    ctx.pubsub.publish(ServerEvents.USER_VOICE_SOUND, {
+    await publishVoiceEvent(ServerEvents.USER_VOICE_SOUND, {
       channelId,
       userId: ctx.user.id,
       soundId: sound.id

@@ -8,37 +8,43 @@ type TVoiceProducerEvent = {
   kind: StreamKind;
 };
 
-// these events are broadcast to ALL users (for UI population in the sidebar)
+// voice presence goes to the people who can see the channel, see publishVoiceEvent
 const onUserJoinVoiceRoute = protectedProcedure.subscription(
   async ({ ctx }) => {
-    return ctx.pubsub.subscribe(ServerEvents.USER_JOIN_VOICE);
+    return ctx.pubsub.subscribeFor(ctx.user.id, ServerEvents.USER_JOIN_VOICE);
   }
 );
 
 const onUserLeaveVoiceRoute = protectedProcedure.subscription(
   async ({ ctx }) => {
-    return ctx.pubsub.subscribe(ServerEvents.USER_LEAVE_VOICE);
+    return ctx.pubsub.subscribeFor(ctx.user.id, ServerEvents.USER_LEAVE_VOICE);
   }
 );
 
 const onUserUpdateVoiceStateRoute = protectedProcedure.subscription(
   async ({ ctx }) => {
-    return ctx.pubsub.subscribe(ServerEvents.USER_VOICE_STATE_UPDATE);
+    return ctx.pubsub.subscribeFor(
+      ctx.user.id,
+      ServerEvents.USER_VOICE_STATE_UPDATE
+    );
   }
 );
 
-// broadcast too: reactions render on the voice cards of whichever channel the user is
-// looking at, which is not necessarily the one they are connected to
+// reactions render on the voice cards of whichever channel the user is looking at, which is
+// not necessarily the one they are connected to
 const onUserVoiceReactionRoute = protectedProcedure.subscription(
   async ({ ctx }) => {
-    return ctx.pubsub.subscribe(ServerEvents.USER_VOICE_REACTION);
+    return ctx.pubsub.subscribeFor(
+      ctx.user.id,
+      ServerEvents.USER_VOICE_REACTION
+    );
   }
 );
 
-// broadcast like reactions, each app plays only the sounds of the call it is in
+// sent like reactions, each app plays only the sounds of the call it is in
 const onUserVoiceSoundRoute = protectedProcedure.subscription(
   async ({ ctx }) => {
-    return ctx.pubsub.subscribe(ServerEvents.USER_VOICE_SOUND);
+    return ctx.pubsub.subscribeFor(ctx.user.id, ServerEvents.USER_VOICE_SOUND);
   }
 );
 
@@ -48,22 +54,30 @@ const onUserVoiceMovedRoute = protectedProcedure.subscription(
   }
 );
 
-// these events are broadcast to ALL users (for external stream UI in the sidebar)
 const onVoiceAddExternalStreamRoute = protectedProcedure.subscription(
   async ({ ctx }) => {
-    return ctx.pubsub.subscribe(ServerEvents.VOICE_ADD_EXTERNAL_STREAM);
+    return ctx.pubsub.subscribeFor(
+      ctx.user.id,
+      ServerEvents.VOICE_ADD_EXTERNAL_STREAM
+    );
   }
 );
 
 const onVoiceUpdateExternalStreamRoute = protectedProcedure.subscription(
   async ({ ctx }) => {
-    return ctx.pubsub.subscribe(ServerEvents.VOICE_UPDATE_EXTERNAL_STREAM);
+    return ctx.pubsub.subscribeFor(
+      ctx.user.id,
+      ServerEvents.VOICE_UPDATE_EXTERNAL_STREAM
+    );
   }
 );
 
 const onVoiceRemoveExternalStreamRoute = protectedProcedure.subscription(
   async ({ ctx }) => {
-    return ctx.pubsub.subscribe(ServerEvents.VOICE_REMOVE_EXTERNAL_STREAM);
+    return ctx.pubsub.subscribeFor(
+      ctx.user.id,
+      ServerEvents.VOICE_REMOVE_EXTERNAL_STREAM
+    );
   }
 );
 

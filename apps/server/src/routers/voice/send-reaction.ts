@@ -5,6 +5,7 @@ import {
 } from '@sharkord/shared';
 import { z } from 'zod';
 import { config } from '../../config';
+import { publishVoiceEvent } from '../../db/publishers';
 import { getCurrentVoiceRuntime } from '../../helpers/get-current-voice-runtime';
 import { resolveKnownEmojiFileId } from '../../helpers/resolve-known-emoji-file-id';
 import { protectedProcedure, rateLimitedProcedure } from '../../utils/trpc';
@@ -26,7 +27,7 @@ const sendVoiceReactionRoute = rateLimitedProcedure(protectedProcedure, {
 
     await resolveKnownEmojiFileId(input.emoji);
 
-    ctx.pubsub.publish(ServerEvents.USER_VOICE_REACTION, {
+    await publishVoiceEvent(ServerEvents.USER_VOICE_REACTION, {
       channelId,
       userId: ctx.user.id,
       emoji: input.emoji

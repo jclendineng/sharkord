@@ -3009,7 +3009,7 @@ describe('plugins router', () => {
         const received: unknown[] = [];
 
         const subscription = pubsub
-          .subscribe(ServerEvents.USER_LEAVE_VOICE)
+          .subscribeFor(2, ServerEvents.USER_LEAVE_VOICE)
           .subscribe({ next: (event) => received.push(event) });
 
         await run('voice-disconnect', { userId: 2 });
@@ -3032,7 +3032,7 @@ describe('plugins router', () => {
         const received: { state: { serverMuted: boolean } }[] = [];
 
         const subscription = pubsub
-          .subscribe(ServerEvents.USER_VOICE_STATE_UPDATE)
+          .subscribeFor(2, ServerEvents.USER_VOICE_STATE_UPDATE)
           .subscribe({ next: (event) => received.push(event) });
 
         await run('voice-mute', {
@@ -3458,7 +3458,7 @@ describe('plugins router', () => {
         const received: unknown[] = [];
 
         const subscription = pubsub
-          .subscribe(ServerEvents.USER_VOICE_REACTION)
+          .subscribeFor(2, ServerEvents.USER_VOICE_REACTION)
           .subscribe({ next: (event) => received.push(event) });
 
         await react({});

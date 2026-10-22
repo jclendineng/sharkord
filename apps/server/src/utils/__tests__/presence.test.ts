@@ -86,7 +86,7 @@ describe('voice across a user session', () => {
       const departures: number[] = [];
 
       const subscription = pubsub
-        .subscribe(ServerEvents.USER_LEAVE_VOICE)
+        .subscribeFor(1, ServerEvents.USER_LEAVE_VOICE)
         .subscribe({
           next: ({ userId }) => {
             departures.push(userId);
@@ -161,7 +161,7 @@ describe('voice taken over by another connection of the account', () => {
       takenOver?: boolean;
     }[] = [];
     const subscription = pubsub
-      .subscribe(ServerEvents.USER_LEAVE_VOICE)
+      .subscribeFor(1, ServerEvents.USER_LEAVE_VOICE)
       .subscribe({
         next: (event) => {
           departures.push(event);

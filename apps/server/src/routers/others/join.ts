@@ -157,8 +157,20 @@ const joinServerRoute = rateLimitedProcedure(publicProcedure, {
       ctx.saveUserIp(ctx.user.id, connectionInfo.ip);
     }
 
-    const voiceMap = VoiceRuntime.getVoiceMap();
-    const externalStreamsMap = VoiceRuntime.getExternalStreamsMap();
+    // who is in a voice channel is only for the people who can see it
+    const visibleChannelIds = new Set(
+      channelsForUser.map((channel) => channel.id)
+    );
+    const voiceMap = Object.fromEntries(
+      Object.entries(VoiceRuntime.getVoiceMap()).filter(([channelId]) =>
+        visibleChannelIds.has(Number(channelId))
+      )
+    );
+    const externalStreamsMap = Object.fromEntries(
+      Object.entries(VoiceRuntime.getExternalStreamsMap()).filter(
+        ([channelId]) => visibleChannelIds.has(Number(channelId))
+      )
+    );
 
     await db
       .update(users)

@@ -9,7 +9,8 @@ import { db } from '.';
 import { enforceVoicePermissions } from '../helpers/enforce-voice-permissions';
 import { getCapabilityAccessRules } from '../helpers/plugin-capability-access';
 import { logger } from '../logger';
-import { pubsub } from '../utils/pubsub';
+import { VoiceRuntime } from '../runtimes/voice';
+import { pubsub, type TPubSubEvents } from '../utils/pubsub';
 import {
   channelUserCan,
   getAffectedOnlineUserIdsForChannel,
@@ -241,6 +242,72 @@ const publishChannel = async (
   }
 };
 
+type TVoiceEvent =
+  | ServerEvents.USER_JOIN_VOICE
+  | ServerEvents.USER_LEAVE_VOICE
+  | ServerEvents.USER_VOICE_STATE_UPDATE
+  | ServerEvents.USER_VOICE_REACTION
+  | ServerEvents.USER_VOICE_SOUND
+  | ServerEvents.VOICE_ADD_EXTERNAL_STREAM
+  | ServerEvents.VOICE_UPDATE_EXTERNAL_STREAM
+  | ServerEvents.VOICE_REMOVE_EXTERNAL_STREAM;
+
+// voice presence says who is in a channel, so it goes to whoever can see that channel. the
+// people in the call get it too, which covers someone moved into a channel they cannot see,
+// and so does the user the event is about, who may just have left because they lost access
+const publishVoiceEvent = async <TTopic extends TVoiceEvent>(
+  topic: TTopic,
+  payload: TPubSubEvents[TTopic]
+) => {
+  const { channelId } = payload;
+  const audience = new Set(
+    await getAffectedOnlineUserIdsForChannel(
+      channelId,
+      ChannelPermission.VIEW_CHANNEL
+    )
+  );
+
+  const runtime = VoiceRuntime.findById(channelId);
+
+  if (runtime) {
+    const { users } = runtime.getState();
+
+    users.forEach(({ userId }) => audience.add(userId));
+  }
+
+  if ('userId' in payload) {
+    audience.add(payload.userId);
+  }
+
+  pubsub.publishFor([...audience], topic, payload);
+};
+
+// the voice events only reach people who can see the channel, so someone who has just been
+// given access is sent who is already in the call, as the joins they missed
+const publishVoiceSnapshot = (userIds: number[], channelId: number) => {
+  const runtime = VoiceRuntime.findById(channelId);
+
+  if (!runtime || userIds.length === 0) return;
+
+  const { users, externalStreams } = runtime.getState();
+
+  users.forEach(({ userId, state }) => {
+    pubsub.publishFor(userIds, ServerEvents.USER_JOIN_VOICE, {
+      channelId,
+      userId,
+      state
+    });
+  });
+
+  Object.entries(externalStreams).forEach(([streamId, stream]) => {
+    pubsub.publishFor(userIds, ServerEvents.VOICE_ADD_EXTERNAL_STREAM, {
+      channelId,
+      streamId: Number(streamId),
+      stream
+    });
+  });
+};
+
 const publishHiddenChannelToUser = async (
   userId: number,
   channelId: number
@@ -262,6 +329,7 @@ const publishHiddenChannelToUser = async (
   if (!channel) return;
 
   pubsub.publishFor(userId, ServerEvents.CHANNEL_CREATE, channel);
+  publishVoiceSnapshot([userId], channelId);
 };
 
 const unpublishHiddenChannelFromUser = async (
@@ -361,6 +429,7 @@ const publishChannelAccessChange = async (
 
     if (channel) {
       pubsub.publishFor(gained, ServerEvents.CHANNEL_CREATE, channel);
+      publishVoiceSnapshot(gained, channelId);
     }
   }
 
@@ -384,9 +453,10 @@ const publishChannelListChange = async (
 
   channelsAfter
     .filter((channel) => !beforeSet.has(channel.id))
-    .forEach((channel) =>
-      pubsub.publishFor(userId, ServerEvents.CHANNEL_CREATE, channel)
-    );
+    .forEach((channel) => {
+      pubsub.publishFor(userId, ServerEvents.CHANNEL_CREATE, channel);
+      publishVoiceSnapshot([userId], channel.id);
+    });
 
   channelIdsBefore
     .filter((channelId) => !afterSet.has(channelId))
@@ -449,5 +519,6 @@ export {
   publishSound,
   publishSticker,
   publishUser,
+  publishVoiceEvent,
   unpublishHiddenChannelFromUser
 };

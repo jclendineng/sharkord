@@ -1,5 +1,6 @@
 import { ChannelPermission, ServerEvents } from '@sharkord/shared';
 import { z } from 'zod';
+import { publishVoiceEvent } from '../../db/publishers';
 import { getCurrentVoiceRuntime } from '../../helpers/get-current-voice-runtime';
 import { VoiceRuntime } from '../../runtimes/voice';
 import { invariant } from '../../utils/invariant';
@@ -52,7 +53,7 @@ const updateVoiceStateRoute = protectedProcedure
 
     const newState = runtime.getUserState(ctx.user.id);
 
-    ctx.pubsub.publish(ServerEvents.USER_VOICE_STATE_UPDATE, {
+    await publishVoiceEvent(ServerEvents.USER_VOICE_STATE_UPDATE, {
       channelId: channelId,
       userId: ctx.user.id,
       state: newState

@@ -10,12 +10,14 @@ import type {
   UpgradePluginContext
 } from '@sharkord/plugin-sdk';
 import {
+  getErrorMessage,
   ServerEvents,
   StreamKind,
   type ChannelPermission,
   type Permission
 } from '@sharkord/shared';
 import path from 'path';
+import { publishVoiceEvent } from '../db/publishers';
 import { channelUserCan } from '../db/queries/channels';
 import { getFileNameById } from '../db/queries/files';
 import { getMessage } from '../db/queries/messages';
@@ -138,10 +140,15 @@ const createStream = (
 
   const stream = channel.getState().externalStreams[streamId]!;
 
-  pubsub.publish(ServerEvents.VOICE_ADD_EXTERNAL_STREAM, {
+  publishVoiceEvent(ServerEvents.VOICE_ADD_EXTERNAL_STREAM, {
     channelId: options.channelId,
     streamId,
     stream
+  }).catch((error) => {
+    scopedLogger.error(
+      `Failed to publish external stream ${streamId}:`,
+      getErrorMessage(error)
+    );
   });
 
   for (const [kind, producer] of [

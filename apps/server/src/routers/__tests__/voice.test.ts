@@ -760,7 +760,7 @@ describe('voice router', () => {
         [];
 
       const subscription = pubsub
-        .subscribe(ServerEvents.USER_VOICE_SOUND)
+        .subscribeFor(1, ServerEvents.USER_VOICE_SOUND)
         .subscribe({
           next: (play) => {
             plays.push(play);
@@ -901,7 +901,7 @@ describe('voice router', () => {
       }[] = [];
 
       const subscription = pubsub
-        .subscribe(ServerEvents.USER_VOICE_REACTION)
+        .subscribeFor(1, ServerEvents.USER_VOICE_REACTION)
         .subscribe({
           next: (reaction) => {
             reactions.push(reaction);
@@ -1157,7 +1157,7 @@ describe('voice producer subscriptions', () => {
       const updates: { userId: number; webcamEnabled: boolean }[] = [];
 
       const subscription = pubsub
-        .subscribe(ServerEvents.USER_VOICE_STATE_UPDATE)
+        .subscribeFor(2, ServerEvents.USER_VOICE_STATE_UPDATE)
         .subscribe({
           next: ({ userId, state }) => {
             updates.push({ userId, webcamEnabled: state.webcamEnabled });
@@ -1269,5 +1269,117 @@ describe('voice producer subscriptions', () => {
         await runtime.destroy();
       }
     });
+  });
+});
+
+describe('voice presence audience', () => {
+  const watch = <TTopic extends ServerEvents>(
+    userId: number,
+    topic: TTopic
+  ) => {
+    const received: unknown[] = [];
+    const subscription = pubsub
+      .subscribeFor(userId, topic)
+      .subscribe({ next: (event) => received.push(event) });
+
+    return { received, stop: () => subscription.unsubscribe() };
+  };
+
+  test('should not tell a user about a voice channel they cannot see', async () => {
+    const runtime = new VoiceRuntime(PRIVATE_VOICE_CHANNEL_ID);
+
+    runtime.addUser(1, { micMuted: false, soundMuted: false });
+
+    await initTest(2, { socket: createFakeSocket() });
+
+    const { caller } = await initTest(1, undefined, {
+      currentVoiceChannelId: PRIVATE_VOICE_CHANNEL_ID
+    });
+    const outsider = watch(2, ServerEvents.USER_VOICE_REACTION);
+    const subject = watch(1, ServerEvents.USER_VOICE_REACTION);
+
+    try {
+      await caller.voice.sendReaction({ emoji: 'tada' });
+
+      expect(outsider.received).toEqual([]);
+      expect(subject.received).toHaveLength(1);
+    } finally {
+      outsider.stop();
+      subject.stop();
+      await runtime.destroy();
+    }
+  });
+
+  test('should tell an online user about a voice channel they can see', async () => {
+    const { runtime, caller } = await joinVoiceChannelTwo(1);
+
+    await initTest(2, { socket: createFakeSocket() });
+
+    const viewer = watch(2, ServerEvents.USER_VOICE_REACTION);
+
+    try {
+      await caller.voice.sendReaction({ emoji: 'tada' });
+
+      expect(viewer.received).toEqual([
+        { channelId: VOICE_CHANNEL_ID, userId: 1, emoji: 'tada' }
+      ]);
+    } finally {
+      viewer.stop();
+      await runtime.destroy();
+    }
+  });
+
+  test('should send who is in the call to a user who just gained access', async () => {
+    const runtime = new VoiceRuntime(PRIVATE_VOICE_CHANNEL_ID);
+
+    runtime.addUser(1, { micMuted: false, soundMuted: false });
+
+    await initTest(2, { socket: createFakeSocket() });
+
+    const { caller: owner } = await initTest(1);
+    const joins = watch(2, ServerEvents.USER_JOIN_VOICE);
+
+    try {
+      await owner.channels.updatePermissions({
+        channelId: PRIVATE_VOICE_CHANNEL_ID,
+        userId: 2,
+        permissions: [ChannelPermission.VIEW_CHANNEL]
+      });
+
+      expect(joins.received).toMatchObject([
+        { channelId: PRIVATE_VOICE_CHANNEL_ID, userId: 1 }
+      ]);
+    } finally {
+      joins.stop();
+      await runtime.destroy();
+    }
+  });
+
+  test('should leave channels the user cannot see out of the voice map on join', async () => {
+    const runtime = new VoiceRuntime(PRIVATE_VOICE_CHANNEL_ID);
+
+    runtime.addUser(1, { micMuted: false, soundMuted: false });
+
+    const { caller: member } = await initTest(2);
+    const { caller: owner } = await initTest(1);
+
+    try {
+      const memberHandshake = await member.others.handshake();
+      const ownerHandshake = await owner.others.handshake();
+      const memberJoin = await member.others.joinServer({
+        handshakeHash: memberHandshake.handshakeHash
+      });
+      const ownerJoin = await owner.others.joinServer({
+        handshakeHash: ownerHandshake.handshakeHash
+      });
+
+      expect(memberJoin.voiceMap[PRIVATE_VOICE_CHANNEL_ID]).toBeUndefined();
+      expect(
+        memberJoin.externalStreamsMap[PRIVATE_VOICE_CHANNEL_ID]
+      ).toBeUndefined();
+      expect(ownerJoin.voiceMap[PRIVATE_VOICE_CHANNEL_ID]).toBeDefined();
+    } finally {
+      await runtime.destroy();
+    }
   });
 });

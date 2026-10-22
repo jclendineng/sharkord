@@ -4,6 +4,7 @@ import {
   StreamKind,
   type TVoiceUserState
 } from '@sharkord/shared';
+import { publishVoiceEvent } from '../db/publishers';
 import { channelUserCan } from '../db/queries/channels';
 import { VoiceRuntime } from '../runtimes/voice';
 import { pubsub } from '../utils/pubsub';
@@ -62,7 +63,7 @@ const enforceUserVoicePermissions = async (userId: number) => {
 
   if (!stateChanged) return;
 
-  pubsub.publish(ServerEvents.USER_VOICE_STATE_UPDATE, {
+  await publishVoiceEvent(ServerEvents.USER_VOICE_STATE_UPDATE, {
     channelId,
     userId,
     state: runtime.getUserState(userId)

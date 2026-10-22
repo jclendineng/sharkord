@@ -1,4 +1,5 @@
 import { ServerEvents } from '@sharkord/shared';
+import { publishVoiceEvent } from '../db/publishers';
 import { VoiceRuntime } from '../runtimes/voice';
 import type { Context } from '../utils/trpc';
 import { findVoiceSocket } from '../utils/wss';
@@ -8,7 +9,7 @@ import { findVoiceSocket } from '../utils/wss';
 // end its call; the one joining ignores its own leave while the join is under way. before,
 // the join was refused, and a phone back from the background whose old socket the server had
 // not yet noticed was dead could neither join nor leave
-const takeOverVoiceSeat = (ctx: Context) => {
+const takeOverVoiceSeat = async (ctx: Context) => {
   const ownSocket = ctx.getOwnWs();
 
   // a caller with no socket of its own, a plugin's, takes nobody's seat
@@ -27,7 +28,7 @@ const takeOverVoiceSeat = (ctx: Context) => {
 
   runtime.removeUser(ctx.user.id);
 
-  ctx.pubsub.publish(ServerEvents.USER_LEAVE_VOICE, {
+  await publishVoiceEvent(ServerEvents.USER_LEAVE_VOICE, {
     channelId: runtime.id,
     userId: ctx.user.id,
     takenOver: true
