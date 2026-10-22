@@ -1,6 +1,9 @@
 import {
   ActivityLogType,
   Permission,
+  STORAGE_MAX_AVATAR_SIZE,
+  STORAGE_MAX_BANNER_SIZE,
+  STORAGE_MAX_FILE_SIZE,
   STORAGE_MAX_FILES_PER_MESSAGE,
   type TTempFile
 } from '@sharkord/shared';
@@ -273,6 +276,27 @@ describe('others router', () => {
     expect(settings.storageMaxFilesPerMessage).toBe(
       STORAGE_MAX_FILES_PER_MESSAGE
     );
+  });
+
+  test('should refuse size limits above the most the server supports', async () => {
+    const { caller } = await initTest(1);
+    const before = await caller.others.getSettings();
+
+    for (const limit of [
+      { storageUploadMaxFileSize: STORAGE_MAX_FILE_SIZE + 1 },
+      { storageMaxAvatarSize: STORAGE_MAX_AVATAR_SIZE + 1 },
+      { storageMaxBannerSize: STORAGE_MAX_BANNER_SIZE + 1 }
+    ]) {
+      await expect(caller.others.updateSettings(limit)).rejects.toThrow();
+    }
+
+    const after = await caller.others.getSettings();
+
+    expect(after.storageUploadMaxFileSize).toBe(
+      before.storageUploadMaxFileSize
+    );
+    expect(after.storageMaxAvatarSize).toBe(before.storageMaxAvatarSize);
+    expect(after.storageMaxBannerSize).toBe(before.storageMaxBannerSize);
   });
 
   describe('storage settings permissions', () => {

@@ -4,6 +4,9 @@ import {
   AFK_TIMEOUT_MIN_SECONDS,
   ChannelType,
   Permission,
+  STORAGE_MAX_AVATAR_SIZE,
+  STORAGE_MAX_BANNER_SIZE,
+  STORAGE_MAX_FILE_SIZE,
   STORAGE_MAX_FILES_PER_MESSAGE,
   STORAGE_MAX_IMAGE_OPTIMIZATION_QUALITY,
   STORAGE_MIN_IMAGE_OPTIMIZATION_QUALITY,
@@ -26,9 +29,21 @@ const zStorageSettings = z.object({
   storageUploadEnabled: z.boolean().optional(),
   storageFileSharingInDirectMessages: z.boolean().optional(),
   storageQuota: z.number().min(0).optional(),
-  storageUploadMaxFileSize: z.number().min(0).optional(),
-  storageMaxAvatarSize: z.number().min(0).optional(),
-  storageMaxBannerSize: z.number().min(0).optional(),
+  storageUploadMaxFileSize: z
+    .number()
+    .min(0)
+    .max(STORAGE_MAX_FILE_SIZE)
+    .optional(),
+  storageMaxAvatarSize: z
+    .number()
+    .min(0)
+    .max(STORAGE_MAX_AVATAR_SIZE)
+    .optional(),
+  storageMaxBannerSize: z
+    .number()
+    .min(0)
+    .max(STORAGE_MAX_BANNER_SIZE)
+    .optional(),
   storageMaxFilesPerMessage: z
     .number()
     .int()

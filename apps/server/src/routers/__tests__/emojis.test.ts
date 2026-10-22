@@ -1,4 +1,4 @@
-import type { TTempFile } from '@sharkord/shared';
+import { EMOJI_MAX_FILE_SIZE, type TTempFile } from '@sharkord/shared';
 import { describe, expect, test } from 'bun:test';
 import { initTest, uploadFile } from '../../__tests__/helpers';
 import { eventBus } from '../../plugins/event-bus';
@@ -79,6 +79,60 @@ describe('emojis router', () => {
     expect(addedEmoji!.name).toBe('test_emoji');
     expect(addedEmoji!.fileId).toBeDefined();
     expect(addedEmoji!.userId).toBe(1);
+  });
+
+  test('should refuse an emoji that is not an image', async () => {
+    const { caller, mockedToken } = await initTest();
+    const file = new File(['not an image'], 'notes.txt', {
+      type: 'text/plain'
+    });
+    const upload = (await (
+      await uploadFile(file, mockedToken)
+    ).json()) as TTempFile;
+
+    await expect(
+      caller.emojis.add([{ fileId: upload.id, name: 'notes' }])
+    ).rejects.toThrow('An emoji has to be an image of 2 MB or less.');
+
+    expect(await caller.emojis.getAll()).toEqual([]);
+  });
+
+  test('should refuse an emoji over the size limit and add none of its batch', async () => {
+    const { caller, mockedToken } = await initTest();
+    const small = new File(['small'], 'small.png', { type: 'image/png' });
+    const large = new File(
+      [new Uint8Array(EMOJI_MAX_FILE_SIZE + 1)],
+      'large.png',
+      { type: 'image/png' }
+    );
+    const smallUpload = (await (
+      await uploadFile(small, mockedToken)
+    ).json()) as TTempFile;
+    const largeUpload = (await (
+      await uploadFile(large, mockedToken)
+    ).json()) as TTempFile;
+
+    await expect(
+      caller.emojis.add([
+        { fileId: smallUpload.id, name: 'small' },
+        { fileId: largeUpload.id, name: 'large' }
+      ])
+    ).rejects.toThrow('An emoji has to be an image of 2 MB or less.');
+
+    expect(await caller.emojis.getAll()).toEqual([]);
+  });
+
+  test('should refuse an upload that belongs to someone else', async () => {
+    const { mockedToken } = await initTest(2);
+    const file = new File(['emoji'], 'emoji.png', { type: 'image/png' });
+    const upload = (await (
+      await uploadFile(file, mockedToken)
+    ).json()) as TTempFile;
+    const { caller } = await initTest();
+
+    await expect(
+      caller.emojis.add([{ fileId: upload.id, name: 'stolen' }])
+    ).rejects.toThrow('That upload was not found, try adding the emoji again.');
   });
 
   test('should add multiple emojis at once', async () => {
