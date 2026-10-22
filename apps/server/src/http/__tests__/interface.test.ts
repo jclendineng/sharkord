@@ -389,6 +389,20 @@ describe('/interface', () => {
     expect(policy).toContain('https://raw.githubusercontent.com');
   });
 
+  test('should only send hsts when the page was reached over https', async () => {
+    const plain = await fetch(`${testsBaseUrl}/`);
+
+    // the test server is on loopback, which is a trusted proxy, so its forwarded proto counts
+    const proxied = await fetch(`${testsBaseUrl}/`, {
+      headers: { 'x-forwarded-proto': 'https' }
+    });
+
+    expect(plain.headers.get('Strict-Transport-Security')).toBeNull();
+    expect(proxied.headers.get('Strict-Transport-Security')).toBe(
+      'max-age=15552000'
+    );
+  });
+
   test('should send the framing and referrer headers on every response', async () => {
     const response = await fetch(`${testsBaseUrl}/non-existent-file.html`);
 

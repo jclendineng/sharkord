@@ -132,6 +132,7 @@ const GlobalErrorFallback = memo(
               <a
                 href={GITHUB_ISSUES_URL}
                 target="_blank"
+                rel="noopener noreferrer"
                 className="hidden hover:text-foreground sm:inline"
               >
                 {GITHUB_ISSUES_URL}

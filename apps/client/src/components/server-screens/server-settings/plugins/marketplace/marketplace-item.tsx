@@ -255,6 +255,7 @@ const MarketplaceItem = memo(
               <a
                 href={plugin.homepage}
                 target="_blank"
+                rel="noopener noreferrer"
                 className="underline hover:text-primary transition-colors"
               >
                 {plugin.homepage}

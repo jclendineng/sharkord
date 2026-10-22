@@ -248,6 +248,20 @@ describe('message metadata normalization', () => {
     ).toEqual(['https://example.com/favicon.ico']);
   });
 
+  test('should drop preview images and favicons that are not http or https', () => {
+    const metadata = createOpenGraphMetadata(
+      {
+        title: 'Example page',
+        images: ['javascript:alert(1)', 'https://example.com/cover.png'],
+        favicons: ['data:image/png;base64,AAAA', 'file:///etc/passwd']
+      },
+      'https://example.com/article'
+    );
+
+    expect(metadata?.images).toEqual(['https://example.com/cover.png']);
+    expect(metadata?.favicons).toBeUndefined();
+  });
+
   test('normalizes link-preview-js style previews into open graph metadata', () => {
     const metadata = createOpenGraphMetadata(
       {

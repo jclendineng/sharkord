@@ -3,7 +3,7 @@ import path from 'path';
 import { isPathInside } from '../helpers/is-path-inside';
 import { INTERFACE_PATH } from '../helpers/paths';
 import { IS_DEVELOPMENT, IS_TEST } from '../utils/env';
-import { sendFile, sendJsonError } from './helpers';
+import { isSecureRequest, sendFile, sendJsonError } from './helpers';
 
 // report-only: the browser logs violations and enforces nothing
 const CONTENT_SECURITY_POLICY = [
@@ -33,6 +33,12 @@ const interfaceRouteHandler = async (
   }
 
   res.setHeader('Content-Security-Policy-Report-Only', CONTENT_SECURITY_POLICY);
+
+  // only over https, where a browser honours it. no includeSubDomains, since the server does
+  // not know what else runs under its domain
+  if (isSecureRequest(req)) {
+    res.setHeader('Strict-Transport-Security', 'max-age=15552000');
+  }
 
   let subPath = decodeURIComponent(url.pathname);
 

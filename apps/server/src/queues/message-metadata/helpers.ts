@@ -79,11 +79,20 @@ const normalizeAbsoluteUrl = (
     return undefined;
   }
 
+  let url: URL;
+
   try {
-    return new URL(candidate, baseUrl).toString();
+    url = new URL(candidate, baseUrl);
   } catch {
     return undefined;
   }
+
+  // every viewer's app loads these, so a page cannot point them at another scheme
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    return undefined;
+  }
+
+  return url.toString();
 };
 
 const normalizeUrlList = (

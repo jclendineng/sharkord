@@ -63,6 +63,7 @@ const FileCard = ({
       className="flex max-w-sm items-center gap-3 rounded-lg border border-border bg-background p-2 select-none transition-all duration-200 hover:border-primary/50 hover:bg-accent hover:shadow-md"
       href={href}
       target="_blank"
+      rel="noopener noreferrer"
     >
       <div className="flex shrink-0 items-center justify-center rounded-md bg-muted p-2 transition-colors duration-200">
         <FileIcon extension={extension} />

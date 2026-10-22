@@ -35,6 +35,7 @@ const OpenGraph = memo(({ previews }: TOpenGraphProps) => {
               alt={preview.title || preview.siteName || preview.hostname}
               className="block h-full w-full object-cover object-center"
               loading="lazy"
+              referrerPolicy="no-referrer"
             />
           </div>
         )}
@@ -47,6 +48,7 @@ const OpenGraph = memo(({ previews }: TOpenGraphProps) => {
                 alt=""
                 className="h-3.5 w-3.5 shrink-0 rounded-full object-cover"
                 loading="lazy"
+                referrerPolicy="no-referrer"
                 onError={hideBrokenFavicon}
               />
             ) : (
