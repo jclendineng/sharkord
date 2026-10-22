@@ -29,6 +29,26 @@ struct UserBar: View {
         isCompact ? 22 : 28
     }
 
+    private var horizontalPadding: CGFloat {
+        isCompact ? 10 : 12
+    }
+
+    private var verticalPadding: CGFloat {
+        isCompact ? 7 : 10
+    }
+
+    // the profile's highlight stops this far from the bar's edge all round, its corners the
+    // bar's less that gap. a smaller radius left dark corners against the bar's rounded ends
+    private static let highlightGap: CGFloat = 3
+
+    private var profileHighlightRadius: CGFloat {
+        cornerRadius - Self.highlightGap
+    }
+
+    private var buttonHighlightRadius: CGFloat {
+        cornerRadius - verticalPadding
+    }
+
     var body: some View {
         HStack(spacing: 12) {
             Button(action: showProfile) {
@@ -55,11 +75,15 @@ struct UserBar: View {
 
                     Spacer(minLength: 0)
                 }
-                .padding(4)
-                .hoverHighlight(cornerRadius: 10)
-                .padding(-4)
+                .padding(.horizontal, horizontalPadding - Self.highlightGap)
+                .padding(.vertical, verticalPadding - Self.highlightGap)
+                .hoverHighlight(cornerRadius: profileHighlightRadius)
+                .padding(.horizontal, Self.highlightGap - horizontalPadding)
+                .padding(.vertical, Self.highlightGap - verticalPadding)
             }
             .buttonStyle(.plain)
+            // the system's pointer platter drew under the highlight, in a shape of its own
+            .hoverEffectDisabled()
 
             if ProcessInfo.processInfo.isiOSAppOnMac {
                 // discord's mac: mute, deafen and settings at hand, the inbox up in the top bar
@@ -67,6 +91,7 @@ struct UserBar: View {
                     title: session.micMuted ? "Unmute" : "Mute",
                     systemImage: session.micMuted ? "mic.slash.fill" : "mic.fill",
                     isOff: session.micMuted,
+                    highlightRadius: buttonHighlightRadius,
                     action: toggleMic
                 )
 
@@ -74,22 +99,34 @@ struct UserBar: View {
                     title: session.soundMuted ? "Undeafen" : "Deafen",
                     systemImage: session.soundMuted ? "headphones.slash" : "headphones",
                     isOff: session.soundMuted,
+                    highlightRadius: buttonHighlightRadius,
                     action: toggleSound
                 )
 
-                UserBarButton(title: "User Settings", systemImage: "gearshape.fill", isOff: false, action: openSettings)
+                UserBarButton(
+                    title: "User Settings",
+                    systemImage: "gearshape.fill",
+                    isOff: false,
+                    highlightRadius: buttonHighlightRadius,
+                    action: openSettings
+                )
             } else {
                 unreadsButton
             }
         }
-        .padding(.horizontal, isCompact ? 10 : 12)
-        .padding(.vertical, isCompact ? 7 : 10)
-        .background(Color(hex: "#202125"), in: .rect(cornerRadius: cornerRadius, style: .continuous))
+        .padding(.horizontal, horizontalPadding)
+        .padding(.vertical, verticalPadding)
+        // the shadow on the bar's shape alone: on the whole bar it fell under each hover
+        // highlight too, a dark band beneath it
+        .background {
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .fill(Color(hex: "#202125"))
+                .shadow(color: .black.opacity(0.4), radius: 20, y: 8)
+        }
         .overlay {
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .strokeBorder(.white.opacity(0.06), lineWidth: 1)
         }
-        .shadow(color: .black.opacity(0.4), radius: 20, y: 8)
         // handed over by hand: on a mac a sheet's background is worked out before it inherits
         // anything, so a sheet reading a store it was not given crashed on opening
         .modifier(ProfilePresentation(isPresented: $isProfilePresented) {
@@ -167,6 +204,7 @@ private struct UserBarButton: View {
     let title: String
     let systemImage: String
     let isOff: Bool
+    let highlightRadius: CGFloat
     let action: () -> Void
 
     var body: some View {
@@ -176,9 +214,10 @@ private struct UserBarButton: View {
             .foregroundStyle(isOff ? Theme.red : Theme.muted)
             .contentTransition(.symbolEffect(.replace))
             .frame(width: 36, height: 36)
-            .hoverHighlight(cornerRadius: 10)
+            .hoverHighlight(cornerRadius: highlightRadius)
             .hoverPop()
             .buttonStyle(.plain)
+            .hoverEffectDisabled()
     }
 }
 
