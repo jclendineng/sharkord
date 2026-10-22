@@ -3,6 +3,7 @@ import { deleteExpiredMessages } from '../helpers/message-retention';
 import { logger } from '../logger';
 import { cleanupFiles } from './cleanup-files';
 import { moveAfkUsers } from './move-afk-users';
+import { sweepStaleUploads } from './sweep-stale-uploads';
 
 enum CRON_TIMES {
   EVERY_15_MINUTES = '*/15 * * * *',
@@ -16,6 +17,16 @@ const loadCrons = () => {
   new CronJob(
     CRON_TIMES.EVERY_15_MINUTES,
     cleanupFiles,
+    null,
+    true,
+    'Europe/Lisbon',
+    null,
+    true
+  );
+
+  new CronJob(
+    CRON_TIMES.EVERY_15_MINUTES,
+    sweepStaleUploads,
     null,
     true,
     'Europe/Lisbon',

@@ -11,7 +11,7 @@ import {
   type TTempFile
 } from '@sharkord/shared';
 import { randomUUIDv7 } from 'bun';
-import { createHash, randomUUID } from 'crypto';
+import { randomUUID } from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
 import { db } from '../db';
@@ -51,13 +51,18 @@ const OPTIMIZABLE_IMAGE_EXTENSIONS = new Set([
   '.avif'
 ]);
 
+// streamed like sha256File, since an upload can be up to the size limit and reading it whole
+// would hold all of it in memory
 const md5File = async (path: string): Promise<string> => {
-  const file = await fs.readFile(path);
-  const hash = createHash('md5');
+  const hasher = new Bun.CryptoHasher('md5');
+  const file = Bun.file(path);
+  const stream = file.stream() as unknown as AsyncIterable<Uint8Array>;
 
-  hash.update(file);
+  for await (const chunk of stream) {
+    hasher.update(chunk);
+  }
 
-  return hash.digest('hex');
+  return hasher.digest('hex');
 };
 
 const moveFile = async (src: string, dest: string) => {

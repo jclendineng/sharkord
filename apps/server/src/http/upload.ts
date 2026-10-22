@@ -100,9 +100,42 @@ const uploadFileRouteHandler = async (
   const safePath = await fileManager.getSafeUploadPath(originalName);
   const fileStream = fs.createWriteStream(safePath);
 
+  let failed = false;
+
+  // a client that disconnects mid body leaves a partial file and an open descriptor behind
+  // unless the write is torn down here. a body longer than content-length cannot arrive: the
+  // parser frames it by that header and refuses one that also says chunked
+  const abortUpload = async (status?: number, message?: string) => {
+    if (failed) return;
+
+    failed = true;
+
+    req.unpipe(fileStream);
+    fileStream.destroy();
+
+    if (status && message && !res.headersSent) {
+      sendJsonError(res, status, message);
+    }
+
+    await fs.promises.rm(safePath, { force: true });
+  };
+
+  req.on('close', () => {
+    if (req.complete) return;
+
+    abortUpload().catch((error) => {
+      logger.error(
+        'Error cleaning up aborted upload: %s',
+        getErrorMessage(error)
+      );
+    });
+  });
+
   req.pipe(fileStream);
 
   fileStream.on('finish', async () => {
+    if (failed) return;
+
     try {
       const { size } = await fs.promises.stat(safePath);
 
@@ -134,7 +167,12 @@ const uploadFileRouteHandler = async (
   fileStream.on('error', (err) => {
     logger.error('Error uploading file: %s', getErrorMessage(err));
 
-    sendJsonError(res, 500, 'File upload failed');
+    abortUpload(500, 'File upload failed').catch((error) => {
+      logger.error(
+        'Error cleaning up failed upload: %s',
+        getErrorMessage(error)
+      );
+    });
   });
 };
 

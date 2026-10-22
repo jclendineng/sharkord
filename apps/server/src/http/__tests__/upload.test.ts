@@ -8,7 +8,7 @@ import { initTest, login, uploadFile } from '../../__tests__/helpers';
 import { tdb, testsBaseUrl } from '../../__tests__/setup';
 import { config } from '../../config';
 import { rolePermissions, settings, users } from '../../db/schema';
-import { TMP_PATH } from '../../helpers/paths';
+import { TMP_PATH, UPLOADS_PATH } from '../../helpers/paths';
 import { createSessionToken } from '../../helpers/sessions';
 import { sanitizeFileName } from '../helpers';
 
@@ -388,6 +388,48 @@ describe('/upload', () => {
     });
 
     expect(raw).toContain('400 Bad Request');
+  });
+
+  test('should delete the partial file when the client disconnects mid upload', async () => {
+    const { port } = new URL(testsBaseUrl);
+    const before = new Set(await fs.readdir(UPLOADS_PATH));
+
+    await new Promise<void>((resolve, reject) => {
+      const socket = net.connect(Number(port), 'localhost', () => {
+        socket.write(
+          [
+            'POST /upload HTTP/1.1',
+            'Host: localhost',
+            'Content-Type: application/octet-stream',
+            'Content-Length: 100000',
+            `${UploadHeaders.ORIGINAL_NAME}: aborted.txt`,
+            `${UploadHeaders.TOKEN}: ${token}`,
+            '',
+            'only the first few bytes'
+          ].join('\r\n')
+        );
+
+        // give the handler time to open its file before the connection drops
+        setTimeout(() => socket.destroy(), 200);
+      });
+
+      socket.on('error', reject);
+      socket.on('close', () => resolve());
+    });
+
+    let leftover: string[] = [];
+
+    for (let attempt = 0; attempt < 20; attempt++) {
+      await Bun.sleep(50);
+
+      const entries = await fs.readdir(UPLOADS_PATH);
+
+      leftover = entries.filter((entry) => !before.has(entry));
+
+      if (leftover.length === 0) break;
+    }
+
+    expect(leftover).toEqual([]);
   });
 
   test('should reject a non-numeric content-length', async () => {
