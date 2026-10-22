@@ -1,6 +1,6 @@
 import { useAdminPlugins } from '@/features/server/admin/hooks';
 import { useCan, usePluginsEnabled } from '@/features/server/hooks';
-import { Permission } from '@sharkord/shared';
+import { Permission, USER_MODERATION_PERMISSIONS } from '@sharkord/shared';
 import {
   AudioLines,
   Blocks,
@@ -90,7 +90,7 @@ const ServerSettings = memo(({ close }: TServerSettingsProps) => {
         label: t('usersTab'),
         icon: Users,
         content: <UsersSection />,
-        permission: Permission.MANAGE_USERS
+        permission: USER_MODERATION_PERMISSIONS
       },
       {
         id: 'invites',

@@ -519,6 +519,13 @@
       "when": 1792366977312,
       "tag": "0073_invite_uses",
       "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "6",
+      "when": 1792701913435,
+      "tag": "0074_grant_moderation_permissions",
+      "breakpoints": true
     }
   ]
 }

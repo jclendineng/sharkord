@@ -1,4 +1,8 @@
-import { Permission, type TLogin } from '@sharkord/shared';
+import {
+  Permission,
+  USER_MODERATION_PERMISSIONS,
+  type TLogin
+} from '@sharkord/shared';
 import z from 'zod';
 import { getFilesByUserId } from '../../db/queries/files';
 import { getLastLogins } from '../../db/queries/logins';
@@ -7,6 +11,7 @@ import { getEffectiveStorageSpaceQuotaByUserId } from '../../db/queries/roles';
 import { getSettings } from '../../db/queries/server';
 import { getStorageUsageByUserId, getUserById } from '../../db/queries/users';
 import { clearFields } from '../../helpers/clear-fields';
+import { needsAnyPermission } from '../../helpers/needs-any-permission';
 import { invariant } from '../../utils/invariant';
 import { protectedProcedure } from '../../utils/trpc';
 
@@ -17,7 +22,7 @@ const getUserInfoRoute = protectedProcedure
     })
   )
   .query(async ({ ctx, input }) => {
-    await ctx.needsPermission(Permission.MANAGE_USERS);
+    await needsAnyPermission(ctx, USER_MODERATION_PERMISSIONS);
 
     const user = await getUserById(input.userId);
 

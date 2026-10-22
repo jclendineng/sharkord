@@ -15,7 +15,7 @@ const removeRoleRoute = protectedProcedure
     })
   )
   .mutation(async ({ ctx, input }) => {
-    await ctx.needsPermission(Permission.MANAGE_USERS);
+    await ctx.needsPermission(Permission.ASSIGN_ROLES);
 
     const role = await getRole(input.roleId);
 

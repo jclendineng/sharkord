@@ -2,6 +2,7 @@ import { Permission } from '@sharkord/shared';
 import { z } from 'zod';
 import { getRole } from '../../db/queries/roles';
 import { assertCanActOnUser } from '../../helpers/assert-can-act-on-user';
+import { assertCanAssignRole } from '../../helpers/assert-can-assign-role';
 import { assertCanModifyOwnerRole } from '../../helpers/assert-can-modify-owner-role';
 import { assertUserExists } from '../../helpers/moderation';
 import { assignRole } from '../../helpers/user-roles';
@@ -16,7 +17,7 @@ const addRoleRoute = protectedProcedure
     })
   )
   .mutation(async ({ ctx, input }) => {
-    await ctx.needsPermission(Permission.MANAGE_USERS);
+    await ctx.needsPermission(Permission.ASSIGN_ROLES);
 
     const [role] = await Promise.all([
       getRole(input.roleId),
@@ -36,6 +37,7 @@ const addRoleRoute = protectedProcedure
     });
 
     await assertCanActOnUser(ctx.userId, input.userId);
+    await assertCanAssignRole(ctx.userId, role);
 
     await assignRole(input.userId, role);
   });

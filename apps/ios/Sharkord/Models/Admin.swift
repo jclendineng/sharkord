@@ -22,6 +22,9 @@ enum Permission: String, CaseIterable, Codable {
     case manageSoundboard = "MANAGE_SOUNDBOARD"
     case manageSettings = "MANAGE_SETTINGS"
     case manageUsers = "MANAGE_USERS"
+    case kickMembers = "KICK_MEMBERS"
+    case banMembers = "BAN_MEMBERS"
+    case assignRoles = "ASSIGN_ROLES"
     case moveMembers = "MOVE_MEMBERS"
     case manageMessages = "MANAGE_MESSAGES"
     case manageStorage = "MANAGE_STORAGE"
@@ -31,8 +34,16 @@ enum Permission: String, CaseIterable, Codable {
     case usePlugins = "USE_PLUGINS"
     case viewUserSensitiveData = "VIEW_USER_SENSITIVE_DATA"
 
+    // packages/shared USER_MODERATION_PERMISSIONS: any one opens the members screen
+    static let userModeration: [Permission] = [.manageUsers, .kickMembers, .banMembers, .assignRoles]
+
     var title: String {
-        rawValue
+        // the id stayed MANAGE_USERS when kicking, banning and roles moved to their own
+        if self == .manageUsers {
+            return "Manage Accounts"
+        }
+
+        return rawValue
             .split(separator: "_")
             .map { $0.prefix(1) + $0.dropFirst().lowercased() }
             .joined(separator: " ")
@@ -40,6 +51,7 @@ enum Permission: String, CaseIterable, Codable {
 
     var isAdmin: Bool {
         rawValue.hasPrefix("MANAGE_") || self == .moveMembers || self == .viewUserSensitiveData
+            || Self.userModeration.contains(self)
     }
 }
 

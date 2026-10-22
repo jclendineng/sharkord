@@ -15,6 +15,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - Database migrations run by themselves at startup.
   - This release adds tables for friends, group direct messages, private notes, the new member lounge, QR sign in and the soundboard.
   - Upstream's plugin storage migrations run as this fork's `0060_plugin_storage`, after the fork's own, so a database that already ran `0059` still gets them.
+  - `0074_grant_moderation_permissions` gives Kick Members, Ban Members and Assign Roles to every role that had Manage Users, so nobody loses what they could do. Manage Users is now called Manage Accounts and covers deleting accounts and password reset links.
   - `0073_invite_uses` adds the table of who signed up with which invite, and marks deleted invites instead of removing them. Sign ups from before it have only the count.
   - `0072_role_positions` gives roles an order, starting from the order they were made in.
   - `0071_onboarding_removes_default_role` adds the rules setting that takes the default role away on reacting, off for a lounge already set up.
@@ -209,6 +210,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - A wider plugin SDK: plugins can store data, add buttons and other parts under their messages, and take arguments in their commands.
 
 ### Changed
+
+- Manage Users is split into Kick Members, Ban Members, Assign Roles and Manage Accounts, and moderation follows the role order: you can only act on members ranked below you and only assign roles below your own.
 
 - The sign in page's GitHub link, the crash screen's report link and the developer console point to this fork rather than upstream.
 - File links are always signed, and uploads are stored under random names rather than their original ones.

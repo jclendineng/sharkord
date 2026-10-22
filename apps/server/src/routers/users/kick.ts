@@ -12,7 +12,7 @@ const kickRoute = protectedProcedure
     })
   )
   .mutation(async ({ ctx, input }) => {
-    await ctx.needsPermission(Permission.MANAGE_USERS);
+    await ctx.needsPermission(Permission.KICK_MEMBERS);
 
     await assertCanActOnUser(ctx.userId, input.userId);
 

@@ -40,7 +40,7 @@ struct MemberActionsSheet: View {
     }
 
     private var canManageRoles: Bool {
-        session.can(.manageRoles) && !assignableRoles.isEmpty
+        session.can(.assignRoles) && !assignableRoles.isEmpty
     }
 
     var body: some View {

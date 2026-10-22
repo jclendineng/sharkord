@@ -5,10 +5,14 @@ struct MembersScreen: View {
     @Environment(SessionStore.self) private var session
 
     @State private var users: [AdminUser] = []
-    @State private var roles: [AdminRole] = []
     @State private var query = ""
     @State private var errorMessage: String?
     @State private var isLoading = true
+
+    // the roles every member has from joining, roles.getAll needs manage roles
+    private var roles: [Role] {
+        session.rolesById.values.sorted(by: Role.ranksAbove)
+    }
 
     private var shown: [AdminUser] {
         users
@@ -53,11 +57,7 @@ struct MembersScreen: View {
 
     private func load() async {
         do {
-            async let loadedUsers: [AdminUser] = session.request("users.getAll")
-            async let loadedRoles: [AdminRole] = session.request("roles.getAll")
-
-            users = try await loadedUsers
-            roles = try await loadedRoles
+            users = try await session.request("users.getAll")
             errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
@@ -75,7 +75,7 @@ struct MembersScreen: View {
 
 private struct MemberRow: View {
     let user: AdminUser
-    let roles: [AdminRole]
+    let roles: [Role]
 
     @Environment(SessionStore.self) private var session
 
@@ -117,7 +117,7 @@ private struct MemberDetail: View {
     }
 
     let user: AdminUser
-    let roles: [AdminRole]
+    let roles: [Role]
     let onChange: () -> Void
 
     @Environment(SessionStore.self) private var session
@@ -136,6 +136,10 @@ private struct MemberDetail: View {
 
     private var isSelf: Bool {
         user.id == session.ownUserId
+    }
+
+    private var canModerate: Bool {
+        session.can(.kickMembers) || session.can(.banMembers) || session.can(.manageUsers)
     }
 
     var body: some View {
@@ -162,18 +166,20 @@ private struct MemberDetail: View {
                 }
             }
 
-            Section("Roles") {
-                ForEach(roles) { role in
-                    Toggle(isOn: binding(for: role)) {
-                        HStack(spacing: 8) {
-                            Circle()
-                                .fill(Color(hex: role.color))
-                                .frame(width: 10, height: 10)
+            if session.can(.assignRoles) {
+                Section("Roles") {
+                    ForEach(roles) { role in
+                        Toggle(isOn: binding(for: role)) {
+                            HStack(spacing: 8) {
+                                Circle()
+                                    .fill(Color(hex: role.color))
+                                    .frame(width: 10, height: 10)
 
-                            Text(role.name)
+                                Text(role.name)
+                            }
                         }
+                        .disabled(isWorking)
                     }
-                    .disabled(isWorking)
                 }
             }
 
@@ -181,20 +187,29 @@ private struct MemberDetail: View {
                 MemberActivity(info: info)
             }
 
-            if !isSelf {
+            if !isSelf, canModerate {
                 Section {
                     if user.banned {
                         if let banReason = user.banReason, !banReason.isEmpty {
                             LabeledContent("Ban Reason", value: banReason)
                         }
 
-                        Button("Unban", action: unban)
+                        if session.can(.banMembers) {
+                            Button("Unban", action: unban)
+                        }
                     } else {
-                        Button("Kick", role: .destructive) { pending = .kick }
-                        Button("Ban", role: .destructive) { pending = .ban }
+                        if session.can(.kickMembers) {
+                            Button("Kick", role: .destructive) { pending = .kick }
+                        }
+
+                        if session.can(.banMembers) {
+                            Button("Ban", role: .destructive) { pending = .ban }
+                        }
                     }
 
-                    Button("Delete Account", role: .destructive) { pending = .delete }
+                    if session.can(.manageUsers) {
+                        Button("Delete Account", role: .destructive) { pending = .delete }
+                    }
                 } header: {
                     Text("Moderation")
                 } footer: {
@@ -202,18 +217,20 @@ private struct MemberDetail: View {
                 }
             }
 
-            Section {
-                if let resetLink {
-                    ShareLink(item: resetLink) {
-                        Label("Share Reset Link", systemImage: "square.and.arrow.up")
+            if session.can(.manageUsers) {
+                Section {
+                    if let resetLink {
+                        ShareLink(item: resetLink) {
+                            Label("Share Reset Link", systemImage: "square.and.arrow.up")
+                        }
+                    } else {
+                        Button("Make a Password Reset Link", action: makeResetLink)
                     }
-                } else {
-                    Button("Make a Password Reset Link", action: makeResetLink)
+                } header: {
+                    Text("Password")
+                } footer: {
+                    Text("A link they open to set a new password. It works once, for 24 hours, and signs them out everywhere.")
                 }
-            } header: {
-                Text("Password")
-            } footer: {
-                Text("A link they open to set a new password. It works once, for 24 hours, and signs them out everywhere.")
             }
 
             if let errorMessage {
@@ -244,7 +261,7 @@ private struct MemberDetail: View {
         }
     }
 
-    private func binding(for role: AdminRole) -> Binding<Bool> {
+    private func binding(for role: Role) -> Binding<Bool> {
         Binding(
             get: { roleIds.contains(role.id) },
             set: { isOn in
@@ -253,7 +270,7 @@ private struct MemberDetail: View {
         )
     }
 
-    private func setRole(_ role: AdminRole, isOn: Bool) {
+    private func setRole(_ role: Role, isOn: Bool) {
         struct RoleInput: Encodable {
             let userId: Int
             let roleId: Int

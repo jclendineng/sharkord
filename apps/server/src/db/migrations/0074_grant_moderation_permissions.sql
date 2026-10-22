@@ -1,0 +1,3 @@
+INSERT OR IGNORE INTO `role_permissions` (`role_id`, `permission`, `created_at`) SELECT `role_id`, 'KICK_MEMBERS', unixepoch() FROM `role_permissions` WHERE `permission` = 'MANAGE_USERS';--> statement-breakpoint
+INSERT OR IGNORE INTO `role_permissions` (`role_id`, `permission`, `created_at`) SELECT `role_id`, 'BAN_MEMBERS', unixepoch() FROM `role_permissions` WHERE `permission` = 'MANAGE_USERS';--> statement-breakpoint
+INSERT OR IGNORE INTO `role_permissions` (`role_id`, `permission`, `created_at`) SELECT `role_id`, 'ASSIGN_ROLES', unixepoch() FROM `role_permissions` WHERE `permission` = 'MANAGE_USERS';

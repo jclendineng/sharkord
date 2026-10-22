@@ -1,3 +1,4 @@
+import { Protect } from '@/components/protect';
 import { UserAvatar } from '@/components/user-avatar';
 import { setModViewOpen } from '@/features/app/actions';
 import {
@@ -5,13 +6,14 @@ import {
   requestConfirmation,
   requestTextInput
 } from '@/features/dialogs/actions';
-import { useUserRoles } from '@/features/server/hooks';
+import { useCan, useUserRoles } from '@/features/server/hooks';
 import { useOwnUserId, useUserStatus } from '@/features/server/users/hooks';
 import { getUrlFromServer } from '@/helpers/get-file-url';
 import { getTRPCClient } from '@/lib/trpc';
 import {
   DELETED_USER_IDENTITY_AND_NAME,
   getTrpcError,
+  Permission,
   TestId,
   UserStatus
 } from '@sharkord/shared';
@@ -32,6 +34,8 @@ const Header = memo(() => {
   const userRoles = useUserRoles(user.id);
   const isDeletedUser = user.identity === DELETED_USER_IDENTITY_AND_NAME;
   const isOwnUser = user.id === ownUserId;
+  const can = useCan();
+  const canAssignRoles = can(Permission.ASSIGN_ROLES);
 
   const onRemoveRole = useCallback(
     async (roleId: number, roleName: string) => {
@@ -196,66 +200,78 @@ const Header = memo(() => {
       </div>
 
       <div className="flex flex-wrap gap-1.5">
-        <Button
-          data-testid={TestId.MOD_VIEW_KICK}
-          variant="outline"
-          size="sm"
-          onClick={onKick}
-          disabled={status === UserStatus.OFFLINE}
-        >
-          <UserMinus className="h-4 w-4" />
-          {t('kickBtn')}
-        </Button>
-        <Button
-          data-testid={TestId.MOD_VIEW_BAN}
-          variant="outline"
-          size="sm"
-          onClick={() => (user.banned ? onUnban() : onBan())}
-          disabled={isOwnUser || isDeletedUser}
-        >
-          <Gavel className="h-4 w-4" />
-          {user.banned ? t('unbanBtn') : t('banBtn')}
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() =>
-            openDialog(Dialog.DELETE_USER, {
-              user,
-              refetch,
-              onDelete: () => setModViewOpen(false)
-            })
-          }
-          disabled={isOwnUser || isDeletedUser}
-        >
-          <Trash className="h-4 w-4" />
-          {t('deleteBtn')}
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onPasswordReset}
-          disabled={isDeletedUser}
-        >
-          <KeyRound className="h-4 w-4" />
-          {t('passwordResetLinkBtn')}
-        </Button>
+        <Protect permission={Permission.KICK_MEMBERS}>
+          <Button
+            data-testid={TestId.MOD_VIEW_KICK}
+            variant="outline"
+            size="sm"
+            onClick={onKick}
+            disabled={status === UserStatus.OFFLINE}
+          >
+            <UserMinus className="h-4 w-4" />
+            {t('kickBtn')}
+          </Button>
+        </Protect>
+        <Protect permission={Permission.BAN_MEMBERS}>
+          <Button
+            data-testid={TestId.MOD_VIEW_BAN}
+            variant="outline"
+            size="sm"
+            onClick={() => (user.banned ? onUnban() : onBan())}
+            disabled={isOwnUser || isDeletedUser}
+          >
+            <Gavel className="h-4 w-4" />
+            {user.banned ? t('unbanBtn') : t('banBtn')}
+          </Button>
+        </Protect>
+        <Protect permission={Permission.MANAGE_USERS}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              openDialog(Dialog.DELETE_USER, {
+                user,
+                refetch,
+                onDelete: () => setModViewOpen(false)
+              })
+            }
+            disabled={isOwnUser || isDeletedUser}
+          >
+            <Trash className="h-4 w-4" />
+            {t('deleteBtn')}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onPasswordReset}
+            disabled={isDeletedUser}
+          >
+            <KeyRound className="h-4 w-4" />
+            {t('passwordResetLinkBtn')}
+          </Button>
+        </Protect>
       </div>
 
       <div className="flex flex-wrap gap-1.5 items-center">
         {userRoles.map((role) => (
-          <RoleBadge key={role.id} role={role} onRemoveRole={onRemoveRole} />
+          <RoleBadge
+            key={role.id}
+            role={role}
+            onRemoveRole={canAssignRoles ? onRemoveRole : undefined}
+          />
         ))}
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-6 px-2 text-xs"
-          disabled={isDeletedUser}
-          onClick={() => openDialog(Dialog.ASSIGN_ROLE, { user, refetch })}
-        >
-          <Plus className="h-3 w-3" />
-          {t('modViewAssignRoleBtn')}
-        </Button>
+        {canAssignRoles && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-6 px-2 text-xs"
+            disabled={isDeletedUser}
+            onClick={() => openDialog(Dialog.ASSIGN_ROLE, { user, refetch })}
+          >
+            <Plus className="h-3 w-3" />
+            {t('modViewAssignRoleBtn')}
+          </Button>
+        )}
       </div>
     </div>
   );

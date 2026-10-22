@@ -4,7 +4,16 @@ import {
   type TJoinedRole,
   type TRole
 } from '@sharkord/shared';
-import { and, asc, eq, getTableColumns, inArray, sql } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  eq,
+  getTableColumns,
+  inArray,
+  min,
+  ne,
+  sql
+} from 'drizzle-orm';
 import { db } from '..';
 import { rolePermissions, roles, userRoles } from '../schema';
 type TQueryResult = TRole & {
@@ -61,6 +70,28 @@ const getUserRoleIds = async (userId: number): Promise<number[]> => {
     .where(eq(userRoles.userId, userId));
 
   return userRoleRecords.map((ur) => ur.roleId);
+};
+
+// where the user's highest role sits, ranked the way the apps list roles: a lower position is
+// higher. the owner's role and the default one are left out, since they sit above and below
+// every other role whatever their position. undefined with neither
+const getTopRolePosition = async (
+  userId: number
+): Promise<number | undefined> => {
+  const result = await db
+    .select({ position: min(roles.position) })
+    .from(userRoles)
+    .innerJoin(roles, eq(roles.id, userRoles.roleId))
+    .where(
+      and(
+        eq(userRoles.userId, userId),
+        ne(roles.id, OWNER_ROLE_ID),
+        eq(roles.isDefault, false)
+      )
+    )
+    .get();
+
+  return result?.position ?? undefined;
 };
 
 // server-level permission check for an arbitrary user (the context's
@@ -154,6 +185,7 @@ export {
   getEffectiveStorageSpaceQuotaByUserId,
   getRole,
   getRoles,
+  getTopRolePosition,
   getUserRoleIds,
   getUserRoles,
   userCan

@@ -25,7 +25,7 @@ import {
 import { useSwipeGestures } from '@/hooks/use-swipe-gestures';
 import { cn } from '@/lib/utils';
 import { MobileDrawer } from '@/types';
-import { Permission, TestId } from '@sharkord/shared';
+import { TestId, USER_MODERATION_PERMISSIONS } from '@sharkord/shared';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { ContentWrapper } from './content-wrapper';
 import { PreventBrowser } from './prevent-browser';
@@ -189,7 +189,7 @@ const ServerView = memo(() => {
             isOpen={isMobileUsersOpen || isDesktopRightSidebarOpen}
           />
 
-          <Protect permission={Permission.MANAGE_USERS}>
+          <Protect permission={USER_MODERATION_PERMISSIONS}>
             <ModViewSheet />
           </Protect>
         </div>

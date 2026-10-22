@@ -1,7 +1,11 @@
 import { openDialog, requestConfirmation } from '@/features/dialogs/actions';
 import { openServerScreen } from '@/features/server-screens/actions';
 import { disconnectFromServer } from '@/features/server/actions';
-import { Permission, TestId } from '@sharkord/shared';
+import {
+  Permission,
+  TestId,
+  USER_MODERATION_PERMISSIONS
+} from '@sharkord/shared';
 import {
   Button,
   DropdownMenu,
@@ -27,7 +31,7 @@ const ServerDropdownMenu = memo(() => {
       Permission.MANAGE_EMOJIS,
       Permission.MANAGE_SOUNDBOARD,
       Permission.MANAGE_STORAGE,
-      Permission.MANAGE_USERS,
+      ...USER_MODERATION_PERMISSIONS,
       Permission.MANAGE_INVITES
     ],
     []

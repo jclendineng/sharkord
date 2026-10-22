@@ -18,6 +18,9 @@ export enum Permission {
   MANAGE_SOUNDBOARD = 'MANAGE_SOUNDBOARD',
   MANAGE_SETTINGS = 'MANAGE_SETTINGS',
   MANAGE_USERS = 'MANAGE_USERS',
+  KICK_MEMBERS = 'KICK_MEMBERS',
+  BAN_MEMBERS = 'BAN_MEMBERS',
+  ASSIGN_ROLES = 'ASSIGN_ROLES',
   MOVE_MEMBERS = 'MOVE_MEMBERS',
   MANAGE_MESSAGES = 'MANAGE_MESSAGES',
   MANAGE_STORAGE = 'MANAGE_STORAGE',
@@ -27,6 +30,14 @@ export enum Permission {
   USE_PLUGINS = 'USE_PLUGINS',
   VIEW_USER_SENSITIVE_DATA = 'VIEW_USER_SENSITIVE_DATA'
 }
+
+// any one of these opens the users list, the rest decide what can be done there
+export const USER_MODERATION_PERMISSIONS = [
+  Permission.MANAGE_USERS,
+  Permission.KICK_MEMBERS,
+  Permission.BAN_MEMBERS,
+  Permission.ASSIGN_ROLES
+];
 
 export const DEFAULT_ROLE_PERMISSIONS = [
   Permission.JOIN_VOICE_CHANNELS,

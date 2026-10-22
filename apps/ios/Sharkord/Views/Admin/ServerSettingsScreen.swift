@@ -192,7 +192,7 @@ enum ServerSettingsPage: Hashable {
         case .soundboard:
             session.can(.manageSoundboard)
         case .members:
-            session.can(.manageUsers)
+            Permission.userModeration.contains(where: session.can)
         case .invites:
             session.can(.manageInvites)
         case .channels:

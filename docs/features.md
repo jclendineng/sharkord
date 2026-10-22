@@ -364,6 +364,17 @@ the ones between in the order an admin with Manage Roles arranges them (`roles.r
 on a Mac. A new role starts at the bottom. A member's roles are listed in that order, the first
 with a colour colours their name, and the apps' member list groups people under it in that order.
 
+## Moderation permissions
+
+Manage Users is split in four: Kick Members (`users.kick`), Ban Members (`users.ban`,
+`users.unban`), Assign Roles (`users.addRole`, `users.removeRole`) and Manage Accounts, which kept
+the `MANAGE_USERS` id, for deleting accounts and password reset links. Any one of them opens the
+Users screen, and each action shows only to those who hold its permission. Moderation follows the
+role order: you act only on members whose highest role is below yours, and assign only roles below
+your own highest (`assertCanActOnUser`, `assertCanAssignRole`). Only the owner acts on the owner,
+and the owner acts on anyone. Migration `0074` gives the three new permissions to every role that
+had Manage Users.
+
 ## Pinned channels
 
 Pin Channel to Top on a channel or a conversation in the apps puts it in a Pinned group above

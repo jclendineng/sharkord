@@ -3,11 +3,11 @@ import { UserAvatar } from '@/components/user-avatar';
 import { setModViewOpen } from '@/features/app/actions';
 import { openDialog } from '@/features/dialogs/actions';
 import type { TAdminUser } from '@/features/server/admin/hooks';
-import { useUserRoles } from '@/features/server/hooks';
+import { useCan, useUserRoles } from '@/features/server/hooks';
 import { useOwnUserId, useUserStatus } from '@/features/server/users/hooks';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { cn } from '@/lib/utils';
-import { UserStatus } from '@sharkord/shared';
+import { Permission, UserStatus } from '@sharkord/shared';
 import {
   Button,
   DropdownMenu,
@@ -32,6 +32,8 @@ const TableUser = memo(({ user, refetch }: TTableUserProps) => {
   const roles = useUserRoles(user.id);
   const status = useUserStatus(user.id);
   const ownUserId = useOwnUserId();
+  const can = useCan();
+  const canDelete = ownUserId !== user.id && can(Permission.MANAGE_USERS);
 
   const onModerateClick = useCallback(() => {
     setModViewOpen(true, user.id);
@@ -125,7 +127,7 @@ const TableUser = memo(({ user, refetch }: TTableUserProps) => {
                 <UserCog className="h-4 w-4" />
                 {t('moderateUserAction')}
               </DropdownMenuItem>
-              {ownUserId !== user.id && (
+              {canDelete && (
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem

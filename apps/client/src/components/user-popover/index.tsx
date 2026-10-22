@@ -14,9 +14,9 @@ import { useDateLocale } from '@/hooks/use-date-locale';
 import { getTRPCClient } from '@/lib/trpc';
 import {
   DELETED_USER_IDENTITY_AND_NAME,
-  Permission,
   PluginSlot,
   TestId,
+  USER_MODERATION_PERMISSIONS,
   UserStatus,
   getTrpcError
 } from '@sharkord/shared';
@@ -247,7 +247,7 @@ const UserPopover = memo(({ userId, children }: TUserPopoverProps) => {
               )}
 
               {
-                <Protect permission={Permission.MANAGE_USERS}>
+                <Protect permission={USER_MODERATION_PERMISSIONS}>
                   <IconButton
                     data-testid={TestId.USER_POPOVER_MODERATE}
                     icon={UserCog}

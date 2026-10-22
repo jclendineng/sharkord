@@ -8,7 +8,7 @@ import { protectedProcedure } from '../../utils/trpc';
 const unbanRoute = protectedProcedure
   .input(z.object({ userId: z.number() }))
   .mutation(async ({ ctx, input }) => {
-    await ctx.needsPermission(Permission.MANAGE_USERS);
+    await ctx.needsPermission(Permission.BAN_MEMBERS);
 
     invariant(input.userId !== ctx.user.id, {
       code: 'BAD_REQUEST',

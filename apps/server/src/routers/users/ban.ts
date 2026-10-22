@@ -15,7 +15,7 @@ const banRoute = protectedProcedure
     })
   )
   .mutation(async ({ ctx, input }) => {
-    await ctx.needsPermission(Permission.MANAGE_USERS);
+    await ctx.needsPermission(Permission.BAN_MEMBERS);
 
     invariant(input.userId !== ctx.user.id, {
       code: 'BAD_REQUEST',

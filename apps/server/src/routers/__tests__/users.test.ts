@@ -923,7 +923,7 @@ describe('users router', () => {
     expect(info.user.roleIds).not.toContain(1);
   });
 
-  // user 5 is the seeded moderator: MANAGE_USERS and MANAGE_ROLES, nothing else. role 2 is
+  // user 5 is the seeded moderator: user moderation and MANAGE_ROLES, nothing else. role 2 is
   // the default role, which grants sending messages and voice. taking it away is a change to
   // what its holder can do, so the same gate addRole applies has to apply here
   test('should throw when removing a role with permissions the caller lacks', async () => {
@@ -958,7 +958,7 @@ describe('users router', () => {
       roleId: newRoleId,
       name: 'Test Role',
       color: '#123456',
-      permissions: [Permission.MANAGE_USERS],
+      permissions: [Permission.ASSIGN_ROLES],
       storageQuotaOverrideEnabled: false,
       storageSpaceQuota: 0
     });
@@ -1003,7 +1003,7 @@ describe('users router', () => {
       roleId: newRoleId,
       name: 'Test Role',
       color: '#123456',
-      permissions: [Permission.MANAGE_USERS],
+      permissions: [Permission.ASSIGN_ROLES],
       storageQuotaOverrideEnabled: false,
       storageSpaceQuota: 0
     });
@@ -2201,5 +2201,238 @@ describe('users router', () => {
         expect(user).not.toHaveProperty('oidcSub');
       }
     });
+  });
+});
+
+// role 3 (Guest) ranks above role 4 (Moderator): a lower position is higher. user 5 holds
+// the moderator role, users 2 to 4 only the default one, which ranks below every other
+describe('user moderation permissions and role order', () => {
+  const GUEST_ROLE_ID = 3;
+  const MODERATOR_ROLE_ID = 4;
+
+  const giveRole = (userId: number, roleId: number) =>
+    tdb.insert(userRoles).values({ userId, roleId, createdAt: Date.now() });
+
+  // a new role goes to the bottom of the order, below the moderator's
+  const giveNewRole = async (userId: number, permissions: Permission[]) => {
+    const { caller: owner } = await initTest();
+    const roleId = await owner.roles.add();
+
+    await owner.roles.update({
+      roleId,
+      name: 'Split Role',
+      color: '#123456',
+      permissions,
+      storageQuotaOverrideEnabled: false,
+      storageSpaceQuota: 0
+    });
+
+    await giveRole(userId, roleId);
+
+    return roleId;
+  };
+
+  const getTokenVersion = async (userId: number) => {
+    const row = await tdb
+      .select({ tokenVersion: users.tokenVersion })
+      .from(users)
+      .where(eq(users.id, userId))
+      .get();
+
+    return row?.tokenVersion;
+  };
+
+  test('should let kick members alone kick, and nothing else', async () => {
+    await giveNewRole(3, [Permission.KICK_MEMBERS]);
+
+    const { caller } = await initTest(3);
+
+    await caller.users.kick({ userId: 4 });
+
+    expect(await getTokenVersion(4)).toBe(1);
+
+    await expect(caller.users.ban({ userId: 4 })).rejects.toThrow(
+      'Insufficient permissions'
+    );
+    await expect(
+      caller.users.addRole({ userId: 4, roleId: GUEST_ROLE_ID })
+    ).rejects.toThrow('Insufficient permissions');
+    await expect(caller.users.delete({ userId: 4 })).rejects.toThrow(
+      'Insufficient permissions'
+    );
+  });
+
+  test('should let ban members alone ban and unban', async () => {
+    await giveNewRole(3, [Permission.BAN_MEMBERS]);
+
+    const { caller } = await initTest(3);
+
+    await caller.users.ban({ userId: 4 });
+
+    const [banned] = await tdb.select().from(users).where(eq(users.id, 4));
+
+    expect(banned!.banned).toBe(true);
+
+    await caller.users.unban({ userId: 4 });
+
+    const [unbanned] = await tdb.select().from(users).where(eq(users.id, 4));
+
+    expect(unbanned!.banned).toBe(false);
+
+    await expect(caller.users.kick({ userId: 4 })).rejects.toThrow(
+      'Insufficient permissions'
+    );
+  });
+
+  test('should let assign roles alone add and remove roles', async () => {
+    await giveNewRole(3, [Permission.ASSIGN_ROLES]);
+
+    const lowerRoleId = await giveNewRole(1, []);
+    const { caller } = await initTest(3);
+
+    await caller.users.addRole({ userId: 4, roleId: lowerRoleId });
+
+    const added = await tdb
+      .select()
+      .from(userRoles)
+      .where(and(eq(userRoles.userId, 4), eq(userRoles.roleId, lowerRoleId)));
+
+    expect(added.length).toBe(1);
+
+    await caller.users.removeRole({ userId: 4, roleId: lowerRoleId });
+
+    const removed = await tdb
+      .select()
+      .from(userRoles)
+      .where(and(eq(userRoles.userId, 4), eq(userRoles.roleId, lowerRoleId)));
+
+    expect(removed.length).toBe(0);
+
+    await expect(caller.users.kick({ userId: 4 })).rejects.toThrow(
+      'Insufficient permissions'
+    );
+  });
+
+  test('should not let manage users alone kick, ban or assign roles', async () => {
+    await giveNewRole(3, [Permission.MANAGE_USERS]);
+
+    const { caller } = await initTest(3);
+
+    await expect(caller.users.kick({ userId: 4 })).rejects.toThrow(
+      'Insufficient permissions'
+    );
+    await expect(caller.users.ban({ userId: 4 })).rejects.toThrow(
+      'Insufficient permissions'
+    );
+    await expect(caller.users.unban({ userId: 4 })).rejects.toThrow(
+      'Insufficient permissions'
+    );
+    await expect(
+      caller.users.addRole({ userId: 4, roleId: GUEST_ROLE_ID })
+    ).rejects.toThrow('Insufficient permissions');
+    await expect(
+      caller.users.removeRole({ userId: 4, roleId: 2 })
+    ).rejects.toThrow('Insufficient permissions');
+  });
+
+  test('should open the users list with any one moderation permission', async () => {
+    for (const [userId, permission] of [
+      [2, Permission.KICK_MEMBERS],
+      [3, Permission.BAN_MEMBERS],
+      [4, Permission.ASSIGN_ROLES]
+    ] as const) {
+      await giveNewRole(userId, [permission]);
+
+      const { caller } = await initTest(userId);
+      const list = await caller.users.getAll();
+      const info = await caller.users.getInfo({ userId: 1 });
+
+      expect(list.length).toBeGreaterThan(0);
+      expect(info.user.id).toBe(1);
+    }
+  });
+
+  test('should not let a moderator act on a member ranked above them', async () => {
+    await giveRole(2, GUEST_ROLE_ID);
+
+    const { caller } = await initTest(5);
+
+    await expect(caller.users.kick({ userId: 2 })).rejects.toThrow(
+      'You can only act on members whose highest role is below yours.'
+    );
+    await expect(caller.users.ban({ userId: 2 })).rejects.toThrow(
+      'You can only act on members whose highest role is below yours.'
+    );
+
+    const [target] = await tdb.select().from(users).where(eq(users.id, 2));
+
+    expect(target!.banned).toBeFalsy();
+    expect(await getTokenVersion(2)).toBe(0);
+  });
+
+  test('should not let a moderator act on a member of the same rank', async () => {
+    await giveRole(2, MODERATOR_ROLE_ID);
+
+    const { caller } = await initTest(5);
+
+    await expect(caller.users.ban({ userId: 2 })).rejects.toThrow(
+      'You can only act on members whose highest role is below yours.'
+    );
+    await expect(
+      caller.users.removeRole({ userId: 2, roleId: MODERATOR_ROLE_ID })
+    ).rejects.toThrow(
+      'You can only act on members whose highest role is below yours.'
+    );
+
+    const [target] = await tdb.select().from(users).where(eq(users.id, 2));
+
+    expect(target!.banned).toBeFalsy();
+  });
+
+  test('should not let a moderator assign a role ranked above their own', async () => {
+    const { caller } = await initTest(5);
+
+    await expect(
+      caller.users.addRole({ userId: 2, roleId: GUEST_ROLE_ID })
+    ).rejects.toThrow('You can only assign roles below your highest role.');
+    await expect(
+      caller.users.addRole({ userId: 2, roleId: MODERATOR_ROLE_ID })
+    ).rejects.toThrow('You can only assign roles below your highest role.');
+
+    const assigned = await tdb
+      .select()
+      .from(userRoles)
+      .where(eq(userRoles.userId, 2));
+
+    expect(assigned.map(({ roleId }) => roleId)).toEqual([2]);
+  });
+
+  test('should let a moderator assign a role ranked below their own', async () => {
+    const roleId = await giveNewRole(1, []);
+    const { caller } = await initTest(5);
+
+    await caller.users.addRole({ userId: 2, roleId });
+
+    const assigned = await tdb
+      .select()
+      .from(userRoles)
+      .where(and(eq(userRoles.userId, 2), eq(userRoles.roleId, roleId)));
+
+    expect(assigned.length).toBe(1);
+  });
+
+  test('should follow the order after roles are reordered', async () => {
+    const roleId = await giveNewRole(2, []);
+    const { caller: owner } = await initTest();
+
+    await owner.roles.reorder({
+      roleIds: [roleId, GUEST_ROLE_ID, MODERATOR_ROLE_ID]
+    });
+
+    const { caller } = await initTest(5);
+
+    await expect(caller.users.kick({ userId: 2 })).rejects.toThrow(
+      'You can only act on members whose highest role is below yours.'
+    );
   });
 });
