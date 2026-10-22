@@ -528,6 +528,15 @@ describe('getWsInfo - trusted proxy gate', () => {
     expect(getWsInfo(undefined, req)?.ip).toBe('198.51.100.7');
   });
 
+  test('ignores forwarded headers from a lan address by default', () => {
+    const req = createRequest({
+      headers: { 'x-forwarded-for': '5.6.7.8' },
+      remoteAddress: '192.168.1.5'
+    });
+
+    expect(getWsInfo(undefined, req)?.ip).toBe('192.168.1.5');
+  });
+
   test('ignores forwarded headers when there is no socket address', () => {
     const req = createRequest({ headers: { 'x-real-ip': '1.2.3.4' } });
 

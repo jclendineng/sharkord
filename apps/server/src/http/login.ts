@@ -53,6 +53,11 @@ const loginRateLimiter = createRateLimiter({
   windowMs: config.rateLimiters.login.windowMs
 });
 
+const loginIdentityRateLimiter = createRateLimiter({
+  maxRequests: config.rateLimiters.loginIdentity.maxRequests,
+  windowMs: config.rateLimiters.loginIdentity.windowMs
+});
+
 const GENERIC_LOGIN_ERROR = 'Invalid credentials';
 
 let dummyArgon2HashPromise: Promise<string> | null = null;
@@ -112,6 +117,18 @@ const loginRouteHandler = async (
   );
 
   if (!allowed) return;
+
+  const identityAllowed = enforceHttpRateLimit(
+    res,
+    loginIdentityRateLimiter,
+    `identity:${data.identity}`,
+    {
+      route: '/login',
+      message: 'Too many login attempts. Please try again shortly.'
+    }
+  );
+
+  if (!identityAllowed) return;
 
   // before an account is found or made, so a banned network cannot sign up a new one either
   if (await isIpBanned(connectionInfo?.ip)) {

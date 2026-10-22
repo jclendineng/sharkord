@@ -610,6 +610,26 @@ describe('/login', () => {
     expect(differentClient.status).not.toBe(429);
   });
 
+  test('should limit attempts on one account however many addresses they come from', async () => {
+    const attempts = config.rateLimiters.loginIdentity.maxRequests;
+
+    for (let i = 0; i < attempts; i++) {
+      await login('testowner', 'wrongpassword', undefined, {
+        'x-forwarded-for': `7.7.${Math.floor(i / 4)}.${i}`
+      });
+    }
+
+    const sameAccount = await login('testowner', 'password123', undefined, {
+      'x-forwarded-for': '8.8.4.4'
+    });
+    const otherAccount = await login('testuser', 'wrongpassword', undefined, {
+      'x-forwarded-for': '8.8.4.5'
+    });
+
+    expect(sameAccount.status).toBe(429);
+    expect(otherAccount.status).not.toBe(429);
+  });
+
   test('should fail with missing identity', async () => {
     const response = await login('', 'somepassword');
 

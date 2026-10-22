@@ -96,6 +96,7 @@ const zConfig = z.object({
     joinVoiceChannel: zRateLimiter,
     moveMembers: zRateLimiter,
     login: zRateLimiter,
+    loginIdentity: zRateLimiter,
     joinServer: zRateLimiter,
     upload: zRateLimiter,
     search: zRateLimiter,
@@ -135,14 +136,10 @@ const defaultConfig: TConfig = {
     backupDatabase: true,
     maxRequestBodyBytes: 256 * 1024,
     allowedOrigins: ['*'],
-    trustedProxies: [
-      '127.0.0.1',
-      '::1',
-      '10.0.0.0/8',
-      '172.16.0.0/12',
-      '192.168.0.0/16',
-      'fc00::/7'
-    ]
+    // a proxy on the same host only. trusting the private ranges let any machine on the lan
+    // claim any address in x-forwarded-for, which reset its rate limits and dodged ip bans.
+    // a proxy on another machine or in another container is added by its address
+    trustedProxies: ['127.0.0.1', '::1']
   },
   oidc: {
     enabled: false,
@@ -183,6 +180,12 @@ const defaultConfig: TConfig = {
     },
     login: {
       maxRequests: 5,
+      windowMs: 60_000
+    },
+    // per account rather than per address, so spreading attempts over many addresses does not
+    // buy more guesses. looser than the address limit, since anyone can spend it for the owner
+    loginIdentity: {
+      maxRequests: 10,
       windowMs: 60_000
     },
     joinServer: {
