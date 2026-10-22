@@ -1334,6 +1334,116 @@ describe('channels router', () => {
       })
     ).rejects.toThrow('Cannot delete DM channel permissions');
   });
+
+  describe('channel permission management scope', () => {
+    // user 5 holds MANAGE_CHANNEL_PERMISSIONS but has no access to the private channels
+    const MODERATOR_ID = 5;
+    const PRIVATE_VOICE_ID = 4;
+    const RESTRICTED_CHANNEL_ID = 5;
+
+    test('should not read permissions of a channel the caller cannot see', async () => {
+      const { caller } = await initTest(MODERATOR_ID);
+
+      await expect(
+        caller.channels.getPermissions({ channelId: PRIVATE_VOICE_ID })
+      ).rejects.toThrow('Insufficient channel permissions');
+    });
+
+    test('should not let a caller grant themselves a channel they cannot see', async () => {
+      const { caller } = await initTest(MODERATOR_ID);
+
+      await expect(
+        caller.channels.updatePermissions({
+          channelId: PRIVATE_VOICE_ID,
+          userId: MODERATOR_ID,
+          permissions: [ChannelPermission.VIEW_CHANNEL]
+        })
+      ).rejects.toThrow('Insufficient channel permissions');
+
+      const { caller: owner } = await initTest();
+      const { userPermissions } = await owner.channels.getPermissions({
+        channelId: PRIVATE_VOICE_ID
+      });
+
+      expect(userPermissions).toHaveLength(0);
+    });
+
+    test('should not delete permissions on a channel the caller cannot see', async () => {
+      const { caller } = await initTest(MODERATOR_ID);
+
+      await expect(
+        caller.channels.deletePermissions({
+          channelId: RESTRICTED_CHANNEL_ID,
+          userId: 2
+        })
+      ).rejects.toThrow('Insufficient channel permissions');
+
+      const { caller: owner } = await initTest();
+      const { userPermissions } = await owner.channels.getPermissions({
+        channelId: RESTRICTED_CHANNEL_ID
+      });
+
+      expect(userPermissions.some((row) => row.userId === 2)).toBe(true);
+    });
+
+    test('should throw when reading permissions of a missing channel', async () => {
+      const { caller } = await initTest();
+
+      await expect(
+        caller.channels.getPermissions({ channelId: 999 })
+      ).rejects.toThrow('Channel not found');
+    });
+
+    test('should throw when deleting permissions of a missing channel', async () => {
+      const { caller } = await initTest();
+
+      await expect(
+        caller.channels.deletePermissions({ channelId: 999, userId: 2 })
+      ).rejects.toThrow('Channel not found');
+    });
+
+    test('should only let a caller grant channel permissions they hold', async () => {
+      const { caller: owner } = await initTest();
+
+      await owner.channels.updatePermissions({
+        channelId: PRIVATE_VOICE_ID,
+        userId: MODERATOR_ID,
+        permissions: [ChannelPermission.VIEW_CHANNEL]
+      });
+
+      const { caller } = await initTest(MODERATOR_ID);
+
+      await expect(
+        caller.channels.updatePermissions({
+          channelId: PRIVATE_VOICE_ID,
+          userId: 2,
+          permissions: [
+            ChannelPermission.VIEW_CHANNEL,
+            ChannelPermission.SEND_MESSAGES
+          ]
+        })
+      ).rejects.toThrow(
+        'You cannot grant channel permissions that you do not have.'
+      );
+
+      await caller.channels.updatePermissions({
+        channelId: PRIVATE_VOICE_ID,
+        userId: 2,
+        permissions: [ChannelPermission.VIEW_CHANNEL]
+      });
+
+      const { userPermissions } = await owner.channels.getPermissions({
+        channelId: PRIVATE_VOICE_ID
+      });
+      const granted = userPermissions.filter(
+        (row) => row.userId === 2 && row.allow
+      );
+
+      expect(granted.map((row) => row.permission)).toEqual([
+        ChannelPermission.VIEW_CHANNEL
+      ]);
+    });
+  });
 });
 
 describe('channels.markAsUnread', () => {

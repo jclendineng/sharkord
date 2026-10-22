@@ -2,11 +2,13 @@ import { Permission } from '@sharkord/shared';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../../db';
+import { channelExists } from '../../db/queries/channels';
 import { isDirectMessageChannel } from '../../db/queries/dms';
 import {
   channelRolePermissions,
   channelUserPermissions
 } from '../../db/schema';
+import { assertChannelAccess } from '../../helpers/assert-channel-access';
 import { invariant } from '../../utils/invariant';
 import { protectedProcedure } from '../../utils/trpc';
 
@@ -25,6 +27,13 @@ const getPermissionsRoute = protectedProcedure
       code: 'FORBIDDEN',
       message: 'Cannot view DM channel permissions'
     });
+
+    invariant(await channelExists(input.channelId), {
+      code: 'NOT_FOUND',
+      message: 'Channel not found'
+    });
+
+    await assertChannelAccess(ctx, input.channelId);
 
     const [rolePermissions, userPermissions] = await Promise.all([
       db

@@ -159,6 +159,17 @@ const channelUserCan = async (
   return resolvePermission(channelId, targetPermissions!);
 };
 
+const channelExists = async (channelId: number): Promise<boolean> => {
+  const channel = await db
+    .select({ id: channels.id })
+    .from(channels)
+    .where(eq(channels.id, channelId))
+    .limit(1)
+    .get();
+
+  return !!channel;
+};
+
 const getChannelsForUser = async (userId: number): Promise<TChannel[]> => {
   const roleIds = await getUserRoleIds(userId);
 
@@ -503,6 +514,7 @@ const getChannelsReadStatesForUser = async (
 };
 
 export {
+  channelExists,
   channelUserCan,
   getAffectedOnlineUserIdsForChannel,
   getAffectedUserIdsForChannel,

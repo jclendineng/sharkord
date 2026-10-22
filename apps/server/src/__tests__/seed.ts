@@ -14,7 +14,7 @@
  *                          every "lacks permission" case), usera, userb, testmoderator
  *   roles             4    Owner (id 1), Member, Guest, Moderator
  *   userRoles         5    one per user, plus the moderator's extra role
- *   rolePermissions  35    the default permission sets for the roles above
+ *   rolePermissions  36    the default permission sets for the roles above
  *   categories        2    Text Channels, Voice Channels
  *   channels          5    1 General (text), Voice, DM Channel, Private Voice,
  *                          Restricted Text
@@ -84,12 +84,13 @@ const hashedPassword = await Bun.password.hash('password123');
  * - Test User (member) (2)
  * - User A (member) (3)
  * - User B (member) (4)
- * - Test Moderator (moderator) (5) (MANAGE_USERS + MANAGE_ROLES, no owner role)
+ * - Test Moderator (moderator) (5) (MANAGE_USERS + MANAGE_ROLES + MANAGE_CHANNEL_PERMISSIONS,
+ *   no owner role, sees no private channel)
  * Roles:
  * - Owner (1)
  * - Member (2) (default)
  * - Guest (3)
- * - Moderator (4) (MANAGE_USERS + MANAGE_ROLES only)
+ * - Moderator (4) (MANAGE_USERS + MANAGE_ROLES + MANAGE_CHANNEL_PERMISSIONS only)
  * Channels:
  * - General (1)
  * - Voice (2)
@@ -391,6 +392,11 @@ const seedTestDb = async (
     {
       roleId: insertedModeratorRole!.id,
       permission: Permission.MANAGE_ROLES,
+      createdAt: firstStart
+    },
+    {
+      roleId: insertedModeratorRole!.id,
+      permission: Permission.MANAGE_CHANNEL_PERMISSIONS,
       createdAt: firstStart
     }
   ]);

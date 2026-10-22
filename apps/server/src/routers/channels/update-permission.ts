@@ -16,6 +16,7 @@ import {
   roles,
   users
 } from '../../db/schema';
+import { assertChannelAccess } from '../../helpers/assert-channel-access';
 import { enqueueActivityLog } from '../../queues/activity-log';
 import { invariant } from '../../utils/invariant';
 import { protectedProcedure } from '../../utils/trpc';
@@ -82,7 +83,22 @@ const updatePermissionsRoute = protectedProcedure
       message: input.userId ? 'User not found' : 'Role not found'
     });
 
+    await assertChannelAccess(ctx, input.channelId);
+
     const permissions = input.isCreate ? [] : input.permissions;
+
+    // a user level row beats the role grants, so writing one is how a manager would hand
+    // themselves or anyone else access they were never given
+    const held = await Promise.all(
+      permissions.map((permission) =>
+        ctx.hasChannelPermission(input.channelId, permission)
+      )
+    );
+
+    invariant(held.every(Boolean), {
+      code: 'FORBIDDEN',
+      message: 'You cannot grant channel permissions that you do not have.'
+    });
 
     const audienceBefore = await getAffectedOnlineUserIdsForChannel(
       input.channelId,
