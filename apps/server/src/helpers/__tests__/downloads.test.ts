@@ -152,8 +152,9 @@ beforeAll(async () => {
         socket.write(
           `HTTP/1.1 200 OK\r\nContent-Length: ${MAX_DOWNLOAD_BYTES + 1}\r\n\r\n`
         );
+        // left open: closing straight after the headers raced fetch, which sometimes saw the
+        // socket close before it handed back the response. stop(true) in afterAll closes it
         socket.write(CHUNK.subarray(0, 16));
-        socket.end();
       }
     }
   });
