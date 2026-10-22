@@ -47,6 +47,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   - New rate limits in `config.ini`, added by themselves: `loginIdentity` (sign in attempts per account), `messageAction` (pins, ending polls, deleting files) and `pluginManage` (plugin toggle and settings).
   - A database first made by a development build had the access token `dev`. It is replaced once at startup with a new one printed to the console, which signs everyone out on that server.
   - Emoji uploads have to be images of 2 MB or less.
+  - The web app enforces its content security policy. Plugins that load scripts, frames or connections from other sites are blocked by it.
 - The server image is published to `ghcr.io/jclendineng/sharkord`.
   - `:latest` (or no tag) is built from `main`, the stable channel.
   - `:development` is built from the `development` branch.

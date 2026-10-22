@@ -5,13 +5,15 @@ import { INTERFACE_PATH } from '../helpers/paths';
 import { IS_DEVELOPMENT, IS_TEST } from '../utils/env';
 import { isSecureRequest, sendFile, sendJsonError } from './helpers';
 
-// report-only: the browser logs violations and enforces nothing
+// the noise suppression worklets compile WebAssembly, youtube links embed youtube's player, and
+// video links in messages play from anywhere
 const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
-  "script-src 'self' blob:",
+  "script-src 'self' blob: 'wasm-unsafe-eval' https://www.youtube.com",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
-  "media-src 'self' blob:",
+  "media-src 'self' blob: https:",
+  'frame-src https://www.youtube.com https://www.youtube-nocookie.com',
   "font-src 'self' data:",
   "connect-src 'self' ws: wss: https://raw.githubusercontent.com",
   "worker-src 'self' blob:",
@@ -32,7 +34,7 @@ const interfaceRouteHandler = async (
     return res;
   }
 
-  res.setHeader('Content-Security-Policy-Report-Only', CONTENT_SECURITY_POLICY);
+  res.setHeader('Content-Security-Policy', CONTENT_SECURITY_POLICY);
 
   // only over https, where a browser honours it. no includeSubDomains, since the server does
   // not know what else runs under its domain

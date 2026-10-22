@@ -379,13 +379,16 @@ describe('/interface', () => {
     expect(response.headers.get('Cache-Control')).toBe('no-store');
   });
 
-  test('should send the csp report-only and never the enforcing header', async () => {
+  test('should enforce the csp', async () => {
     const response = await fetch(`${testsBaseUrl}/`);
-    const policy = response.headers.get('Content-Security-Policy-Report-Only');
+    const policy = response.headers.get('Content-Security-Policy');
 
-    expect(response.headers.get('Content-Security-Policy')).toBeNull();
+    expect(
+      response.headers.get('Content-Security-Policy-Report-Only')
+    ).toBeNull();
     expect(policy).toContain("default-src 'self'");
-    expect(policy).toContain("script-src 'self' blob:");
+    expect(policy).toContain("'wasm-unsafe-eval'");
+    expect(policy).toContain('frame-src https://www.youtube.com');
     expect(policy).toContain('https://raw.githubusercontent.com');
   });
 
