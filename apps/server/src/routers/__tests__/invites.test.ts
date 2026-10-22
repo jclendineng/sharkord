@@ -359,3 +359,42 @@ describe('invites router', () => {
     });
   });
 });
+
+// role 3 (Guest) ranks above role 4 (Moderator), user 5's. a new role goes below both
+describe('invite roles and the role order', () => {
+  const letModeratorInvite = () =>
+    tdb.insert(rolePermissions).values({
+      roleId: 4,
+      permission: Permission.MANAGE_INVITES,
+      createdAt: Date.now()
+    });
+
+  test('should not let a member attach a role ranked above their own', async () => {
+    await letModeratorInvite();
+
+    const { caller } = await initTest(5);
+
+    await expect(caller.invites.add({ roleId: 3 })).rejects.toThrow(
+      'You can only assign roles below your highest role.'
+    );
+    await expect(caller.invites.add({ roleId: 4 })).rejects.toThrow(
+      'You can only assign roles below your highest role.'
+    );
+
+    const all = await tdb.select().from(invites);
+
+    expect(all.some(({ roleId }) => roleId === 3 || roleId === 4)).toBe(false);
+  });
+
+  test('should let a member attach a role ranked below their own', async () => {
+    await letModeratorInvite();
+
+    const { caller: owner } = await initTest(1);
+    const roleId = await owner.roles.add();
+    const { caller } = await initTest(5);
+
+    const invite = await caller.invites.add({ roleId });
+
+    expect(invite.roleId).toBe(roleId);
+  });
+});

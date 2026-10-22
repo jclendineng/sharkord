@@ -371,7 +371,8 @@ Manage Users is split in four: Kick Members (`users.kick`), Ban Members (`users.
 the `MANAGE_USERS` id, for deleting accounts and password reset links. Any one of them opens the
 Users screen, and each action shows only to those who hold its permission. Moderation follows the
 role order: you act only on members whose highest role is below yours, and assign only roles below
-your own highest (`assertCanActOnUser`, `assertCanAssignRole`). Only the owner acts on the owner,
+your own highest (`assertCanActOnUser`, `assertCanAssignRole`), which holds for the role an
+invite carries too. Only the owner acts on the owner,
 and the owner acts on anyone. Migration `0074` gives the three new permissions to every role that
 had Manage Users.
 
@@ -620,7 +621,10 @@ to everyone already there so nobody is locked out. Open the server's channels to
 hide them from everyone else in each channel's permissions: a new member then lands in the rules
 channel, the only one they see, and the rest appears as soon as they react. Taking the reaction
 back keeps the role. The rules message says what reacting does, the owner's role and the default
-role cannot be the one given, and deleting the message turns the lounge off.
+role cannot be the one given, and deleting the message turns the lounge off. An invite that
+carries a role holds it back while there is a rules message: the new member lands in the rules
+like everyone else and gets the invite's role along with the lounge's the first time they react
+(`grantOnboardingRole`, from the invite in `invite_uses`), so an invite never skips the rules.
 
 The setup can do the channel work too. **Close other channels to new members** makes every
 other public channel private, open to every role except the default one (a channel already

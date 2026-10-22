@@ -1,6 +1,7 @@
 import { Permission } from '@sharkord/shared';
 import { config } from '../../config';
 import { getRole } from '../../db/queries/roles';
+import { assertCanAssignRole } from '../../helpers/assert-can-assign-role';
 import { assertCanModifyOwnerRole } from '../../helpers/assert-can-modify-owner-role';
 import { createInvite, zCreateInvite } from '../../helpers/invites';
 import { invariant } from '../../utils/invariant';
@@ -32,6 +33,8 @@ const addInviteRoute = rateLimitedProcedure(protectedProcedure, {
         message:
           'You cannot create an invite for a role with permissions that you do not have.'
       });
+
+      await assertCanAssignRole(ctx.userId, role);
     }
 
     return createInvite(input, ctx.user.id, ctx.user.id);

@@ -1,7 +1,7 @@
 import { ChannelPermission, Permission } from '@sharkord/shared';
 import { describe, expect, spyOn, test } from 'bun:test';
 import { and, eq } from 'drizzle-orm';
-import { initTest } from '../../__tests__/helpers';
+import { initTest, login } from '../../__tests__/helpers';
 import { tdb } from '../../__tests__/setup';
 import * as publishers from '../../db/publishers';
 import { getChannelsForUser } from '../../db/queries/channels';
@@ -444,5 +444,80 @@ describe('reacting to the rules message', () => {
     });
 
     expect(await hasRole(3, ONBOARDING_ROLE_ID)).toBe(false);
+  });
+});
+
+describe('invite roles and the rules', () => {
+  const signUpWithRoleInvite = async () => {
+    const { caller: owner } = await initTest(1);
+    const roleId = await owner.roles.add();
+
+    await owner.invites.add({ code: 'RULESINVITE', roleId });
+
+    const response = await login('rulesreader', 'password123', 'RULESINVITE');
+
+    expect(response.status).toBe(200);
+
+    const user = await tdb
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.identity, 'rulesreader'))
+      .get();
+
+    return { roleId, userId: user!.id };
+  };
+
+  test('should give the invite role at sign up when no rules are set', async () => {
+    const { roleId, userId } = await signUpWithRoleInvite();
+
+    expect(await hasRole(userId, roleId)).toBe(true);
+  });
+
+  test('should hold the invite role back until the rules are accepted', async () => {
+    await setUpRules();
+    await letMembersReact();
+
+    const { roleId, userId } = await signUpWithRoleInvite();
+
+    expect(await hasRole(userId, roleId)).toBe(false);
+
+    const { caller } = await initTest(userId);
+
+    await caller.messages.toggleReaction({
+      messageId: RULES_MESSAGE_ID,
+      emoji: 'white_check_mark'
+    });
+
+    expect(await hasRole(userId, ONBOARDING_ROLE_ID)).toBe(true);
+    expect(await hasRole(userId, roleId)).toBe(true);
+  });
+
+  test('should give the invite role only with the first acceptance', async () => {
+    await setUpRules();
+    await letMembersReact();
+
+    const { roleId, userId } = await signUpWithRoleInvite();
+    const { caller } = await initTest(userId);
+
+    await caller.messages.toggleReaction({
+      messageId: RULES_MESSAGE_ID,
+      emoji: 'white_check_mark'
+    });
+
+    // a moderator takes it away, and reacting again does not hand it back
+    await tdb
+      .delete(userRoles)
+      .where(and(eq(userRoles.userId, userId), eq(userRoles.roleId, roleId)));
+
+    await caller.messages.toggleReaction({
+      messageId: RULES_MESSAGE_ID,
+      emoji: 'white_check_mark'
+    });
+    await caller.messages.toggleReaction({
+      messageId: RULES_MESSAGE_ID,
+      emoji: 'white_check_mark'
+    });
+
+    expect(await hasRole(userId, roleId)).toBe(false);
   });
 });

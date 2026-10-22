@@ -214,6 +214,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 ### Changed
 
 - Manage Users is split into Kick Members, Ban Members, Assign Roles and Manage Accounts, and moderation follows the role order: you can only act on members ranked below you and only assign roles below your own.
+- An invite's role waits until the new member accepts the rules, when the server has a rules message, so an invite can't skip them. Only roles below your own can be attached to an invite.
 
 - The sign in page's GitHub link, the crash screen's report link and the developer console point to this fork rather than upstream.
 - File links are always signed, and uploads are stored under random names rather than their original ones.

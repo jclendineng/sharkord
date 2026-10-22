@@ -4,6 +4,7 @@ import { HttpValidationError } from '../../http/errors';
 import { eventBus } from '../../plugins/event-bus';
 import { invariant } from '../../utils/invariant';
 import { getDefaultRole } from '../queries/roles';
+import { getSettings } from '../queries/server';
 import { isUserNameTaken } from '../queries/users';
 import {
   channelReadStates,
@@ -34,7 +35,10 @@ const createUser = async ({
   inviteCode,
   inviteRoleId
 }: TCreateUserOptions): Promise<number> => {
-  const defaultRole = await getDefaultRole();
+  const [defaultRole, settings] = await Promise.all([
+    getDefaultRole(),
+    getSettings()
+  ]);
 
   invariant(defaultRole, {
     code: 'NOT_FOUND',
@@ -107,8 +111,13 @@ const createUser = async ({
         .run();
     }
 
-    // if the invite has a specific role and it's different from the default, assign it too
-    if (inviteRoleId && inviteRoleId !== defaultRole.id) {
+    // if the invite has a specific role and it's different from the default, assign it too.
+    // with a rules message set it waits until they react, see grantOnboardingRole, so an
+    // invite cannot let anyone past the rules
+    const hasRulesMessage =
+      !!settings.onboardingMessageId && !!settings.onboardingRoleId;
+
+    if (inviteRoleId && inviteRoleId !== defaultRole.id && !hasRulesMessage) {
       tx.insert(userRoles)
         .values({
           roleId: inviteRoleId,

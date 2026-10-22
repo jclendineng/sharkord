@@ -121,4 +121,19 @@ const getInvites = async (): Promise<TJoinedInvite[]> => {
   }));
 };
 
-export { getInvites, isInviteValid };
+// the role the invite a member signed up with carries, if it carries one
+const getSignupInviteRoleId = async (
+  userId: number
+): Promise<number | undefined> => {
+  const row = await db
+    .select({ roleId: invites.roleId })
+    .from(inviteUses)
+    .innerJoin(invites, eq(invites.id, inviteUses.inviteId))
+    .where(eq(inviteUses.userId, userId))
+    .limit(1)
+    .get();
+
+  return row?.roleId ?? undefined;
+};
+
+export { getInvites, getSignupInviteRoleId, isInviteValid };
