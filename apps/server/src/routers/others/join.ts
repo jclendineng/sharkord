@@ -33,14 +33,22 @@ import { enqueueLogin } from '../../queues/logins';
 import { VoiceRuntime } from '../../runtimes/voice';
 import { SERVER_VERSION } from '../../utils/env';
 import { invariant } from '../../utils/invariant';
-import { publicProcedure, rateLimitedProcedure } from '../../utils/trpc';
+import {
+  createRateLimiter,
+  getClientRateLimitKey
+} from '../../utils/rate-limiters/rate-limiter';
+import { publicProcedure } from '../../utils/trpc';
 import { setUserPresence } from '../../utils/wss';
 
-const joinServerRoute = rateLimitedProcedure(publicProcedure, {
+// only joins that check the server password count, since that is where guessing happens. a
+// refresh joins again with a session already good, and counting those signed people out after a
+// few refreshes. how often anyone joins at all stays bounded by the handshake each join needs
+const passwordAttemptLimiter = createRateLimiter({
   maxRequests: config.rateLimiters.joinServer.maxRequests,
-  windowMs: config.rateLimiters.joinServer.windowMs,
-  logLabel: 'joinServer'
-})
+  windowMs: config.rateLimiters.joinServer.windowMs
+});
+
+const joinServerRoute = publicProcedure
   .input(
     z.object({
       handshakeHash: z.string(),
@@ -70,6 +78,17 @@ const joinServerRoute = rateLimitedProcedure(publicProcedure, {
       password: settings.password,
       onlyAskForPasswordOnFirstJoin: settings.onlyAskForPasswordOnFirstJoin
     });
+
+    if (shouldAskForPassword) {
+      const { allowed } = passwordAttemptLimiter.consume(
+        getClientRateLimitKey(`user:${ctx.user.id}`)
+      );
+
+      invariant(allowed, {
+        code: 'TOO_MANY_REQUESTS',
+        message: 'Too many requests. Please try again shortly.'
+      });
+    }
 
     invariant(
       input.handshakeHash &&

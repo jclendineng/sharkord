@@ -3,9 +3,11 @@ import { useIsAppLoading, useIsPluginsLoading } from '@/features/app/hooks';
 import {
   clearServerSnapshot,
   connect,
+  isAuthFailure,
   resetServerState,
   restoreServerSnapshot,
-  saveServerSnapshot
+  saveServerSnapshot,
+  setDisconnectInfo
 } from '@/features/server/actions';
 import { useDisconnectInfo, useIsConnected } from '@/features/server/hooks';
 import {
@@ -65,12 +67,24 @@ const AutoLoginController = memo(() => {
     setSessionStorageItem(SessionStorageKey.TOKEN, token);
 
     connect()
-      .catch(() => {
+      .catch((error) => {
         if (restored) {
           resetServerState();
         }
 
         clearServerSnapshot();
+
+        // a few quick refreshes can run into a rate limit, which used to sign people out
+        if (!isAuthFailure(error)) {
+          setDisconnectInfo({
+            code: 0,
+            reason: '',
+            wasClean: false,
+            time: new Date()
+          });
+
+          return;
+        }
 
         // token expired or invalid clear auto-login state so the user
         // sees the connect screen and can log in manually

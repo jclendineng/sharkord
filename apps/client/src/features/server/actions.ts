@@ -227,6 +227,12 @@ const abandonReconnect = () => {
   playSound(SoundType.SERVER_DISCONNECTED);
 };
 
+// the server turned the session down, rather than a rate limit or a connection that dropped,
+// which leave the session good for the next try
+export const isAuthFailure = (error: unknown) =>
+  error instanceof TRPCClientError &&
+  (error.data?.code === 'UNAUTHORIZED' || error.data?.code === 'FORBIDDEN');
+
 // a reconnected socket starts unauthenticated: the server only sets ctx.authenticated and
 // tracks the user in joinServer, and every subscription sits behind that. so recovering a
 // dropped connection means replaying the whole join, not just reopening the transport.
@@ -298,12 +304,7 @@ export const reconnectToServer = (info: TDisconnectInfo) => {
         error: String(error)
       });
 
-      const isAuthFailure =
-        error instanceof TRPCClientError &&
-        (error.data?.code === 'UNAUTHORIZED' ||
-          error.data?.code === 'FORBIDDEN');
-
-      if (isAuthFailure) {
+      if (isAuthFailure(error)) {
         abandonReconnect();
         return;
       }

@@ -603,20 +603,39 @@ describe('others router', () => {
     expect(after.logo?.originalName).toBe('keep-me.png');
   });
 
-  test('should rate limit excessive join attempts', async () => {
+  // a refresh joins again, and counting those signed people out after a few refreshes
+  test('should not limit joins that check no server password', async () => {
     const { caller } = await getCaller(1);
+
+    for (let i = 0; i < 8; i++) {
+      const { handshakeHash } = await caller.others.handshake();
+      const joined = await caller.others.joinServer({ handshakeHash });
+
+      expect(joined.ownUserId).toBe(1);
+    }
+  });
+
+  test('should limit server password attempts, right ones included once limited', async () => {
+    const { caller } = await initTest(1);
+
+    await caller.others.updateSettings({
+      password: 'testpassword',
+      onlyAskForPasswordOnFirstJoin: false
+    });
+
+    const { caller: secondUserCaller } = await getCaller(2);
+    const { handshakeHash } = await secondUserCaller.others.handshake();
 
     for (let i = 0; i < 5; i++) {
       await expect(
-        caller.others.joinServer({
-          handshakeHash: ''
-        })
-      ).rejects.toThrow('Invalid handshake hash');
+        secondUserCaller.others.joinServer({ handshakeHash, password: 'wrong' })
+      ).rejects.toThrow('Invalid password');
     }
 
     await expect(
-      caller.others.joinServer({
-        handshakeHash: ''
+      secondUserCaller.others.joinServer({
+        handshakeHash,
+        password: 'testpassword'
       })
     ).rejects.toThrow('Too many requests. Please try again shortly.');
   });

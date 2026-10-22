@@ -145,6 +145,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 #### Web client
 
+- Signing in on a computer opens the first text channel instead of an empty page.
 - A refresh shows the server as it was straight away instead of a loading screen, and swaps in the fresh copy once it has reconnected. Nothing can be sent until then.
 - Group direct messages and friends.
 - GIF and sticker tabs in the picker, sticker settings and a Klipy key field.
@@ -277,6 +278,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 #### Server and web client
 
+- A few quick refreshes no longer sign you out. Only joins that check the server password are rate limited now, and a resume that fails for any other reason than the session shows the connection lost screen instead of signing out.
 - The web invite page says how to make an account: choose an identity and a password, then press Connect.
 - Open in the Sharkord app on the invite page keeps a server's subpath, so a server under `example.com/sharkord` opens there in the app instead of at `example.com`.
 - The sign in page scrolls on a phone instead of cutting off its top and bottom, and the language picker sits below it there rather than over the Connect button.
