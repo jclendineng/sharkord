@@ -243,11 +243,12 @@ const Connect = memo(() => {
 
   // a page a little taller than the screen stutters in safari: scrolling tucks the toolbar
   // away, the screen grows past the end of the page, the page snaps back and the toolbar
-  // returns. one that overflows at all gets a toolbar's height more, so it keeps scrolling
+  // returns. one that overflows at all gets more room than the toolbar takes up. a fixed
+  // amount, since ios 26 safari changes svh as the toolbar moves
   let pageClassName = 'flex flex-col justify-center items-center min-h-svh';
 
   if (overflows) {
-    pageClassName = 'flex flex-col items-center min-h-[calc(200lvh-100svh)]';
+    pageClassName = 'flex flex-col items-center min-h-svh pb-32';
   }
 
   return (
