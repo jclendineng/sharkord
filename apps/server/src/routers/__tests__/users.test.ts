@@ -2245,7 +2245,11 @@ describe('user moderation permissions and role order', () => {
   test('should let kick members alone kick, and nothing else', async () => {
     await giveNewRole(3, [Permission.KICK_MEMBERS]);
 
-    const { caller } = await initTest(3);
+    // kicking needs the member connected
+    const tab = createFakeSocket();
+    const { caller } = await initTest(3, undefined, {
+      getUserWs: (userId) => (userId === 4 ? [tab] : [])
+    });
 
     await caller.users.kick({ userId: 4 });
 
