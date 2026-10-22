@@ -11,6 +11,8 @@ import {
 } from '../db/queries/plugin-capabilities';
 import { getRoles, getUserRoleIds, userCan } from '../db/queries/roles';
 import { pluginManager } from '../plugins';
+import { invariant } from '../utils/invariant';
+import type { Context } from '../utils/trpc';
 
 const canUseResolvedCapability = async (
   userId: number,
@@ -89,4 +91,29 @@ const getCapabilityAccessRules = async (): Promise<
   return rules;
 };
 
-export { canUseCapability, canUseResolvedCapability, getCapabilityAccessRules };
+// an owner may open a capability up past the permission its plugin declares, which the sdk
+// documents. anyone else managing plugin access could otherwise hand out, or take for
+// themselves, a capability gated by a permission they were never given
+const assertCanManageCapability = async (
+  ctx: Context,
+  pluginId: string,
+  type: PluginCapabilityType,
+  name: string
+) => {
+  const requires = pluginManager.getRequiredPermission(pluginId, type, name);
+
+  if (!requires) return;
+
+  invariant(await ctx.hasPermission(requires), {
+    code: 'FORBIDDEN',
+    message:
+      'You cannot change access to something that needs a permission you do not have.'
+  });
+};
+
+export {
+  assertCanManageCapability,
+  canUseCapability,
+  canUseResolvedCapability,
+  getCapabilityAccessRules
+};

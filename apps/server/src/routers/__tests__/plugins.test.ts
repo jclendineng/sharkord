@@ -3835,6 +3835,93 @@ describe('plugins router', () => {
       ).rejects.toThrow('Insufficient permissions');
     });
 
+    // plugin-b declares admin-sum as needing MANAGE_MESSAGES, which the moderator lacks, and
+    // admin-multiply as needing MANAGE_USERS, which it holds
+    describe('managing access to a declared capability', () => {
+      const NOT_HELD_MESSAGE =
+        'You cannot change access to something that needs a permission you do not have.';
+
+      beforeEach(async () => {
+        await tdb.insert(rolePermissions).values({
+          roleId: MODERATOR_ROLE,
+          permission: Permission.MANAGE_PLUGIN_PERMISSIONS,
+          createdAt: Date.now()
+        });
+      });
+
+      const setPublic = async (name: string) => {
+        const { caller } = await initTest(MODERATOR_USER);
+
+        return caller.plugins.setCapabilityAccess({
+          pluginId: 'plugin-b',
+          type: PluginCapabilityType.COMMAND,
+          name,
+          mode: PluginCapabilityMode.PUBLIC,
+          roleIds: []
+        });
+      };
+
+      test('should not open up a capability gated by a permission the caller lacks', async () => {
+        await expect(setPublic('admin-sum')).rejects.toThrow(NOT_HELD_MESSAGE);
+
+        const { caller: owner } = await initTest();
+        const { capabilities } = await owner.plugins.getCapabilities({
+          pluginId: 'plugin-b'
+        });
+        const adminSum = capabilities.find((c) => c.name === 'admin-sum');
+
+        expect(adminSum!.mode).not.toBe(PluginCapabilityMode.PUBLIC);
+      });
+
+      test('should let the caller manage a capability gated by a permission they hold', async () => {
+        await setPublic('admin-multiply');
+
+        const { caller: owner } = await initTest();
+        const { capabilities } = await owner.plugins.getCapabilities({
+          pluginId: 'plugin-b'
+        });
+        const adminMultiply = capabilities.find(
+          (c) => c.name === 'admin-multiply'
+        );
+
+        expect(adminMultiply!.mode).toBe(PluginCapabilityMode.PUBLIC);
+      });
+
+      test('should not reset a capability gated by a permission the caller lacks', async () => {
+        const { caller } = await initTest(MODERATOR_USER);
+
+        await expect(
+          caller.plugins.resetCapabilityAccess({
+            pluginId: 'plugin-b',
+            type: PluginCapabilityType.COMMAND,
+            name: 'admin-sum'
+          })
+        ).rejects.toThrow(NOT_HELD_MESSAGE);
+      });
+
+      test('should let the owner open up any capability', async () => {
+        const { caller: owner } = await initTest();
+
+        await owner.plugins.setCapabilityAccess({
+          pluginId: 'plugin-b',
+          type: PluginCapabilityType.COMMAND,
+          name: 'admin-sum',
+          mode: PluginCapabilityMode.PUBLIC,
+          roleIds: []
+        });
+
+        const { caller } = await initTest(MODERATOR_USER);
+
+        expect(
+          await caller.plugins.executeCommand({
+            pluginId: 'plugin-b',
+            commandName: 'admin-sum',
+            args: { a: 1, b: 2 }
+          })
+        ).toBeDefined();
+      });
+    });
+
     // plugin-b declares admin-sum as requiring MANAGE_MESSAGES and
     // admin-multiply as requiring MANAGE_USERS. the seeded moderator role holds
     // MANAGE_USERS and MANAGE_ROLES only
