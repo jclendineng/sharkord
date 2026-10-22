@@ -22,6 +22,7 @@ final class TRPCClient {
     private let token: String
     private let decoder = JSONDecoder()
     private var nextId = 0
+    // a reply resumes its caller with the whole frame, which decodes its own payload from it
     private var pending: [Int: CheckedContinuation<Data, Error>] = [:]
     // one per request, asleep until its deadline, so a reply that never arrives cannot leave a
     // caller waiting forever and a channel stuck on its spinner
@@ -102,9 +103,9 @@ final class TRPCClient {
     func subscribe<Output: Decodable>(_ path: String, onData: @escaping (Output) -> Void) -> Int {
         let id = makeId()
 
-        subscriptions[id] = { [decoder] data in
+        subscriptions[id] = { [decoder] frame in
             do {
-                onData(try decoder.decode(Output.self, from: data))
+                onData(try decoder.decode(DataFrame<Output>.self, from: frame).result.data)
             } catch {
                 print("[trpc] failed to decode \(path): \(error)")
             }
@@ -128,12 +129,21 @@ final class TRPCClient {
     }
 
     private func request<Output: Decodable>(method: String, path: String, input: Any?) async throws -> Output {
-        let data = try await requestData(method: method, path: path, input: input)
+        let frame = try await requestFrame(method: method, path: path, input: input)
 
-        return try decoder.decode(Output.self, from: data)
+        return try decoder.decode(DataFrame<Output>.self, from: frame).result.data
     }
 
+    // the raw calls hand their payload on as json, so only they pull it back out of the frame
     private func requestData(method: String, path: String, input: Any?) async throws -> Data {
+        let frame = try await requestFrame(method: method, path: path, input: input)
+        let object = try JSONSerialization.jsonObject(with: frame) as? [String: Any]
+        let result = object?["result"] as? [String: Any]
+
+        return try JSONSerialization.data(withJSONObject: result?["data"] ?? NSNull(), options: .fragmentsAllowed)
+    }
+
+    private func requestFrame(method: String, path: String, input: Any?) async throws -> Data {
         guard !isClosed else {
             throw TRPCError(message: "Not connected to the server.", code: nil)
         }
@@ -199,9 +209,9 @@ final class TRPCClient {
 
                 switch message {
                 case .string(let text):
-                    handle(text)
+                    handle(Data(text.utf8))
                 case .data(let data):
-                    handle(String(decoding: data, as: UTF8.self))
+                    handle(data)
                 @unknown default:
                     break
                 }
@@ -214,39 +224,39 @@ final class TRPCClient {
         }
     }
 
-    private func handle(_ text: String) {
-        if text == "PONG" {
+    // each frame is decoded once into the few fields that route it, and the payload is then
+    // decoded straight from the same bytes by whoever asked for it. it used to be parsed into
+    // [String: Any], written back out and decoded a third time
+    private func handle(_ frame: Data) {
+        if frame == Self.pong {
             return
         }
 
-        if text == "PING" {
+        if frame == Self.ping {
             Task { try? await task.send(.string("PONG")) }
             return
         }
 
-        guard
-            let object = try? JSONSerialization.jsonObject(with: Data(text.utf8)) as? [String: Any]
-        else {
+        guard let envelope = try? decoder.decode(Frame.self, from: frame) else {
             return
         }
 
-        if object["method"] as? String == "reconnect" {
+        if envelope.method == "reconnect" {
             finish(.serverRequestedReconnect)
             task.cancel(with: .normalClosure, reason: nil)
             return
         }
 
-        guard let id = object["id"] as? Int else {
+        guard let id = envelope.id else {
             return
         }
 
-        if let error = object["error"] as? [String: Any] {
-            let data = error["data"] as? [String: Any]
-            let code = data?["code"] as? String
+        if let error = envelope.error {
+            let code = error.data?.code
             // a route this server does not have yet, it runs an older sharkord than the app
-            let message = code == "NOT_FOUND" && (error["message"] as? String)?.contains("-procedure on path") == true
+            let message = code == "NOT_FOUND" && error.message?.contains("-procedure on path") == true
                 ? "This server needs to be updated to use this."
-                : error["message"] as? String ?? "Unknown error"
+                : error.message ?? "Unknown error"
             let trpcError = TRPCError(message: message, code: code)
 
             if pending[id] != nil {
@@ -258,23 +268,14 @@ final class TRPCClient {
             return
         }
 
-        guard
-            let result = object["result"] as? [String: Any],
-            result["type"] as? String == "data"
-        else {
-            return
-        }
-
-        let payload = result["data"] ?? NSNull()
-
-        guard let data = try? JSONSerialization.data(withJSONObject: payload, options: .fragmentsAllowed) else {
+        guard envelope.result?.type == "data" else {
             return
         }
 
         if let onData = subscriptions[id] {
-            onData(data)
+            onData(frame)
         } else {
-            resolve(id, with: .success(data))
+            resolve(id, with: .success(frame))
         }
     }
 
@@ -304,6 +305,9 @@ final class TRPCClient {
         onClose?(reason)
     }
 
+    private static let ping = Data("PING".utf8)
+    private static let pong = Data("PONG".utf8)
+
     private func makeId() -> Int {
         nextId += 1
 
@@ -326,4 +330,50 @@ final class TRPCClient {
 // mutations whose result the app does not use; decodes anything, including null
 private struct IgnoredResult: Decodable {
     init(from decoder: Decoder) throws {}
+}
+
+// the parts of a frame that say where it goes. result.data is left for DataFrame
+private struct Frame: Decodable {
+    struct Failure: Decodable {
+        struct Details: Decodable {
+            let code: String?
+        }
+
+        let message: String?
+        let data: Details?
+    }
+
+    struct Result: Decodable {
+        let type: String?
+    }
+
+    let id: Int?
+    let method: String?
+    let error: Failure?
+    let result: Result?
+}
+
+// a data frame with its payload decoded as the caller's type
+private struct DataFrame<Output: Decodable>: Decodable {
+    struct Result: Decodable {
+        let data: Output
+
+        private enum CodingKeys: String, CodingKey {
+            case data
+        }
+
+        // a procedure that returns nothing sends no data key at all, which reads as null,
+        // the way the payload did when it was written back out before decoding
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+
+            if container.contains(.data) {
+                data = try container.decode(Output.self, forKey: .data)
+            } else {
+                data = try JSONDecoder().decode(Output.self, from: Data("null".utf8))
+            }
+        }
+    }
+
+    let result: Result
 }

@@ -219,9 +219,9 @@ from the Swift repository.
 - `MessageListView` still builds `Array(store.messages.enumerated())` for its
   day and header decisions. It is a page of 50 rows, and the index is needed
   for both.
-- `TRPCClient` still parses the websocket envelope with `JSONSerialization`
-  and then decodes the payload again. Removing the second pass needs typed
-  subscription envelopes and a larger change than this review.
+- `TRPCClient` parsed the websocket envelope with `JSONSerialization`, wrote
+  the payload back out and decoded it again. Fixed later in #183: a typed
+  `Frame` routes each message and the payload decodes straight from the frame.
 
 ## Verification
 
