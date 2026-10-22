@@ -23,7 +23,6 @@ import type {
   TPluginTab,
   TPluginTabsMap,
   TPublicServerSettings,
-  TReadStateMap,
   TServerInfo,
   TVoiceMap,
   TVoiceUserState
@@ -32,8 +31,10 @@ import { DEFAULT_MESSAGES_LIMIT } from '@sharkord/shared';
 import { mergeMessagesChronologically } from './helpers';
 import type {
   TDisconnectInfo,
+  TInitialData,
   TMessagesMap,
   TReconnectState,
+  TServerSnapshot,
   TThreadMessagesMap,
   TVoiceReaction
 } from './types';
@@ -97,6 +98,10 @@ export interface IServerState {
   // the caller's conversations, groups among them, newest first
   directMessages: TDirectMessageConversation[];
   friendLists: TFriendLists;
+  // showing the copy saved before a refresh, see restoreSnapshot
+  restoredFromSnapshot: boolean;
+  // the channel whose messages came from that copy, replaced by its first fetched page
+  snapshotChannelId: number | undefined;
 }
 
 const initialState: IServerState = {
@@ -164,10 +169,33 @@ const initialState: IServerState = {
   dmsOpen: false,
   directMessages: [],
   friendLists: { friends: [], incoming: [], outgoing: [] },
+  restoredFromSnapshot: false,
+  snapshotChannelId: undefined,
   hideOwnScreenShare: getLocalStorageItemBool(
     LocalStorageKey.HIDE_OWN_SCREEN_SHARE,
     false
   )
+};
+
+const applyInitialData = (state: IServerState, data: TInitialData) => {
+  state.connected = true;
+  state.reconnect = null;
+  state.categories = data.categories;
+  state.channels = data.channels;
+  state.emojis = data.emojis;
+  state.stickers = data.stickers ?? [];
+  state.sounds = data.sounds ?? [];
+  state.users = data.users;
+  state.roles = data.roles;
+  state.ownUserId = data.ownUserId;
+  state.ownUserPasswordSet = data.ownUserPasswordSet;
+  state.publicSettings = data.publicSettings;
+  state.voiceMap = data.voiceMap;
+  state.externalStreamsMap = data.externalStreamsMap;
+  state.serverId = data.serverId;
+  state.channelPermissions = data.channelPermissions;
+  state.readStatesMap = data.readStates;
+  state.pluginsMetadata = data.pluginsMetadata;
 };
 
 export const serverSlice = createSlice({
@@ -199,45 +227,29 @@ export const serverSlice = createSlice({
     ) => {
       state.disconnectInfo = action.payload;
     },
-    setInitialData: (
-      state,
-      action: PayloadAction<{
-        serverId: string;
-        categories: TCategory[];
-        channels: TChannel[];
-        users: TJoinedPublicUser[];
-        ownUserId: number;
-        ownUserPasswordSet: boolean;
-        roles: TJoinedRole[];
-        emojis: TJoinedEmoji[];
-        stickers?: TJoinedSticker[];
-        sounds?: TJoinedSoundboardSound[];
-        publicSettings: TPublicServerSettings | undefined;
-        voiceMap: TVoiceMap;
-        externalStreamsMap: TExternalStreamsMap;
-        channelPermissions: TChannelUserPermissionsMap;
-        readStates: TReadStateMap;
-        pluginsMetadata: TPluginMetadata[];
-      }>
-    ) => {
-      state.connected = true;
-      state.reconnect = null;
-      state.categories = action.payload.categories;
-      state.channels = action.payload.channels;
-      state.emojis = action.payload.emojis;
-      state.stickers = action.payload.stickers ?? [];
-      state.sounds = action.payload.sounds ?? [];
-      state.users = action.payload.users;
-      state.roles = action.payload.roles;
-      state.ownUserId = action.payload.ownUserId;
-      state.ownUserPasswordSet = action.payload.ownUserPasswordSet;
-      state.publicSettings = action.payload.publicSettings;
-      state.voiceMap = action.payload.voiceMap;
-      state.externalStreamsMap = action.payload.externalStreamsMap;
-      state.serverId = action.payload.serverId;
-      state.channelPermissions = action.payload.channelPermissions;
-      state.readStatesMap = action.payload.readStates;
-      state.pluginsMetadata = action.payload.pluginsMetadata;
+    setInitialData: (state, action: PayloadAction<TInitialData>) => {
+      applyInitialData(state, action.payload);
+      state.restoredFromSnapshot = false;
+    },
+    // shown inert, the way a reconnect is, until joining returns: a first attempt shows no
+    // reconnecting dialog, so the page looks as it did before the refresh
+    restoreSnapshot: (state, action: PayloadAction<TServerSnapshot>) => {
+      const { selectedChannelId, messages, ...data } = action.payload;
+
+      applyInitialData(state, data);
+
+      state.connected = false;
+      state.reconnect = { attempt: 1, maxAttempts: 1, nextAttemptAt: null };
+      state.restoredFromSnapshot = true;
+      state.selectedChannelId = selectedChannelId;
+
+      if (selectedChannelId !== undefined) {
+        state.messagesMap[selectedChannelId] = messages;
+        state.snapshotChannelId = selectedChannelId;
+      }
+    },
+    clearSnapshotChannel: (state) => {
+      state.snapshotChannelId = undefined;
     },
     addMessages: (
       state,

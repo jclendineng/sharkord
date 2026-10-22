@@ -1,6 +1,12 @@
 import { setIsAutoConnecting } from '@/features/app/actions';
 import { useIsAppLoading, useIsPluginsLoading } from '@/features/app/hooks';
-import { connect } from '@/features/server/actions';
+import {
+  clearServerSnapshot,
+  connect,
+  resetServerState,
+  restoreServerSnapshot,
+  saveServerSnapshot
+} from '@/features/server/actions';
 import { useDisconnectInfo, useIsConnected } from '@/features/server/hooks';
 import {
   getLocalStorageItem,
@@ -41,6 +47,9 @@ const AutoLoginController = memo(() => {
     // a refresh: the tab still holds the session it signed in with, kept whether or not login
     // automatically is on, which only decides whether a new tab or browser stays signed in
     let token = getSessionStorageItem(SessionStorageKey.TOKEN);
+    // the server as it was before the refresh, shown while joining runs instead of a loading
+    // screen. only on a refresh, a new tab has no copy of its own
+    const restored = !!token && restoreServerSnapshot();
 
     if (!token && autoLoginEnabled) {
       token = getLocalStorageItem(LocalStorageKey.AUTO_LOGIN_TOKEN);
@@ -57,6 +66,12 @@ const AutoLoginController = memo(() => {
 
     connect()
       .catch(() => {
+        if (restored) {
+          resetServerState();
+        }
+
+        clearServerSnapshot();
+
         // token expired or invalid clear auto-login state so the user
         // sees the connect screen and can log in manually
         removeLocalStorageItem(LocalStorageKey.AUTO_LOGIN_TOKEN);
@@ -69,6 +84,14 @@ const AutoLoginController = memo(() => {
         setIsAutoConnecting(false);
       });
   }, [isAppLoading, isPluginsLoading, isConnected, disconnectInfo]);
+
+  useEffect(() => {
+    window.addEventListener('pagehide', saveServerSnapshot);
+
+    return () => {
+      window.removeEventListener('pagehide', saveServerSnapshot);
+    };
+  }, []);
 
   return null;
 });

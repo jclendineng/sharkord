@@ -7,7 +7,8 @@ import {
 import {
   useDisconnectInfo,
   useIsConnected,
-  useIsReconnecting
+  useIsReconnecting,
+  useIsRestoredFromSnapshot
 } from '@/features/server/hooks';
 import { Connect } from '@/screens/connect';
 import { Disconnected } from '@/screens/disconnected';
@@ -27,6 +28,7 @@ const Routing = memo(() => {
   const disconnectInfo = useDisconnectInfo();
   const isAutoConnecting = useIsAutoConnecting();
   const isReconnecting = useIsReconnecting();
+  const isRestoredFromSnapshot = useIsRestoredFromSnapshot();
 
   useDocumentTitle();
   useOidcAutoRedirect();
@@ -56,12 +58,14 @@ const Routing = memo(() => {
     return <Connect />;
   }
 
+  // mounted again once joining returns: views that fetch on mount did so with no connection
+  // while the copy saved before a refresh was showing
   return (
     <>
       {isReconnecting && <ReconnectingOverlay />}
 
       <div className="contents" inert={isReconnecting}>
-        <ServerView />
+        <ServerView key={isRestoredFromSnapshot ? 'snapshot' : 'live'} />
       </div>
     </>
   );

@@ -1,8 +1,47 @@
 import {
+  type TCategory,
+  type TChannel,
+  type TChannelUserPermissionsMap,
+  type TExternalStreamsMap,
+  type TJoinedEmoji,
   type TJoinedMessage,
   type TJoinedPublicUser,
+  type TJoinedRole,
+  type TJoinedSoundboardSound,
+  type TJoinedSticker,
+  type TPluginMetadata,
+  type TPublicServerSettings,
+  type TReadStateMap,
+  type TVoiceMap,
   type TVoiceUserState
 } from '@sharkord/shared';
+
+// what joining the server fills the store with
+export type TInitialData = {
+  serverId: string;
+  categories: TCategory[];
+  channels: TChannel[];
+  users: TJoinedPublicUser[];
+  ownUserId: number;
+  ownUserPasswordSet: boolean;
+  roles: TJoinedRole[];
+  emojis: TJoinedEmoji[];
+  stickers?: TJoinedSticker[];
+  sounds?: TJoinedSoundboardSound[];
+  publicSettings: TPublicServerSettings | undefined;
+  voiceMap: TVoiceMap;
+  externalStreamsMap: TExternalStreamsMap;
+  channelPermissions: TChannelUserPermissionsMap;
+  readStates: TReadStateMap;
+  pluginsMetadata: TPluginMetadata[];
+};
+
+// the copy of the server a refresh shows until joining again returns, with the open channel's
+// latest messages
+export type TServerSnapshot = TInitialData & {
+  selectedChannelId: number | undefined;
+  messages: TJoinedMessage[];
+};
 
 export enum SoundType {
   MESSAGE_RECEIVED = 'message_received',

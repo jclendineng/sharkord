@@ -680,3 +680,14 @@ the app. Open jumps to the channel on screen in the app, with the same `sharkord
 the app copies for a channel, and shows only while a channel is open. Get opens the TestFlight
 beta. The X hides the banner in that browser until its site data is cleared. Other phones and
 computers never see it. Code `apps/client/src/components/app-banner`.
+
+## Refresh without a loading screen
+
+A refresh restarts the web app, which has to reconnect and join the server again. Leaving the page
+saves the server as it is (channels, members, roles, settings and the open channel's latest
+messages) to the tab's session storage, and the refreshed page shows that copy straight away,
+inert the way a reconnect is, until joining returns. The view then mounts again on the fresh data,
+and the open channel's first page replaces the saved messages, so ones deleted meanwhile do not
+linger. The copy lives only as long as the tab, is dropped on signing out, and a copy over 2 MB is
+not kept. Code `saveServerSnapshot` and `restoreServerSnapshot` in
+`apps/client/src/features/server/actions.ts`.

@@ -145,6 +145,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 #### Web client
 
+- A refresh shows the server as it was straight away instead of a loading screen, and swaps in the fresh copy once it has reconnected. Nothing can be sent until then.
 - Group direct messages and friends.
 - GIF and sticker tabs in the picker, sticker settings and a Klipy key field.
 - Signed file links refresh while the page is open.

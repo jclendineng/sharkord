@@ -7,6 +7,7 @@ import {
 } from '@sharkord/shared';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
+import { takeSnapshotChannel } from '../actions';
 import {
   addMessages,
   addThreadMessages,
@@ -210,7 +211,11 @@ export const useMessages = (channelId: number) => {
         limit: DEFAULT_MESSAGES_LIMIT
       });
 
-      storeChannelMessages(channelId, rawPage);
+      if (cursorToFetch === null && takeSnapshotChannel(channelId)) {
+        setChannelMessages(channelId, [...rawPage].reverse(), false);
+      } else {
+        storeChannelMessages(channelId, rawPage);
+      }
 
       return { nextCursor };
     },

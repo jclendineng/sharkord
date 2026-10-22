@@ -45,7 +45,8 @@ export enum LocalStorageKey {
 
 export enum SessionStorageKey {
   TOKEN = 'sharkord-token',
-  OIDC_NO_AUTO_REDIRECT = 'sharkord-oidc-no-auto-redirect'
+  OIDC_NO_AUTO_REDIRECT = 'sharkord-oidc-no-auto-redirect',
+  SERVER_SNAPSHOT = 'sharkord-server-snapshot'
 }
 
 // librewolf and firefox private mode throw SecurityError when privacy hardening

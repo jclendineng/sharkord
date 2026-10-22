@@ -2,6 +2,12 @@ import { Dialog } from '@/components/dialogs/dialogs';
 import { logDebug } from '@/helpers/browser-logger';
 import { getHostFromServer } from '@/helpers/get-file-url';
 import { playSound } from '@/helpers/sounds';
+import {
+  getSessionStorageItem,
+  removeSessionStorageItem,
+  SessionStorageKey,
+  setSessionStorageItem
+} from '@/helpers/storage';
 import { pushVoiceDebugEvent } from '@/helpers/voice-debug';
 import { i18n } from '@/i18n';
 import { cleanup, connectToTRPC, getTRPCClient } from '@/lib/trpc';
@@ -27,9 +33,14 @@ import {
   setPluginCommands,
   setPluginComponents
 } from './plugins/actions';
-import { connectedSelector, infoSelector } from './selectors';
+import {
+  connectedSelector,
+  infoSelector,
+  serverSnapshotSelector,
+  snapshotChannelIdSelector
+} from './selectors';
 import { serverSliceActions } from './slice';
-import { SoundType, type TDisconnectInfo } from './types';
+import { SoundType, type TDisconnectInfo, type TServerSnapshot } from './types';
 import { rejoinVoiceAfterReconnect } from './voice/actions';
 
 let unsubscribeFromServer: (() => void) | null = null;
@@ -126,6 +137,65 @@ export const joinServer = async (handshakeHash: string, password?: string) => {
   return {
     showWelcomeDialog: data.showWelcomeDialog
   };
+};
+
+// a copy too big for the tab's storage is not kept, the page then loads as before
+const MAX_SNAPSHOT_LENGTH = 2_000_000;
+
+// kept in the tab's session storage, so it outlives a refresh but not the tab, and is dropped
+// with the session on signing out
+export const saveServerSnapshot = () => {
+  const state = store.getState();
+
+  if (!connectedSelector(state)) return;
+
+  const snapshot = serverSnapshotSelector(state);
+
+  if (!snapshot) return;
+
+  const serialized = JSON.stringify(snapshot);
+
+  if (serialized.length > MAX_SNAPSHOT_LENGTH) return;
+
+  setSessionStorageItem(SessionStorageKey.SERVER_SNAPSHOT, serialized);
+};
+
+export const clearServerSnapshot = () => {
+  removeSessionStorageItem(SessionStorageKey.SERVER_SNAPSHOT);
+};
+
+// whether a copy of this server was there to show while joining runs
+export const restoreServerSnapshot = (): boolean => {
+  const serialized = getSessionStorageItem(SessionStorageKey.SERVER_SNAPSHOT);
+  const info = infoSelector(store.getState());
+
+  if (!serialized || !info) return false;
+
+  try {
+    const snapshot: TServerSnapshot = JSON.parse(serialized);
+
+    if (snapshot.serverId !== info.serverId) return false;
+
+    store.dispatch(serverSliceActions.restoreSnapshot(snapshot));
+
+    return true;
+  } catch {
+    clearServerSnapshot();
+
+    return false;
+  }
+};
+
+// the restored copy of a channel may hold messages deleted since, so its first fetched page
+// replaces it rather than merging in. true once, for that channel
+export const takeSnapshotChannel = (channelId: number): boolean => {
+  const snapshotChannelId = snapshotChannelIdSelector(store.getState());
+
+  if (snapshotChannelId !== channelId) return false;
+
+  store.dispatch(serverSliceActions.clearSnapshotChannel());
+
+  return true;
 };
 
 export const disconnectFromServer = () => {

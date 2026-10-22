@@ -1,10 +1,13 @@
 import { createSelector } from '@reduxjs/toolkit';
 import {
+  DEFAULT_MESSAGES_LIMIT,
   OWNER_ROLE_ID,
   PluginCapabilityType,
   PluginSlot,
+  type TJoinedMessage,
   type TJoinedRole,
-  type TPluginStoreState
+  type TPluginStoreState,
+  type TReadStateMap
 } from '@sharkord/shared';
 import { createCachedSelector } from 're-reselect';
 import { hotkeysEnabledSelector } from '../app/selectors';
@@ -34,7 +37,7 @@ import {
   pluginsMetadataSelector
 } from './plugins/selectors';
 import { rolesSelector } from './roles/selectors';
-import type { TVoiceUser } from './types';
+import type { TServerSnapshot, TVoiceUser } from './types';
 import {
   ownUserIdSelector,
   ownUserRoleIdsSelector,
@@ -59,6 +62,63 @@ export const reconnectingSelector = (state: IRootState) =>
   !!state.server.reconnect;
 
 export const serverIdSelector = (state: IRootState) => state.server.serverId;
+
+export const restoredFromSnapshotSelector = (state: IRootState) =>
+  state.server.restoredFromSnapshot;
+
+export const snapshotChannelIdSelector = (state: IRootState) =>
+  state.server.snapshotChannelId;
+
+// this selector is not cached, do not use it outside actions. what saveServerSnapshot keeps,
+// with the open channel's latest page of messages
+export const serverSnapshotSelector = (
+  state: IRootState
+): TServerSnapshot | undefined => {
+  const { server } = state;
+
+  if (!server.serverId || server.ownUserId === undefined) return undefined;
+
+  const { selectedChannelId } = server;
+  let messages: TJoinedMessage[] = [];
+
+  if (selectedChannelId !== undefined) {
+    const channelMessages = messagesByChannelIdSelector(
+      state,
+      selectedChannelId
+    );
+
+    messages = channelMessages.slice(-DEFAULT_MESSAGES_LIMIT);
+  }
+
+  const readStates: TReadStateMap = {};
+
+  for (const [channelId, count] of Object.entries(server.readStatesMap)) {
+    if (count !== undefined) {
+      readStates[Number(channelId)] = count;
+    }
+  }
+
+  return {
+    serverId: server.serverId,
+    categories: server.categories,
+    channels: server.channels,
+    users: server.users,
+    ownUserId: server.ownUserId,
+    ownUserPasswordSet: server.ownUserPasswordSet,
+    roles: server.roles,
+    emojis: server.emojis,
+    stickers: server.stickers,
+    sounds: server.sounds,
+    publicSettings: server.publicSettings,
+    voiceMap: server.voiceMap,
+    externalStreamsMap: server.externalStreamsMap,
+    channelPermissions: server.channelPermissions,
+    readStates,
+    pluginsMetadata: server.pluginsMetadata,
+    selectedChannelId,
+    messages
+  };
+};
 
 export const serverNameSelector = (state: IRootState) =>
   state.server.publicSettings?.name;

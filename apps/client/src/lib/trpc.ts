@@ -3,6 +3,7 @@ import { resetDialogs } from '@/features/dialogs/actions';
 import { resetServerScreens } from '@/features/server-screens/actions';
 import {
   cancelReconnect,
+  clearServerSnapshot,
   reconnectToServer,
   resetServerState,
   setDisconnectInfo
@@ -159,6 +160,7 @@ const cleanup = () => {
 
     // the tab's own session too, which a refresh picks back up whatever login automatically says
     removeSessionStorageItem(SessionStorageKey.TOKEN);
+    clearServerSnapshot();
 
     // same reasoning, for a server that redirects straight to its identity provider
     suppressOidcAutoRedirect();
