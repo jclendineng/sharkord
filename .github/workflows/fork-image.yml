@@ -2,7 +2,8 @@ name: Publish Fork Image
 
 # the fork's own server image on ghcr.io, for the unraid container. no secrets needed,
 # the workflow token can push packages to the repository owner's namespace.
-# main publishes :latest, development publishes :development (and the older :push)
+# main publishes :main, development publishes :development (and the older :push), and
+# :latest follows whichever branch built last, so a pull with no tag gets the newest build
 on:
   push:
     branches: [main, development]
@@ -32,14 +33,11 @@ jobs:
         run: |
           image=ghcr.io/${{ github.repository_owner }}/sharkord
 
-          if [ "${{ github.ref_name }}" = main ]; then
-            channel=latest
-          else
-            channel=development
-          fi
+          channel=${{ github.ref_name }}
 
           {
             echo 'list<<EOF'
+            echo "$image:latest"
             echo "$image:$channel"
             echo "$image:$channel-${{ github.sha }}"
             if [ "$channel" = development ]; then echo "$image:push"; fi
