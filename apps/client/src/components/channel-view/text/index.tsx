@@ -8,6 +8,7 @@ import { useMessages } from '@/features/server/messages/hooks';
 import { SoundType } from '@/features/server/types';
 import { playSound } from '@/helpers/sounds';
 import { LocalStorageKey } from '@/helpers/storage';
+import { useOnReconnect } from '@/hooks/use-on-reconnect';
 import { useTypingSignal } from '@/hooks/use-typing-signal';
 import { getTRPCClient } from '@/lib/trpc';
 import type { TReplyTarget } from '@/types';
@@ -54,7 +55,8 @@ const TextChannel = memo(({ channelId, onClose }: TChannelProps) => {
     groupedMessages,
     scrollToMessage,
     detachedFromPresent,
-    returnToPresent
+    returnToPresent,
+    catchUpAfterReconnect
   } = useMessages(channelId);
 
   useScrollToJumpTarget(channelId, scrollToMessage);
@@ -108,6 +110,12 @@ const TextChannel = memo(({ channelId, onClose }: TChannelProps) => {
       scrollToBottom();
     }
   }, [isAtBottom, scrollToBottom]);
+
+  const handleReconnect = useCallback(() => {
+    catchUpAfterReconnect(!isAtBottom());
+  }, [catchUpAfterReconnect, isAtBottom]);
+
+  useOnReconnect(handleReconnect);
 
   const channelCan = useChannelCan(channelId);
 

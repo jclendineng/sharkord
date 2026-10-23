@@ -9,7 +9,11 @@ import {
   saveServerSnapshot,
   setDisconnectInfo
 } from '@/features/server/actions';
-import { useDisconnectInfo, useIsConnected } from '@/features/server/hooks';
+import {
+  useDisconnectInfo,
+  useIsConnected,
+  useIsReconnecting
+} from '@/features/server/hooks';
 import {
   getLocalStorageItem,
   getLocalStorageItemBool,
@@ -28,6 +32,7 @@ const AutoLoginController = memo(() => {
   const isAppLoading = useIsAppLoading();
   const isPluginsLoading = useIsPluginsLoading();
   const disconnectInfo = useDisconnectInfo();
+  const isReconnecting = useIsReconnecting();
   const autoLoginAttempted = useRef(false);
 
   useEffect(() => {
@@ -35,10 +40,14 @@ const AutoLoginController = memo(() => {
       isAppLoading ||
       isPluginsLoading ||
       isConnected ||
+      isReconnecting ||
       disconnectInfo ||
       autoLoginAttempted.current
     ) {
-      // ignore if the app is not done loading, if we're already connected or in the process of connecting
+      // ignore if the app is not done loading, if we're already connected or in the process of
+      // connecting. a dropped connection is reconnectToServer's to recover: a second connect
+      // here would handshake on the same socket, one join would fail on the replaced hash, and
+      // that failure signed the tab out the next time the connection dropped
       return;
     }
 
@@ -97,7 +106,13 @@ const AutoLoginController = memo(() => {
         autoLoginAttempted.current = false;
         setIsAutoConnecting(false);
       });
-  }, [isAppLoading, isPluginsLoading, isConnected, disconnectInfo]);
+  }, [
+    isAppLoading,
+    isPluginsLoading,
+    isConnected,
+    isReconnecting,
+    disconnectInfo
+  ]);
 
   useEffect(() => {
     window.addEventListener('pagehide', saveServerSnapshot);

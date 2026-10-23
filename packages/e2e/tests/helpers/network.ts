@@ -34,8 +34,20 @@ const createLane = ({ latencyMs, jitterMs, kbps }: TLinkProfile) => {
 // holds and the spec can drop the connection at a moment of its choosing
 const shapeLink = async (context: BrowserContext, profile: TLinkProfile) => {
   let cutCurrent: (() => Promise<void>) | undefined;
+  let isDown = false;
 
+  // the handler stays synchronous: playwright only wires the page to the server for one that
+  // has called connectToServer by the time it returns
   await context.routeWebSocket(SERVER_SOCKET, (ws) => {
+    // still out of signal: every reconnect attempt fails until the link is restored
+    if (isDown) {
+      ws.close({ code: 4000, reason: 'network down' }).catch(() => {
+        // the page gave up on this attempt first, which is the same outcome
+      });
+
+      return;
+    }
+
     const server = ws.connectToServer();
     const up = createLane(profile);
     const down = createLane(profile);
@@ -65,7 +77,18 @@ const shapeLink = async (context: BrowserContext, profile: TLinkProfile) => {
     await cutCurrent?.();
   };
 
-  return { cut };
+  // a drop that lasts, so whatever is sent meanwhile is sure to be missed rather than racing
+  // the first reconnect attempt. restore before the client's reconnect attempts run out
+  const goDown = async () => {
+    isDown = true;
+    await cut();
+  };
+
+  const restore = () => {
+    isDown = false;
+  };
+
+  return { cut, goDown, restore };
 };
 
 type TLink = Awaited<ReturnType<typeof shapeLink>>;

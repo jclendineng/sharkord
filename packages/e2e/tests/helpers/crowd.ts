@@ -124,8 +124,12 @@ const joinCrowdMember = async (index: number) => {
     return () => clearInterval(timer);
   };
 
-  const send = (channelId: number, text: string) =>
-    session.trpc.messages.send.mutate({ channelId, content: `<p>${text}</p>` });
+  const send = (channelId: number, text: string, parentMessageId?: number) =>
+    session.trpc.messages.send.mutate({
+      channelId,
+      content: `<p>${text}</p>`,
+      parentMessageId
+    });
 
   const disconnect = () => {
     session.closed = true;

@@ -10,7 +10,11 @@ import {
   type TLink,
   type TLinkProfile
 } from './helpers/network';
-import { messagesContainer } from './helpers/scroll';
+import {
+  messagesContainer,
+  readScroll,
+  scrollWellAwayFromBottom
+} from './helpers/scroll';
 
 // run this with bun test:crowd, or CROWD_SIZE=200 bun test:crowd for a bigger room. it fills the
 // server with that many extra online members, which
@@ -52,6 +56,19 @@ const OBSERVER_SPECS: TObserverSpec[] = [
   { label: 'mobile', identity: 'usera', profile: LINK_PROFILES.mobile },
   { label: 'congested', identity: 'userb', profile: LINK_PROFILES.congested }
 ];
+
+// the one whose connection is cut in the middle of the burst
+const DROPPED_OBSERVER = 'congested';
+
+const observerByLabel = (observers: TObserver[], label: string) => {
+  const observer = observers.find((candidate) => candidate.label === label);
+
+  if (!observer) {
+    throw new Error(`no ${label} observer`);
+  }
+
+  return observer;
+};
 
 const burstToken = (member: TCrowdMember, round: number) =>
   `b${String(member.index).padStart(3, '0')}x${round}-${RUN_ID}`;
@@ -305,13 +322,13 @@ test(`${CROWD_SIZE} people chatting at once on mixed connections`, async ({
         .slice(50, 80)
         .map((member) => member.startTyping(liveChannelId));
 
-      const congested = observers.find(({ label }) => label === 'congested');
+      const congested = observerByLabel(observers, DROPPED_OBSERVER);
 
       // a second into the burst, the congested observer loses its connection, with the burst
       // still arriving. it has to reconnect and show the room without gaps or doubles
       const dropMidway = async () => {
         await observers[0]!.page.waitForTimeout(1_000);
-        await congested?.link?.cut();
+        await congested.link?.cut();
       };
 
       const sendAll = Promise.all(
@@ -359,11 +376,23 @@ test(`${CROWD_SIZE} people chatting at once on mixed connections`, async ({
         .toSorted((a, b) => a.createdAt - b.createdAt || a.id - b.id)
         .map(tokenOf);
 
-      for (const { label, page, link } of observers) {
-        if (!link) {
+      const crowdNames = crowd.map(({ name }) => name).toSorted();
+
+      for (const { label, page } of observers) {
+        if (label !== DROPPED_OBSERVER) {
           await expect
             .poll(() => burstTokensOnPage(page), { timeout: 60_000 })
             .toEqual(expectedOrder);
+
+          // the member list only has room for a hundred, so this is where every rename is
+          // seen: each member wrote part of the burst, under the name they gave themselves
+          await expect
+            .poll(async () => {
+              const text = await messagesContainer(page).innerText();
+
+              return [...new Set(text.match(/Crowd \d{3}/g) ?? [])].toSorted();
+            })
+            .toEqual(crowdNames);
 
           continue;
         }
@@ -413,6 +442,89 @@ test(`${CROWD_SIZE} people chatting at once on mixed connections`, async ({
           timeout: 15_000
         })
       );
+    });
+
+    const handTypedId = firstMember.received.find(({ content }) =>
+      content?.includes(`typed by hand ${RUN_ID}`)
+    )?.id;
+
+    await test.step('an open thread catches up on replies sent during a drop', async () => {
+      const { page, link } = observerByLabel(observers, DROPPED_OBSERVER);
+      const [opener, ...others] = crowd.slice(90, 96);
+
+      if (!opener || !link || !handTypedId) {
+        throw new Error('nothing to reply to');
+      }
+
+      await opener.send(liveChannelId, `reply 0 ${RUN_ID}`, handTypedId);
+
+      await messageByText(page, `typed by hand ${RUN_ID}`)
+        .getByRole('button', { name: '1 reply' })
+        .click();
+
+      await expect(messageByText(page, `reply 0 ${RUN_ID}`)).toHaveCount(1, {
+        timeout: 15_000
+      });
+
+      await link.goDown();
+      await Promise.all(
+        others.map((member, index) =>
+          member.send(
+            liveChannelId,
+            `reply ${index + 1} ${RUN_ID}`,
+            handTypedId
+          )
+        )
+      );
+      link.restore();
+
+      for (let index = 0; index <= others.length; index++) {
+        await expect(
+          messageByText(page, `reply ${index} ${RUN_ID}`)
+        ).toHaveCount(1, { timeout: 30_000 });
+      }
+    });
+
+    await test.step('reading older messages through a drop keeps the place', async () => {
+      const { page, link } = observerByLabel(observers, 'mobile');
+      const container = messagesContainer(page);
+
+      if (!link) {
+        throw new Error('the mobile observer has no link to drop');
+      }
+
+      const before = await scrollWellAwayFromBottom(page, container);
+      const senders = crowd.slice(20, 30);
+
+      await link.goDown();
+      await Promise.all(
+        senders.map((member, index) =>
+          member.send(liveChannelId, `while away ${index} ${RUN_ID}`)
+        )
+      );
+      link.restore();
+
+      // reconnected, and offering the way back rather than moving the reader there
+      const returnToPresent = page.getByTestId(TestId.RETURN_TO_PRESENT);
+
+      await expect(returnToPresent).toBeVisible({ timeout: 30_000 });
+      await expect(messageByText(page, `while away 9 ${RUN_ID}`)).toHaveCount(
+        0
+      );
+
+      const after = await readScroll(container);
+
+      expect(Math.abs(after.scrollTop - before.scrollTop)).toBeLessThanOrEqual(
+        5
+      );
+
+      await returnToPresent.click();
+
+      for (let index = 0; index < senders.length; index++) {
+        await expect(
+          messageByText(page, `while away ${index} ${RUN_ID}`)
+        ).toHaveCount(1, { timeout: 15_000 });
+      }
     });
 
     // rate limits on the typing signal would make people vanish from the indicator under load

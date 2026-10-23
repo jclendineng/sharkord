@@ -1,4 +1,5 @@
 import type { IRootState } from '@/features/store';
+import { useOnReconnect } from '@/hooks/use-on-reconnect';
 import { getTRPCClient } from '@/lib/trpc';
 import {
   DEFAULT_MESSAGES_LIMIT,
@@ -8,7 +9,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { takeStaleChannel } from '../actions';
-import { connectedSelector, restoredFromSnapshotSelector } from '../selectors';
+import { restoredFromSnapshotSelector } from '../selectors';
 import {
   addMessages,
   addThreadMessages,
@@ -236,20 +237,24 @@ export const useMessages = (channelId: number) => {
     inited.current = true;
   }, [paginated, restoredFromSnapshot]);
 
-  const connected = useSelector(connectedSelector);
-  const wasConnected = useRef(connected);
   const { fetchMessages, applyCursor } = paginated;
 
-  // the open channel was marked stale when the socket dropped. once joined again its newest
-  // page replaces what is on screen, which also resets the cursor so loading older history
-  // continues from that page rather than from before the gap
-  useEffect(() => {
-    const reconnected = connected && !wasConnected.current;
+  // the open channel was marked stale when the socket dropped. someone reading older messages
+  // keeps that window, detached, and the banner offers the way back, so nothing moves under
+  // them. at the bottom the newest page replaces what is on screen, which also resets the
+  // cursor so loading older history continues from that page rather than from before the gap
+  const catchUpAfterReconnect = useCallback(
+    (isReadingHistory: boolean) => {
+      if (isReadingHistory || detachedFromPresent) {
+        setChannelMessages(channelId, messages, true);
 
-    wasConnected.current = connected;
+        return;
+      }
 
-    if (reconnected) fetchMessages(null);
-  }, [connected, fetchMessages]);
+      fetchMessages(null);
+    },
+    [channelId, messages, detachedFromPresent, fetchMessages]
+  );
 
   useEffect(() => () => trimChannelMessages(channelId), [channelId]);
 
@@ -315,7 +320,8 @@ export const useMessages = (channelId: number) => {
     ...paginated,
     scrollToMessage,
     detachedFromPresent,
-    returnToPresent
+    returnToPresent,
+    catchUpAfterReconnect
   };
 };
 
@@ -324,19 +330,28 @@ export const useThreadMessagesByParentId = (parentMessageId: number) =>
     threadMessagesByParentIdSelector(state, parentMessageId)
   );
 
+const fetchThreadPage = (
+  parentMessageId: number,
+  cursor: TMessagesCursor | null
+) => {
+  const trpcClient = getTRPCClient();
+
+  return trpcClient.messages.getThread.query({
+    parentMessageId,
+    cursor,
+    limit: DEFAULT_MESSAGES_LIMIT
+  });
+};
+
 export const useThreadMessages = (parentMessageId: number) => {
   const messages = useThreadMessagesByParentId(parentMessageId);
 
   const fetchPage = useCallback(
     async (cursorToFetch: TMessagesCursor | null) => {
-      const trpcClient = getTRPCClient();
-
-      const { messages: page, nextCursor } =
-        await trpcClient.messages.getThread.query({
-          parentMessageId,
-          cursor: cursorToFetch,
-          limit: DEFAULT_MESSAGES_LIMIT
-        });
+      const { messages: page, nextCursor } = await fetchThreadPage(
+        parentMessageId,
+        cursorToFetch
+      );
 
       addThreadMessages(parentMessageId, page);
 
@@ -355,6 +370,27 @@ export const useThreadMessages = (parentMessageId: number) => {
     paginated.reset();
     paginated.fetchMessages(null);
   }, [parentMessageId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const { applyCursor } = paginated;
+
+  // replies sent while the socket was down never arrived. the newest page replaces the thread
+  // in one dispatch batch rather than clearing it first, so the open panel does not flash empty
+  const refreshAfterReconnect = useCallback(async () => {
+    try {
+      const { messages: page, nextCursor } = await fetchThreadPage(
+        parentMessageId,
+        null
+      );
+
+      clearThreadMessages(parentMessageId);
+      addThreadMessages(parentMessageId, page);
+      applyCursor(nextCursor);
+    } catch {
+      // the thread keeps what it had, and reopening it fetches again
+    }
+  }, [parentMessageId, applyCursor]);
+
+  useOnReconnect(refreshAfterReconnect);
 
   return paginated;
 };
