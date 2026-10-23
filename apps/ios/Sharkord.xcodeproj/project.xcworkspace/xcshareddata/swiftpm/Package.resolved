@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/VLprojects/mediasoup-client-swift",
       "state" : {
-        "revision" : "bdf0a5c55ba12a22847df575501c9873425dd628",
-        "version" : "0.9.0"
+        "revision" : "a3206f704fb2f13390c74df45dba692a1c8a5598",
+        "version" : "0.13.2"
       }
     }
   ],

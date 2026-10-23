@@ -524,8 +524,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/VLprojects/mediasoup-client-swift";
 			requirement = {
-				kind = upToNextMinorVersion;
-				minimumVersion = 0.9.0;
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.13.2;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

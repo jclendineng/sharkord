@@ -25,8 +25,7 @@ const CATEGORY_TERMS = [
 const CATEGORY_TTL_MS = 60 * 60 * 1000;
 
 let cachedCategories:
-  | { at: number; key: string; categories: TGifCategory[] }
-  | undefined;
+  { at: number; key: string; categories: TGifCategory[] } | undefined;
 
 const getKlipyKey = async () => {
   const { klipyApiKey, serverId } = await getSettings();

@@ -20,21 +20,21 @@
     "@types/bun": "latest"
   },
   "peerDependencies": {
-    "@types/react": "^19",
-    "typescript": "^5",
+    "@types/react": "^19.3.0",
+    "typescript": "^5.9.3",
     "@types/linkify-it": "^5.0.0",
-    "@typescript-eslint/eslint-plugin": "^8.46.1",
-    "eslint": "^8.56.0",
-    "eslint-plugin-unused-imports": "^4.1.4",
-    "prettier": "^3.5.3",
-    "prettier-plugin-organize-imports": "^4.1.0",
-    "@trpc/client": "^11.6.0"
+    "@typescript-eslint/eslint-plugin": "^8.72.0",
+    "eslint": "^8.57.1",
+    "eslint-plugin-unused-imports": "^4.4.1",
+    "prettier": "^3.9.10",
+    "prettier-plugin-organize-imports": "^4.3.0",
+    "@trpc/client": "^11.19.0"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.4",
     "js-sha256": "^0.11.1",
-    "linkify-it": "^5.0.0",
-    "mediasoup": "^3.19.9",
-    "zod": "^4.3.5"
+    "linkify-it": "^5.0.2",
+    "mediasoup": "^3.31.0",
+    "zod": "^4.6.7"
   }
 }
