@@ -72,14 +72,14 @@ struct MessageContentView: View {
 
             return Text(attributed)
         case .mention(let userId):
-            return chip("@\(session.usersById[userId]?.name ?? "unknown-user")", color: Theme.mentionText, background: Theme.mentionBackground)
+            return chip(session.usersById[userId]?.name ?? "unknown-user", color: Theme.mentionTint)
         case .roleMention(let roleId):
             let role = session.rolesById[roleId]
-            let color = role.map { Color(hex: $0.color) } ?? Theme.mentionText
+            let color = role.map { Color(hex: $0.color) } ?? Theme.mentionTint
 
-            return chip("@\(role?.name ?? "deleted-role")", color: color, background: color.opacity(0.15))
+            return chip(role?.name ?? "deleted-role", color: color)
         case .channel(let channelId):
-            return chip("#\(session.channel(channelId)?.name ?? "unknown")", color: Theme.mentionText, background: Theme.mentionBackground)
+            return chip("#\(session.channel(channelId)?.name ?? "unknown")", color: Theme.mentionTint)
         case .emoji(let name, let character, let imageSource):
             return emoji(name: name, character: character, imageSource: imageSource, size: emojiSize)
         case .lineBreak:
@@ -133,10 +133,10 @@ struct MessageContentView: View {
         return attributed
     }
 
-    private func chip(_ string: String, color: Color, background: Color) -> Text {
+    // a mention as Messages shows one: the name alone, tinted and bold
+    private func chip(_ string: String, color: Color) -> Text {
         var attributed = AttributedString(string)
         attributed.foregroundColor = color
-        attributed.backgroundColor = background
         attributed.inlinePresentationIntent = .stronglyEmphasized
 
         return Text(attributed)

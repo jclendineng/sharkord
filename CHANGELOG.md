@@ -205,6 +205,12 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   - Settings fill the screen, and pins open as a panel from the top bar.
 - Messages light up under the finger while pressed.
 - A thread's first message has the same menu and double tap reaction as any other, so it can be edited from the thread.
+- Mentions in the composer, shown the way Messages shows them.
+  - Typing @ lists members and roles above the box, and # lists channels, narrowing as you type.
+  - A picked name sits in the box as the tinted name, and sent messages show it the same way, the role's color for a role.
+  - A name typed out in full becomes the mention once a space follows it, or when the message is sent.
+  - Mention in a member's or a message's menu adds the name and brings up the keyboard.
+  - Editing a message keeps its mentions and channel links.
 
 #### From upstream
 
@@ -374,6 +380,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - A long press on a member in a channel's Members tab opens the same menu as a right click on a Mac.
 - The button that opens the system's settings says Settings on an iPhone or iPad and System Settings on a Mac, where it opens the matching pane.
 - Sheets with no button of their own to close them get an X in the top left.
+- The typing indicator sits under the newest message instead of over it.
+- On an iPhone SE the message box placeholder stays on one line, and the box's text sits centered beside its buttons.
 - On an iPad:
   - The message bar sits level with the user bar beside it.
   - The top bar's pins and search stay in place while the chat slides over the list and back.

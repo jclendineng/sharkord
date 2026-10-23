@@ -29,8 +29,8 @@ final class ChannelMessagesStore {
     // the composer's mode, set from a message's long press sheet
     var replyingTo: Message?
     var editing: Message?
-    // text the composer adds where the cursor is, a mention for instance
-    var pendingInsert: String?
+    // a mention the composer adds, from a member's or a message's menu
+    var pendingMention: ComposerMention?
     // the composer's attachment panel, which the message list can drag away too
     let attachPanel = AttachPanelModel()
 
@@ -178,7 +178,7 @@ final class ChannelMessagesStore {
         hasOlder = page.nextCursor != nil
     }
 
-    func send(_ text: String, files: [TemporaryFile]) async throws {
+    func send(_ text: String, files: [TemporaryFile], mentions: [ComposerMention] = []) async throws {
         guard let client = session.client else {
             throw TRPCError(message: "Not connected to the server.", code: nil)
         }
@@ -195,7 +195,7 @@ final class ChannelMessagesStore {
             "messages.send",
             input: SendInput(
                 channelId: channelId,
-                content: trimmed.isEmpty ? "" : customEmojiSpans(in: HTMLText.messageHTML(fromMarkdown: trimmed)),
+                content: trimmed.isEmpty ? "" : customEmojiSpans(in: HTMLText.messageHTML(fromMarkdown: trimmed, mentions: mentions)),
                 files: files.map(\.id),
                 parentMessageId: parentMessageId,
                 replyToMessageId: replyingTo?.id
@@ -263,7 +263,7 @@ final class ChannelMessagesStore {
         )
     }
 
-    func edit(_ message: Message, to text: String) async throws {
+    func edit(_ message: Message, to text: String, mentions: [ComposerMention]) async throws {
         guard let client = session.client else {
             throw TRPCError(message: "Not connected to the server.", code: nil)
         }
@@ -275,7 +275,7 @@ final class ChannelMessagesStore {
 
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        try await client.mutation("messages.edit", input: EditInput(messageId: message.id, content: HTMLText.messageHTML(fromMarkdown: trimmed)))
+        try await client.mutation("messages.edit", input: EditInput(messageId: message.id, content: HTMLText.messageHTML(fromMarkdown: trimmed, mentions: mentions)))
         editing = nil
     }
 

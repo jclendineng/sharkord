@@ -2,7 +2,7 @@ import SwiftUI
 
 extension Color {
     // profile colors are stored as "#rrggbb"
-    init(hex: String) {
+    nonisolated init(hex: String) {
         let value = UInt64(hex.trimmingCharacters(in: CharacterSet(charactersIn: "#")), radix: 16) ?? 0
 
         self.init(

@@ -24,7 +24,9 @@ enum Theme {
     static let blurple = Color(hex: "#5865F2")
     static let link = Color(hex: "#00A8FC")
     static let mentionText = Color(hex: "#C9CDFB")
-    static let mentionBackground = Color(hex: "#5865F2").opacity(0.3)
+    // a mention as Messages shows one, the name alone in a brighter blurple
+    // nonisolated for the composer field's formatting, which runs off the main actor
+    nonisolated static let mentionTint = Color(hex: "#949CF7")
     static let red = Color(hex: "#F23F43")
     static let green = Color(hex: "#23A55A")
     static let yellow = Color(hex: "#F0B232")

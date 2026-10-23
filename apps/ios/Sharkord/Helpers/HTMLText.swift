@@ -25,6 +25,18 @@ enum HTMLText {
         return decodeEntities(text).trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    // text from the composer with a placeholder where each picked mention sits, made into
+    // html and then each placeholder into its mention's span
+    static func messageHTML(fromMarkdown text: String, mentions: [ComposerMention]) -> String {
+        var html = messageHTML(fromMarkdown: text)
+
+        for (index, mention) in mentions.enumerated() {
+            html = html.replacingOccurrences(of: ComposerMention.placeholder(index), with: mention.html)
+        }
+
+        return html
+    }
+
     // discord's markdown as typed in the app, made into the html the web editor writes for it:
     // **bold**, *italic* or _italic_, __underline__, ~~strike~~, `code`, ``` blocks ```, lines
     // starting "> " as a quote, "- " or "* " as a list and "1. " as a numbered one
@@ -217,7 +229,7 @@ enum HTMLText {
         return html + escape(text.substring(from: position))
     }
 
-    private static func escape(_ text: String) -> String {
+    static func escape(_ text: String) -> String {
         text
             .replacingOccurrences(of: "&", with: "&amp;")
             .replacingOccurrences(of: "<", with: "&lt;")

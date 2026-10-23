@@ -153,7 +153,7 @@ struct MemberActionsSheet: View {
 
     private func mention() {
         if let channelId {
-            session.messages(for: channelId).pendingInsert = "@\(user.name) "
+            session.messages(for: channelId).pendingMention = .user(user)
         }
 
         close()

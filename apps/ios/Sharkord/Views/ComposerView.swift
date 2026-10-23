@@ -10,7 +10,10 @@ struct ComposerView: View {
 
     @Environment(SessionStore.self) private var session
 
-    @State private var text = ""
+    // picked mentions are runs in it, made into real ones when it is sent
+    @State private var field = AttributedString()
+    // set by hand after text goes in, which otherwise leaves the cursor where it was
+    @State private var selection = AttributedTextSelection()
     @State private var attachments: [PendingAttachment] = []
     @State private var isSending = false
     @State private var errorMessage: String?
@@ -42,12 +45,25 @@ struct ComposerView: View {
         session.settings?.storageMaxFilesPerMessage ?? 0
     }
 
+    private var text: String {
+        String(field.characters)
+    }
+
     private var hasText: Bool {
         !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     private var canSend: Bool {
         !isSending && !isUploading && (hasText || !uploadedFiles.isEmpty)
+    }
+
+    // the @ or # word being typed at the end of the text, which the suggestions follow
+    private var mentionQuery: (trigger: String, query: String)? {
+        guard isFieldFocused, let match = text.firstMatch(of: /(?:^|\s)([@#])([^\s@#]*)$/) else {
+            return nil
+        }
+
+        return (String(match.1), String(match.2))
     }
 
     var body: some View {
@@ -166,19 +182,28 @@ struct ComposerView: View {
             if new.count > old.count && store.editing == nil {
                 session.signalTyping(channelId: store.channelId, parentMessageId: store.typingPlace.parentMessageId)
             }
+
+            if new.count > old.count {
+                resolveTypedMention()
+            }
         }
         .onChange(of: store.editing) { _, message in
             if let message {
-                text = HTMLText.markdown(from: message.content ?? "")
+                let editable = ComposerMention.editable(from: message.content ?? "", in: session)
+
+                field = ComposerMention.field(from: HTMLText.markdown(from: editable.html), mentions: editable.mentions)
             }
         }
-        .onChange(of: store.pendingInsert) { _, insert in
-            guard let insert else {
+        .onChange(of: store.pendingMention) { _, mention in
+            guard let mention else {
                 return
             }
 
-            text += insert
-            store.pendingInsert = nil
+            field += mention.fieldText + AttributedString(" ")
+            selection = AttributedTextSelection(insertionPoint: field.endIndex)
+            store.pendingMention = nil
+            // the menu it came from is closing, the field takes the keyboard to carry on typing
+            isFieldFocused = true
         }
     }
 
@@ -264,6 +289,10 @@ struct ComposerView: View {
                 }
             }
 
+            if let mentionQuery, !recorder.isRecording {
+                MentionSuggestions(trigger: mentionQuery.trigger, query: mentionQuery.query, onPick: pickMention)
+            }
+
             if recorder.isRecording {
                 RecordingBar(recorder: recorder, onCancel: cancelRecording, onSend: sendRecording)
             } else {
@@ -332,11 +361,7 @@ struct ComposerView: View {
             }
 
             HStack(alignment: .bottom, spacing: 10) {
-                TextField(placeholder, text: $text, axis: .vertical)
-                    .focused($isFieldFocused)
-                    .lineLimit(1...6)
-                    .foregroundStyle(Theme.text)
-                    .padding(.vertical, 9)
+                ComposerField(placeholder: placeholder, text: $field, selection: $selection, isFocused: $isFieldFocused)
 
                 if ProcessInfo.processInfo.isiOSAppOnMac {
                     // discord's mac: gifs, stickers and emoji each a button in the box
@@ -487,8 +512,8 @@ struct ComposerView: View {
     }
 
     private func deleteBackward() {
-        if !text.isEmpty {
-            text.removeLast()
+        if !field.characters.isEmpty {
+            field.characters.removeLast()
         }
     }
 
@@ -514,10 +539,46 @@ struct ComposerView: View {
         }
     }
 
+    // the @ or # word being typed becomes the picked name, with a space to carry on after it
+    private func pickMention(_ mention: ComposerMention) {
+        let text = text
+
+        guard let range = text.range(of: "[@#][^\\s@#]*$", options: .regularExpression) else {
+            return
+        }
+
+        let start = field.index(field.startIndex, offsetByCharacters: text.distance(from: text.startIndex, to: range.lowerBound))
+
+        field.replaceSubrange(start..<field.endIndex, with: mention.fieldText + AttributedString(" "))
+        selection = AttributedTextSelection(insertionPoint: field.endIndex)
+    }
+
+    // a name typed out in full and followed by a space becomes its mention, as if picked
+    private func resolveTypedMention() {
+        let text = text
+
+        guard
+            let match = text.firstMatch(of: /(?:^|\s)([@#][^\s@#]+) $/),
+            let mention = ComposerMention.matching(String(match.1), in: session)
+        else {
+            return
+        }
+
+        let start = field.index(field.startIndex, offsetByCharacters: text.distance(from: text.startIndex, to: match.1.startIndex))
+
+        // a picked channel reads as #name too, and is already its mention
+        guard field[start..<field.index(afterCharacter: start)][ComposerMentionAttribute.self] == nil else {
+            return
+        }
+
+        field.replaceSubrange(start..<field.endIndex, with: mention.fieldText + AttributedString(" "))
+        selection = AttributedTextSelection(insertionPoint: field.endIndex)
+    }
+
     private func insertEmoji(_ shortcode: String) {
         let entry = EmojiCatalog.find(shortcode)
 
-        text += entry?.emoji ?? ":\(shortcode):"
+        field += AttributedString(entry?.emoji ?? ":\(shortcode):")
     }
 
     private func toggleAttachPanel() {
@@ -579,7 +640,7 @@ struct ComposerView: View {
 
     private func cancelMode() {
         if store.editing != nil {
-            text = ""
+            field = AttributedString()
         }
 
         store.editing = nil
@@ -635,7 +696,7 @@ struct ComposerView: View {
     }
 
     private func send() {
-        let draft = text
+        let draft = ComposerMention.resolvingTyped(in: ComposerMention.draft(of: field), session: session)
         let files = uploadedFiles
 
         isSending = true
@@ -644,13 +705,13 @@ struct ComposerView: View {
         Task {
             do {
                 if let editing = store.editing {
-                    try await store.edit(editing, to: draft)
+                    try await store.edit(editing, to: draft.text, mentions: draft.mentions)
                 } else {
-                    try await store.send(draft, files: files)
+                    try await store.send(draft.text, files: files, mentions: draft.mentions)
                     session.typing.resetSignal(in: store.typingPlace)
                 }
 
-                text = ""
+                field = AttributedString()
                 attachments = []
             } catch {
                 errorMessage = error.localizedDescription

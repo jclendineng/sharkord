@@ -72,6 +72,13 @@ Online, idle, do not disturb or invisible, and a custom status message. Routes
 A member can turn off new direct messages from people they have no conversation with.
 Routes `users.getPrivacy` and `users.updatePrivacy`, column `users.allow_direct_messages`.
 
+## Mentions in the iOS app
+
+The iOS composer lists members, roles and channels as you type `@` or `#`, and sends the same
+mention spans the web editor writes, so a mention from the app notifies, lands in the inbox and
+shows as a pill on the web. In the app a mention reads as the tinted name, the way Messages shows
+one.
+
 ## Mentions inbox and mark unread
 
 `messages.getMentions` pages through the messages that mention you, and

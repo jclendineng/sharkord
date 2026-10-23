@@ -55,6 +55,17 @@ panel over the conversation, a drag down slides the composer and panel together 
 offset, so nothing is laid out again under the finger. `AnimatedImage` plays GIFs, APNGs and
 animated WebPs, decoding frames off the main thread at the size they are shown.
 
+## Mentions in the composer
+
+The composer's box is `ComposerField`, a `TextEditor` over an `AttributedString`, since a
+`TextField` cannot tint part of its text. A picked mention is a run carrying
+`ComposerMentionAttribute`, which added text never inherits and an edit to the run drops. It
+crosses into UIKit's text storage as JSON, or the first keystroke would lose it. On send,
+`ComposerMention.draft(of:)` swaps each run for a private use placeholder, the Markdown
+conversion runs, and `HTMLText.messageHTML(fromMarkdown:mentions:)` puts the web editor's
+mention span in each placeholder's place. Typed `@name` and `#name` that match exactly are
+resolved the same way (`ComposerMention.resolvingTyped`).
+
 ## Voice and video
 
 The server scopes `voice.onNewProducer` and `voice.onProducerClosed` to the voice channel a

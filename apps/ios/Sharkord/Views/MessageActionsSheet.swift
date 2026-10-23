@@ -342,8 +342,8 @@ struct MessageActionsSheet: View {
     }
 
     private func mention() {
-        if let name = message.userId.flatMap({ session.usersById[$0]?.name }) {
-            store.pendingInsert = "@\(name) "
+        if let user = message.userId.flatMap({ session.usersById[$0] }) {
+            store.pendingMention = .user(user)
         }
 
         closeMenu()
