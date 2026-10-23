@@ -177,9 +177,10 @@ struct ComposerView: View {
             store.attachPanel.endSearch()
         }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillChangeFrameNotification), perform: keyboardWillChange)
-        // typing more than was there, not the field being cleared or a draft being loaded
+        // any change counts as typing, deleting and punctuation included, as on the web, but
+        // not the field being cleared after a send or a draft being loaded for an edit
         .onChange(of: text) { old, new in
-            if new.count > old.count && store.editing == nil {
+            if !new.isEmpty && store.editing == nil {
                 session.signalTyping(channelId: store.channelId, parentMessageId: store.typingPlace.parentMessageId)
             }
 

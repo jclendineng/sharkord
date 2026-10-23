@@ -384,6 +384,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - The button that opens the system's settings says Settings on an iPhone or iPad and System Settings on a Mac, where it opens the matching pane.
 - Sheets with no button of their own to close them get an X in the top left.
 - The typing indicator sits under the newest message instead of over it.
+- Deleting text and punctuation count as typing, so others see the typing indicator for them as well.
 - On an iPhone SE the message box placeholder stays on one line, and the box's text sits centered beside its buttons.
 - On an iPad:
   - The message bar sits level with the user bar beside it.
