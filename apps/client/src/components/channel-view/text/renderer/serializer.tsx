@@ -2,16 +2,17 @@ import { ChannelChip } from '@/components/channel-chip';
 import { RoleMentionChip } from '@/components/role-mention-chip';
 import { getUrlFromServer } from '@/helpers/get-file-url';
 import { MessageNodeType, parseDomCommand } from '@sharkord/shared';
-import { Element, type DOMNode } from 'html-react-parser';
+import { type DOMNode } from 'html-react-parser';
 import { CommandOverride } from '../overrides/command';
 import { MentionOverride } from '../overrides/mention';
+import { isElementNode } from './helpers';
 
 const serializer = (domNode: DOMNode, messageId: number) => {
   try {
     // custom emoji are stored as /public/... paths, which only point at the server when it runs
     // at the root, so they are made absolute against wherever the client is served from
     if (
-      domNode instanceof Element &&
+      isElementNode(domNode) &&
       domNode.name === 'img' &&
       domNode.attribs.src?.startsWith('/public/')
     ) {
@@ -20,12 +21,12 @@ const serializer = (domNode: DOMNode, messageId: number) => {
       return undefined;
     }
 
-    if (domNode instanceof Element && domNode.name === 'command') {
+    if (isElementNode(domNode) && domNode.name === 'command') {
       const command = parseDomCommand(domNode);
 
       return <CommandOverride command={command} />;
     } else if (
-      domNode instanceof Element &&
+      isElementNode(domNode) &&
       domNode.name === 'span' &&
       domNode.attribs['data-type'] === MessageNodeType.MENTION &&
       domNode.attribs['data-user-id']
@@ -36,7 +37,7 @@ const serializer = (domNode: DOMNode, messageId: number) => {
         return <MentionOverride userId={userId} />;
       }
     } else if (
-      domNode instanceof Element &&
+      isElementNode(domNode) &&
       domNode.name === 'span' &&
       domNode.attribs['data-type'] === MessageNodeType.ROLE_MENTION &&
       domNode.attribs['data-role-id']
@@ -47,7 +48,7 @@ const serializer = (domNode: DOMNode, messageId: number) => {
         return <RoleMentionChip roleId={roleId} />;
       }
     } else if (
-      domNode instanceof Element &&
+      isElementNode(domNode) &&
       domNode.name === 'span' &&
       domNode.attribs['data-type'] === MessageNodeType.CHANNEL_REFERENCE &&
       domNode.attribs['data-channel-id']
