@@ -119,13 +119,16 @@ struct VoiceRoomScreen: View {
                     setFocus(nil)
                 }
                 .overlay(alignment: .topLeading) {
-                    Button("Back to Grid", systemImage: "arrow.down.right.and.arrow.up.left", action: clearFocus)
-                        .labelStyle(.iconOnly)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .frame(width: 36, height: 36)
-                        .background(.black.opacity(0.55), in: .circle)
-                        .padding(8)
+                    Button(action: clearFocus) {
+                        Label("Back to Grid", systemImage: "arrow.down.right.and.arrow.up.left")
+                            .labelStyle(.iconOnly)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .frame(width: 36, height: 36)
+                            .background(.black.opacity(0.55), in: .circle)
+                            .padding(8)
+                            .contentShape(.circle)
+                    }
                 }
 
             ScrollView(.horizontal) {
@@ -237,12 +240,15 @@ struct VoiceRoomScreen: View {
 
     private var header: some View {
         HStack(spacing: 12) {
-            Button("Close", systemImage: "chevron.down", action: close)
-                .labelStyle(.iconOnly)
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(Theme.header)
-                .frame(width: 40, height: 40)
-                .background(Theme.listBackground, in: .circle)
+            Button(action: close) {
+                Label("Close", systemImage: "chevron.down")
+                    .labelStyle(.iconOnly)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Theme.header)
+                    .frame(width: 40, height: 40)
+                    .background(Theme.listBackground, in: .circle)
+                    .contentShape(.circle)
+            }
 
             // the names alone, the speaker beside them cost the channel's name its room
             VStack(alignment: .leading, spacing: 1) {
@@ -264,29 +270,38 @@ struct VoiceRoomScreen: View {
             ConnectionBadge(isRound: true)
 
             // the sheet's settings, which the call covers once it has started
-            Button("Voice Settings", systemImage: "gearshape.fill", action: showSettings)
-                .labelStyle(.iconOnly)
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(Theme.header)
-                .frame(width: 40, height: 40)
-                .background(Theme.listBackground, in: .circle)
-
-            if session.can(.useSoundboard) {
-                Button("Soundboard", systemImage: "waveform", action: showSoundboard)
+            Button(action: showSettings) {
+                Label("Voice Settings", systemImage: "gearshape.fill")
                     .labelStyle(.iconOnly)
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(Theme.header)
                     .frame(width: 40, height: 40)
                     .background(Theme.listBackground, in: .circle)
+                    .contentShape(.circle)
+            }
+
+            if session.can(.useSoundboard) {
+                Button(action: showSoundboard) {
+                    Label("Soundboard", systemImage: "waveform")
+                        .labelStyle(.iconOnly)
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(Theme.header)
+                        .frame(width: 40, height: 40)
+                        .background(Theme.listBackground, in: .circle)
+                        .contentShape(.circle)
+                }
             }
 
             if session.can(.sendVoiceReaction) {
-                Button("Reactions", systemImage: "face.smiling", action: toggleReactionBar)
-                    .labelStyle(.iconOnly)
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(isReactionBarShown ? Color.black : Theme.header)
-                    .frame(width: 40, height: 40)
-                    .background(isReactionBarShown ? Color.white : Theme.listBackground, in: .circle)
+                Button(action: toggleReactionBar) {
+                    Label("Reactions", systemImage: "face.smiling")
+                        .labelStyle(.iconOnly)
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(isReactionBarShown ? Color.black : Theme.header)
+                        .frame(width: 40, height: 40)
+                        .background(isReactionBarShown ? Color.white : Theme.listBackground, in: .circle)
+                        .contentShape(.circle)
+                }
             }
         }
         .padding(.horizontal, 12)
@@ -390,13 +405,16 @@ private struct ParticipantTile: View {
         }
         .overlay(alignment: .topTrailing) {
             if isOwn && track != nil && !isCompact {
-                Button("Flip Camera", systemImage: "arrow.triangle.2.circlepath.camera.fill", action: flipCamera)
-                    .labelStyle(.iconOnly)
-                    .font(.subheadline)
-                    .foregroundStyle(.white)
-                    .frame(width: 36, height: 36)
-                    .background(.black.opacity(0.55), in: .circle)
-                    .padding(8)
+                Button(action: flipCamera) {
+                    Label("Flip Camera", systemImage: "arrow.triangle.2.circlepath.camera.fill")
+                        .labelStyle(.iconOnly)
+                        .font(.subheadline)
+                        .foregroundStyle(.white)
+                        .frame(width: 36, height: 36)
+                        .background(.black.opacity(0.55), in: .circle)
+                        .padding(8)
+                        .contentShape(.circle)
+                }
             }
         }
     }
@@ -466,12 +484,15 @@ private struct VoiceControls: View {
                 action: toggleSound
             )
 
-            Button("Disconnect", systemImage: "phone.down.fill", action: onLeave)
-                .labelStyle(.iconOnly)
-                .font(.title3)
-                .foregroundStyle(.white)
-                .frame(width: 56, height: 56)
-                .background(Theme.red, in: .circle)
+            Button(action: onLeave) {
+                Label("Disconnect", systemImage: "phone.down.fill")
+                    .labelStyle(.iconOnly)
+                    .font(.title3)
+                    .foregroundStyle(.white)
+                    .frame(width: 56, height: 56)
+                    .background(Theme.red, in: .circle)
+                    .contentShape(.circle)
+            }
         }
         .padding(.vertical, 14)
         .frame(maxWidth: .infinity)
@@ -502,12 +523,15 @@ private struct ControlButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(title, systemImage: systemImage, action: action)
-            .labelStyle(.iconOnly)
-            .font(.title3)
-            .foregroundStyle(isActive ? Color.black : Theme.header)
-            .frame(width: 56, height: 56)
-            .background(isActive ? Color.white : Theme.listBackground, in: .circle)
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .labelStyle(.iconOnly)
+                .font(.title3)
+                .foregroundStyle(isActive ? Color.black : Theme.header)
+                .frame(width: 56, height: 56)
+                .background(isActive ? Color.white : Theme.listBackground, in: .circle)
+                .contentShape(.circle)
+        }
     }
 }
 

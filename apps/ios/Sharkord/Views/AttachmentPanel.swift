@@ -241,12 +241,15 @@ private struct PhotoGrid: View, Equatable {
 
             Spacer(minLength: 0)
 
-            Button("Manage", action: onManage)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Theme.header)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
-                .background(Theme.inputBackground, in: .rect(cornerRadius: 10))
+            Button(action: onManage) {
+                Text("Manage")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Theme.header)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(Theme.inputBackground, in: .rect(cornerRadius: 10))
+                    .contentShape(.rect(cornerRadius: 10))
+            }
                 .buttonStyle(.plain)
         }
         .padding(.horizontal, 14)

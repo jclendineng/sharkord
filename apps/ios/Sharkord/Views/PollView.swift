@@ -86,21 +86,27 @@ struct PollView: View {
             }
 
             if !isClosed && !ownVotes.isEmpty {
-                Button("Remove Vote", action: removeVote)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Theme.header)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 7)
-                    .background(Theme.inputBackground, in: .rect(cornerRadius: 8))
+                Button(action: removeVote) {
+                    Text("Remove Vote")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.header)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 7)
+                        .background(Theme.inputBackground, in: .rect(cornerRadius: 8))
+                        .contentShape(.rect(cornerRadius: 8))
+                }
                     .buttonStyle(.plain)
                     .disabled(isWorking)
             } else if !showsResults {
-                Button("Vote", action: vote)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 7)
-                    .background(picked.isEmpty ? Theme.blurple.opacity(0.45) : Theme.blurple, in: .rect(cornerRadius: 8))
+                Button(action: vote) {
+                    Text("Vote")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 7)
+                        .background(picked.isEmpty ? Theme.blurple.opacity(0.45) : Theme.blurple, in: .rect(cornerRadius: 8))
+                        .contentShape(.rect(cornerRadius: 8))
+                }
                     .buttonStyle(.plain)
                     .disabled(picked.isEmpty || isWorking)
             }

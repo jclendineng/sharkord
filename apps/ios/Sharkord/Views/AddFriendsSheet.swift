@@ -239,12 +239,15 @@ struct RoundIconButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(title, systemImage: systemImage, action: action)
-            .labelStyle(.iconOnly)
-            .font(.body.weight(.semibold))
-            .foregroundStyle(tint)
-            .frame(width: 36, height: 36)
-            .background(Theme.deepBackground, in: .circle)
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .labelStyle(.iconOnly)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(tint)
+                .frame(width: 36, height: 36)
+                .background(Theme.deepBackground, in: .circle)
+                .contentShape(.circle)
+        }
             .buttonStyle(.plain)
     }
 }

@@ -115,12 +115,15 @@ struct VoiceChannelSheet: View {
 
     private var header: some View {
         HStack(spacing: 10) {
-            Button("Close", systemImage: "chevron.down", action: close)
-                .labelStyle(.iconOnly)
-                .font(.headline)
-                .foregroundStyle(Theme.header)
-                .frame(width: 40, height: 40)
-                .background(Theme.deepBackground, in: .rect(cornerRadius: 10))
+            Button(action: close) {
+                Label("Close", systemImage: "chevron.down")
+                    .labelStyle(.iconOnly)
+                    .font(.headline)
+                    .foregroundStyle(Theme.header)
+                    .frame(width: 40, height: 40)
+                    .background(Theme.deepBackground, in: .rect(cornerRadius: 10))
+                    .contentShape(.rect(cornerRadius: 10))
+            }
 
             Label(channel.name, systemImage: "speaker.wave.2.fill")
                 .font(.headline)
@@ -302,12 +305,15 @@ private struct JoinBar: View {
 
     private var row: some View {
         HStack(spacing: 14) {
-            Button(session.micMuted ? "Unmute" : "Mute", systemImage: session.micMuted ? "mic.slash.fill" : "mic.fill", action: toggleMic)
-                .labelStyle(.iconOnly)
-                .font(.title3)
-                .foregroundStyle(session.micMuted ? Theme.red : Theme.header)
-                .frame(width: 56, height: 56)
-                .background(session.micMuted ? Theme.red.opacity(0.2) : Theme.deepBackground, in: .rect(cornerRadius: 14))
+            Button(action: toggleMic) {
+                Label(session.micMuted ? "Unmute" : "Mute", systemImage: session.micMuted ? "mic.slash.fill" : "mic.fill")
+                    .labelStyle(.iconOnly)
+                    .font(.title3)
+                    .foregroundStyle(session.micMuted ? Theme.red : Theme.header)
+                    .frame(width: 56, height: 56)
+                    .background(session.micMuted ? Theme.red.opacity(0.2) : Theme.deepBackground, in: .rect(cornerRadius: 14))
+                    .contentShape(.rect(cornerRadius: 14))
+            }
 
             if isConnectedHere {
                 Button(action: onOpen) {

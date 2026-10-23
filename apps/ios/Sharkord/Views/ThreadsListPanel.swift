@@ -127,6 +127,7 @@ private struct ThreadListRow: View {
             }
             .padding(8)
             .hoverHighlight(cornerRadius: 8)
+            .contentShape(.rect)
         }
         .buttonStyle(.plain)
     }

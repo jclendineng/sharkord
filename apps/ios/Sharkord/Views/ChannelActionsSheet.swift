@@ -413,6 +413,7 @@ private struct LevelRow: View {
                 Image(systemName: isSelected ? "largecircle.fill.circle" : "circle")
                     .foregroundStyle(isSelected ? Theme.blurple : Theme.muted)
             }
+            .contentShape(.rect)
         }
     }
 

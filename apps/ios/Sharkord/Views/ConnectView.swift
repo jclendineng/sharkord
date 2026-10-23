@@ -99,11 +99,14 @@ struct ConnectView: View {
         VStack(spacing: 0) {
             if canCancel {
                 HStack {
-                    Button("Close", systemImage: "xmark", action: cancel)
-                        .labelStyle(.iconOnly)
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .frame(width: 44, height: 44)
+                    Button(action: cancel) {
+                        Label("Close", systemImage: "xmark")
+                            .labelStyle(.iconOnly)
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .frame(width: 44, height: 44)
+                            .contentShape(.rect)
+                    }
 
                     Spacer()
                 }
@@ -645,11 +648,14 @@ private struct AuthCard<Content: View>: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                Button("Back", systemImage: "arrow.left", action: onBack)
-                    .labelStyle(.iconOnly)
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(Theme.header)
-                    .frame(width: 36, height: 36, alignment: .leading)
+                Button(action: onBack) {
+                    Label("Back", systemImage: "arrow.left")
+                        .labelStyle(.iconOnly)
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(Theme.header)
+                        .frame(width: 36, height: 36, alignment: .leading)
+                        .contentShape(.rect)
+                }
 
                 content
             }

@@ -531,6 +531,7 @@ private struct MemberResultRow: View {
                 Image(systemName: "bubble.left.fill")
                     .foregroundStyle(Theme.muted)
             }
+            .contentShape(.rect)
         }
         .listRowBackground(Theme.listBackground)
     }
@@ -611,6 +612,7 @@ private struct MessageResultRow: View {
                     }
                 }
             }
+            .contentShape(.rect)
         }
         .listRowBackground(Theme.listBackground)
     }

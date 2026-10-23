@@ -45,15 +45,18 @@ struct VoiceTakenOverBanner: View {
                 .fontWeight(.semibold)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            Button("Reconnect", action: reconnect)
-                .fontWeight(.semibold)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 4)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 4)
-                        .strokeBorder(.white.opacity(0.7), lineWidth: 1)
-                }
-                .buttonStyle(.plain)
+            Button(action: reconnect) {
+                Text("Reconnect")
+                    .fontWeight(.semibold)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 4)
+                            .strokeBorder(.white.opacity(0.7), lineWidth: 1)
+                    }
+                    .contentShape(.rect(cornerRadius: 4))
+            }
+            .buttonStyle(.plain)
         }
         .font(.footnote)
         .foregroundStyle(.white)

@@ -55,12 +55,15 @@ struct MessageActionsSheet: View {
                             .pointerTooltip(":\(shortcode):")
                         }
 
-                        Button("Add Reaction", systemImage: "face.smiling", action: openPicker)
-                            .labelStyle(.iconOnly)
-                            .font(isPointerMenu ? .body : .title2)
-                            .foregroundStyle(Theme.text)
-                            .frame(maxWidth: .infinity, minHeight: isPointerMenu ? 34 : 52)
-                            .background(Theme.listBackground, in: .rect(cornerRadius: isPointerMenu ? 17 : 14))
+                        Button(action: openPicker) {
+                            Label("Add Reaction", systemImage: "face.smiling")
+                                .labelStyle(.iconOnly)
+                                .font(isPointerMenu ? .body : .title2)
+                                .foregroundStyle(Theme.text)
+                                .frame(maxWidth: .infinity, minHeight: isPointerMenu ? 34 : 52)
+                                .background(Theme.listBackground, in: .rect(cornerRadius: isPointerMenu ? 17 : 14))
+                                .contentShape(.rect(cornerRadius: isPointerMenu ? 17 : 14))
+                        }
                             .hoverBrighten(cornerRadius: isPointerMenu ? 17 : 14)
                     }
 

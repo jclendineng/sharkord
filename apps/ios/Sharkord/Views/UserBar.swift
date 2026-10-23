@@ -80,6 +80,7 @@ struct UserBar: View {
                 .hoverHighlight(cornerRadius: profileHighlightRadius)
                 .padding(.horizontal, Self.highlightGap - horizontalPadding)
                 .padding(.vertical, Self.highlightGap - verticalPadding)
+                .contentShape(.rect)
             }
             .buttonStyle(.plain)
             // the system's pointer platter drew under the highlight, in a shape of its own
@@ -138,12 +139,15 @@ struct UserBar: View {
     }
 
     private var unreadsButton: some View {
-        Button("Unreads", systemImage: "bell.fill", action: showUnreads)
-            .labelStyle(.iconOnly)
-            .font(isCompact ? .body : .title3)
-            .foregroundStyle(Theme.muted)
-            .frame(width: isCompact ? 36 : 44, height: isCompact ? 36 : 44)
-            .hoverHighlight(cornerRadius: 10)
+        Button(action: showUnreads) {
+            Label("Unreads", systemImage: "bell.fill")
+                .labelStyle(.iconOnly)
+                .font(isCompact ? .body : .title3)
+                .foregroundStyle(Theme.muted)
+                .frame(width: isCompact ? 36 : 44, height: isCompact ? 36 : 44)
+                .contentShape(.rect(cornerRadius: 10))
+        }
+        .hoverHighlight(cornerRadius: 10)
             .overlay(alignment: .topTrailing) {
                 if hasUnread {
                     Circle()
@@ -208,13 +212,16 @@ private struct UserBarButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(title, systemImage: systemImage, action: action)
-            .labelStyle(.iconOnly)
-            .font(.system(size: 17, weight: .semibold))
-            .foregroundStyle(isOff ? Theme.red : Theme.muted)
-            .contentTransition(.symbolEffect(.replace))
-            .frame(width: 36, height: 36)
-            .hoverHighlight(cornerRadius: highlightRadius)
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .labelStyle(.iconOnly)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(isOff ? Theme.red : Theme.muted)
+                .contentTransition(.symbolEffect(.replace))
+                .frame(width: 36, height: 36)
+                .contentShape(.rect(cornerRadius: highlightRadius))
+        }
+        .hoverHighlight(cornerRadius: highlightRadius)
             .hoverPop()
             .buttonStyle(.plain)
             .hoverEffectDisabled()

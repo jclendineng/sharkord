@@ -119,12 +119,15 @@ struct ChannelListPanel: View {
                         .background(Theme.panelControl, in: .rect(cornerRadius: 12))
                 }
 
-                Button("Invite", systemImage: "person.badge.plus", action: showInvite)
-                    .labelStyle(.iconOnly)
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(Theme.text)
-                    .frame(width: 44, height: 40)
-                    .background(Theme.panelControl, in: .rect(cornerRadius: 12))
+                Button(action: showInvite) {
+                    Label("Invite", systemImage: "person.badge.plus")
+                        .labelStyle(.iconOnly)
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(Theme.text)
+                        .frame(width: 44, height: 40)
+                        .background(Theme.panelControl, in: .rect(cornerRadius: 12))
+                        .contentShape(.rect(cornerRadius: 12))
+                }
             }
             .buttonStyle(.plain)
             .padding(.horizontal, 4)

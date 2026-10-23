@@ -463,12 +463,15 @@ private struct SectionTitle: View {
             Spacer()
 
             if let actionTitle, let action {
-                Button(actionTitle, action: action)
-                    .font(.body.weight(.medium))
-                    .foregroundStyle(Theme.link)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .hoverHighlight()
+                Button(action: action) {
+                    Text(actionTitle)
+                        .font(.body.weight(.medium))
+                        .foregroundStyle(Theme.link)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .contentShape(.rect)
+                }
+                .hoverHighlight()
                     .padding(.horizontal, -6)
                     .padding(.vertical, -2)
             }

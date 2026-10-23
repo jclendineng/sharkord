@@ -59,11 +59,14 @@ struct MediaViewer: View {
 
     private var topBar: some View {
         HStack {
-            Button("Close", systemImage: "xmark", action: close)
-                .labelStyle(.iconOnly)
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(.white)
-                .frame(width: 44, height: 44)
+            Button(action: close) {
+                Label("Close", systemImage: "xmark")
+                    .labelStyle(.iconOnly)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 44, height: 44)
+                    .contentShape(.rect)
+            }
 
             Spacer()
 

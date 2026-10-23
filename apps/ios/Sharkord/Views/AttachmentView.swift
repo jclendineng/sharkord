@@ -225,12 +225,15 @@ private struct AudioPlayerCard: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Button(isPlaying ? "Pause" : "Play", systemImage: isPlaying ? "pause.fill" : "play.fill", action: toggle)
-                .labelStyle(.iconOnly)
-                .font(.title3)
-                .foregroundStyle(.white)
-                .frame(width: 44, height: 44)
-                .background(Theme.blurple, in: .circle)
+            Button(action: toggle) {
+                Label(isPlaying ? "Pause" : "Play", systemImage: isPlaying ? "pause.fill" : "play.fill")
+                    .labelStyle(.iconOnly)
+                    .font(.title3)
+                    .foregroundStyle(.white)
+                    .frame(width: 44, height: 44)
+                    .background(Theme.blurple, in: .circle)
+                    .contentShape(.circle)
+            }
 
             HStack(alignment: .center, spacing: 2) {
                 ForEach(Array(bars.enumerated()), id: \.offset) { index, height in

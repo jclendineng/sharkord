@@ -362,24 +362,28 @@ struct ComposerView: View {
                     .padding(.bottom, 8)
                 } else {
                     // discord's emoji button turns into a keyboard one while the panel is up
-                    Button(
-                        showsKeyboardButton ? "Keyboard" : "Emoji",
-                        systemImage: showsKeyboardButton ? "keyboard" : "face.smiling.inverse",
-                        action: toggleExpressions
-                    )
+                    Button(action: toggleExpressions) {
+                        Label(
+                            showsKeyboardButton ? "Keyboard" : "Emoji",
+                            systemImage: showsKeyboardButton ? "keyboard" : "face.smiling.inverse"
+                        )
                         .labelStyle(.iconOnly)
                         .font(.title3)
                         .foregroundStyle(Theme.muted)
                         .frame(width: 44, height: 44)
                         .contentShape(.rect)
+                    }
                 }
 
                 if canRecord {
-                    Button("Voice Message", systemImage: "mic.fill", action: startRecording)
-                        .labelStyle(.iconOnly)
-                        .font(.title3)
-                        .foregroundStyle(Theme.muted)
-                        .frame(width: 44, height: 44)
+                    Button(action: startRecording) {
+                        Label("Voice Message", systemImage: "mic.fill")
+                            .labelStyle(.iconOnly)
+                            .font(.title3)
+                            .foregroundStyle(Theme.muted)
+                            .frame(width: 44, height: 44)
+                            .contentShape(.rect)
+                    }
                         .contentShape(.rect)
                 }
             }
@@ -388,13 +392,16 @@ struct ComposerView: View {
             .background(Theme.inputBackground, in: .rect(cornerRadius: 20))
 
             if canSend {
-                Button("Send", systemImage: store.editing == nil ? "paperplane.fill" : "checkmark", action: send)
-                    .labelStyle(.iconOnly)
-                    .font(.body)
-                    .foregroundStyle(.white)
-                    .frame(width: 38, height: 38)
-                    .background(Theme.blurple, in: .circle)
-                    .frame(width: 44, height: 44)
+                Button(action: send) {
+                    Label("Send", systemImage: store.editing == nil ? "paperplane.fill" : "checkmark")
+                        .labelStyle(.iconOnly)
+                        .font(.body)
+                        .foregroundStyle(.white)
+                        .frame(width: 38, height: 38)
+                        .background(Theme.blurple, in: .circle)
+                        .frame(width: 44, height: 44)
+                        .contentShape(.circle)
+                }
                     .contentShape(.rect)
                     .transition(.scale.combined(with: .opacity))
             }
@@ -902,11 +909,14 @@ private struct RecordingBar: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Button("Cancel", systemImage: "trash.fill", action: onCancel)
-                .labelStyle(.iconOnly)
-                .font(.title3)
-                .foregroundStyle(Theme.red)
-                .frame(width: 38, height: 38)
+            Button(action: onCancel) {
+                Label("Cancel", systemImage: "trash.fill")
+                    .labelStyle(.iconOnly)
+                    .font(.title3)
+                    .foregroundStyle(Theme.red)
+                    .frame(width: 38, height: 38)
+                    .contentShape(.rect)
+            }
 
             HStack(spacing: 10) {
                 Circle()
@@ -931,12 +941,15 @@ private struct RecordingBar: View {
             .frame(height: 38)
             .background(Theme.inputBackground, in: .rect(cornerRadius: 20))
 
-            Button("Send Voice Message", systemImage: "arrow.up", action: onSend)
-                .labelStyle(.iconOnly)
-                .font(.body.weight(.bold))
-                .foregroundStyle(.white)
-                .frame(width: 38, height: 38)
-                .background(Theme.blurple, in: .circle)
+            Button(action: onSend) {
+                Label("Send Voice Message", systemImage: "arrow.up")
+                    .labelStyle(.iconOnly)
+                    .font(.body.weight(.bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 38, height: 38)
+                    .background(Theme.blurple, in: .circle)
+                    .contentShape(.circle)
+            }
         }
     }
 }

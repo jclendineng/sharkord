@@ -332,11 +332,14 @@ private struct EmojiTab: View {
             }
             .scrollIndicators(.hidden)
 
-            Button("Delete", systemImage: "delete.left.fill", action: onBackspace)
-                .labelStyle(.iconOnly)
-                .font(.system(size: 18))
-                .foregroundStyle(Theme.muted)
-                .frame(width: 52, height: 40)
+            Button(action: onBackspace) {
+                Label("Delete", systemImage: "delete.left.fill")
+                    .labelStyle(.iconOnly)
+                    .font(.system(size: 18))
+                    .foregroundStyle(Theme.muted)
+                    .frame(width: 52, height: 40)
+                    .contentShape(.rect)
+            }
         }
         .padding(.vertical, 6)
         .background(ComposerPanel<EmptyView, EmptyView>.background)

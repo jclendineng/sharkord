@@ -78,11 +78,14 @@ private struct ThreadPanelHeader: View {
 
             Spacer()
 
-            Button("Close Thread", systemImage: "xmark", action: onClose)
-                .labelStyle(.iconOnly)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(Theme.muted)
-                .frame(width: 32, height: 32)
+            Button(action: onClose) {
+                Label("Close Thread", systemImage: "xmark")
+                    .labelStyle(.iconOnly)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Theme.muted)
+                    .frame(width: 32, height: 32)
+                    .contentShape(.rect)
+            }
                 .hoverHighlight(cornerRadius: 8)
                 .buttonStyle(.plain)
         }

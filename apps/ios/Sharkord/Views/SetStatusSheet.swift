@@ -60,6 +60,7 @@ struct SetStatusSheet: View {
                                         .foregroundStyle(Theme.blurple)
                                 }
                             }
+                            .contentShape(.rect)
                         }
                     }
                 } header: {

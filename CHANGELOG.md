@@ -334,6 +334,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 #### iOS app
 
+- On a Mac every button takes a click anywhere on the shape it draws, not just on its icon, so a click near a button's edge or in a list row's gap no longer needs a second try.
 - On a Mac the call zooms out of the voice bar and back into it, instead of sliding off the bottom of the window.
 - An animated GIF in a message shows its first frame straight away, and after a launch it is there at once instead of leaving a gap while it loads.
 - An empty channel's chat fills the screen, instead of leaving black strips down both sides.

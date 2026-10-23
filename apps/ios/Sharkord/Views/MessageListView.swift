@@ -578,6 +578,7 @@ private struct JumpToPresentBar: View {
             .padding(.vertical, 10)
             .background(Theme.blurple, in: .capsule)
             .padding(.horizontal, 12)
+            .contentShape(.rect)
         }
         .buttonStyle(.plain)
     }
@@ -627,11 +628,14 @@ private struct NewMessagesBar: View {
             }
             .buttonStyle(.plain)
 
-            Button("Dismiss", systemImage: "xmark", action: onClose)
-                .labelStyle(.iconOnly)
-                .font(.body.weight(.semibold))
-                .frame(width: 48)
-                .frame(maxHeight: .infinity)
+            Button(action: onClose) {
+                Label("Dismiss", systemImage: "xmark")
+                    .labelStyle(.iconOnly)
+                    .font(.body.weight(.semibold))
+                    .frame(width: 48)
+                    .frame(maxHeight: .infinity)
+                    .contentShape(.rect)
+            }
                 .buttonStyle(.plain)
         }
         .font(.subheadline)

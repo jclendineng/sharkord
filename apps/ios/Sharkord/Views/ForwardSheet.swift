@@ -89,6 +89,7 @@ struct ForwardSheet: View {
                         .foregroundStyle(Theme.blurple)
                 }
             }
+            .contentShape(.rect)
         }
         .disabled(sendingTo != nil)
     }

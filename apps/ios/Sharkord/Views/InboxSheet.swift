@@ -283,6 +283,7 @@ private struct UnreadRow: View {
                     .padding(.vertical, 2)
                     .background(Theme.red, in: .capsule)
             }
+            .contentShape(.rect)
         }
     }
 }

@@ -45,13 +45,16 @@ struct ReactionsView: View {
 
             // discord's smiley at the end of the row, another reaction without the long press
             if session.can(.reactToMessages) {
-                Button("Add Reaction", systemImage: "face.smiling", action: openPicker)
-                    .labelStyle(.iconOnly)
-                    .font(.system(size: 17))
-                    .foregroundStyle(Theme.muted)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Theme.listBackground, in: .rect(cornerRadius: 8))
+                Button(action: openPicker) {
+                    Label("Add Reaction", systemImage: "face.smiling")
+                        .labelStyle(.iconOnly)
+                        .font(.system(size: 17))
+                        .foregroundStyle(Theme.muted)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Theme.listBackground, in: .rect(cornerRadius: 8))
+                        .contentShape(.rect(cornerRadius: 8))
+                }
                     .hoverBrighten(cornerRadius: 8)
                     .buttonStyle(.plain)
             }
