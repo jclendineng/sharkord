@@ -70,9 +70,10 @@ export const ChannelReference = Extension.create<TChannelReferenceOptions>({
 
           if (!channel) return null;
 
-          // the range already ends past the space just typed, so the # is the name's
-          // length plus two before its end
-          const from = range.to - match[1].length - 2;
+          // the match starts at range.from on every path, but where it ends depends on whether
+          // the browser has put the space in the document yet, which chrome has and safari
+          // seems not to. so the # is counted from the start, past any whitespace before it
+          const from = range.from + match[0].length - match[1].length - 2;
           const { tr, schema } = state;
 
           tr.replaceWith(from, range.to, [
