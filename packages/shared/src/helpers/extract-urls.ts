@@ -1,6 +1,7 @@
-import LinkifyIt from 'linkify-it';
+import { LinkifyIt } from 'linkify-it';
 
-const linkify = new LinkifyIt();
+// bare domains as links, which linkify-it 6 stopped finding by default
+const linkify = new LinkifyIt({ fuzzyLink: true });
 
 const extractUrls = (content: string): string[] => {
   try {

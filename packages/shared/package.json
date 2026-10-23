@@ -20,20 +20,19 @@
     "@types/bun": "latest"
   },
   "peerDependencies": {
+    "@trpc/client": "^11.19.0",
     "@types/react": "^19.3.0",
-    "typescript": "^5.9.3",
-    "@types/linkify-it": "^5.0.0",
     "@typescript-eslint/eslint-plugin": "^8.72.0",
     "eslint": "^8.57.1",
     "eslint-plugin-unused-imports": "^4.4.1",
     "prettier": "^3.9.10",
     "prettier-plugin-organize-imports": "^4.3.0",
-    "@trpc/client": "^11.19.0"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.4",
-    "js-sha256": "^0.11.1",
-    "linkify-it": "^5.0.2",
+    "js-sha256": "^1.0.0",
+    "linkify-it": "^6.1.0",
     "mediasoup": "^3.31.0",
     "zod": "^4.6.7"
   }
