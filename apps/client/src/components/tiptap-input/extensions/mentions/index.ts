@@ -73,7 +73,7 @@ export const Mention = Extension.create<TMentionOptions>({
       // was picked. anything that is not exactly a member's or role's name stays text
       new InputRule({
         find: /(?:^|\s)@([^\s@#]+)\s$/,
-        handler: ({ range, match, commands }) => {
+        handler: ({ state, range, match }) => {
           const typed = match[1].toLowerCase();
           const items: TMentionItem[] = [
             ...(storage.users ?? []).map((user) => ({
@@ -91,12 +91,14 @@ export const Mention = Extension.create<TMentionOptions>({
 
           if (!item) return null;
 
-          // the range ends at the cursor, the @ sits just before the name
-          const from = range.to - match[1].length - 1;
+          // the range already ends past the space just typed, so the @ is the name's
+          // length plus two before its end
+          const from = range.to - match[1].length - 2;
+          const { tr, schema } = state;
 
-          commands.insertContentAt({ from, to: range.to }, [
-            toMentionNode(item),
-            { type: 'text', text: ' ' }
+          tr.replaceWith(from, range.to, [
+            schema.nodeFromJSON(toMentionNode(item)),
+            schema.text(' ')
           ]);
         }
       })

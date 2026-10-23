@@ -62,7 +62,7 @@ export const ChannelReference = Extension.create<TChannelReferenceOptions>({
       // was picked. anything that is not exactly a channel's name stays text
       new InputRule({
         find: /(?:^|\s)#([^\s@#]+)\s$/,
-        handler: ({ range, match, commands }) => {
+        handler: ({ state, range, match }) => {
           const typed = match[1].toLowerCase();
           const channel = (storage.channels ?? []).find(
             (candidate) => candidate.name.toLowerCase() === typed
@@ -70,12 +70,14 @@ export const ChannelReference = Extension.create<TChannelReferenceOptions>({
 
           if (!channel) return null;
 
-          // the range ends at the cursor, the # sits just before the name
-          const from = range.to - match[1].length - 1;
+          // the range already ends past the space just typed, so the # is the name's
+          // length plus two before its end
+          const from = range.to - match[1].length - 2;
+          const { tr, schema } = state;
 
-          commands.insertContentAt({ from, to: range.to }, [
-            { type: 'channelReference', attrs: { channelId: channel.id } },
-            { type: 'text', text: ' ' }
+          tr.replaceWith(from, range.to, [
+            schema.nodes.channelReference.create({ channelId: channel.id }),
+            schema.text(' ')
           ]);
         }
       })
