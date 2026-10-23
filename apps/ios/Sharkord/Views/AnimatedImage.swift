@@ -1,3 +1,4 @@
+import CryptoKit
 import ImageIO
 import SwiftUI
 import UIKit
@@ -14,10 +15,14 @@ struct AnimatedImage: View {
 
     @State private var image: UIImage?
 
-    // what is on screen: the loaded image, or one already decoded for this url, so a row that is
-    // drawn again keeps its size instead of starting empty and growing
+    // what is on screen: the loaded image, one already decoded for this url, or the first frame
+    // kept on disk, so a row drawn again, or after a launch, keeps its size instead of starting
+    // empty and growing
     private var shown: UIImage? {
-        image ?? url.flatMap { AnimatedImageLoader.shared.cached(for: $0, maxPixelSize: maxPointSize * 3) }
+        image ?? url.flatMap { url in
+            AnimatedImageLoader.shared.cached(for: url, maxPixelSize: maxPointSize * 3)
+                ?? AnimatedImageLoader.shared.still(for: url, maxPixelSize: maxPointSize * 3)
+        }
     }
 
     private var aspectRatio: CGFloat? {
@@ -38,7 +43,15 @@ struct AnimatedImage: View {
                     return
                 }
 
-                image = await AnimatedImageLoader.shared.image(for: url, maxPixelSize: maxPointSize * 3)
+                let loader = AnimatedImageLoader.shared
+                let maxPixelSize = maxPointSize * 3
+
+                // the first frame while the rest decode, a long gif took a second to show at all
+                if loader.cached(for: url, maxPixelSize: maxPixelSize) == nil {
+                    image = await loader.firstFrame(for: url, maxPixelSize: maxPixelSize)
+                }
+
+                image = await loader.image(for: url, maxPixelSize: maxPixelSize) ?? image
             }
     }
 }
@@ -74,6 +87,22 @@ actor AnimatedImageLoader {
 
     // nscache is safe from any thread, so a view can read it while it is drawn
     nonisolated(unsafe) private let cache = NSCache<NSString, UIImage>()
+    // first frames read back from disk, which a row asks for each time it is drawn
+    nonisolated(unsafe) private let stills = NSCache<NSString, UIImage>()
+    // what firstFrame downloaded, handed to the full decode right after instead of fetched twice
+    private var downloads: [URL: Data] = [:]
+
+    private nonisolated static let directory: URL? = {
+        guard let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first else {
+            return nil
+        }
+
+        let directory = caches.appending(path: "animated-stills", directoryHint: .isDirectory)
+
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+        return directory
+    }()
 
     init() {
         cache.countLimit = 120
@@ -90,6 +119,54 @@ actor AnimatedImageLoader {
         cache.object(forKey: Self.key(url, maxPixelSize))
     }
 
+    // the first frame kept from an earlier decode, a small file read there and then so a launch
+    // draws it in the first frame, as FileImageCache does for files
+    nonisolated func still(for url: URL, maxPixelSize: CGFloat) -> UIImage? {
+        let key = Self.key(url, maxPixelSize)
+
+        if let still = stills.object(forKey: key) {
+            return still
+        }
+
+        guard
+            let stillURL = Self.stillURL(for: key),
+            let data = try? Data(contentsOf: stillURL),
+            let still = UIImage(data: data)
+        else {
+            return nil
+        }
+
+        stills.setObject(still, forKey: key)
+
+        return still
+    }
+
+    func firstFrame(for url: URL, maxPixelSize: CGFloat) async -> UIImage? {
+        guard let data = await download(url) else {
+            return nil
+        }
+
+        downloads[url] = data
+
+        guard
+            let source = CGImageSourceCreateWithData(data as CFData, nil),
+            let frame = CGImageSourceCreateThumbnailAtIndex(source, 0, Self.thumbnailOptions(maxPixelSize) as CFDictionary)
+        else {
+            return nil
+        }
+
+        let still = UIImage(cgImage: frame)
+        let key = Self.key(url, maxPixelSize)
+
+        stills.setObject(still, forKey: key)
+
+        if let stillURL = Self.stillURL(for: key), let png = still.pngData() {
+            try? png.write(to: stillURL, options: .atomic)
+        }
+
+        return still
+    }
+
     func image(for url: URL, maxPixelSize: CGFloat) async -> UIImage? {
         let key = Self.key(url, maxPixelSize)
 
@@ -97,16 +174,40 @@ actor AnimatedImageLoader {
             return cached
         }
 
-        guard
-            let (data, _) = try? await URLSession.shared.data(from: url),
-            let image = Self.decode(data, maxPixelSize: maxPixelSize)
-        else {
+        var data = downloads.removeValue(forKey: url)
+
+        if data == nil {
+            data = await download(url)
+        }
+
+        guard let data, let image = Self.decode(data, maxPixelSize: maxPixelSize) else {
             return nil
         }
 
         cache.setObject(image, forKey: key, cost: Self.cost(of: image))
 
         return image
+    }
+
+    private func download(_ url: URL) async -> Data? {
+        try? await URLSession.shared.data(from: url).0
+    }
+
+    private nonisolated static func stillURL(for key: NSString) -> URL? {
+        let name = SHA256.hash(data: Data((key as String).utf8))
+            .map { String(format: "%02x", $0) }
+            .joined()
+
+        return directory?.appending(path: "\(name).png")
+    }
+
+    private nonisolated static func thumbnailOptions(_ maxPixelSize: CGFloat) -> [CFString: Any] {
+        [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceShouldCacheImmediately: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxPixelSize
+        ]
     }
 
     private static func cost(of image: UIImage) -> Int {
@@ -132,12 +233,7 @@ actor AnimatedImageLoader {
         }
 
         let count = CGImageSourceGetCount(source)
-        let options: [CFString: Any] = [
-            kCGImageSourceCreateThumbnailFromImageAlways: true,
-            kCGImageSourceCreateThumbnailWithTransform: true,
-            kCGImageSourceShouldCacheImmediately: true,
-            kCGImageSourceThumbnailMaxPixelSize: maxPixelSize
-        ]
+        let options = thumbnailOptions(maxPixelSize)
 
         guard count > 1 else {
             return CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary).map { UIImage(cgImage: $0) }

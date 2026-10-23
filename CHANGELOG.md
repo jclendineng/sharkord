@@ -334,6 +334,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 #### iOS app
 
+- On a Mac the call zooms out of the voice bar and back into it, instead of sliding off the bottom of the window.
+- An animated GIF in a message shows its first frame straight away, and after a launch it is there at once instead of leaving a gap while it loads.
 - An empty channel's chat fills the screen, instead of leaving black strips down both sides.
 - The app's invite list says "1 use", not "1 uses".
 - An invite link opened while the app shows its welcome screen goes straight to making an account on that server, instead of being dropped.
