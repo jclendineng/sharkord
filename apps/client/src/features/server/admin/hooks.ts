@@ -24,40 +24,49 @@ import { useCallback, useEffect, useState } from 'react';
 export type TAdminUser = TRouterOutputs['users']['getAll'][number];
 export type TAdminUserInfo = TRouterOutputs['users']['getInfo']['user'];
 
-export const useAdminGeneral = () => {
+// loads on mount and whenever load changes. loading starts true, so a load sets no state
+// before its request and an effect never sets state synchronously; only refetch shows
+// loading again
+const useAdminLoad = (load: () => Promise<void>) => {
   const [loading, setLoading] = useState(true);
+
+  const refetch = useCallback(async () => {
+    setLoading(true);
+    await load();
+    setLoading(false);
+  }, [load]);
+
+  useEffect(() => {
+    load().then(() => setLoading(false));
+  }, [load]);
+
+  return { loading, refetch };
+};
+
+export const useAdminGeneral = () => {
   const [settings, setSettings] = useState<
     TRouterOutputs['others']['getSettings'] | undefined
   >(undefined);
 
   const fetchSettings = useCallback(async () => {
-    setLoading(true);
-
     const trpc = getTRPCClient();
 
     setSettings(await trpc.others.getSettings.query());
-    setLoading(false);
   }, []);
 
-  useEffect(() => {
-    fetchSettings();
-  }, [fetchSettings]);
+  const { loading, refetch } = useAdminLoad(fetchSettings);
 
-  return { settings, refetch: fetchSettings, loading };
+  return { settings, refetch, loading };
 };
 
 export const useAdminPlugins = (canManagePlugins: boolean) => {
-  const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState<TTrpcErrors>({});
   const [plugins, setPlugins] = useState<TPluginInfo[]>([]);
 
   const fetchPlugins = useCallback(async () => {
     if (!canManagePlugins) {
-      setLoading(false);
       return;
     }
-
-    setLoading(true);
 
     const trpc = getTRPCClient();
 
@@ -71,16 +80,12 @@ export const useAdminPlugins = (canManagePlugins: boolean) => {
       console.error('Error fetching plugins:', error);
       setErrors(parseTrpcErrors(error));
     }
-
-    setLoading(false);
   }, [canManagePlugins]);
 
-  useEffect(() => {
-    fetchPlugins();
-  }, [fetchPlugins]);
+  const { loading, refetch } = useAdminLoad(fetchPlugins);
 
   return {
-    refetch: fetchPlugins,
+    refetch,
     plugins,
     loading,
     errors
@@ -88,87 +93,62 @@ export const useAdminPlugins = (canManagePlugins: boolean) => {
 };
 
 export const useAdminChannelGeneral = (channelId: number) => {
-  const [loading, setLoading] = useState(true);
   const [channel, setChannel] = useState<TChannel | undefined>(undefined);
 
   const fetchChannel = useCallback(async () => {
-    setLoading(true);
-
     const trpc = getTRPCClient();
 
     setChannel(await trpc.channels.get.query({ channelId }));
-    setLoading(false);
   }, [channelId]);
 
-  useEffect(() => {
-    fetchChannel();
-  }, [fetchChannel]);
+  const { loading, refetch } = useAdminLoad(fetchChannel);
 
-  return { channel, refetch: fetchChannel, loading };
+  return { channel, refetch, loading };
 };
 
 export const useAdminCategoryGeneral = (categoryId: number) => {
-  const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState<TCategory | undefined>(undefined);
 
   const fetchCategory = useCallback(async () => {
-    setLoading(true);
-
     const trpc = getTRPCClient();
 
     setCategory(await trpc.categories.get.query({ categoryId }));
-    setLoading(false);
   }, [categoryId]);
 
-  useEffect(() => {
-    fetchCategory();
-  }, [fetchCategory]);
+  const { loading, refetch } = useAdminLoad(fetchCategory);
 
-  return { category, refetch: fetchCategory, loading };
+  return { category, refetch, loading };
 };
 
 export const useAdminEmojis = () => {
-  const [loading, setLoading] = useState(true);
   const [emojis, setEmojis] = useState<TJoinedEmoji[]>([]);
 
   const fetchEmojis = useCallback(async () => {
-    setLoading(true);
-
     const trpc = getTRPCClient();
 
     setEmojis(await trpc.emojis.getAll.query());
-    setLoading(false);
   }, []);
 
-  useEffect(() => {
-    fetchEmojis();
-  }, [fetchEmojis]);
+  const { loading, refetch } = useAdminLoad(fetchEmojis);
 
-  return { emojis, refetch: fetchEmojis, loading };
+  return { emojis, refetch, loading };
 };
 
 export const useAdminRoles = () => {
-  const [loading, setLoading] = useState(true);
   const [roles, setRoles] = useState<TJoinedRole[]>([]);
 
   const fetchRoles = useCallback(async () => {
-    setLoading(true);
-
     const trpc = getTRPCClient();
 
     setRoles(await trpc.roles.getAll.query());
-    setLoading(false);
   }, []);
 
-  useEffect(() => {
-    fetchRoles();
-  }, [fetchRoles]);
+  const { loading, refetch } = useAdminLoad(fetchRoles);
 
-  return { roles, refetch: fetchRoles, loading };
+  return { roles, refetch, loading };
 };
 
 export const useAdminStorage = () => {
-  const [loading, setLoading] = useState(true);
   const [storageSettings, setStorageSettings] = useState<
     TStorageSettings | undefined
   >(undefined);
@@ -178,8 +158,6 @@ export const useAdminStorage = () => {
   const [pluginStorage, setPluginStorage] = useState<TPluginStorageUsage[]>([]);
 
   const fetchStorageSettings = useCallback(async () => {
-    setLoading(true);
-
     const trpc = getTRPCClient();
     const { storageSettings, diskMetrics, pluginStorage } =
       await trpc.others.getStorageSettings.query();
@@ -187,29 +165,23 @@ export const useAdminStorage = () => {
     setStorageSettings(storageSettings);
     setDiskMetrics(diskMetrics);
     setPluginStorage(pluginStorage);
-    setLoading(false);
   }, []);
 
-  useEffect(() => {
-    fetchStorageSettings();
-  }, [fetchStorageSettings]);
+  const { loading, refetch } = useAdminLoad(fetchStorageSettings);
 
   return {
     storageSettings,
     diskMetrics,
     pluginStorage,
-    refetch: fetchStorageSettings,
+    refetch,
     loading
   };
 };
 
 export const useAdminUsers = () => {
-  const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<TAdminUser[]>([]);
 
   const fetchUsers = useCallback(async () => {
-    setLoading(true);
-
     const trpc = getTRPCClient();
     const users = await trpc.users.getAll.query();
 
@@ -218,22 +190,18 @@ export const useAdminUsers = () => {
     );
 
     setUsers(filteredUsers);
-    setLoading(false);
   }, []);
 
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+  const { loading, refetch } = useAdminLoad(fetchUsers);
 
   return {
     users,
-    refetch: fetchUsers,
+    refetch,
     loading
   };
 };
 
 export const useAdminChannelPermissions = (channelId: number) => {
-  const [loading, setLoading] = useState(true);
   const [rolePermissions, setRolePermissions] = useState<
     TChannelRolePermission[]
   >([]);
@@ -242,31 +210,25 @@ export const useAdminChannelPermissions = (channelId: number) => {
   >([]);
 
   const fetchPermissions = useCallback(async () => {
-    setLoading(true);
-
     const trpc = getTRPCClient();
     const { rolePermissions, userPermissions } =
       await trpc.channels.getPermissions.query({ channelId });
 
     setRolePermissions(rolePermissions);
     setUserPermissions(userPermissions);
-    setLoading(false);
   }, [channelId]);
 
-  useEffect(() => {
-    fetchPermissions();
-  }, [fetchPermissions]);
+  const { loading, refetch } = useAdminLoad(fetchPermissions);
 
   return {
     rolePermissions,
     userPermissions,
-    refetch: fetchPermissions,
+    refetch,
     loading
   };
 };
 
 export const useAdminUserInfo = (userId: number) => {
-  const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<TAdminUserInfo | null>(null);
   const [logins, setLogins] = useState<TLogin[]>([]);
   const [files, setFiles] = useState<TFile[]>([]);
@@ -279,8 +241,6 @@ export const useAdminUserInfo = (userId: number) => {
   });
 
   const fetchUser = useCallback(async () => {
-    setLoading(true);
-
     const trpc = getTRPCClient();
     const { user, logins, files, messages, storage } =
       await trpc.users.getInfo.query({
@@ -288,49 +248,40 @@ export const useAdminUserInfo = (userId: number) => {
       });
 
     setUser(user);
-    setLoading(false);
     setLogins(logins);
     setFiles(files);
     setMessages(messages);
     setStorage(storage);
   }, [userId]);
 
-  useEffect(() => {
-    fetchUser();
-  }, [fetchUser]);
+  const { loading, refetch } = useAdminLoad(fetchUser);
 
   return {
     user,
     logins,
     files,
     storage,
-    refetch: fetchUser,
+    refetch,
     loading,
     messages
   };
 };
 
 export const useAdminInvites = () => {
-  const [loading, setLoading] = useState(true);
   const [invites, setInvites] = useState<TJoinedInvite[]>([]);
 
   const fetchInvites = useCallback(async () => {
-    setLoading(true);
-
     const trpc = getTRPCClient();
     const invites = await trpc.invites.getAll.query();
 
     setInvites(invites);
-    setLoading(false);
   }, []);
 
-  useEffect(() => {
-    fetchInvites();
-  }, [fetchInvites]);
+  const { loading, refetch } = useAdminLoad(fetchInvites);
 
   return {
     invites,
-    refetch: fetchInvites,
+    refetch,
     loading
   };
 };

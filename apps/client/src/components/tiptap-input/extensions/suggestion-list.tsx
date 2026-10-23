@@ -2,7 +2,6 @@ import { cn } from '@/lib/utils';
 import {
   memo,
   useCallback,
-  useEffect,
   useImperativeHandle,
   useState,
   type ReactNode,
@@ -71,8 +70,14 @@ const SuggestionList = <TItem,>({
   ref
 }: TSuggestionListProps<TItem>) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [shownItems, setShownItems] = useState(items);
 
-  useEffect(() => setSelectedIndex(0), [items]);
+  // new items start from the top, set while rendering as react adjusts state to a changed
+  // prop, rather than an effect rendering twice
+  if (items !== shownItems) {
+    setShownItems(items);
+    setSelectedIndex(0);
+  }
 
   const selectItem = useCallback(
     (index: number) => {

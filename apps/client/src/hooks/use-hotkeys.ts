@@ -3,8 +3,8 @@ import type { THotkeyAction, THotkeyPhase } from '@/lib/hotkeys/types';
 import {
   useCallback,
   useEffect,
+  useEffectEvent,
   useMemo,
-  useRef,
   useSyncExternalStore
 } from 'react';
 
@@ -16,9 +16,8 @@ const useHotkeyAction = (
   handler: (phase: THotkeyPhase) => void,
   enabled = true
 ) => {
-  const handlerRef = useRef(handler);
-
-  handlerRef.current = handler;
+  // always the latest handler, without registering again when it changes
+  const onHotkey = useEffectEvent(handler);
 
   useEffect(() => {
     if (!enabled) {
@@ -26,7 +25,7 @@ const useHotkeyAction = (
     }
 
     return hotkeys.registerAction({ id, label, mode }, (phase) =>
-      handlerRef.current(phase)
+      onHotkey(phase)
     );
   }, [id, label, mode, enabled]);
 };

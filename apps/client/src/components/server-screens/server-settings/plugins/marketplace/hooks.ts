@@ -10,6 +10,28 @@ const getLatestTimestamp = (entry: TMarketplaceEntry) => {
   return entry.versions[0]?.timestamp ?? 0;
 };
 
+// the registry with each plugin's versions newest first, and the plugins by their newest
+const loadMarketplace = async (): Promise<TMarketplaceEntry[]> => {
+  const response = await fetch(MARKETPLACE_REGISTRY_URL);
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
+
+  const data = parseMarketplaceRegistry(await response.json());
+
+  return data
+    .map((entry) => ({
+      ...entry,
+      versions: [...entry.versions].sort(
+        (left, right) => right.timestamp - left.timestamp
+      )
+    }))
+    .sort(
+      (left, right) => getLatestTimestamp(right) - getLatestTimestamp(left)
+    );
+};
+
 const useMarketplaceData = (t: TFunction<'settings'>) => {
   const [entries, setEntries] = useState<TMarketplaceEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -17,43 +39,26 @@ const useMarketplaceData = (t: TFunction<'settings'>) => {
   const [search, setSearch] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const fetchMarketplace = useCallback(async () => {
-    setError(null);
-
-    try {
-      const response = await fetch(MARKETPLACE_REGISTRY_URL);
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const data = parseMarketplaceRegistry(await response.json());
-
-      const sortedEntries = data
-        .map((entry) => ({
-          ...entry,
-          versions: [...entry.versions].sort(
-            (left, right) => right.timestamp - left.timestamp
-          )
-        }))
-        .sort(
-          (left, right) => getLatestTimestamp(right) - getLatestTimestamp(left)
-        );
-
-      setEntries(sortedEntries);
-    } catch {
-      setError(t('marketplaceFetchError'));
-    } finally {
-      setLoading(false);
-      setIsRefreshing(false);
-    }
-  }, [t]);
+  // the error starts empty, so only a refresh has one to clear. state is only set in the
+  // promise's callbacks, never before the request goes out
+  const fetchMarketplace = useCallback(
+    () =>
+      loadMarketplace()
+        .then(setEntries)
+        .catch(() => setError(t('marketplaceFetchError')))
+        .finally(() => {
+          setLoading(false);
+          setIsRefreshing(false);
+        }),
+    [t]
+  );
 
   useEffect(() => {
     fetchMarketplace();
   }, [fetchMarketplace]);
 
   const refresh = useCallback(async () => {
+    setError(null);
     setIsRefreshing(true);
     await fetchMarketplace();
   }, [fetchMarketplace]);

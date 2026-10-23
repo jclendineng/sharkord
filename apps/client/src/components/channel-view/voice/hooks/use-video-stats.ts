@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type VideoStats = {
   width: number;
@@ -18,27 +18,22 @@ const useVideoStats = (
   const callbackIdRef = useRef<number | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const onFrame = useCallback(() => {
-    frameCountRef.current++;
-
-    const video = videoRef.current;
-
-    if (!video) return;
-
-    callbackIdRef.current = video.requestVideoFrameCallback(onFrame);
-  }, [videoRef]);
-
   useEffect(() => {
     const video = videoRef.current;
 
+    // stats start empty and the previous run's cleanup empties them again
     if (!enabled || !video) {
-      setStats(null);
-
       frameCountRef.current = 0;
       lastUpdateRef.current = 0;
 
       return;
     }
+
+    // inside the effect, where it can schedule itself for the next frame
+    const onFrame = () => {
+      frameCountRef.current++;
+      callbackIdRef.current = video.requestVideoFrameCallback(onFrame);
+    };
 
     frameCountRef.current = 0;
     lastUpdateRef.current = performance.now();
@@ -83,7 +78,7 @@ const useVideoStats = (
       frameCountRef.current = 0;
       lastUpdateRef.current = 0;
     };
-  }, [enabled, videoRef, onFrame]);
+  }, [enabled, videoRef]);
 
   return stats;
 };

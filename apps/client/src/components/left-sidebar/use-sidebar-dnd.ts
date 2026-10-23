@@ -105,18 +105,16 @@ export const useSidebarDnd = () => {
     });
   }, []);
 
-  useEffect(() => {
-    if (!dragPreview) {
-      return;
-    }
-
-    const categoryChannelIds =
+  // the preview goes once the server's channel list shows the move. set while rendering,
+  // the way react adjusts state to changed inputs, so no effect renders it a second time
+  if (dragPreview) {
+    const previewChannelIds =
       channelIdsByCategory[dragPreview.categoryId] ?? NO_CHANNELS;
 
-    if (categoryChannelIds.includes(dragPreview.channelId)) {
+    if (previewChannelIds.includes(dragPreview.channelId)) {
       setDragPreview(null);
     }
-  }, [channelIdsByCategory, dragPreview]);
+  }
 
   const orderedChannelIds = useCallback(
     (categoryId: number) =>

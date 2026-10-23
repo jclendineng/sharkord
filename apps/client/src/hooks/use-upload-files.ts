@@ -9,6 +9,7 @@ import {
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -61,9 +62,11 @@ const useUploadFiles = (
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // hackers gonna hack
-  filesRef.current = files;
-  previewUrlsRef.current = previewUrls;
+  // kept current after each render, for callbacks and the unmount cleanup that read them
+  useLayoutEffect(() => {
+    filesRef.current = files;
+    previewUrlsRef.current = previewUrls;
+  }, [files, previewUrls]);
 
   const takeAllowedFiles = useCallback(
     (filesToUpload: File[]) => {

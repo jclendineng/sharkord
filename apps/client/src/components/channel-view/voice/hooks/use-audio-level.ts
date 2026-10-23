@@ -33,9 +33,9 @@ const useAudioLevel = (audioStream: MediaStream | undefined) => {
   const ownVoiceUser = useOwnVoiceUser();
 
   useEffect(() => {
+    // the level starts at 0 and the previous run's cleanup puts it back there, so nothing
+    // needs resetting here
     if (!audioStream || ownVoiceUser?.state.soundMuted) {
-      setAudioLevel(0);
-      setIsSpeaking(false);
       return;
     }
 

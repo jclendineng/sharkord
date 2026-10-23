@@ -6,7 +6,7 @@ import { bridgeLogger } from '@/helpers/browser-logger';
 import { useHotkeyAction } from '@/hooks/use-hotkeys';
 import { CoreHotkeyAction } from '@/lib/hotkeys/actions';
 import type { THotkeyPhase } from '@/lib/hotkeys/types';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type TUseVoiceHotkeysParams = {
@@ -28,7 +28,10 @@ const useVoiceHotkeys = ({
   const wantMicMutedRef = useRef(true);
   const isReconcilingRef = useRef(false);
 
-  toggleMicRef.current = toggleMic;
+  // kept current after each render, before a key press can reach reconcileMic
+  useLayoutEffect(() => {
+    toggleMicRef.current = toggleMic;
+  }, [toggleMic]);
 
   // toggleMic ignores a call while a previous one is still in flight, so a quick
   // release would be lost and leave the mic open. this keeps toggling until the

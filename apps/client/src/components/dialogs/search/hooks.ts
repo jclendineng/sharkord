@@ -21,21 +21,10 @@ export const useSearch = (isOpen: boolean) => {
   const [results, setResults] = useState<TSearchResults>(EMPTY_RESULTS);
 
   useEffect(() => {
-    // reset state when dialog is closed
-    if (!isOpen) {
-      setQuery('');
-      setResults(EMPTY_RESULTS);
-      setLoading(false);
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
     const trimmed = query.trim();
 
+    // a query too short to search shows nothing without touching state, see canSearch below
     if (!isOpen || trimmed.length < MIN_QUERY_LENGTH) {
-      setResults(EMPTY_RESULTS);
-      setLoading(false);
-
       return;
     }
 
@@ -71,34 +60,37 @@ export const useSearch = (isOpen: boolean) => {
     };
   }, [query, isOpen, t]);
 
+  // the dialog unmounts once closed, so it opens fresh each time. a query too short to
+  // search hides the last results rather than clearing them
   const canSearch = query.trim().length >= MIN_QUERY_LENGTH;
-  const totalResults = results.messages.length + results.files.length;
-  const truncated = results.truncated;
+  const shownResults = canSearch ? results : EMPTY_RESULTS;
+  const totalResults = shownResults.messages.length + shownResults.files.length;
+  const truncated = shownResults.truncated;
 
   // combine messages and files into a single list
   const unifiedResults: TUnifiedSearchResult[] = useMemo(
     () =>
       [
-        ...results.messages.map((message) => ({
+        ...shownResults.messages.map((message) => ({
           type: 'message' as const,
           createdAt: message.createdAt,
           key: `message-${message.id}`,
           item: message
         })),
-        ...results.files.map((fileResult) => ({
+        ...shownResults.files.map((fileResult) => ({
           type: 'file' as const,
           createdAt: fileResult.messageCreatedAt,
           key: `file-${fileResult.file.id}-${fileResult.messageId}`,
           item: fileResult
         }))
       ].sort((a, b) => b.createdAt - a.createdAt),
-    [results]
+    [shownResults]
   );
 
   return {
     query,
     setQuery,
-    loading,
+    loading: canSearch && loading,
     canSearch,
     totalResults,
     truncated,

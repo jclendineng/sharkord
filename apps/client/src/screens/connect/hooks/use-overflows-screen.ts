@@ -25,10 +25,13 @@ export const useOverflowsScreen = () => {
     const small = createProbe('100svh');
     const large = createProbe('100lvh');
 
-    setToolbarHeight(Math.max(0, large.offsetHeight - small.offsetHeight));
+    const toolbar = Math.max(0, large.offsetHeight - small.offsetHeight);
+
     large.remove();
 
+    // the observer reports once as soon as it starts, which is when the toolbar height lands
     const observer = new ResizeObserver(() => {
+      setToolbarHeight(toolbar);
       setOverflows(content.offsetHeight > small.offsetHeight);
     });
 

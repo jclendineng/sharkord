@@ -7,6 +7,7 @@ type TUseCountdownOptions = {
 
 const useCountdown = ({ seconds, isActive }: TUseCountdownOptions) => {
   const [countdown, setCountdown] = useState(seconds);
+  const [wasActive, setWasActive] = useState(isActive);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const clearTimer = useCallback(() => {
@@ -21,14 +22,22 @@ const useCountdown = ({ seconds, isActive }: TUseCountdownOptions) => {
     setCountdown(seconds);
   }, [seconds]);
 
+  // turning active starts from the full count, set while rendering as react adjusts state
+  // to a changed prop, rather than an effect rendering twice
+  if (isActive !== wasActive) {
+    setWasActive(isActive);
+
+    if (isActive) {
+      setCountdown(seconds);
+    }
+  }
+
   useEffect(() => {
     if (!isActive) {
       clearTimer();
 
       return;
     }
-
-    reset();
 
     intervalRef.current = setInterval(() => {
       setCountdown((prev) => {
@@ -43,7 +52,7 @@ const useCountdown = ({ seconds, isActive }: TUseCountdownOptions) => {
     }, 1000);
 
     return clearTimer;
-  }, [isActive, reset, clearTimer]);
+  }, [isActive, clearTimer]);
 
   useEffect(() => clearTimer, [clearTimer]);
 

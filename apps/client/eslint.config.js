@@ -45,11 +45,6 @@ export default defineConfig([
       ...reactHooks.configs.recommended.rules,
       ...reactRefresh.configs.recommended.rules,
       'react-hooks/exhaustive-deps': 'error',
-      // the react compiler's rules from react-hooks 7, warnings until the code they flag is
-      // reworked (#193)
-      'react-hooks/set-state-in-effect': 'warn',
-      'react-hooks/refs': 'warn',
-      'react-hooks/immutability': 'warn',
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
       'unused-imports/no-unused-imports': 'error',

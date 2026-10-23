@@ -8,10 +8,16 @@ const getSecondsLeft = (target: number | null) => {
 
 const useCountdownSeconds = (target: number | null) => {
   const [secondsLeft, setSecondsLeft] = useState(() => getSecondsLeft(target));
+  const [countedTarget, setCountedTarget] = useState(target);
+
+  // a new target starts counting from its own time straight away, set while rendering as
+  // react adjusts state to a changed prop, rather than an effect rendering twice
+  if (target !== countedTarget) {
+    setCountedTarget(target);
+    setSecondsLeft(getSecondsLeft(target));
+  }
 
   useEffect(() => {
-    setSecondsLeft(getSecondsLeft(target));
-
     if (target === null) return;
 
     const timer = setInterval(
