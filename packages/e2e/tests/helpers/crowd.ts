@@ -12,7 +12,7 @@ const CROWD_PASSWORD = 'password123';
 const crowdName = (index: number) =>
   `Crowd ${String(index + 1).padStart(3, '0')}`;
 
-// every member signs in from an address of its own, the way a hundred people would. the server
+// every member signs in from an address of its own, the way a real crowd would. the server
 // trusts x-forwarded-for from localhost, so each one gets its own login rate limit bucket
 // instead of the fifth sign in from 127.0.0.1 being turned away. the identity does not exist
 // yet, and the seeded server allows new users, so this is also the member registering
@@ -21,7 +21,7 @@ const signIn = async (index: number): Promise<string> => {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Forwarded-For': `198.51.100.${index + 1}`
+      'X-Forwarded-For': `10.0.${Math.floor(index / 250)}.${(index % 250) + 1}`
     },
     body: JSON.stringify({
       identity: `crowd${index}`,
@@ -70,7 +70,7 @@ const connect = async (
   return { wsClient, trpc, data, closed: false };
 };
 
-// a chat member without a browser, so a hundred of them fit next to the few real pages
+// a chat member without a browser, so hundreds of them fit next to the few real pages
 // that watch the ui. everything it is sent is kept in `received` for the spec to count
 const joinCrowdMember = async (index: number) => {
   const name = crowdName(index);

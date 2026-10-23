@@ -12,11 +12,12 @@ import {
 } from './helpers/network';
 import { messagesContainer } from './helpers/scroll';
 
-// run this with bun test:crowd. it fills the server with a hundred extra online members, which
+// run this with bun test:crowd, or CROWD_SIZE=200 bun test:crowd for a bigger room. it fills the
+// server with that many extra online members, which
 // would push the seeded users other specs click on out of the member list, so it runs on its
 // own against a freshly seeded server rather than alongside the rest of the suite
 
-const CROWD_SIZE = 100;
+const CROWD_SIZE = Number(process.env.CROWD_SIZE ?? 100);
 const MESSAGES_PER_MEMBER = 3;
 const BURST_SPREAD_MS = 1_500;
 
@@ -123,7 +124,7 @@ const tokenOf = ({ content }: TJoinedMessage) => {
   return match[0];
 };
 
-test('a hundred people chatting at once on mixed connections', async ({
+test(`${CROWD_SIZE} people chatting at once on mixed connections`, async ({
   browser
 }) => {
   test.skip(!process.env.RUN_CROWD, 'load test, run it with bun test:crowd');
@@ -141,7 +142,7 @@ test('a hundred people chatting at once on mixed connections', async ({
       );
     });
 
-    await test.step('a hundred people join at the same moment', async () => {
+    await test.step(`${CROWD_SIZE} people join at the same moment`, async () => {
       crowd.push(
         ...(await Promise.all(
           Array.from({ length: CROWD_SIZE }, (_, index) =>
@@ -165,9 +166,11 @@ test('a hundred people chatting at once on mixed connections', async ({
     await test.step('the member list caps at a hundred and counts the rest', async () => {
       const total = CROWD_SIZE + SEEDED_USERS;
 
-      // everyone sorts online first, then by name, so with 103 people online the hundred
-      // crowd members fill the list and the three observers fall into the summary
-      const expectedNames = crowd.map(({ index }) => crowdName(index));
+      // everyone sorts online first, then by name, so the first hundred crowd members fill
+      // the list and everyone after them, the three observers included, is in the summary
+      const expectedNames = crowd
+        .slice(0, MEMBER_LIST_CAP)
+        .map(({ index }) => crowdName(index));
 
       await expectOnEveryObserver(observers, async (page) => {
         await expect(
@@ -297,7 +300,7 @@ test('a hundred people chatting at once on mixed connections', async ({
 
     const totalBurst = CROWD_SIZE * MESSAGES_PER_MEMBER;
 
-    await test.step('three hundred messages land at once while thirty people type', async () => {
+    await test.step(`${CROWD_SIZE * MESSAGES_PER_MEMBER} messages land at once while thirty people type`, async () => {
       const typingStops = crowd
         .slice(50, 80)
         .map((member) => member.startTyping(liveChannelId));
@@ -389,7 +392,7 @@ test('a hundred people chatting at once on mixed connections', async ({
       await expectNobodyTyping(observers);
     });
 
-    await test.step('someone typing by hand still reaches all hundred', async () => {
+    await test.step(`someone typing by hand still reaches all ${CROWD_SIZE}`, async () => {
       const handTyped = `typed by hand ${RUN_ID}`;
 
       await sendMessage(observers[0]!.page, handTyped);
