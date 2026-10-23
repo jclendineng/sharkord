@@ -14,7 +14,7 @@ const UsersTypingIndicator = memo(
       <div className="h-2 flex items-center gap-1 text-xs text-muted-foreground p-3 absolute -top-6 bg-background">
         {typingUsers.length > 0 && (
           <div className="flex items-center gap-2">
-            <TypingDots className="[&>div]:w-0.5 [&>div]:h-0.5" />
+            <TypingDots />
             <span>
               {typingUsers.length === 1
                 ? `${typingUsers[0].name} is typing...`

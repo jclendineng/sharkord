@@ -195,7 +195,7 @@ const Text = memo(({ channel, ...props }: TTextProps) => {
       </span>
       {hasTypingUsers && (
         <div className="flex items-center gap-0.5 ml-auto">
-          <TypingDots className="space-x-0.5" />
+          <TypingDots />
         </div>
       )}
       {!hasTypingUsers && unreadCount > 0 && (

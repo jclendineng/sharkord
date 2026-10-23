@@ -6,10 +6,10 @@ type TTypingDotsProps = {
 
 const TypingDots = memo(({ className = '' }: TTypingDotsProps) => {
   return (
-    <div className={`flex space-x-1 ${className}`}>
-      <div className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-      <div className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-      <div className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce"></div>
+    <div className={`flex items-center gap-[3px] h-2.5 ${className}`}>
+      <div className="typing-dot size-[5px] rounded-full bg-foreground" />
+      <div className="typing-dot size-[5px] rounded-full bg-foreground [animation-delay:0.17s]" />
+      <div className="typing-dot size-[5px] rounded-full bg-foreground [animation-delay:0.34s]" />
     </div>
   );
 });

@@ -155,6 +155,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - On a phone the channel list opens whenever no channel is open, after signing in or leaving a call, in place of the welcome screen with its swipe hints and mobile warning.
 - On an iPhone or iPad browser, a banner across the top of the app offers to open the current channel in the Sharkord app or get it from TestFlight, until it is hidden in that browser.
 - A member, role or channel name typed out in full after @ or #, then a space, becomes a mention, the same as picking it from the list.
+- The typing dots animate the way the apps' do, each rising and brightening a step behind the one before, at a size that shows.
 
 #### iOS app
 

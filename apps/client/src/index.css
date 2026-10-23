@@ -408,6 +408,23 @@ body {
   }
 }
 
+/* the apps' typing dots: each rises and brightens on a 1.2s beat, a step behind the one before */
+@keyframes typing-dot {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+
+.typing-dot {
+  animation: typing-dot 1.2s ease-in-out infinite;
+}
+
 @keyframes voice-reaction-rise {
   0% {
     opacity: 0;
