@@ -8,6 +8,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { takeSnapshotChannel } from '../actions';
+import { restoredFromSnapshotSelector } from '../selectors';
 import {
   addMessages,
   addThreadMessages,
@@ -223,14 +224,17 @@ export const useMessages = (channelId: number) => {
   );
 
   const paginated = usePaginatedMessages(messages, fetchPage);
+  const restoredFromSnapshot = useSelector(restoredFromSnapshotSelector);
 
+  // the copy shown on a refresh is mounted again once joining returns, and fetches then: asked
+  // before the join the server turns it down
   useEffect(() => {
-    if (inited.current) return;
+    if (inited.current || restoredFromSnapshot) return;
 
     paginated.fetchMessages(null);
 
     inited.current = true;
-  }, [paginated]);
+  }, [paginated, restoredFromSnapshot]);
 
   useEffect(() => () => trimChannelMessages(channelId), [channelId]);
 
