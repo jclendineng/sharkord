@@ -76,6 +76,8 @@ const TiptapInput = memo(
     const onSubmitRef = useRef(onSubmit);
     const onCancelRef = useRef(onCancel);
     const onArrowUpRef = useRef(onArrowUp);
+    // the html this editor last reported through onChange, see the value effect below
+    const reportedValueRef = useRef<string | undefined>(undefined);
 
     readOnlyRef.current = readOnly;
     onSubmitRef.current = onSubmit;
@@ -157,6 +159,7 @@ const TiptapInput = memo(
       onUpdate: ({ editor }) => {
         const html = editor.getHTML();
 
+        reportedValueRef.current = html;
         onChange?.(html);
 
         if (!editor.isEmpty) {
@@ -288,7 +291,11 @@ const TiptapInput = memo(
     }, [editor, channels]);
 
     useEffect(() => {
-      if (editor && value !== undefined) {
+      // a value that is only this editor's own last report coming back is never a change from
+      // outside. a mention's node view mounts with flushSync, which renders the parent's
+      // pending update from the keystroke before, so without this a typed mention was reset
+      // to the text it replaced in the middle of its own transaction
+      if (editor && value !== undefined && value !== reportedValueRef.current) {
         const currentContent = editor.getHTML();
 
         // only update if content is actually different to avoid cursor jumping
