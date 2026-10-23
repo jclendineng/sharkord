@@ -3,9 +3,8 @@ import { getFileUrl } from '@/helpers/get-file-url';
 import { getInitialsFromName } from '@/helpers/get-initials-from-name';
 import { getRenderedUsername } from '@/helpers/get-rendered-username';
 import { cn } from '@/lib/utils';
-import { AvatarImage } from '@radix-ui/react-avatar';
 import { getAvatarGradient, UserStatus } from '@sharkord/shared';
-import { Avatar, AvatarFallback } from '@sharkord/ui';
+import { Avatar, AvatarFallback, AvatarImage } from '@sharkord/ui';
 import { memo, useMemo } from 'react';
 import { UserPopover } from '../user-popover';
 import { UserStatusBadge } from '../user-status';
@@ -40,7 +39,11 @@ const UserAvatar = memo(
     const content = (
       <div className="relative size-fit" onClick={onClick}>
         <Avatar className={cn('size-8 bg-muted', className)}>
-          <AvatarImage src={getFileUrl(user.avatar)} key={user.avatarId} />
+          <AvatarImage
+            src={getFileUrl(user.avatar)}
+            key={user.avatarId}
+            className="object-cover"
+          />
           <AvatarFallback
             className="text-xs font-semibold text-white"
             style={fallbackStyle}

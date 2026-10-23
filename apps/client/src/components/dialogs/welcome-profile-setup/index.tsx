@@ -6,11 +6,11 @@ import { uploadImage } from '@/helpers/upload-file';
 import { useFilePicker } from '@/hooks/use-file-picker';
 import { useForm } from '@/hooks/use-form';
 import { getTRPCClient } from '@/lib/trpc';
-import { AvatarImage } from '@radix-ui/react-avatar';
 import { DEFAULT_PROFILE_COLOR, getTrpcError } from '@sharkord/shared';
 import {
   Avatar,
   AvatarFallback,
+  AvatarImage,
   Button,
   Dialog,
   DialogContent,
@@ -191,6 +191,7 @@ const WelcomeProfileSetupDialog = memo(
                     <AvatarImage
                       src={getFileUrl(ownPublicUser.avatar)}
                       key={ownPublicUser.avatarId}
+                      className="object-cover"
                     />
                     <AvatarFallback className="text-base">
                       {getInitialsFromName(previewName)}

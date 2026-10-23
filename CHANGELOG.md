@@ -154,6 +154,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - Mute Stream Audio in Devices settings: screen shares with sound start muted ([#749](https://github.com/Sharkord/sharkord/issues/749)).
 - On a phone the channel list opens whenever no channel is open, after signing in or leaving a call, in place of the welcome screen with its swipe hints and mobile warning.
 - On an iPhone or iPad browser, a banner across the top of the app offers to open the current channel in the Sharkord app or get it from TestFlight, until it is hidden in that browser.
+- A member, role or channel name typed out in full after @ or #, then a space, becomes a mention, the same as picking it from the list.
 
 #### iOS app
 
@@ -290,6 +291,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 #### Server and web client
 
+- Avatars fill their circle in a call tile and the call controls, instead of the picture stopping short with a gap on the right.
 - A few quick refreshes no longer sign you out. Only joins that check the server password are rate limited now, and a resume that fails for any other reason than the session shows the connection lost screen instead of signing out.
 - The web invite page says how to make an account: choose an identity and a password, then press Connect.
 - Open in the Sharkord app on the invite page keeps a server's subpath, so a server under `example.com/sharkord` opens there in the app instead of at `example.com`.

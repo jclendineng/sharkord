@@ -94,4 +94,4 @@ const MentionSuggestion = {
 };
 
 export { getMentionItemName, MENTION_STORAGE_KEY, MentionSuggestion };
-export type { TMentionItem };
+export type { TMentionItem, TMentionStorage };
