@@ -365,7 +365,6 @@ class FileManager {
   private claimUniqueName = async (originalName: string): Promise<string> => {
     const extension = getNormalizedExtension(getSafeFileName(originalName));
 
-    // eslint-disable-next-line no-constant-condition
     while (true) {
       const fileName = `${randomUUID()}${extension}`;
 

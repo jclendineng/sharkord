@@ -1,3 +1,4 @@
+import type { ComponentType } from 'react';
 import type { Permission } from '../statics/permissions';
 
 /**
@@ -68,8 +69,7 @@ export type TPluginSlotProps = {
 type EmptyProps = Record<string, never>;
 
 /** A component the host renders, with whatever its slot passes. */
-export type TPluginReactComponent<TProps = EmptyProps> =
-  React.ComponentType<TProps>;
+export type TPluginReactComponent<TProps = EmptyProps> = ComponentType<TProps>;
 
 export type TPluginSlotRequirements = Partial<Record<PluginSlot, Permission>>;
 

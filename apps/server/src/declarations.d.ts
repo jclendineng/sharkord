@@ -27,7 +27,6 @@ declare global {
       commands: TCommandMap;
     };
   }
-  // eslint-disable-next-line no-var
   var disableRateLimiting: boolean | undefined;
 }
 

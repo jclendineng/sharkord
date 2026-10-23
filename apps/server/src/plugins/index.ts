@@ -390,7 +390,9 @@ class PluginManager {
         JSON.parse(await fs.readFile(manifestPath, 'utf-8'))
       );
     } catch (error) {
-      throw new Error(`Invalid manifest.json: ${getErrorMessage(error)}`);
+      throw new Error(`Invalid manifest.json: ${getErrorMessage(error)}`, {
+        cause: error
+      });
     }
 
     if (manifest.id !== pluginId) {
@@ -849,7 +851,9 @@ class PluginManager {
         getErrorMessage(error)
       );
 
-      throw new Error(`Failed to remove plugin: ${getErrorMessage(error)}`);
+      throw new Error(`Failed to remove plugin: ${getErrorMessage(error)}`, {
+        cause: error
+      });
     }
 
     try {

@@ -213,6 +213,11 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 ### Changed
 
+- Every package is on its latest release.
+  - Server: mediasoup 3.31 and Bun 1.4.4, in the image and in CI.
+  - Web: Vite 8, i18next 26, lucide 1 and react-day-picker 10.
+  - iOS and Mac apps: mediasoup-client-swift 0.13.2, which brings WebRTC m140.
+  - Tooling: TypeScript 6.0.3 (TypeScript 7 waits on typescript-eslint, which stops at 6.0) and ESLint 10 with flat configs in every workspace.
 - Manage Users is split into Kick Members, Ban Members, Assign Roles and Manage Accounts, and moderation follows the role order: you can only act on members ranked below you and only assign roles below your own.
 - An invite's role waits until the new member accepts the rules, when the server has a rules message, so an invite can't skip them. Only roles below your own can be attached to an invite.
 

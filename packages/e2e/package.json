@@ -11,23 +11,26 @@
     "test:flaky": "bun run seed:e2e && bunx playwright test --repeat-each=2 --retries=5",
     "format": "prettier --write \"**/*.*.ts*\" --config ./.prettierrc.json",
     "format:check": "prettier --check \"**/*.*.ts*\" --config ./.prettierrc.json",
-    "lint": "eslint ./tests/**/*.ts --ext ts --report-unused-disable-directives",
-    "lint:fix": "eslint ./tests/**/*.ts --ext ts --report-unused-disable-directives --fix",
+    "lint": "eslint ./tests --report-unused-disable-directives",
+    "lint:fix": "eslint ./tests --report-unused-disable-directives --fix",
     "check-types": "tsc --noEmit",
     "magic": "bun --bun run lint:fix && bun --bun run format && bun --bun run check-types",
     "seed:e2e": "SHARKORD_DATA_PATH=./e2e-data bun run ./tests/setup/seed-db.ts"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.64.1",
     "@sharkord/shared": "workspace:*",
     "@types/bun": "latest",
     "@types/react": "^19.3.0",
-    "drizzle-orm": "^0.45.4"
+    "drizzle-orm": "^0.45.4",
+    "globals": "^17.13.0",
+    "typescript-eslint": "^8.72.0"
   },
   "peerDependencies": {
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
     "@typescript-eslint/eslint-plugin": "^8.72.0",
-    "eslint": "^8.57.1",
+    "eslint": "^10.13.0",
     "eslint-plugin-unused-imports": "^4.4.1",
     "prettier": "^3.9.10",
     "prettier-plugin-organize-imports": "^4.3.0"

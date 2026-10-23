@@ -136,8 +136,6 @@ const loginRouteHandler = async (
   }
 
   if (!existingUser) {
-    let inviteRoleId: number | null = null;
-
     const result = await isInviteValid(data.invite);
 
     if (!settings.allowNewUsers && result.error) {
@@ -153,7 +151,7 @@ const loginRouteHandler = async (
     // only consume the invite when one was actually accepted
     const usedInviteCode = result.invite ? data.invite : undefined;
 
-    inviteRoleId = result.invite?.roleId ?? null;
+    const inviteRoleId = result.invite?.roleId ?? null;
 
     // user doesn't exist, but registration is open OR invite was valid - create the user automatically
     const registeredUserId = await createUser({
@@ -185,7 +183,7 @@ const loginRouteHandler = async (
   // temporary logic to migrate old SHA256 password hashes to argon2 on login
   const isPasswordArgon = existingUser.password.startsWith('$argon2');
 
-  let passwordMatches = false;
+  let passwordMatches: boolean;
 
   if (isPasswordArgon) {
     passwordMatches = await Bun.password.verify(
