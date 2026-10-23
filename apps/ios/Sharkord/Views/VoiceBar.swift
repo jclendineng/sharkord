@@ -5,6 +5,8 @@ struct VoiceBar: View {
     @Environment(ServerListStore.self) private var servers
 
     @Namespace private var zoom
+    // where the mac's zoom starts and ends, see MacCallZoom
+    @State private var frame = CGRect.zero
 
     private var channelName: String {
         session.currentVoiceChannelId.flatMap { session.channel($0)?.name } ?? ""
@@ -65,14 +67,10 @@ struct VoiceBar: View {
                 PictureInPictureSource(track: pictureInPictureTrack)
             }
         }
-        // handed over by hand: on a mac a sheet's background is worked out before it inherits
-        // anything, so a sheet reading a store it was not given crashed on opening
-        .fullScreenCover(isPresented: $servers.isCallPresented) {
-            VoiceRoomScreen()
-                .navigationTransition(.zoom(sourceID: "call", in: zoom))
-                .environment(session)
-                .environment(servers)
+        .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }) { newFrame in
+            frame = newFrame
         }
+        .modifier(CallPresentation(isPresented: $servers.isCallPresented, source: frame, zoom: zoom))
     }
 
     // what picture in picture shows away from the app: a screen share first, then the camera of
@@ -108,5 +106,42 @@ struct VoiceBar: View {
 
     private func leave() {
         Task { await session.leaveVoice() }
+    }
+}
+
+// the call over everything, zooming out of the bar. the mac draws the zoom itself and opens the
+// cover with no animation of its own, which would otherwise slide it up from the bottom
+private struct CallPresentation: ViewModifier {
+    @Environment(SessionStore.self) private var session
+    @Environment(ServerListStore.self) private var servers
+
+    @Binding var isPresented: Bool
+    let source: CGRect
+    let zoom: Namespace.ID
+
+    func body(content: Content) -> some View {
+        // handed over by hand: on a mac a sheet's background is worked out before it inherits
+        // anything, so a sheet reading a store it was not given crashed on opening
+        if ProcessInfo.processInfo.isiOSAppOnMac {
+            content
+                .transaction { transaction in
+                    transaction.disablesAnimations = true
+                }
+                .fullScreenCover(isPresented: $isPresented) {
+                    MacCallZoom(source: source, isPresented: $isPresented) {
+                        VoiceRoomScreen()
+                            .environment(session)
+                            .environment(servers)
+                    }
+                }
+        } else {
+            content
+                .fullScreenCover(isPresented: $isPresented) {
+                    VoiceRoomScreen()
+                        .navigationTransition(.zoom(sourceID: "call", in: zoom))
+                        .environment(session)
+                        .environment(servers)
+                }
+        }
     }
 }

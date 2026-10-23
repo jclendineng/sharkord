@@ -6,6 +6,7 @@ struct VoiceRoomScreen: View {
     @Environment(SessionStore.self) private var session
     @Environment(ServerListStore.self) private var servers
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.closeCall) private var closeCall
 
     @State private var isReactionBarShown = false
     @State private var isSoundboardPresented = false
@@ -307,7 +308,11 @@ struct VoiceRoomScreen: View {
     }
 
     private func close() {
-        dismiss()
+        if let closeCall {
+            closeCall()
+        } else {
+            dismiss()
+        }
     }
 
     private func leave() {
