@@ -100,8 +100,8 @@ export interface IServerState {
   friendLists: TFriendLists;
   // showing the copy saved before a refresh, see restoreSnapshot
   restoredFromSnapshot: boolean;
-  // the channel whose messages came from that copy, replaced by its first fetched page
-  snapshotChannelId: number | undefined;
+  // channels whose messages may have missed changes, replaced by their first fetched page
+  staleChannelIds: Record<number, true>;
 }
 
 const initialState: IServerState = {
@@ -170,7 +170,7 @@ const initialState: IServerState = {
   directMessages: [],
   friendLists: { friends: [], incoming: [], outgoing: [] },
   restoredFromSnapshot: false,
-  snapshotChannelId: undefined,
+  staleChannelIds: {},
   hideOwnScreenShare: getLocalStorageItemBool(
     LocalStorageKey.HIDE_OWN_SCREEN_SHARE,
     false
@@ -245,11 +245,18 @@ export const serverSlice = createSlice({
 
       if (selectedChannelId !== undefined) {
         state.messagesMap[selectedChannelId] = messages;
-        state.snapshotChannelId = selectedChannelId;
+        state.staleChannelIds[selectedChannelId] = true;
       }
     },
-    clearSnapshotChannel: (state) => {
-      state.snapshotChannelId = undefined;
+    clearStaleChannel: (state, action: PayloadAction<number>) => {
+      delete state.staleChannelIds[action.payload];
+    },
+    // nothing arrives while the socket is down, so everything loaded before it dropped may
+    // be missing messages, edits and deletes from the gap
+    markLoadedChannelsStale: (state) => {
+      for (const channelId of Object.keys(state.messagesMap)) {
+        state.staleChannelIds[Number(channelId)] = true;
+      }
     },
     addMessages: (
       state,

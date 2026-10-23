@@ -7,8 +7,8 @@ import {
 } from '@sharkord/shared';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { takeSnapshotChannel } from '../actions';
-import { restoredFromSnapshotSelector } from '../selectors';
+import { takeStaleChannel } from '../actions';
+import { connectedSelector, restoredFromSnapshotSelector } from '../selectors';
 import {
   addMessages,
   addThreadMessages,
@@ -212,7 +212,7 @@ export const useMessages = (channelId: number) => {
         limit: DEFAULT_MESSAGES_LIMIT
       });
 
-      if (cursorToFetch === null && takeSnapshotChannel(channelId)) {
+      if (cursorToFetch === null && takeStaleChannel(channelId)) {
         setChannelMessages(channelId, [...rawPage].reverse(), false);
       } else {
         storeChannelMessages(channelId, rawPage);
@@ -236,9 +236,22 @@ export const useMessages = (channelId: number) => {
     inited.current = true;
   }, [paginated, restoredFromSnapshot]);
 
-  useEffect(() => () => trimChannelMessages(channelId), [channelId]);
+  const connected = useSelector(connectedSelector);
+  const wasConnected = useRef(connected);
+  const { fetchMessages, applyCursor } = paginated;
 
-  const { applyCursor } = paginated;
+  // the open channel was marked stale when the socket dropped. once joined again its newest
+  // page replaces what is on screen, which also resets the cursor so loading older history
+  // continues from that page rather than from before the gap
+  useEffect(() => {
+    const reconnected = connected && !wasConnected.current;
+
+    wasConnected.current = connected;
+
+    if (reconnected) fetchMessages(null);
+  }, [connected, fetchMessages]);
+
+  useEffect(() => () => trimChannelMessages(channelId), [channelId]);
 
   const scrollToMessage = useCallback(
     async (messageId: number, highlightTime = 4000) => {

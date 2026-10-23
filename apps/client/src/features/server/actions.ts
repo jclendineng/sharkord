@@ -36,8 +36,8 @@ import {
 import {
   connectedSelector,
   infoSelector,
-  serverSnapshotSelector,
-  snapshotChannelIdSelector
+  isChannelStaleSelector,
+  serverSnapshotSelector
 } from './selectors';
 import { serverSliceActions } from './slice';
 import { SoundType, type TDisconnectInfo, type TServerSnapshot } from './types';
@@ -186,14 +186,13 @@ export const restoreServerSnapshot = (): boolean => {
   }
 };
 
-// the restored copy of a channel may hold messages deleted since, so its first fetched page
-// replaces it rather than merging in. true once, for that channel
-export const takeSnapshotChannel = (channelId: number): boolean => {
-  const snapshotChannelId = snapshotChannelIdSelector(store.getState());
+// a stale channel (restored after a refresh, or loaded before a reconnect) may hold messages
+// deleted since and miss ones sent since, so its first fetched page replaces it rather than
+// merging in. true once, for that channel
+export const takeStaleChannel = (channelId: number): boolean => {
+  if (!isChannelStaleSelector(store.getState(), channelId)) return false;
 
-  if (snapshotChannelId !== channelId) return false;
-
-  store.dispatch(serverSliceActions.clearSnapshotChannel());
+  store.dispatch(serverSliceActions.clearStaleChannel(channelId));
 
   return true;
 };
@@ -249,6 +248,7 @@ export const reconnectToServer = (info: TDisconnectInfo) => {
   }
 
   setConnected(false);
+  store.dispatch(serverSliceActions.markLoadedChannelsStale());
 
   reconnectDisconnectInfo = info;
 

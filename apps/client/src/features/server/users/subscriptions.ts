@@ -5,6 +5,7 @@ import { handleSubscriptionError } from '../subscription-error';
 import {
   addUser,
   handleUserJoin,
+  handleUserUpdate,
   reassignUser,
   updateUser,
   wipeUser
@@ -40,7 +41,7 @@ const subscribeToUsers = () => {
   const onUserUpdateSub = trpc.users.onUpdate.subscribe(undefined, {
     onData: (user: TJoinedPublicUser) => {
       logDebug('[EVENTS] users.onUpdate', { user });
-      updateUser(user.id, user);
+      handleUserUpdate(user);
     },
     onError: handleSubscriptionError('onUserUpdate')
   });

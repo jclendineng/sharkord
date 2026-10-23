@@ -1,5 +1,5 @@
 import { TypingDots } from '@/components/typing-dots';
-import type { TJoinedPublicUser } from '@sharkord/shared';
+import { TestId, type TJoinedPublicUser } from '@sharkord/shared';
 import { memo } from 'react';
 
 type TUsersTypingIndicatorProps = {
@@ -11,7 +11,10 @@ const UsersTypingIndicator = memo(
     if (typingUsers.length === 0) return null;
 
     return (
-      <div className="h-2 flex items-center gap-1 text-xs text-muted-foreground p-3 absolute -top-6 bg-background">
+      <div
+        data-testid={TestId.TYPING_INDICATOR}
+        className="h-2 flex items-center gap-1 text-xs text-muted-foreground p-3 absolute -top-6 bg-background"
+      >
         {typingUsers.length > 0 && (
           <div className="flex items-center gap-2">
             <TypingDots />

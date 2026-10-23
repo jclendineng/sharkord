@@ -2179,21 +2179,36 @@ final class SessionStore {
             Task { await self?.loadFriends() }
         }
 
+        // joins, creates and updates come in on separate subscriptions, so under load one can
+        // overtake another: a join or create taken before a rename can land after it. a known
+        // user's profile is only ever changed by an update, a join only brings the status
         client.subscribe("users.onJoin") { [weak self] (user: PublicUser) in
-            var joined = user
+            guard let self else { return }
 
-            joined.status = joined.status ?? .online
-            self?.usersById[user.id] = joined
+            let status = user.status ?? .online
+
+            if usersById[user.id] != nil {
+                usersById[user.id]?.status = status
+            } else {
+                var joined = user
+
+                joined.status = status
+                usersById[user.id] = joined
+            }
+        }
+
+        client.subscribe("users.onCreate") { [weak self] (user: PublicUser) in
+            guard let self, usersById[user.id] == nil else { return }
+
+            usersById[user.id] = user
         }
 
         // a profile change carries no status, the one already known still holds
-        for path in ["users.onUpdate", "users.onCreate"] {
-            client.subscribe(path) { [weak self] (user: PublicUser) in
-                var updated = user
+        client.subscribe("users.onUpdate") { [weak self] (user: PublicUser) in
+            var updated = user
 
-                updated.status = updated.status ?? self?.usersById[user.id]?.status
-                self?.usersById[user.id] = updated
-            }
+            updated.status = updated.status ?? self?.usersById[user.id]?.status
+            self?.usersById[user.id] = updated
         }
 
         client.subscribe("users.onDelete") { [weak self] (event: UserDeletedEvent) in

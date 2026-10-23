@@ -10,6 +10,7 @@ export enum TestId {
   CHANNEL_ITEM = 'channel-item',
   MESSAGE_ITEM = 'message-item',
   MESSAGE_COMPOSE_EDITOR = 'message-compose-editor',
+  TYPING_INDICATOR = 'typing-indicator',
   CATEGORY_ITEM = 'category-item',
   SEARCH_INPUT = 'search-input',
   SEARCH_RESULT_JUMP = 'search-result-jump',

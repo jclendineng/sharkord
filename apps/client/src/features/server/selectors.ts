@@ -67,8 +67,8 @@ export const serverIdSelector = (state: IRootState) => state.server.serverId;
 export const restoredFromSnapshotSelector = (state: IRootState) =>
   state.server.restoredFromSnapshot;
 
-export const snapshotChannelIdSelector = (state: IRootState) =>
-  state.server.snapshotChannelId;
+export const isChannelStaleSelector = (state: IRootState, channelId: number) =>
+  !!state.server.staleChannelIds[channelId];
 
 // this selector is not cached, do not use it outside actions. what saveServerSnapshot keeps,
 // with the open channel's latest page of messages

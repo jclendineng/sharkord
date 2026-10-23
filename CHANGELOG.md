@@ -292,6 +292,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 #### Server and web client
 
+- A chat that lost its connection catches up when it is back. Messages sent while it was away used to stay missing until the channel was opened again.
+- A member's new name no longer goes back to the old one when lots of people join at once.
 - Avatars fill their circle in a call tile and the call controls, instead of the picture stopping short with a gap on the right.
 - A few quick refreshes no longer sign you out. Only joins that check the server password are rate limited now, and a resume that fails for any other reason than the session shows the connection lost screen instead of signing out.
 - The web invite page says how to make an account: choose an identity and a password, then press Connect.
@@ -348,6 +350,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 #### iOS app
 
+- A member's new name no longer goes back to the old one when lots of people join at once.
 - On a Mac every button takes a click anywhere on the shape it draws, not just on its icon, so a click near a button's edge or in a list row's gap no longer needs a second try.
 - On a Mac the call zooms out of the voice bar and back into it, instead of sliding off the bottom of the window.
 - An animated GIF in a message shows its first frame straight away, and after a launch it is there at once instead of leaving a gap while it loads.
