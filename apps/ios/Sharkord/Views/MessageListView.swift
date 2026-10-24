@@ -111,6 +111,7 @@ struct MessageListView<Header: View>: View {
                     MessageRow(
                         message: message,
                         showsHeader: showsHeader,
+                        isFollowedClosely: isFollowedClosely(at: index),
                         showsThreadLink: store.scope == .channel,
                         onLongPress: { showActions(for: message) },
                         onDoubleTap: { react(to: message) },

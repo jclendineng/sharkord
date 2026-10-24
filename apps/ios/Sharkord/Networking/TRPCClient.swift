@@ -31,6 +31,9 @@ final class TRPCClient {
     private var receiveTask: Task<Void, Never>?
     private var keepAliveTask: Task<Void, Never>?
     private var isClosed = false
+    // the server turning the connection itself down, a revoked or expired token, so every call
+    // still to come fails with that answer instead of looking like a dropped connection
+    private var refusal: TRPCError?
 
     init(wsURL: URL, token: String) {
         // the flag tells the server to wait for a connectionParams message before building the context
@@ -145,7 +148,7 @@ final class TRPCClient {
 
     private func requestFrame(method: String, path: String, input: Any?) async throws -> Data {
         guard !isClosed else {
-            throw TRPCError(message: "Not connected to the server.", code: nil)
+            throw refusal ?? TRPCError(message: "Not connected to the server.", code: nil)
         }
 
         let id = makeId()
@@ -247,7 +250,18 @@ final class TRPCClient {
             return
         }
 
+        // an error with no id is the server refusing the token, just before it closes the socket
         guard let id = envelope.id else {
+            if let error = envelope.error {
+                let trpcError = TRPCError(message: error.message ?? "Unknown error", code: error.data?.code)
+
+                refusal = trpcError
+
+                for id in Array(pending.keys) {
+                    resolve(id, with: .failure(trpcError))
+                }
+            }
+
             return
         }
 
@@ -288,7 +302,7 @@ final class TRPCClient {
         receiveTask?.cancel()
         keepAliveTask?.cancel()
 
-        let error = TRPCError(message: "Disconnected from the server.", code: nil)
+        let error = refusal ?? TRPCError(message: "Disconnected from the server.", code: nil)
 
         for timeout in timeouts.values {
             timeout.cancel()

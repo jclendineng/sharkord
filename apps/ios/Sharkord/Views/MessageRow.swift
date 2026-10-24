@@ -3,6 +3,8 @@ import SwiftUI
 struct MessageRow: View {
     let message: Message
     let showsHeader: Bool
+    // the next message right under this one, with only the small gap between them
+    var isFollowedClosely = false
     var showsThreadLink = true
     let onLongPress: () -> Void
     let onDoubleTap: () -> Void
@@ -114,13 +116,15 @@ struct MessageRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.horizontal, 16)
-        // the press: a rounded card the same few points past the message on every side, inset from
-        // the screen's edges, rather than a band taking in the gap above a header
+        // the press: a rounded card a few points past the message, inset from the screen's edges,
+        // rather than a band taking in the gap above a header. between two lines of one stretch it
+        // only reaches into the small gap, past that it covered the edge of the line next to it
         .background {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(Theme.hover)
                 .padding(.horizontal, 6)
-                .padding(.vertical, -6)
+                .padding(.top, showsHeader ? -6 : -2)
+                .padding(.bottom, isFollowedClosely ? -2 : -6)
                 .opacity(isPressed ? 1 : 0)
         }
         .animation(.easeOut(duration: isPressed ? 0.08 : 0.2), value: isPressed)

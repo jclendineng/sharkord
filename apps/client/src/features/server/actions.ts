@@ -13,6 +13,7 @@ import { i18n } from '@/i18n';
 import { cleanup, connectToTRPC, getTRPCClient } from '@/lib/trpc';
 import type { TMessageJumpToTarget } from '@/types';
 import {
+  DisconnectCode,
   type TLocale,
   type TPublicServerSettings,
   type TServerInfo
@@ -228,9 +229,18 @@ const abandonReconnect = () => {
 
 // the server turned the session down, rather than a rate limit or a connection that dropped,
 // which leave the session good for the next try
-export const isAuthFailure = (error: unknown) =>
-  error instanceof TRPCClientError &&
-  (error.data?.code === 'UNAUTHORIZED' || error.data?.code === 'FORBIDDEN');
+export const isAuthFailure = (error: unknown) => {
+  if (!(error instanceof TRPCClientError)) return false;
+
+  const { data, cause } = error;
+
+  if (data?.code === 'UNAUTHORIZED' || data?.code === 'FORBIDDEN') return true;
+
+  // a token refused while the socket opens arrives as the close, see createContext on the server
+  return (
+    cause instanceof CloseEvent && cause.code === DisconnectCode.UNAUTHORIZED
+  );
+};
 
 // a reconnected socket starts unauthenticated: the server only sets ctx.authenticated and
 // tracks the user in joinServer, and every subscription sits behind that. so recovering a

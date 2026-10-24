@@ -292,6 +292,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 #### Server and web client
 
+- A saved sign in that is no longer good, after a kick, a ban or a password change, opens the connect screen again. It used to show connection lost, since the server's refusal reached the tab as a dropped connection.
 - A chat that lost its connection catches up when it is back. Messages sent while it was away used to stay missing until the channel was opened again.
 - A second dropped connection no longer signs you out. Reconnecting and the automatic sign in both joined at once, and the one that lost turned off login automatically and forgot the session.
 - An open thread catches up on replies sent while the connection was down.
@@ -353,6 +354,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 #### iOS app
 
+- A saved session the server no longer accepts, after a kick, a ban or a password change, signs out instead of trying to reconnect forever.
+- Holding a message in the middle of a run of lines lights only that line, instead of the highlight covering the edge of the line above.
 - A member's new name no longer goes back to the old one when lots of people join at once.
 - On a Mac every button takes a click anywhere on the shape it draws, not just on its icon, so a click near a button's edge or in a list row's gap no longer needs a second try.
 - On a Mac the call zooms out of the voice bar and back into it, instead of sliding off the bottom of the window.

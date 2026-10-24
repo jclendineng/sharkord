@@ -36,7 +36,10 @@ export enum DisconnectCode {
   UNEXPECTED = 1006,
   KICKED = 40000,
   BANNED = 40001,
-  SERVER_SHUTDOWN = 40002
+  SERVER_SHUTDOWN = 40002,
+  // in the 4000 to 4999 range the websocket spec leaves to applications, which the ones above
+  // predate
+  UNAUTHORIZED = 4401
 }
 
 export const MAX_USER_NAME_LENGTH = 24;

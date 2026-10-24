@@ -84,6 +84,13 @@ const initializeTRPC = (host: string) => {
         return;
       }
 
+      // only a connect() in flight can be refused its token, and its caller signs out on the
+      // rejected handshake. retrying here would send the same token again
+      if (info.code === DisconnectCode.UNAUTHORIZED) {
+        closeClient();
+        return;
+      }
+
       closeClient();
       reconnectToServer(info);
     },

@@ -136,6 +136,13 @@ const createContext = async ({
 
   const decodedUser = await getUserByToken(token);
 
+  // trpc reports a failed context in a reply with no request id, which the web client drops,
+  // so the handshake only ever saw a closed socket and retried a revoked token as a dropped
+  // connection. the close code is what tells the client to sign in again
+  if (!decodedUser) {
+    ws?.close(DisconnectCode.UNAUTHORIZED, 'Invalid authentication token');
+  }
+
   invariant(decodedUser, {
     code: 'UNAUTHORIZED',
     message: 'Invalid authentication token'
