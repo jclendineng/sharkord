@@ -2,7 +2,11 @@ import SwiftUI
 
 @main
 struct SharkordApp: App {
+    #if os(macOS)
+    @NSApplicationDelegateAdaptor private var appDelegate: AppDelegate
+    #else
     @UIApplicationDelegateAdaptor private var appDelegate: AppDelegate
+    #endif
     @State private var servers = ServerListStore()
     @Environment(\.scenePhase) private var scenePhase
 

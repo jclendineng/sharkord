@@ -62,11 +62,13 @@ struct VoiceBar: View {
         .matchedTransitionSource(id: "call", in: zoom) { source in
             source.clipShape(.rect(cornerRadius: 20))
         }
+        #if os(iOS)
         .background {
-            if !ProcessInfo.processInfo.isiOSAppOnMac {
+            if !Platform.isMac {
                 PictureInPictureSource(track: pictureInPictureTrack)
             }
         }
+        #endif
         .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }) { newFrame in
             frame = newFrame
         }
@@ -122,12 +124,12 @@ private struct CallPresentation: ViewModifier {
     func body(content: Content) -> some View {
         // handed over by hand: on a mac a sheet's background is worked out before it inherits
         // anything, so a sheet reading a store it was not given crashed on opening
-        if ProcessInfo.processInfo.isiOSAppOnMac {
+        if Platform.isMac {
             content
                 .transaction { transaction in
                     transaction.disablesAnimations = true
                 }
-                .fullScreenCover(isPresented: $isPresented) {
+                .fullScreen(isPresented: $isPresented) {
                     MacCallZoom(source: source, isPresented: $isPresented) {
                         VoiceRoomScreen()
                             .environment(session)
@@ -136,9 +138,11 @@ private struct CallPresentation: ViewModifier {
                 }
         } else {
             content
-                .fullScreenCover(isPresented: $isPresented) {
+                .fullScreen(isPresented: $isPresented) {
                     VoiceRoomScreen()
+                        #if os(iOS)
                         .navigationTransition(.zoom(sourceID: "call", in: zoom))
+                        #endif
                         .environment(session)
                         .environment(servers)
                 }

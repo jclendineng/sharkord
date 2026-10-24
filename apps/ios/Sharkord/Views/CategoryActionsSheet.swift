@@ -171,7 +171,7 @@ private struct CategoryNotificationsSheet: View {
             }
             .settingsListStyle()
             .navigationTitle("Notifications")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done", action: close)
@@ -233,7 +233,7 @@ struct CategoryEditor: View {
             }
             .settingsListStyle()
             .navigationTitle("Edit Category")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", action: close)

@@ -5,10 +5,14 @@ import AVFoundation
 // own. kept to on every route change, since webrtc's own audio device sets the session up where
 // nothing here can reach it
 enum AudioInputPreference {
+    #if os(iOS)
     private static let headsets: Set<AVAudioSession.Port> = [.bluetoothHFP, .headsetMic, .usbAudio]
     private static var observer: NSObjectProtocol?
+    #endif
 
+    // a mac has no audio session, webrtc's mac audio device picks the system's input
     static func start() {
+        #if os(iOS)
         guard observer == nil else {
             return
         }
@@ -18,9 +22,11 @@ enum AudioInputPreference {
                 apply()
             }
         }
+        #endif
     }
 
     static func apply() {
+        #if os(iOS)
         let session = AVAudioSession.sharedInstance()
 
         guard session.category == .playAndRecord, let inputs = session.availableInputs else {
@@ -45,5 +51,6 @@ enum AudioInputPreference {
         if current?.uid != target.uid {
             try? session.setPreferredInput(target)
         }
+        #endif
     }
 }

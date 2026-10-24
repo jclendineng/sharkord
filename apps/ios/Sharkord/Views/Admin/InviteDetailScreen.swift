@@ -91,7 +91,7 @@ struct InviteDetailScreen: View {
         }
         .settingsListStyle()
         .navigationTitle("Invite")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
         .alert("Delete this invite?", isPresented: $isDeleteConfirmPresented) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive, action: delete)
@@ -114,7 +114,7 @@ struct InviteDetailScreen: View {
         }
 
         // the web client's invite link, see table-invite.tsx
-        UIPasteboard.general.string = "\(address.baseURL.absoluteString)/?invite=\(invite.code)"
+        Platform.copy("\(address.baseURL.absoluteString)/?invite=\(invite.code)")
         isCopied = true
     }
 

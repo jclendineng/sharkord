@@ -76,9 +76,9 @@ struct InvitesScreen: View {
             Text(AdminInvite.deleteMessage)
         }
         .navigationTitle("Invites")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .barTrailing) {
                 Button("New Invite", systemImage: "plus", action: showCreate)
             }
         }
@@ -241,7 +241,7 @@ private struct CreateInviteSheet: View {
             }
             .settingsListStyle()
             .navigationTitle("New Invite")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", action: close)

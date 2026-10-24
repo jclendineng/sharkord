@@ -51,15 +51,17 @@ nonisolated final class ScreenCapture: NSObject, @unchecked Sendable {
         let picker = SCContentSharingPicker.shared
         var configuration = SCContentSharingPickerConfiguration()
 
+        #if os(iOS)
         configuration.showsMicrophoneControl = false
         configuration.showsCameraControl = false
+        #endif
         picker.defaultConfiguration = configuration
         picker.add(self)
         picker.isActive = true
 
         // a mac's control centre turns the display only picker down for an ipad app, its own
         // picker of a screen or a window opens
-        if ProcessInfo.processInfo.isiOSAppOnMac {
+        if Platform.isMac {
             picker.present()
         } else {
             picker.present(using: .display)

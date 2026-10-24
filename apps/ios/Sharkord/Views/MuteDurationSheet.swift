@@ -27,7 +27,7 @@ struct MuteDurationSheet: View {
             .scrollContentBackground(.hidden)
             .listHoverHighlight()
             .background(Theme.deepBackground)
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     VStack(spacing: 1) {

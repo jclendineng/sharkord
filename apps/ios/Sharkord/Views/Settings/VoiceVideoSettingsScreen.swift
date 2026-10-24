@@ -10,13 +10,15 @@ struct VoiceVideoSettingsScreen: View {
     @State private var hearYourself = false
     @State private var isCameraPreviewOn = false
     @State private var cameraPosition = AVCaptureDevice.Position.front
+    #if os(iOS)
     @State private var inputs: [AVAudioSessionPortDescription] = []
+    #endif
     // whether the input device lets its gain be set, most built in and usb mics on a mac do not
     @State private var canSetInputGain = false
     // the mic mode picked in control center, which the system changes without telling the app
     @State private var micMode = AVCaptureDevice.activeMicrophoneMode
 
-    private let isOnMac = ProcessInfo.processInfo.isiOSAppOnMac
+    private let isOnMac = Platform.isMac
 
     private var isInCall: Bool {
         servers.voiceSession != nil
@@ -49,6 +51,8 @@ struct VoiceVideoSettingsScreen: View {
             // app, and many have no mic either, a headset's is used once one is plugged in
             if isOnMac {
                 Section {
+                    // the native mac app's calls use webrtc's own input, which this does not pick yet
+                    #if os(iOS)
                     Picker("Input Device", selection: $settings.inputDeviceId) {
                         Text("Automatic").tag(String?.none)
 
@@ -56,6 +60,7 @@ struct VoiceVideoSettingsScreen: View {
                             Text(input.portName).tag(Optional(input.uid))
                         }
                     }
+                    #endif
 
                     HStack {
                         Text("Output Device")
@@ -228,7 +233,7 @@ struct VoiceVideoSettingsScreen: View {
         }
         .settingsListStyle()
         .navigationTitle("Voice & Video")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
         .onChange(of: settings.outputVolume) { _, volume in
             servers.voiceSession?.setOutputVolume(volume)
             tester.setOutputVolume(volume)
@@ -245,9 +250,11 @@ struct VoiceVideoSettingsScreen: View {
         .onChange(of: settings.pushToTalk) {
             servers.voiceSession?.applyPushToTalk()
         }
+        #if os(iOS)
         .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.routeChangeNotification)) { _ in
             loadInputs()
         }
+        #endif
         .task {
             loadInputs()
         }
@@ -265,6 +272,7 @@ struct VoiceVideoSettingsScreen: View {
 
     // the session only lists its inputs once it is active for recording, which a call already is
     private func loadInputs() {
+        #if os(iOS)
         guard isOnMac else {
             return
         }
@@ -279,6 +287,7 @@ struct VoiceVideoSettingsScreen: View {
 
         inputs = session.availableInputs ?? []
         canSetInputGain = session.isInputGainSettable
+        #endif
     }
 
     private func toggleMicTest() {
@@ -467,17 +476,30 @@ private struct MicLevelMeter: View {
 }
 
 // a plain capture preview, nothing is sent anywhere
-private struct CameraPreview: UIViewRepresentable {
+#if os(macOS)
+private typealias PreviewRepresentable = NSViewRepresentable
+#else
+private typealias PreviewRepresentable = UIViewRepresentable
+#endif
+
+private struct CameraPreview: PreviewRepresentable {
     let position: AVCaptureDevice.Position
 
-    func makeUIView(context: Context) -> PreviewView {
-        let view = PreviewView()
+    #if os(macOS)
+    func makeNSView(context: Context) -> PreviewView {
+        makeView(context: context)
+    }
 
-        view.previewLayer.videoGravity = .resizeAspectFill
-        view.previewLayer.session = context.coordinator.session
+    func updateNSView(_ view: PreviewView, context: Context) {
         context.coordinator.start(position)
+    }
 
-        return view
+    static func dismantleNSView(_ view: PreviewView, coordinator: Coordinator) {
+        coordinator.stop()
+    }
+    #else
+    func makeUIView(context: Context) -> PreviewView {
+        makeView(context: context)
     }
 
     func updateUIView(_ view: PreviewView, context: Context) {
@@ -486,6 +508,17 @@ private struct CameraPreview: UIViewRepresentable {
 
     static func dismantleUIView(_ view: PreviewView, coordinator: Coordinator) {
         coordinator.stop()
+    }
+    #endif
+
+    private func makeView(context: Context) -> PreviewView {
+        let view = PreviewView()
+
+        view.previewLayer.videoGravity = .resizeAspectFill
+        view.previewLayer.session = context.coordinator.session
+        context.coordinator.start(position)
+
+        return view
     }
 
     func makeCoordinator() -> Coordinator {
@@ -510,8 +543,10 @@ private struct CameraPreview: UIViewRepresentable {
                 session.beginConfiguration()
                 session.inputs.forEach { session.removeInput($0) }
 
+                // a mac's camera has no front or back, any camera there will do
                 if
-                    let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: newPosition),
+                    let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: newPosition)
+                        ?? AVCaptureDevice.default(for: .video),
                     let input = try? AVCaptureDeviceInput(device: device),
                     session.canAddInput(input)
                 {
@@ -535,6 +570,22 @@ private struct CameraPreview: UIViewRepresentable {
         }
     }
 
+    #if os(macOS)
+    final class PreviewView: NSView {
+        let previewLayer = AVCaptureVideoPreviewLayer()
+
+        override init(frame: NSRect) {
+            super.init(frame: frame)
+
+            wantsLayer = true
+            layer = previewLayer
+        }
+
+        required init?(coder: NSCoder) {
+            nil
+        }
+    }
+    #else
     final class PreviewView: UIView {
         override class var layerClass: AnyClass {
             AVCaptureVideoPreviewLayer.self
@@ -544,9 +595,25 @@ private struct CameraPreview: UIViewRepresentable {
             layer as! AVCaptureVideoPreviewLayer
         }
     }
+    #endif
 }
 
 // the system's own output list, the one place an ios app on a mac can switch where sound plays
+#if os(macOS)
+private struct OutputDevicePicker: NSViewRepresentable {
+    func makeNSView(context: Context) -> AVRoutePickerView {
+        let picker = AVRoutePickerView()
+
+        picker.isRoutePickerButtonBordered = false
+        picker.setRoutePickerButtonColor(NSColor(Theme.text), for: .normal)
+        picker.setRoutePickerButtonColor(NSColor(Theme.blurple), for: .active)
+
+        return picker
+    }
+
+    func updateNSView(_ picker: AVRoutePickerView, context: Context) {}
+}
+#else
 private struct OutputDevicePicker: UIViewRepresentable {
     func makeUIView(context: Context) -> AVRoutePickerView {
         let picker = AVRoutePickerView()
@@ -559,3 +626,4 @@ private struct OutputDevicePicker: UIViewRepresentable {
 
     func updateUIView(_ uiView: AVRoutePickerView, context: Context) {}
 }
+#endif

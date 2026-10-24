@@ -22,7 +22,7 @@ struct SettingsSheet: View {
     }
 
     var body: some View {
-        if ProcessInfo.processInfo.isiOSAppOnMac {
+        if Platform.isMac {
             splitView
         } else {
             stackView
@@ -54,7 +54,7 @@ struct SettingsSheet: View {
             }
             .settingsListStyle()
             .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close", systemImage: "xmark", action: close)
@@ -97,7 +97,7 @@ struct SettingsSheet: View {
             .settingsSidebarStyle()
             .searchable(text: $query, placement: .sidebar, prompt: "Search")
             .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close", systemImage: "xmark", action: close)
@@ -150,13 +150,19 @@ struct SettingsRow: View {
                     .foregroundStyle(Theme.muted)
             }
         }
-        .padding(.vertical, UIDevice.current.userInterfaceIdiom == .pad ? 8 : 4)
+        .padding(.vertical, Platform.isPad ? 8 : 4)
     }
 }
 
 extension View {
     func settingsListStyle() -> some View {
-        listStyle(.insetGrouped)
+        #if os(macOS)
+        let grouped = listStyle(.inset)
+        #else
+        let grouped = listStyle(.insetGrouped)
+        #endif
+
+        return grouped
             .scrollContentBackground(.hidden)
             .background(Theme.deepBackground)
             .listHoverHighlight()
@@ -166,14 +172,20 @@ extension View {
 
     // a list styled some other way still lights the row under a mac pointer
     func listHoverHighlight() -> some View {
+        #if os(macOS)
+        // appkit draws a mac list, the uikit probe below has nothing to find there
+        self
+        #else
         background {
-            if ProcessInfo.processInfo.isiOSAppOnMac {
+            if Platform.isMac {
                 ListHoverHighlighter()
             }
         }
+        #endif
     }
 }
 
+#if os(iOS)
 // a mac pointer over a settings row lights it the way channels and messages do. a list's rows are
 // collection view cells swiftui makes, so this finds the list's collection view and tints the
 // cell under the pointer through its background configuration, which keeps a section's rounded
@@ -295,6 +307,7 @@ private extension UIColor {
         )
     }
 }
+#endif
 
 enum UserSettingsPage: Hashable {
     case account

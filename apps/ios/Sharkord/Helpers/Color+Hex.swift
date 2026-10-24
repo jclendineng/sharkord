@@ -16,7 +16,7 @@ extension Color {
 extension Color {
     // the "#rrggbb" form users.update accepts
     var hexString: String {
-        let components = UIColor(self).cgColor.converted(
+        let components = PlatformColor(self).cgColor.converted(
             to: CGColorSpace(name: CGColorSpace.sRGB)!,
             intent: .defaultIntent,
             options: nil

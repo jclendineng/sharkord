@@ -27,14 +27,17 @@ final class MicrophoneTester {
         }
 
         do {
-            let session = AVAudioSession.sharedInstance()
             let settings = AppSettings.shared
 
             // processed as a call is, so the test is a way to hear each setting: echo cancellation
             // is ios's voice processing, which also brings its noise suppression and the mic modes
+            #if os(iOS)
+            let session = AVAudioSession.sharedInstance()
+
             try session.setCategory(.playAndRecord, mode: settings.echoCancellation ? .voiceChat : .default, options: [.defaultToSpeaker, .allowBluetoothHFP])
             try session.setActive(true)
             AudioInputPreference.apply()
+            #endif
 
             engine = AVAudioEngine()
 
@@ -87,7 +90,9 @@ final class MicrophoneTester {
         configurationTask = nil
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
+        #if os(iOS)
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        #endif
         isRunning = false
         level = 0
     }

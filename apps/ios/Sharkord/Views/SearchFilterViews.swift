@@ -278,11 +278,15 @@ struct DateFilterSheet: View {
     var body: some View {
         NavigationStack {
             DatePicker("", selection: $date, in: ...Date.now, displayedComponents: .date)
+                #if os(macOS)
+                .datePickerStyle(.graphical)
+                #else
                 .datePickerStyle(.wheel)
+                #endif
                 .labelsHidden()
                 .frame(maxWidth: .infinity)
                 .navigationTitle(picker.dateTitle)
-                .navigationBarTitleDisplayMode(.inline)
+                .inlineNavigationTitle()
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("Cancel", action: close)

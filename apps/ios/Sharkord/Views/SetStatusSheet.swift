@@ -76,7 +76,7 @@ struct SetStatusSheet: View {
             }
             .settingsListStyle()
             .navigationTitle("Set Status")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", action: close)

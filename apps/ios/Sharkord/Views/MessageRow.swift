@@ -65,13 +65,13 @@ struct MessageRow: View {
                 }
 
                 if let sticker = message.sticker {
-                    AnimatedImage(url: session.address?.fileURL(sticker.file), maxPointSize: 160, contentMode: .scaleAspectFit)
+                    AnimatedImage(url: session.address?.fileURL(sticker.file), maxPointSize: 160, contentMode: .fit)
                         .frame(width: 160, height: 160)
                         .accessibilityLabel(sticker.name)
                 }
 
                 ForEach(message.mediaImages, id: \.url) { media in
-                    AnimatedImage(url: URL(string: media.url), maxPointSize: 300, contentMode: .scaleAspectFit, sizesToImage: true)
+                    AnimatedImage(url: URL(string: media.url), maxPointSize: 300, contentMode: .fit, sizesToImage: true)
                         .frame(maxWidth: 280, maxHeight: 320, alignment: .leading)
                         .clipShape(.rect(cornerRadius: 8))
                 }
@@ -144,7 +144,9 @@ struct MessageRow: View {
         // simultaneous so it also works over an attachment's own button, a voice message's play
         // button for one. the sheet opening cancels that button's tap
         .simultaneousGesture(LongPressGesture(minimumDuration: 0.3).onEnded(longPressed))
+        #if os(iOS)
         .gesture(PressTracker(isPressed: $isFingerDown))
+        #endif
         .onSecondaryClick(perform: onSecondaryClick)
     }
 
@@ -171,7 +173,7 @@ struct MessageRow: View {
     }
 
     private func setHovered(_ hovered: Bool) {
-        guard hoverActions != nil, ProcessInfo.processInfo.isiOSAppOnMac else {
+        guard hoverActions != nil, Platform.isMac else {
             return
         }
 
@@ -179,7 +181,7 @@ struct MessageRow: View {
     }
 
     private func longPressed(_: Bool) {
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        Haptics.medium()
         onLongPress()
     }
 
@@ -352,6 +354,7 @@ private struct UndimmedButtonStyle: ButtonStyle {
 // swiftui gesture tracking it shared the touch with the list, and a menu opening part way through
 // a press left it holding on, the messages no longer scrolling. this one never claims the touch
 // and lets go as soon as the finger moves, so a scroll always wins
+#if os(iOS)
 private struct PressTracker: UIGestureRecognizerRepresentable {
     @Binding var isPressed: Bool
 
@@ -388,3 +391,4 @@ private struct PressTracker: UIGestureRecognizerRepresentable {
         }
     }
 }
+#endif

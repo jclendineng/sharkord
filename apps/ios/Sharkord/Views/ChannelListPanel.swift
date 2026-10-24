@@ -10,7 +10,7 @@ struct ChannelListPanel: View {
     // what the mac's server dropdown opened, shown here once it has closed
     @State private var menuSheet: ServerMenuSheet?
 
-    private let isOnMac = ProcessInfo.processInfo.isiOSAppOnMac
+    private let isOnMac = Platform.isMac
 
     // a sheet on a phone or ipad, discord's dropdown under the server name on a mac
     private var isServerSheetShown: Binding<Bool> {
@@ -261,7 +261,7 @@ private struct CategoryHeader: View {
             return
         }
 
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        Haptics.medium()
         // the menu takes over from the press, the header lets go as it rises
         isPressed = false
         isActionsPresented = true
@@ -281,7 +281,7 @@ private struct CategoryHeader: View {
         isPressed || isHovered || (isOnMac && isActionsPresented)
     }
 
-    private let isOnMac = ProcessInfo.processInfo.isiOSAppOnMac
+    private let isOnMac = Platform.isMac
 
     private var label: some View {
         HStack(spacing: 4) {
@@ -423,7 +423,7 @@ private struct ChannelRow: View {
         isPressed || (!isSelected && (isHovered || (isOnMac && isActionsSheetPresented)))
     }
 
-    private let isOnMac = ProcessInfo.processInfo.isiOSAppOnMac
+    private let isOnMac = Platform.isMac
 
     private func setPressed(_ pressed: Bool) {
         isPressed = pressed
@@ -475,7 +475,7 @@ private struct ChannelRow: View {
     }
 
     private func showActions() {
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        Haptics.medium()
         isPressed = false
         isActionsSheetPresented = true
     }
@@ -585,7 +585,7 @@ private struct VoiceParticipantRow: View {
     @State private var isPressed = false
     @State private var isHovered = false
 
-    private let isOnMac = ProcessInfo.processInfo.isiOSAppOnMac
+    private let isOnMac = Platform.isMac
 
     private var isHighlighted: Bool {
         isPressed || isHovered || (isOnMac && isMenuPresented)
@@ -683,7 +683,7 @@ private struct VoiceParticipantRow: View {
             return
         }
 
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        Haptics.medium()
         isPressed = false
         isMenuPresented = true
     }

@@ -23,7 +23,7 @@ struct AttachmentView: View {
                 .buttonStyle(.plain)
                 // handed over by hand: on a mac a sheet's background is worked out before it inherits
                 // anything, so a sheet reading a store it was not given crashed on opening
-                .fullScreenCover(isPresented: $isViewerPresented) {
+                .fullScreen(isPresented: $isViewerPresented) {
                     ImageViewer(url: url)
                         .environment(session)
                         .environment(servers)
@@ -52,7 +52,7 @@ private struct AttachmentImage: View {
     let file: SharkordFile
     let url: URL
 
-    @State private var image: UIImage?
+    @State private var image: PlatformImage?
 
     @Environment(\.displayScale) private var displayScale
 
@@ -64,7 +64,7 @@ private struct AttachmentImage: View {
 
     var body: some View {
         if let image = image ?? FileImageCache.cached(file, at: url) {
-            Image(uiImage: image)
+            Image(platformImage: image)
                 .resizable()
                 .scaledToFit()
         } else {
@@ -85,13 +85,13 @@ private struct FileCard: View {
 
     @Environment(SessionStore.self) private var session
 
-    @State private var thumbnail: UIImage?
+    @State private var thumbnail: PlatformImage?
 
     var body: some View {
         OpenFileButton(file: file) { isLoading in
             VStack(alignment: .leading, spacing: 0) {
                 if let thumbnail = thumbnail ?? FileThumbnails.cached(for: file, from: url) {
-                    Image(uiImage: thumbnail)
+                    Image(platformImage: thumbnail)
                         .resizable()
                         .scaledToFit()
                         .frame(maxWidth: .infinity, maxHeight: 200)

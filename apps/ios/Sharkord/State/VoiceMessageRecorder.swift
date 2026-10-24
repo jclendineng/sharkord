@@ -20,11 +20,13 @@ final class VoiceMessageRecorder {
             throw VoiceConnection.VoiceError(message: "Allow microphone access in Settings to record a voice message.")
         }
 
+        #if os(iOS)
         let session = AVAudioSession.sharedInstance()
 
         try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetoothHFP])
         try session.setActive(true)
         AudioInputPreference.apply()
+        #endif
 
         let url = FileManager.default.temporaryDirectory.appending(path: "voice-message-\(UUID().uuidString).m4a")
         let recorder = try AVAudioRecorder(url: url, settings: [
@@ -81,7 +83,9 @@ final class VoiceMessageRecorder {
         recorder?.stop()
         recorder = nil
         isRecording = false
+        #if os(iOS)
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        #endif
     }
 
     private func sample() {

@@ -63,7 +63,7 @@ struct ForwardSheet: View {
             .settingsListStyle()
             .searchable(text: $query, prompt: "Search")
             .navigationTitle("Forward To")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", action: close)

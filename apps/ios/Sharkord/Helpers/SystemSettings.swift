@@ -1,4 +1,8 @@
+#if os(macOS)
+import AppKit
+#else
 import UIKit
+#endif
 
 // where a permission is changed. an iphone or ipad app's own settings page is what apple's
 // links open, but on a mac they land on Touch Alternatives, the page for running an ipad app
@@ -10,7 +14,7 @@ enum SystemSettings {
         case photos
     }
 
-    private static let isMac = ProcessInfo.processInfo.isiOSAppOnMac
+    private static let isMac = Platform.isMac
 
     // what the app is called on this device, for "set in ..." wording
     static var name: String {
@@ -18,9 +22,11 @@ enum SystemSettings {
     }
 
     static func url(for pane: Pane) -> URL? {
+        #if os(iOS)
         guard isMac else {
             return URL(string: pane == .notifications ? UIApplication.openNotificationSettingsURLString : UIApplication.openSettingsURLString)
         }
+        #endif
 
         switch pane {
         case .notifications:

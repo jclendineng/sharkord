@@ -139,7 +139,7 @@ struct ChannelActionsSheet: View {
     }
 
     private func copyLink() {
-        UIPasteboard.general.url = session.link(to: channel.id)
+        Platform.copy(session.link(to: channel.id))
         closeMenu()
     }
 
@@ -375,7 +375,7 @@ struct ChannelNotificationsSheet: View {
             }
             .settingsListStyle()
             .navigationTitle("Notifications")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done", action: close)

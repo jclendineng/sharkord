@@ -1,7 +1,11 @@
 import CryptoKit
 import ImageIO
 import SwiftUI
+#if os(macOS)
+import AppKit
+#else
 import UIKit
+#endif
 
 // a gif, apng or animated webp that plays, which AsyncImage does not do. frames are decoded off
 // the main thread at the size they are shown and kept, so a grid of them scrolls smoothly
@@ -9,16 +13,16 @@ struct AnimatedImage: View {
     let url: URL?
     // the longest side it is drawn at, in points, so frames are not decoded larger than that
     var maxPointSize: CGFloat = 320
-    var contentMode: UIView.ContentMode = .scaleAspectFill
+    var contentMode: ContentMode = .fill
     // takes the image's own shape once loaded, for a gif shown in a message
     var sizesToImage = false
 
-    @State private var image: UIImage?
+    @State private var image: PlatformImage?
 
     // what is on screen: the loaded image, one already decoded for this url, or the first frame
     // kept on disk, so a row drawn again, or after a launch, keeps its size instead of starting
     // empty and growing
-    private var shown: UIImage? {
+    private var shown: PlatformImage? {
         image ?? url.flatMap { url in
             AnimatedImageLoader.shared.cached(for: url, maxPixelSize: maxPointSize * 3)
                 ?? AnimatedImageLoader.shared.still(for: url, maxPixelSize: maxPointSize * 3)
@@ -56,9 +60,37 @@ struct AnimatedImage: View {
     }
 }
 
+#if os(macOS)
+// plays a gif by itself, from the image made of the file's own data
+private struct AnimatedImageView: NSViewRepresentable {
+    let image: PlatformImage?
+    let contentMode: ContentMode
+
+    func makeNSView(context: Context) -> NSImageView {
+        let view = NSImageView()
+
+        view.animates = true
+        view.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        view.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+        view.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        view.setContentHuggingPriority(.defaultLow, for: .vertical)
+
+        return view
+    }
+
+    func updateNSView(_ view: NSImageView, context: Context) {
+        // appkit has no aspect fill, so a filled image is fitted for now
+        view.imageScaling = .scaleProportionallyUpOrDown
+
+        if view.image !== image {
+            view.image = image
+        }
+    }
+}
+#else
 private struct AnimatedImageView: UIViewRepresentable {
-    let image: UIImage?
-    let contentMode: UIView.ContentMode
+    let image: PlatformImage?
+    let contentMode: ContentMode
 
     func makeUIView(context: Context) -> UIImageView {
         let view = UIImageView()
@@ -73,22 +105,23 @@ private struct AnimatedImageView: UIViewRepresentable {
     }
 
     func updateUIView(_ view: UIImageView, context: Context) {
-        view.contentMode = contentMode
+        view.contentMode = contentMode == .fit ? .scaleAspectFit : .scaleAspectFill
 
         if view.image !== image {
             view.image = image
         }
     }
 }
+#endif
 
 // downloads through the shared url cache, decodes once per url and size
 actor AnimatedImageLoader {
     static let shared = AnimatedImageLoader()
 
     // nscache is safe from any thread, so a view can read it while it is drawn
-    nonisolated(unsafe) private let cache = NSCache<NSString, UIImage>()
+    nonisolated(unsafe) private let cache = NSCache<NSString, PlatformImage>()
     // first frames read back from disk, which a row asks for each time it is drawn
-    nonisolated(unsafe) private let stills = NSCache<NSString, UIImage>()
+    nonisolated(unsafe) private let stills = NSCache<NSString, PlatformImage>()
     // what firstFrame downloaded, handed to the full decode right after instead of fetched twice
     private var downloads: [URL: Data] = [:]
 
@@ -115,13 +148,13 @@ actor AnimatedImageLoader {
         "\(url.absoluteString)@\(Int(maxPixelSize))" as NSString
     }
 
-    nonisolated func cached(for url: URL, maxPixelSize: CGFloat) -> UIImage? {
+    nonisolated func cached(for url: URL, maxPixelSize: CGFloat) -> PlatformImage? {
         cache.object(forKey: Self.key(url, maxPixelSize))
     }
 
     // the first frame kept from an earlier decode, a small file read there and then so a launch
     // draws it in the first frame, as FileImageCache does for files
-    nonisolated func still(for url: URL, maxPixelSize: CGFloat) -> UIImage? {
+    nonisolated func still(for url: URL, maxPixelSize: CGFloat) -> PlatformImage? {
         let key = Self.key(url, maxPixelSize)
 
         if let still = stills.object(forKey: key) {
@@ -131,7 +164,7 @@ actor AnimatedImageLoader {
         guard
             let stillURL = Self.stillURL(for: key),
             let data = try? Data(contentsOf: stillURL),
-            let still = UIImage(data: data)
+            let still = PlatformImage(data: data)
         else {
             return nil
         }
@@ -141,7 +174,7 @@ actor AnimatedImageLoader {
         return still
     }
 
-    func firstFrame(for url: URL, maxPixelSize: CGFloat) async -> UIImage? {
+    func firstFrame(for url: URL, maxPixelSize: CGFloat) async -> PlatformImage? {
         guard let data = await download(url) else {
             return nil
         }
@@ -155,7 +188,7 @@ actor AnimatedImageLoader {
             return nil
         }
 
-        let still = UIImage(cgImage: frame)
+        let still = PlatformImage(cgImage: frame)
         let key = Self.key(url, maxPixelSize)
 
         stills.setObject(still, forKey: key)
@@ -167,7 +200,7 @@ actor AnimatedImageLoader {
         return still
     }
 
-    func image(for url: URL, maxPixelSize: CGFloat) async -> UIImage? {
+    func image(for url: URL, maxPixelSize: CGFloat) async -> PlatformImage? {
         let key = Self.key(url, maxPixelSize)
 
         if let cached = cache.object(forKey: key) {
@@ -210,15 +243,17 @@ actor AnimatedImageLoader {
         ]
     }
 
-    private static func cost(of image: UIImage) -> Int {
+    private static func cost(of image: PlatformImage) -> Int {
+        #if os(iOS)
         if let frames = image.images {
             return frames.reduce(0) { $0 + bytes(of: $1) }
         }
+        #endif
 
         return bytes(of: image)
     }
 
-    private static func bytes(of image: UIImage) -> Int {
+    private static func bytes(of image: PlatformImage) -> Int {
         guard let frame = image.cgImage else {
             return 0
         }
@@ -227,7 +262,7 @@ actor AnimatedImageLoader {
     }
 
     // every frame of an animated image at the given size, with its own frame durations
-    private static func decode(_ data: Data, maxPixelSize: CGFloat) -> UIImage? {
+    private static func decode(_ data: Data, maxPixelSize: CGFloat) -> PlatformImage? {
         guard let source = CGImageSourceCreateWithData(data as CFData, nil) else {
             return nil
         }
@@ -236,10 +271,15 @@ actor AnimatedImageLoader {
         let options = thumbnailOptions(maxPixelSize)
 
         guard count > 1 else {
-            return CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary).map { UIImage(cgImage: $0) }
+            return CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary).map { PlatformImage(cgImage: $0) }
         }
 
-        var frames: [UIImage] = []
+        #if os(macOS)
+        // appkit plays the file's own frames, it has no image made from a list of them
+        return NSImage(data: data)
+        #else
+
+        var frames: [PlatformImage] = []
         var duration: Double = 0
 
         frames.reserveCapacity(count)
@@ -251,12 +291,13 @@ actor AnimatedImageLoader {
                     return
                 }
 
-                frames.append(UIImage(cgImage: frame))
+                frames.append(PlatformImage(cgImage: frame))
                 duration += frameDuration(source, at: index)
             }
         }
 
-        return UIImage.animatedImage(with: frames, duration: max(duration, 0.1))
+        return PlatformImage.animatedImage(with: frames, duration: max(duration, 0.1))
+        #endif
     }
 
     // gifs, apngs and webps each keep the delay under their own key

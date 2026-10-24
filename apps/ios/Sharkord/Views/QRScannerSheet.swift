@@ -16,7 +16,7 @@ struct QRScannerSheet: View {
         NavigationStack {
             content
                 .navigationTitle("Scan a QR Code")
-                .navigationBarTitleDisplayMode(.inline)
+                .inlineNavigationTitle()
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("Cancel", action: close)
@@ -57,11 +57,15 @@ struct QRScannerSheet: View {
     // visionkit scanner, so there it is the plain camera with vision reading each frame
     @ViewBuilder
     private var scanner: some View {
+        #if os(macOS)
+        CameraQRScanner(onScan: onScan)
+        #else
         if DataScannerViewController.isSupported && DataScannerViewController.isAvailable {
             QRScanner(onScan: onScan)
         } else {
             CameraQRScanner(onScan: onScan)
         }
+        #endif
     }
 
     private func openSettings() {
@@ -75,6 +79,7 @@ struct QRScannerSheet: View {
     }
 }
 
+#if os(iOS)
 private struct QRScanner: UIViewControllerRepresentable {
     let onScan: (String) -> Void
 
@@ -121,21 +126,45 @@ private struct QRScanner: UIViewControllerRepresentable {
     }
 }
 
-private struct CameraQRScanner: UIViewRepresentable {
+#endif
+
+#if os(macOS)
+private typealias CameraViewRepresentable = NSViewRepresentable
+#else
+private typealias CameraViewRepresentable = UIViewRepresentable
+#endif
+
+private struct CameraQRScanner: CameraViewRepresentable {
     let onScan: (String) -> Void
 
+    #if os(macOS)
+    func makeNSView(context: Context) -> CameraPreviewView {
+        makeView(context: context)
+    }
+
+    func updateNSView(_ view: CameraPreviewView, context: Context) {}
+
+    static func dismantleNSView(_ view: CameraPreviewView, coordinator: Coordinator) {
+        coordinator.stop()
+    }
+    #else
     func makeUIView(context: Context) -> CameraPreviewView {
-        let view = CameraPreviewView()
-
-        context.coordinator.start(in: view)
-
-        return view
+        makeView(context: context)
     }
 
     func updateUIView(_ view: CameraPreviewView, context: Context) {}
 
     static func dismantleUIView(_ view: CameraPreviewView, coordinator: Coordinator) {
         coordinator.stop()
+    }
+    #endif
+
+    private func makeView(context: Context) -> CameraPreviewView {
+        let view = CameraPreviewView()
+
+        context.coordinator.start(in: view)
+
+        return view
     }
 
     func makeCoordinator() -> Coordinator {
@@ -216,6 +245,22 @@ private struct CameraQRScanner: UIViewRepresentable {
     }
 }
 
+#if os(macOS)
+private final class CameraPreviewView: NSView {
+    let previewLayer = AVCaptureVideoPreviewLayer()
+
+    override init(frame: NSRect) {
+        super.init(frame: frame)
+
+        wantsLayer = true
+        layer = previewLayer
+    }
+
+    required init?(coder: NSCoder) {
+        nil
+    }
+}
+#else
 private final class CameraPreviewView: UIView {
     override static var layerClass: AnyClass {
         AVCaptureVideoPreviewLayer.self
@@ -225,3 +270,4 @@ private final class CameraPreviewView: UIView {
         layer as! AVCaptureVideoPreviewLayer
     }
 }
+#endif

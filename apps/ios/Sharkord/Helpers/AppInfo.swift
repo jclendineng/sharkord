@@ -1,4 +1,7 @@
+import Foundation
+#if canImport(UIKit)
 import UIKit
+#endif
 
 enum AppInfo {
     static var version: String {
@@ -13,17 +16,21 @@ enum AppInfo {
     // devices list instead of showing the networking library. the ipad app on a mac says it is
     // an ipad unless told otherwise, so there it is shaped like safari on a mac
     static let userAgent: String = {
-        if ProcessInfo.processInfo.isiOSAppOnMac {
+        if Platform.isMac {
             let system = ProcessInfo.processInfo.operatingSystemVersion
             let os = "\(system.majorVersion)_\(system.minorVersion)"
 
             return "Mozilla/5.0 (Macintosh; Intel Mac OS X \(os)) AppleWebKit/605.1.15 (KHTML, like Gecko) Sharkord/\(version)"
         }
 
+        #if os(iOS)
         let device = UIDevice.current
         let model = device.userInterfaceIdiom == .pad ? "iPad" : "iPhone"
         let os = device.systemVersion.replacingOccurrences(of: ".", with: "_")
 
         return "Mozilla/5.0 (\(model); CPU \(model) OS \(os) like Mac OS X) Sharkord/\(version)"
+        #else
+        return "Sharkord/\(version)"
+        #endif
     }()
 }

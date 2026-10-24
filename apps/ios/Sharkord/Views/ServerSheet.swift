@@ -181,7 +181,7 @@ struct ServerSheet: View {
     }
 
     private func copy(_ host: String) {
-        UIPasteboard.general.string = host
+        Platform.copy(host)
         isAddressCopied = true
     }
 
@@ -348,7 +348,7 @@ private struct ServerMenuSheetPresentation: ViewModifier {
                 screen(for: sheet)
                     .appSheet(addsClose: sheet == .notifications)
             }
-            .fullScreenCover(item: fullWindowBinding) { sheet in
+            .fullScreen(item: fullWindowBinding) { sheet in
                 screen(for: sheet)
                     .appSheet()
             }

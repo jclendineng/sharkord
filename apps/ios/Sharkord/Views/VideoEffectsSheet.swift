@@ -82,7 +82,7 @@ struct VideoEffectsSheet: View {
             }
             .background(Theme.listBackground)
             .navigationTitle("Video Effects")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done", action: close)

@@ -45,7 +45,7 @@ struct PluginsScreen: View {
             }
         }
         .navigationTitle("Plugins")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
         .task {
             await load()
         }
@@ -228,7 +228,7 @@ private struct PluginDetailScreen: View {
         }
         .settingsListStyle()
         .navigationTitle(plugin?.title ?? "Plugin")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
         .confirmationDialog("Remove \(plugin?.title ?? "plugin")?", isPresented: $isConfirmingRemove, titleVisibility: .visible) {
             Button("Remove Plugin", role: .destructive, action: remove)
         } message: {
@@ -318,7 +318,7 @@ private struct PluginSettingsScreen: View {
             }
         }
         .navigationTitle("Settings")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 if isSaving {
@@ -363,7 +363,7 @@ private struct PluginSettingsScreen: View {
                     get: { text(values[definition.key]) },
                     set: { values[definition.key] = Double($0).map(PluginSettingValue.number) ?? values[definition.key] }
                 ))
-                .keyboardType(.decimalPad)
+                .keyboard(.decimal)
                 .multilineTextAlignment(.trailing)
             }
         case "secret":
@@ -387,7 +387,7 @@ private struct PluginSettingsScreen: View {
                     get: { text(values[definition.key]) },
                     set: { values[definition.key] = .string($0) }
                 ), axis: .vertical)
-                .textInputAutocapitalization(.never)
+                .noAutocapitalization()
                 .autocorrectionDisabled()
             }
         }
@@ -513,7 +513,7 @@ private struct PluginLogsScreen: View {
             }
         }
         .navigationTitle("Logs")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
         .task {
             await load()
         }

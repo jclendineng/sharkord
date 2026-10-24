@@ -27,7 +27,7 @@ struct FileCardTile: View {
 
     @Environment(SessionStore.self) private var session
 
-    @State private var thumbnail: UIImage?
+    @State private var thumbnail: PlatformImage?
 
     var body: some View {
         OpenFileButton(file: file.file) { isLoading in
@@ -70,7 +70,7 @@ struct FileCardTile: View {
             // the page fills the card from its top, as discord shows one
             Color.clear
                 .overlay(alignment: .top) {
-                    Image(uiImage: thumbnail)
+                    Image(platformImage: thumbnail)
                         .resizable()
                         .scaledToFill()
                 }
@@ -214,7 +214,7 @@ struct PinCardTile: View {
         } else if let media = message.mediaImages.first {
             AnimatedImage(url: URL(string: media.url), maxPointSize: 300)
         } else if let sticker = message.sticker {
-            AnimatedImage(url: session.address?.fileURL(sticker.file), maxPointSize: 160, contentMode: .scaleAspectFit)
+            AnimatedImage(url: session.address?.fileURL(sticker.file), maxPointSize: 160, contentMode: .fit)
                 .padding(12)
         } else if let favicon = message.linkPreviews.first.flatMap({ $0.previewImageURL == nil ? $0.faviconURL : nil }) {
             SiteIcon(url: favicon, fallback: Theme.deepBackground)
@@ -246,7 +246,7 @@ struct PinCardTile: View {
     }
 
     private func copyText() {
-        UIPasteboard.general.string = text
+        Platform.copy(text)
     }
 
     private func unpin() {
@@ -271,7 +271,7 @@ private struct CardActions: View {
 
         if let link {
             Button("Copy Link", systemImage: "doc.on.doc") {
-                UIPasteboard.general.url = link
+                Platform.copy(link)
             }
         }
     }

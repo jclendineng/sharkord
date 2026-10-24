@@ -60,7 +60,7 @@ struct ChatScreen: View {
     // a wide window with room for it beside the conversation, never a direct message. an ipad
     // in landscape has the same room a mac window does, and used to be left out entirely
     private var canShowMembers: Bool {
-        (ProcessInfo.processInfo.isiOSAppOnMac || UIDevice.current.userInterfaceIdiom == .pad)
+        (Platform.isMac || Platform.isPad)
             && channel?.isDm == false
             && hasRoomForMembers
     }
@@ -95,7 +95,7 @@ struct ChatScreen: View {
                     .frame(width: 1)
 
                 ThreadScreen(parent: threadParent, onClose: closeThreadPanel)
-                    .frame(width: ProcessInfo.processInfo.isiOSAppOnMac ? 420 : min(420, chatWidth * 0.45))
+                    .frame(width: Platform.isMac ? 420 : min(420, chatWidth * 0.45))
                     .id(threadParent.id)
                     .transition(.opacity)
             } else if canShowMembers && showsMemberList {
@@ -155,19 +155,19 @@ struct ChatScreen: View {
         .safeAreaInset(edge: .top, spacing: 0) {
             SessionBanners(showsVoiceTakenOver: expandChat == nil)
         }
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(Theme.chatBackground, for: .navigationBar)
-        .toolbarBackgroundVisibility(.visible, for: .navigationBar)
-        .toolbarVisibility(.hidden, for: .tabBar)
+        .inlineNavigationTitle()
+        .navigationBarBackground(Theme.chatBackground)
+        .navigationBarBackgroundVisible()
+        .tabBarHidden()
         .toolbar {
             if let showChannelList {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: .barLeading) {
                     Button("Channels", systemImage: "chevron.left", action: showChannelList)
                         .tint(Theme.header)
                 }
             }
 
-            PlainToolbarItem(placement: .topBarLeading) {
+            PlainToolbarItem(placement: .barLeading) {
                 ChatTitle(
                     title: title,
                     partner: partner,
@@ -187,7 +187,7 @@ struct ChatScreen: View {
             }
 
             if canShowMembers {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .barTrailing) {
                     Button(action: toggleMemberList) {
                         Image(systemName: isMemberListShown ? "person.2.fill" : "person.2")
                             .foregroundStyle(isMemberListShown ? Theme.header : Theme.text)
@@ -196,41 +196,41 @@ struct ChatScreen: View {
                     .accessibilityLabel(isMemberListShown ? "Hide Member List" : "Show Member List")
                     // the icon grows under the pointer, as discord's do. the system's own circle drawn behind
                     // it on top of that read as a shadow
-                    .hoverEffectDisabled()
+                    .noHoverEffect()
                 }
             }
 
             if canShowThreadPanel {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .barTrailing) {
                     Button(action: showThreads) {
                         Image(systemName: "bubble.left.and.text.bubble.right")
                             .foregroundStyle(Theme.text)
                             .hoverPop()
                     }
                     .accessibilityLabel("Threads")
-                    .hoverEffectDisabled()
+                    .noHoverEffect()
                 }
             }
 
-            if ProcessInfo.processInfo.isiOSAppOnMac && channel?.isDm == false {
-                ToolbarItem(placement: .topBarTrailing) {
+            if Platform.isMac && channel?.isDm == false {
+                ToolbarItem(placement: .barTrailing) {
                     NotificationBell(channelId: channelId)
                 }
             }
 
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .barTrailing) {
                 Button(action: showPins) {
                     Image(systemName: "pin")
                         .foregroundStyle(Theme.text)
                         .hoverPop()
                 }
                 .accessibilityLabel("Pinned Messages")
-                .hoverEffectDisabled()
+                .noHoverEffect()
             }
 
             // discord's mac keeps the inbox at the top right rather than in the user bar
-            if ProcessInfo.processInfo.isiOSAppOnMac {
-                ToolbarItem(placement: .topBarTrailing) {
+            if Platform.isMac {
+                ToolbarItem(placement: .barTrailing) {
                     InboxButton(action: showInbox)
                 }
             }
@@ -253,7 +253,7 @@ struct ChatScreen: View {
                 }
                 .sharedBackgroundVisibility(.hidden)
             } else {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .barTrailing) {
                     SearchLink(route: SearchRoute(channelId: channelId)) {
                         Image(systemName: "magnifyingglass")
                             .foregroundStyle(Theme.text)
@@ -305,7 +305,7 @@ struct ChatScreen: View {
     // the conversation. an ipad in portrait is not, and pushes threads and opens search from
     // its magnifier instead
     private var hasDesktopRoom: Bool {
-        ProcessInfo.processInfo.isiOSAppOnMac || (usesDesktopLayout && chatWidth >= 640)
+        Platform.isMac || (usesDesktopLayout && chatWidth >= 640)
     }
 
     // a channel's threads, never a direct message's
@@ -384,7 +384,7 @@ struct ChatScreen: View {
     // before another screen goes over the chat: swiftui gives a field its focus back when the
     // chat shows again, so a keyboard still up on leaving would come back unasked
     private func dismissKeyboard() {
-        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        Platform.dismissKeyboard()
     }
 }
 
@@ -491,7 +491,7 @@ private struct NotificationBell: View {
                 .hoverPop()
         }
         .accessibilityLabel("Notification Settings")
-        .hoverEffectDisabled()
+        .noHoverEffect()
     }
 
     private func setLevel(_ newLevel: ChannelNotificationLevel) {
@@ -623,7 +623,7 @@ private struct ChatTitle: View {
         // a fixed slot rather than a fixed-size title: .fixedSize() forced the whole name into
         // the bar and pushed search and pins off, while an unbounded text collapsed to a couple
         // of characters under the toolbar's minimum width. a slot truncates a long name instead
-        .frame(width: UIDevice.current.userInterfaceIdiom == .pad ? 220 : 160, alignment: .leading)
+        .frame(width: Platform.isPad ? 220 : 160, alignment: .leading)
     }
 }
 
@@ -704,6 +704,6 @@ private struct InboxButton: View {
                 }
         }
         .accessibilityLabel("Inbox")
-        .hoverEffectDisabled()
+        .noHoverEffect()
     }
 }

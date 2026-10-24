@@ -86,7 +86,7 @@ struct EmojiManagerList: View {
         }
         .settingsListStyle()
         .navigationTitle("Server Emoji")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
         .fileImporter(
             isPresented: $isImporterPresented,
             allowedContentTypes: [.png, .jpeg, .gif, .webP, .image],
@@ -102,7 +102,7 @@ struct EmojiManagerList: View {
         }
         .alert("Rename Emoji", isPresented: isRenaming) {
             TextField("Name", text: $newName)
-                .textInputAutocapitalization(.never)
+                .noAutocapitalization()
                 .autocorrectionDisabled()
 
             Button("Save", action: saveRename)

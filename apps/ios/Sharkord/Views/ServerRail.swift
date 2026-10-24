@@ -12,7 +12,7 @@ struct ServerRail: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 8) {
-                if ProcessInfo.processInfo.isiOSAppOnMac {
+                if Platform.isMac {
                     HistoryButtons()
                 }
 
@@ -112,7 +112,7 @@ private struct ServerRailItem: View {
     }
 
     private func showMenu() {
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        Haptics.medium()
         servers.railMenu = ServerListStore.RailMenu(server: server, iconFrame: frame)
     }
 }

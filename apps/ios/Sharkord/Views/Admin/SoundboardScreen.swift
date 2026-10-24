@@ -133,7 +133,7 @@ struct SoundboardScreen: View {
         }
         .settingsListStyle()
         .navigationTitle("Soundboard")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
         .task(loadLibrary)
         .modifier(SoundSearchField(isEnabled: isSoundSearchEnabled, query: $query))
         // waits for typing to pause before searching, and a new letter cancels the search before
@@ -463,7 +463,7 @@ private struct SoundEditor: View {
         }
         .settingsListStyle()
         .navigationTitle("Edit Sound")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button("Save", action: save)

@@ -1,5 +1,9 @@
 import SwiftUI
+#if os(macOS)
+import AppKit
+#else
 import UIKit
+#endif
 
 // discord's "leaving" warning before a link opens outside the app: where it goes, the domain in
 // bold, and a box to trust that domain from then on. links to the servers you are signed in to,
@@ -50,6 +54,34 @@ extension View {
 // root could not do while a sheet is up
 @MainActor
 private enum LeavingWarning {
+    #if os(macOS)
+    static func present(for url: URL, host: String) {
+        guard let content = NSApp.keyWindow?.contentView else {
+            return
+        }
+
+        var overlay: NSView?
+
+        let card = LeavingCard(url: url, host: host) { visit, trust in
+            if trust {
+                TrustedLinkDomains.add(host)
+            }
+
+            overlay?.removeFromSuperview()
+
+            if visit {
+                NSWorkspace.shared.open(url)
+            }
+        }
+
+        let hosting = NSHostingView(rootView: card)
+
+        hosting.frame = content.bounds
+        hosting.autoresizingMask = [.width, .height]
+        content.addSubview(hosting)
+        overlay = hosting
+    }
+    #else
     static func present(for url: URL, host: String) {
         guard let top = UIApplication.shared.topViewController else {
             return
@@ -78,6 +110,7 @@ private enum LeavingWarning {
 
         top.present(hosting, animated: true)
     }
+    #endif
 }
 
 private struct LeavingCard: View {

@@ -2,7 +2,11 @@ import AVFoundation
 import Foundation
 import Mediasoup
 import os
+#if os(macOS)
+import AppKit
+#else
 import UIKit
+#endif
 import WebRTC
 
 // the webrtc side of a voice channel: one send transport carrying the microphone and camera,
@@ -74,10 +78,12 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
         onFailure: @escaping @MainActor @Sendable () -> Void,
         onVideo: @escaping VideoHandler
     ) {
-        // the mixing device sets up the audio session itself
+        // the mixing device sets up the audio session itself. a mac has no audio session
+        #if os(iOS)
         if mixingDevice == nil {
             Self.configureAudioSession(audioOptions)
         }
+        #endif
 
         self.audioOptions = audioOptions
         self.mixingDevice = mixingDevice
@@ -87,6 +93,12 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
         self.onVideo = onVideo
         // the factories are passed either way: the plain init knows only h264 baseline, so the
         // phone could not take vp8, vp9 or av1 from a browser
+        #if os(macOS)
+        self.factory = RTCPeerConnectionFactory(
+            encoderFactory: RTCDefaultVideoEncoderFactory(),
+            decoderFactory: RTCDefaultVideoDecoderFactory()
+        )
+        #else
         self.factory = mixingDevice.map { mixer in
             RTCPeerConnectionFactory(
                 encoderFactory: RTCDefaultVideoEncoderFactory(),
@@ -97,7 +109,10 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
             encoderFactory: RTCDefaultVideoEncoderFactory(),
             decoderFactory: RTCDefaultVideoDecoderFactory()
         )
+        #endif
         self.device = Device(pcFactory: factory)
+        // only ios takes the hardware encoder away in the background
+        #if os(iOS)
         self.backgroundObserver = NotificationCenter.default.addObserver(
             forName: UIApplication.didEnterBackgroundNotification,
             object: nil,
@@ -108,6 +123,7 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
                 self?.checkScreenEncoder()
             }
         }
+        #endif
     }
 
     func start(routerRtpCapabilities: String, micMuted: Bool, soundMuted: Bool, canSpeak: Bool) async throws {
@@ -671,9 +687,11 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
 
         device.activeVideoMaxFrameDuration = CMTime(value: 1, timescale: CMTimeScale(slowestRate))
 
+        #if os(iOS)
         if device.isLowLightBoostSupported {
             device.automaticallyEnablesLowLightBoostWhenAvailable = true
         }
+        #endif
 
         device.unlockForConfiguration()
     }
@@ -788,6 +806,7 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
 
     // speaker by default like other voice chat apps, voiceChat mode adds the system's own echo
     // cancellation on top of webrtc's
+    #if os(iOS)
     private static func configureAudioSession(_ options: AudioOptions) {
         let configuration = RTCAudioSessionConfiguration.webRTC()
 
@@ -801,6 +820,7 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
 
         RTCAudioSessionConfiguration.setWebRTC(configuration)
     }
+    #endif
 }
 
 // answers the transports' signaling callbacks, which arrive on webrtc's own threads
@@ -938,6 +958,22 @@ nonisolated final class ScreenFrameSink: @unchecked Sendable {
     }
 }
 
+#if os(macOS)
+// a mac's camera is never turned, its frames go through as they come
+nonisolated private final class CameraRotation: NSObject, RTCVideoCapturerDelegate, @unchecked Sendable {
+    private let source: RTCVideoSource
+
+    init(source: RTCVideoSource, position: AVCaptureDevice.Position) {
+        self.source = source
+    }
+
+    func follow(_ position: AVCaptureDevice.Position) {}
+
+    func capturer(_ capturer: RTCVideoCapturer, didCapture frame: RTCVideoFrame) {
+        source.capturer(capturer, didCapture: frame)
+    }
+}
+#else
 // between the camera and its track, telling each frame which way up it is. webrtc's capturer
 // does the same but takes the phone as upright until the first turn, so an ipad already lying
 // sideways sent its picture on its side. apple's rotation coordinator answered 0 degrees on an
@@ -1054,6 +1090,7 @@ nonisolated private final class CameraRotation: NSObject, RTCVideoCapturerDelega
         }
     }
 }
+#endif
 
 // webrtc tracks are not sendable, they only ever get attached to a renderer on the main actor
 nonisolated struct VideoTrackBox: @unchecked Sendable {

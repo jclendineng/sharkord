@@ -42,24 +42,24 @@ struct ChannelInfoScreen: View {
             }
         }
         .background(Theme.deepBackground)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(Theme.deepBackground, for: .navigationBar)
-        .toolbarBackgroundVisibility(.visible, for: .navigationBar)
+        .inlineNavigationTitle()
+        .navigationBarBackground(Theme.deepBackground)
+        .navigationBarBackgroundVisible()
         .escapeGoesBack()
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .barTrailing) {
                 SearchLink(route: SearchRoute(channelId: channelId)) {
                     Image(systemName: "magnifyingglass")
                 }
                 .accessibilityLabel("Search")
             }
 
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .barTrailing) {
                 Button("Notification Settings", systemImage: "bell.fill", action: showNotifications)
             }
 
             if let group {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .barTrailing) {
                     Menu {
                         Button("Add Friends", systemImage: "person.badge.plus", action: showAddToGroup)
                             .disabled(group.memberIds.count + 1 >= GroupLimits.maxMembers)
@@ -73,7 +73,7 @@ struct ChannelInfoScreen: View {
             }
 
             if session.can(.manageChannels), let channel, !channel.isDm {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .barTrailing) {
                     NavigationLink {
                         ChannelEditor(channel: channel)
                     } label: {

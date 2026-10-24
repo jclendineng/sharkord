@@ -67,7 +67,7 @@ struct StickersScreen: View {
         }
         .settingsListStyle()
         .navigationTitle("Stickers")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
         .fileImporter(
             isPresented: $isImporterPresented,
             allowedContentTypes: [.png, .gif, .webP],
@@ -248,7 +248,7 @@ private struct StickerRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            AnimatedImage(url: session.address?.fileURL(sticker.file), maxPointSize: 56, contentMode: .scaleAspectFit)
+            AnimatedImage(url: session.address?.fileURL(sticker.file), maxPointSize: 56, contentMode: .fit)
                 .frame(width: 48, height: 48)
 
             VStack(alignment: .leading, spacing: 2) {

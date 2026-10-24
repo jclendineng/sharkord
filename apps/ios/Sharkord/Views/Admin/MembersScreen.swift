@@ -46,7 +46,7 @@ struct MembersScreen: View {
             }
         }
         .navigationTitle("Members")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
         .task {
             await load()
         }
@@ -242,7 +242,7 @@ private struct MemberDetail: View {
         }
         .settingsListStyle()
         .navigationTitle(user.name)
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
         // handed over by hand: on a mac a sheet's background is worked out before it inherits
         // anything, so a sheet reading a store it was not given crashed on opening
         .sheet(item: $pending) { action in
@@ -419,7 +419,7 @@ private struct ConfirmModeration: View {
             }
             .settingsListStyle()
             .navigationTitle(title)
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", action: close)

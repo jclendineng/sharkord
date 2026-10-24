@@ -100,15 +100,15 @@ struct SearchScreen: View {
             screen
                 // the search box sits in the navigation bar between its back button and the
                 // filters, the bar staying keeps the swipe back
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbarBackground(Theme.deepBackground, for: .navigationBar)
-                .toolbarBackgroundVisibility(.visible, for: .navigationBar)
+                .inlineNavigationTitle()
+                .navigationBarBackground(Theme.deepBackground)
+                .navigationBarBackgroundVisible()
                 .toolbar {
                     ToolbarItem(placement: .principal) {
                         SearchBox(model: state, prompt: prompt, isFocused: $isFieldFocused)
                     }
 
-                    ToolbarItem(placement: .topBarTrailing) {
+                    ToolbarItem(placement: .barTrailing) {
                         FilterMenu(isFiltering: !filters.isEmpty, onChoose: choose)
                     }
                 }
@@ -116,7 +116,7 @@ struct SearchScreen: View {
                 // the keyboard, so once the screen has slid in the field is made first responder
                 // directly. the mac's dropdown does not slide, so typing works there almost at once
                 .task {
-                    try? await Task.sleep(for: .milliseconds(ProcessInfo.processInfo.isiOSAppOnMac ? 50 : 450))
+                    try? await Task.sleep(for: .milliseconds(Platform.isMac ? 50 : 450))
                     isFieldFocused = true
                     focusNavigationBarField()
                 }
@@ -148,7 +148,7 @@ struct SearchScreen: View {
         // a tap or a scroll on what is below the search box puts the keyboard away. not on a
         // mac, which has no keyboard to put away and where the tap ate the clicks on results
         .scrollDismissesKeyboard(.immediately)
-        .simultaneousGesture(TapGesture().onEnded(unfocusField), including: ProcessInfo.processInfo.isiOSAppOnMac ? .subviews : .all)
+        .simultaneousGesture(TapGesture().onEnded(unfocusField), including: Platform.isMac ? .subviews : .all)
         // under the keyboard too, or its rounded top corners show the window's black behind them
         .background(Theme.deepBackground.ignoresSafeArea())
         // handed over by hand: on a mac a sheet's background is worked out before it inherits
@@ -220,7 +220,11 @@ struct SearchScreen: View {
                     .listRowBackground(Color.clear)
             }
         }
+        #if os(macOS)
+        .listStyle(.inset)
+        #else
         .listStyle(.insetGrouped)
+        #endif
         .scrollContentBackground(.hidden)
         .listHoverHighlight()
         .scrollDismissesKeyboard(.interactively)
@@ -257,10 +261,11 @@ struct SearchScreen: View {
     // through uikit, as the field was focused: focus state alone may not know it has it
     private func unfocusField() {
         isFieldFocused = false
-        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        Platform.dismissKeyboard()
     }
 
     private func focusNavigationBarField() {
+        #if os(iOS)
         let windows = UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
             .flatMap(\.windows)
@@ -273,8 +278,10 @@ struct SearchScreen: View {
         let field = navigationBarFields(in: window).last
 
         field?.becomeFirstResponder()
+        #endif
     }
 
+    #if os(iOS)
     private func navigationBarFields(in view: UIView, isInBar: Bool = false) -> [UITextField] {
         let isBar = isInBar || view is UINavigationBar
 
@@ -284,6 +291,7 @@ struct SearchScreen: View {
 
         return view.subviews.flatMap { navigationBarFields(in: $0, isInBar: isBar) }
     }
+    #endif
 
     private func clearToken() {
         state.clearToken()
@@ -495,7 +503,7 @@ struct SearchBox: View {
             TextField("", text: $model.query, prompt: Text(prompt).foregroundStyle(Theme.muted))
                 .focused(isFocused)
                 .foregroundStyle(Theme.header)
-                .textInputAutocapitalization(.never)
+                .noAutocapitalization()
                 .autocorrectionDisabled()
                 .submitLabel(.search)
         }

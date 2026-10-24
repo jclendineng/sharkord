@@ -1,4 +1,8 @@
+#if os(macOS)
+import AppKit
+#else
 import UIKit
+#endif
 
 // the keyboard's height as last shown, so the attachment panel can be exactly as tall and the
 // two can trade places without the composer above them moving
@@ -14,6 +18,7 @@ enum KeyboardMetrics {
 
     @MainActor
     static func start() {
+        #if os(iOS)
         guard observer == nil else {
             return
         }
@@ -36,5 +41,19 @@ enum KeyboardMetrics {
                 }
             }
         }
+        #endif
     }
+}
+
+// the on screen keyboard's notifications. a mac has none, so there they are names nothing posts
+enum KeyboardNotifications {
+    #if os(macOS)
+    static let didShow = Notification.Name("SharkordNoKeyboardDidShow")
+    static let didHide = Notification.Name("SharkordNoKeyboardDidHide")
+    static let willChangeFrame = Notification.Name("SharkordNoKeyboardWillChangeFrame")
+    #else
+    static let didShow = UIResponder.keyboardDidShowNotification
+    static let didHide = UIResponder.keyboardDidHideNotification
+    static let willChangeFrame = UIResponder.keyboardWillChangeFrameNotification
+    #endif
 }

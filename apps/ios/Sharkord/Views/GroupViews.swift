@@ -117,8 +117,8 @@ struct GroupFriendPicker: View {
         .scrollContentBackground(.hidden)
         .listHoverHighlight()
         .background(Theme.deepBackground)
-        .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search")
-        .navigationBarTitleDisplayMode(.inline)
+        .searchable(text: $query, placement: .alwaysShown, prompt: "Search")
+        .inlineNavigationTitle()
         .toolbar {
             ToolbarItem(placement: .principal) {
                 VStack(spacing: 1) {

@@ -17,7 +17,7 @@ extension View {
     // what a long press opens on a touch screen, a right click opens with a mouse or trackpad
     func onSecondaryClick(perform action: @escaping (SecondaryClick) -> Void) -> some View {
         overlay {
-            if ProcessInfo.processInfo.isiOSAppOnMac {
+            if Platform.isMac {
                 SecondaryClickView(action: action)
             }
         }
@@ -49,7 +49,7 @@ extension View {
     }
 }
 
-private let isOnMac = ProcessInfo.processInfo.isiOSAppOnMac
+private let isOnMac = Platform.isMac
 
 private struct ActionsPresentation<Menu: View>: ViewModifier {
     @Binding var isPresented: Bool
@@ -269,7 +269,7 @@ enum PointerMenus {
         }
 
         let target = row ?? views.allObjects.last { view in
-            view.window != nil && view.bounds.contains(view.convert(point, from: nil))
+            view.window != nil && view.contains(windowPoint: point)
         }
         let hadMenu = openMenu != nil
 
@@ -413,6 +413,72 @@ struct PointerMenuLayer: View {
     }
 }
 
+#if os(macOS)
+// over the row, but only a right click lands on it. every other click falls through to the
+// row's own gestures as if it were not there. points are in the window's content, top left
+// first, the way swiftui's global frames are
+private final class RightClickOnlyView: NSView {
+    var action: (SecondaryClick) -> Void = { _ in }
+
+    override var isFlipped: Bool {
+        true
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        guard let event = NSApp.currentEvent, event.type == .rightMouseDown || event.type == .rightMouseUp else {
+            return nil
+        }
+
+        return super.hitTest(point)
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+
+        if window != nil {
+            PointerMenus.views.add(self)
+        }
+    }
+
+    override func rightMouseDown(with event: NSEvent) {
+        guard let content = window?.contentView else {
+            return
+        }
+
+        PointerMenus.rightClick(at: content.convert(event.locationInWindow, from: nil), on: self)
+    }
+
+    func contains(windowPoint: CGPoint) -> Bool {
+        bounds.contains(convert(windowPoint, from: window?.contentView))
+    }
+
+    func open(at windowPoint: CGPoint) {
+        let location = convert(windowPoint, from: window?.contentView)
+        let anchor = UnitPoint(
+            x: bounds.width > 0 ? location.x / bounds.width : 0.5,
+            y: bounds.height > 0 ? location.y / bounds.height : 0.5
+        )
+
+        action(SecondaryClick(anchor: anchor, windowPoint: windowPoint))
+    }
+}
+
+private struct SecondaryClickView: NSViewRepresentable {
+    let action: (SecondaryClick) -> Void
+
+    func makeNSView(context: Context) -> RightClickOnlyView {
+        let view = RightClickOnlyView()
+
+        view.action = action
+
+        return view
+    }
+
+    func updateNSView(_ view: RightClickOnlyView, context: Context) {
+        view.action = action
+    }
+}
+#else
 // the window's own catcher for a right click on nothing that has a menu, found after every row
 private final class WindowRightClick: NSObject, UIContextMenuInteractionDelegate {
     static let shared = WindowRightClick()
@@ -457,6 +523,10 @@ private final class RightClickOnlyView: UIView {
         }
     }
 
+    func contains(windowPoint: CGPoint) -> Bool {
+        bounds.contains(convert(windowPoint, from: nil))
+    }
+
     func open(at windowPoint: CGPoint) {
         let location = convert(windowPoint, from: nil)
         let anchor = UnitPoint(
@@ -498,3 +568,4 @@ private struct SecondaryClickView: UIViewRepresentable {
         }
     }
 }
+#endif

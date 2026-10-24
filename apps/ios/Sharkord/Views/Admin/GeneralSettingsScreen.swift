@@ -22,7 +22,7 @@ struct GeneralSettingsScreen: View {
     @State private var isReadingLogo = false
 
     private enum PendingLogo {
-        case replace(Data, UIImage)
+        case replace(Data, PlatformImage)
         case remove
     }
 
@@ -69,7 +69,7 @@ struct GeneralSettingsScreen: View {
         }
         .background(Theme.deepBackground)
         .navigationTitle("Overview")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
         .task {
             await load()
         }
@@ -147,9 +147,9 @@ struct GeneralSettingsScreen: View {
                     get: { settings.wrappedValue.reportEmail ?? "" },
                     set: { settings.wrappedValue.reportEmail = $0 }
                 ))
-                .keyboardType(.emailAddress)
+                .keyboard(.email)
                 .textContentType(.emailAddress)
-                .textInputAutocapitalization(.never)
+                .noAutocapitalization()
                 .autocorrectionDisabled()
             } header: {
                 Text("Report Email")
@@ -162,7 +162,7 @@ struct GeneralSettingsScreen: View {
                     get: { settings.wrappedValue.klipyApiKey ?? "" },
                     set: { settings.wrappedValue.klipyApiKey = $0 }
                 ))
-                .textInputAutocapitalization(.never)
+                .noAutocapitalization()
                 .autocorrectionDisabled()
             } header: {
                 Text("Klipy API Key")
@@ -175,7 +175,7 @@ struct GeneralSettingsScreen: View {
                     get: { settings.wrappedValue.freesoundApiKey ?? "" },
                     set: { settings.wrappedValue.freesoundApiKey = $0 }
                 ))
-                .textInputAutocapitalization(.never)
+                .noAutocapitalization()
                 .autocorrectionDisabled()
             } header: {
                 Text("Freesound API Key")
@@ -268,7 +268,7 @@ struct GeneralSettingsScreen: View {
     private var iconPreview: some View {
         switch pendingLogo {
         case .replace(_, let image):
-            Image(uiImage: image)
+            Image(platformImage: image)
                 .resizable()
                 .scaledToFill()
         case .remove:
@@ -436,7 +436,7 @@ struct GeneralSettingsScreen: View {
 
         Task {
             do {
-                guard let data = try await item.loadTransferable(type: Data.self), let image = UIImage(data: data) else {
+                guard let data = try await item.loadTransferable(type: Data.self), let image = PlatformImage(data: data) else {
                     throw AuthAPI.RequestError(message: "Could not read that picture.")
                 }
 

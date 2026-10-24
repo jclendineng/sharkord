@@ -1,7 +1,11 @@
 import Observation
+#if os(macOS)
+import AppKit
+#else
 import UIKit
+#endif
 
-// custom emoji render inline inside Text, which needs a ready UIImage rather than an AsyncImage
+// custom emoji render inline inside Text, which needs a ready PlatformImage rather than an AsyncImage
 @Observable
 final class EmojiImageCache {
     static let shared = EmojiImageCache()
@@ -13,11 +17,11 @@ final class EmojiImageCache {
         let pointSize: CGFloat
     }
 
-    private var images: [Key: UIImage] = [:]
+    private var images: [Key: PlatformImage] = [:]
 
     @ObservationIgnored private var requested: Set<Key> = []
 
-    func image(for url: URL, pointSize: CGFloat) -> UIImage? {
+    func image(for url: URL, pointSize: CGFloat) -> PlatformImage? {
         let key = Key(url: url, pointSize: pointSize)
 
         if let image = images[key] {
@@ -37,7 +41,7 @@ final class EmojiImageCache {
     private func load(_ key: Key) async {
         guard
             let (data, _) = try? await URLSession.shared.data(from: key.url),
-            let image = UIImage(data: data)
+            let image = PlatformImage(data: data)
         else {
             // a failed fetch used to stay requested forever, so it was never tried again
             requested.remove(key)
@@ -48,8 +52,16 @@ final class EmojiImageCache {
         let scale = key.pointSize / max(image.size.width, image.size.height)
         let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
 
+        #if os(macOS)
+        images[key] = NSImage(size: size, flipped: false) { rect in
+            image.draw(in: rect)
+
+            return true
+        }
+        #else
         images[key] = UIGraphicsImageRenderer(size: size).image { _ in
             image.draw(in: CGRect(origin: .zero, size: size))
         }
+        #endif
     }
 }

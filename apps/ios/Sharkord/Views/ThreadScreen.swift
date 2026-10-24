@@ -30,10 +30,10 @@ struct ThreadScreen: View {
         } else {
             thread
                 .navigationTitle("Thread")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbarBackground(Theme.chatBackground, for: .navigationBar)
-                .toolbarBackgroundVisibility(.visible, for: .navigationBar)
-                .toolbarVisibility(.hidden, for: .tabBar)
+                .inlineNavigationTitle()
+                .navigationBarBackground(Theme.chatBackground)
+                .navigationBarBackgroundVisible()
+                .tabBarHidden()
                 .escapeGoesBack()
         }
     }

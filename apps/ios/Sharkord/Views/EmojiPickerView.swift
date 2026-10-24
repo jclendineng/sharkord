@@ -68,9 +68,9 @@ struct EmojiPickerView: View {
                 .padding(.horizontal)
             }
             .background(Theme.chatBackground)
-            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Find the perfect emoji")
+            .searchable(text: $query, placement: .alwaysShown, prompt: "Find the perfect emoji")
             .navigationTitle(title)
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
                 if let subtitle {
                     ToolbarItem(placement: .principal) {

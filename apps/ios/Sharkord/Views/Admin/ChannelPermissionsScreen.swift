@@ -198,9 +198,9 @@ struct ChannelPermissionsScreen: View {
             }
         }
         .navigationTitle("Permissions")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .barTrailing) {
                 Button("Add Roles or Members", systemImage: "plus", action: showAdd)
             }
         }
@@ -475,7 +475,7 @@ private struct PermissionOverrideEditor: View {
         }
         .settingsListStyle()
         .navigationTitle(title)
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
     }
 
     private func binding(for permission: ChannelPermission) -> Binding<Bool> {
@@ -571,9 +571,9 @@ private struct AddPermissionTargetSheet: View {
                 }
             }
             .settingsListStyle()
-            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search roles and members")
+            .searchable(text: $query, placement: .alwaysShown, prompt: "Search roles and members")
             .navigationTitle("Add Roles or Members")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", action: close)

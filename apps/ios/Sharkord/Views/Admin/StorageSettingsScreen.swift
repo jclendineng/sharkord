@@ -28,7 +28,7 @@ struct StorageSettingsScreen: View {
         }
         .background(Theme.deepBackground)
         .navigationTitle("Storage")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
         .task {
             await load()
         }
@@ -342,7 +342,7 @@ private struct SizeRow: View {
         }
         .alert(title, isPresented: $isCustomPresented) {
             TextField(unitName, text: $custom)
-                .keyboardType(.numberPad)
+                .keyboard(.number)
 
             Button("Set", action: applyCustom)
             Button("Cancel", role: .cancel) {}

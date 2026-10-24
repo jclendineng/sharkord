@@ -77,7 +77,7 @@ struct SignInDeviceScreen: View {
         }
         .background(Theme.deepBackground)
         .navigationTitle("Sign In Another Device")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
         .task {
             await run()
         }
@@ -128,7 +128,7 @@ struct SignInDeviceScreen: View {
 
             Group {
                 if let qrURL, let image = QRCode.image(qrURL) {
-                    Image(uiImage: image)
+                    Image(platformImage: image)
                         .interpolation(.none)
                         .resizable()
                         .scaledToFit()

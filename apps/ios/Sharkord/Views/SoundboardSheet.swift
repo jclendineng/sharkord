@@ -5,7 +5,7 @@ import SwiftUI
 struct SoundboardSheet: View {
     @Environment(SessionStore.self) private var session
 
-    private let isOnMac = ProcessInfo.processInfo.isiOSAppOnMac
+    private let isOnMac = Platform.isMac
 
     var body: some View {
         ScrollView {
@@ -108,7 +108,7 @@ private struct SoundTile: View {
     }
 
     private func play() {
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        Haptics.light()
 
         Task {
             await session.playSound(sound)

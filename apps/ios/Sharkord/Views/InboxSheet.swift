@@ -38,7 +38,7 @@ struct InboxSheet: View {
             NavigationStack {
                 content
                     .navigationTitle("Inbox")
-                    .navigationBarTitleDisplayMode(.inline)
+                    .inlineNavigationTitle()
                     .toolbar {
                         ToolbarItem(placement: .confirmationAction) {
                             Button("Done", action: close)

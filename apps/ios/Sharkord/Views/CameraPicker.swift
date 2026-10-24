@@ -1,3 +1,4 @@
+#if os(iOS)
 import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
@@ -56,7 +57,7 @@ struct CameraPicker: UIViewControllerRepresentable {
                 return (try? FileManager.default.moveItem(at: movie, to: target)) == nil ? nil : target
             }
 
-            guard let image = info[.originalImage] as? UIImage, let data = image.jpegData(compressionQuality: 0.9) else {
+            guard let image = info[.originalImage] as? PlatformImage, let data = image.jpegData(compressionQuality: 0.9) else {
                 return nil
             }
 
@@ -66,3 +67,4 @@ struct CameraPicker: UIViewControllerRepresentable {
         }
     }
 }
+#endif

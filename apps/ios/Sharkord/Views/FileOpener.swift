@@ -37,13 +37,13 @@ enum FileDownloads {
 // it afterwards is instant. only files small enough that fetching one just to draw it is cheap
 enum FileThumbnails {
     private static let maxSize = 10 * 1024 * 1024
-    private static let cache = NSCache<NSString, UIImage>()
+    private static let cache = NSCache<NSString, PlatformImage>()
 
-    static func cached(for file: SharkordFile, from url: URL) -> UIImage? {
+    static func cached(for file: SharkordFile, from url: URL) -> PlatformImage? {
         cache.object(forKey: file.cacheKey(at: url))
     }
 
-    static func thumbnail(for file: SharkordFile, from url: URL) async -> UIImage? {
+    static func thumbnail(for file: SharkordFile, from url: URL) async -> PlatformImage? {
         if let cached = cache.object(forKey: file.cacheKey(at: url)) {
             return cached
         }
@@ -56,7 +56,7 @@ enum FileThumbnails {
             fileAt: local,
             // wide enough to fill a card across, tall enough for a portrait page
             size: CGSize(width: 400, height: 520),
-            scale: UITraitCollection.current.displayScale,
+            scale: Platform.displayScale,
             representationTypes: .thumbnail
         )
 
@@ -65,7 +65,11 @@ enum FileThumbnails {
             return nil
         }
 
+        #if os(macOS)
+        let image = representation.nsImage
+        #else
         let image = representation.uiImage
+        #endif
 
         cache.setObject(image, forKey: file.cacheKey(at: url))
 

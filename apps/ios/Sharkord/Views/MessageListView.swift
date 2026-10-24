@@ -227,7 +227,7 @@ struct MessageListView<Header: View>: View {
             .environment(servers)
             .appSheet()
         }
-        .fullScreenCover(item: $deletingMessage) { message in
+        .fullScreen(item: $deletingMessage) { message in
             DeleteMessageConfirmation(message: message, onConfirm: { delete(message) })
                 .presentationBackground(.clear)
                 .environment(session)
@@ -257,7 +257,7 @@ struct MessageListView<Header: View>: View {
     // the keyboard goes first and stays down, as in discord: left up, the menu knocks it down
     // and its closing brings it back, the conversation jumping both times
     private func showActions(for message: Message) {
-        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        Platform.dismissKeyboard()
         actionsMessage = message
     }
 
@@ -407,7 +407,7 @@ struct MessageListView<Header: View>: View {
                 return
             }
 
-            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            Platform.dismissKeyboard()
         }
     }
 
@@ -428,7 +428,7 @@ struct MessageListView<Header: View>: View {
     private func react(to message: Message) {
         keyboardDismissal?.cancel()
 
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        Haptics.light()
 
         Task {
             do {

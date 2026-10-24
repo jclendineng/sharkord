@@ -42,7 +42,7 @@ struct TwoFactorSection: View {
 
             if let setup {
                 if let image = QRCode.image(setup.uri) {
-                    Image(uiImage: image)
+                    Image(platformImage: image)
                         .interpolation(.none)
                         .resizable()
                         .scaledToFit()
@@ -91,7 +91,7 @@ struct TwoFactorSection: View {
     private func codeField(prompt: String) -> some View {
         TextField(prompt, text: $code)
             .textContentType(.oneTimeCode)
-            .textInputAutocapitalization(.never)
+            .noAutocapitalization()
             .autocorrectionDisabled()
     }
 
@@ -124,7 +124,7 @@ struct TwoFactorSection: View {
     }
 
     private func copyRecoveryCodes() {
-        UIPasteboard.general.string = recoveryCodes?.joined(separator: "\n")
+        Platform.copy(recoveryCodes?.joined(separator: "\n"))
     }
 
     private func run(_ work: @escaping () async throws -> Void) {

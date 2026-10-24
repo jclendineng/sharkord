@@ -141,12 +141,14 @@ struct ComposerView: View {
                 .environment(servers)
                 .appSheet()
         }
-        .fullScreenCover(isPresented: $isCameraPresented) {
+        #if os(iOS)
+        .fullScreen(isPresented: $isCameraPresented) {
             CameraPicker(onCapture: importCapture)
                 .ignoresSafeArea()
                 .environment(session)
                 .environment(servers)
         }
+        #endif
         .onChange(of: photoSelection) { _, items in
             importPhotos(items)
         }
@@ -164,19 +166,19 @@ struct ComposerView: View {
                 store.attachPanel.beginHandoffToKeyboard()
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification)) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: KeyboardNotifications.didShow)) { _ in
             if store.attachPanel.isHandingOff && store.attachPanel.isOpen {
                 store.attachPanel.finishHandoffToKeyboard()
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: KeyboardNotifications.didHide)) { _ in
             if store.attachPanel.isHandingOff && store.attachPanel.isOpen {
                 store.attachPanel.finishHandoffToPanel()
             }
 
             store.attachPanel.endSearch()
         }
-        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillChangeFrameNotification), perform: keyboardWillChange)
+        .onReceive(NotificationCenter.default.publisher(for: KeyboardNotifications.willChangeFrame), perform: keyboardWillChange)
         // any change counts as typing, deleting and punctuation included, as on the web, but
         // not the field being cleared after a send or a draft being loaded for an edit
         .onChange(of: text) { old, new in
@@ -322,7 +324,7 @@ struct ComposerView: View {
     // discord's row: attach, the field with emoji and the mic inside, send once there is text
     private var inputRow: some View {
         HStack(alignment: .bottom, spacing: 8) {
-            if canUpload && store.editing == nil && ProcessInfo.processInfo.isiOSAppOnMac {
+            if canUpload && store.editing == nil && Platform.isMac {
                 // discord's mac: a short menu by the plus, not the phone's panel of photos
                 Menu {
                     Button("Upload a File", systemImage: "doc", action: openFileImporter)
@@ -364,7 +366,7 @@ struct ComposerView: View {
             HStack(alignment: .bottom, spacing: 10) {
                 ComposerField(placeholder: placeholder, text: $field, selection: $selection, isFocused: $isFieldFocused)
 
-                if ProcessInfo.processInfo.isiOSAppOnMac {
+                if Platform.isMac {
                     // discord's mac: gifs, stickers and emoji each a button in the box
                     HStack(spacing: 12) {
                         ExpressionButton(title: "GIFs", action: openGifs) {
@@ -443,6 +445,7 @@ struct ComposerView: View {
     // while searching the panel's content ends at the keyboard's top, moving with it in the
     // keyboard's own animation
     private func keyboardWillChange(_ notification: Notification) {
+        #if os(iOS)
         guard
             store.attachPanel.isSearching,
             let info = notification.userInfo,
@@ -458,6 +461,7 @@ struct ComposerView: View {
         withAnimation(.easeOut(duration: duration)) {
             store.attachPanel.keyboardWillChange(inset: covered)
         }
+        #endif
     }
 
     // the expression panel in the keyboard's place, or the keyboard back in the panel's

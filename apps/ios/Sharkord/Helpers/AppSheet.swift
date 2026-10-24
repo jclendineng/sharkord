@@ -23,7 +23,7 @@ extension View {
     // a narrow mac window counts as compact and turns a popover into a sheet rising from the
     // bottom. discord's hang off their button at any width, a phone still gets the sheet
     func macPopover() -> some View {
-        presentationCompactAdaptation(ProcessInfo.processInfo.isiOSAppOnMac ? .popover : .automatic)
+        presentationCompactAdaptation(Platform.isMac ? .popover : .automatic)
     }
 }
 
@@ -33,7 +33,7 @@ private struct EscapeGoesBack: ViewModifier {
     func body(content: Content) -> some View {
         content
             .background {
-                if ProcessInfo.processInfo.isiOSAppOnMac {
+                if Platform.isMac {
                     Button("Back", action: goBack)
                         .keyboardShortcut(.cancelAction)
                         .hidden()
@@ -50,7 +50,7 @@ private struct SheetDetents: ViewModifier {
     let detents: Set<PresentationDetent>
 
     func body(content: Content) -> some View {
-        if ProcessInfo.processInfo.isiOSAppOnMac {
+        if Platform.isMac {
             content
         } else {
             content.presentationDetents(detents)
@@ -63,7 +63,7 @@ private struct AppSheet: ViewModifier {
 
     @Environment(\.dismiss) private var dismiss
 
-    private let isOnMac = ProcessInfo.processInfo.isiOSAppOnMac
+    private let isOnMac = Platform.isMac
 
     func body(content: Content) -> some View {
         content
@@ -128,7 +128,7 @@ private struct SheetCloseButton: View {
         .buttonStyle(.plain)
         // plain glass on a mac and an ipad: the interactive kind takes a pointer's press for its
         // own animation, and the button only saw an occasional click, so the x needed several
-        .glassEffect(ProcessInfo.processInfo.isiOSAppOnMac || UIDevice.current.userInterfaceIdiom == .pad ? .regular : .regular.interactive(), in: .circle)
+        .glassEffect(Platform.isMac || Platform.isPad ? .regular : .regular.interactive(), in: .circle)
         .contentShape(.circle)
         .accessibilityLabel("Close")
     }

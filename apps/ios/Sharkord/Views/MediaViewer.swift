@@ -38,7 +38,7 @@ struct MediaViewer: View {
                         .tag(item.id)
                 }
             }
-            .tabViewStyle(.page(indexDisplayMode: .never))
+            .pagedTabs()
 
             ThumbnailStrip(items: items, selection: $selection, url: url(for:))
         }
@@ -177,7 +177,7 @@ private struct MediaPage: View {
                 .onAppear(perform: makePlayer)
                 .onDisappear(perform: stop)
         } else {
-            AnimatedImage(url: url, maxPointSize: 1200, contentMode: .scaleAspectFit)
+            AnimatedImage(url: url, maxPointSize: 1200, contentMode: .fit)
                 .scaleEffect(scale)
                 .gesture(zoom)
         }

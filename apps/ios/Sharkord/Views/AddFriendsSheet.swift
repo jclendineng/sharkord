@@ -118,9 +118,9 @@ struct AddFriendsScreen: View {
         .scrollContentBackground(.hidden)
         .listHoverHighlight()
         .background(Theme.deepBackground)
-        .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search people")
+        .searchable(text: $query, placement: .alwaysShown, prompt: "Search people")
         .navigationTitle("Add Friends")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
     }
 
     private func change(_ action: String, _ user: PublicUser) {
@@ -151,7 +151,7 @@ private struct AddByUsernameScreen: View {
                 .foregroundStyle(Theme.muted)
 
             TextField("Enter a username", text: $name)
-                .textInputAutocapitalization(.never)
+                .noAutocapitalization()
                 .autocorrectionDisabled()
                 .focused($isFocused)
                 .onSubmit(send)
@@ -186,7 +186,7 @@ private struct AddByUsernameScreen: View {
         .padding(18)
         .background(Theme.deepBackground)
         .navigationTitle("Add by Username")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
         .onAppear(perform: focus)
     }
 

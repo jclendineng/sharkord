@@ -261,7 +261,7 @@ private struct ConversationRow: View {
     }
 
     private func showActions() {
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        Haptics.medium()
         isActionsPresented = true
     }
 
@@ -640,9 +640,9 @@ private struct NewDirectMessageSheet: View {
             .scrollContentBackground(.hidden)
             .listHoverHighlight()
             .background(Theme.deepBackground)
-            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "To: Search people")
+            .searchable(text: $query, placement: .alwaysShown, prompt: "To: Search people")
             .navigationTitle("New Message")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close", systemImage: "xmark", action: close)

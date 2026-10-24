@@ -66,7 +66,7 @@ struct RulesSetupSheet: View {
             .listHoverHighlight()
             .background(Theme.deepBackground)
             .navigationTitle("Rules Message")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", action: close)

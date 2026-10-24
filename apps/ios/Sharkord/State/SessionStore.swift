@@ -2,7 +2,11 @@ import AuthenticationServices
 import AVFoundation
 import Foundation
 import Observation
+#if os(macOS)
+import AppKit
+#else
 import UIKit
+#endif
 import UserNotifications
 
 @Observable
@@ -1038,7 +1042,11 @@ final class SessionStore {
                 speakerByDefault: settings.speakerByDefault,
                 outputVolume: settings.outputVolume
             )
+            #if os(macOS)
+            let needsMixer = false
+            #else
             let needsMixer = settings.shareAppAudio || settings.hearYourselfInCalls
+            #endif
             let mixer = needsMixer ? MixingAudioDevice(options: audioOptions) : nil
 
             mixer?.isMonitoring = settings.hearYourselfInCalls
@@ -2135,7 +2143,7 @@ final class SessionStore {
             return
         }
 
-        UIApplication.shared.registerForRemoteNotifications()
+        PlatformApplication.shared.registerForRemoteNotifications()
     }
 
     private func subscribe(_ client: TRPCClient) {

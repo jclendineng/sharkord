@@ -47,7 +47,7 @@ struct ApproveDeviceSheet: View {
             .frame(maxWidth: .infinity)
             .background(Theme.deepBackground)
             .navigationTitle("Sign In Another Device")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close", systemImage: "xmark", action: close)

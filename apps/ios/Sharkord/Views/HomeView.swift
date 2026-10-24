@@ -48,7 +48,7 @@ struct HomeView: View {
 
     // an ipad's alone: a phone in landscape can be wide enough to split, and keeps its own
     private var usesDesktopLayout: Bool {
-        ProcessInfo.processInfo.isiOSAppOnMac || (isSplit && UIDevice.current.userInterfaceIdiom == .pad)
+        Platform.isMac || (isSplit && Platform.isPad)
     }
 
     private static func isSplit(_ size: CGSize) -> Bool {
@@ -71,7 +71,7 @@ struct HomeView: View {
             }
         }
         .environment(\.usesDesktopLayout, usesDesktopLayout)
-        .environment(\.usesDesktopSearch, ProcessInfo.processInfo.isiOSAppOnMac || (usesDesktopLayout && (isPortrait || hasHardwareKeyboard)))
+        .environment(\.usesDesktopSearch, Platform.isMac || (usesDesktopLayout && (isPortrait || hasHardwareKeyboard)))
         .onReceive(NotificationCenter.default.publisher(for: .GCKeyboardDidConnect)) { _ in
             hasHardwareKeyboard = true
         }
@@ -191,7 +191,7 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .background(Theme.railBackground.ignoresSafeArea())
-            .toolbarVisibility(.hidden, for: .navigationBar)
+            .navigationBarHidden()
             .chatDestinations()
             .opensRequestedChannel($path)
         }
@@ -213,7 +213,7 @@ struct HomeView: View {
                 }
                 .frame(width: listWidth)
                 .overlay {
-                    if servers.isChatDropdownOpen && !ProcessInfo.processInfo.isiOSAppOnMac {
+                    if servers.isChatDropdownOpen && !Platform.isMac {
                         Color.clear
                             .contentShape(.rect)
                             .onTapGesture(perform: dismissChatDropdown)
@@ -252,7 +252,7 @@ struct HomeView: View {
                     }
                     .environment(\.showChannelList, isChatExpanded ? collapseChat : nil)
                     // a mac's keyboard is a real one and wants no room, the list stays beside the chat
-                    .environment(\.expandChat, isChatExpanded || ProcessInfo.processInfo.isiOSAppOnMac ? nil : expandForTyping)
+                    .environment(\.expandChat, isChatExpanded || Platform.isMac ? nil : expandForTyping)
                     .clipShape(.rect(cornerRadius: Self.cardRadius, style: .continuous))
                     .overlay {
                         RoundedRectangle(cornerRadius: Self.cardRadius, style: .continuous)
@@ -273,11 +273,11 @@ struct HomeView: View {
         .background(Theme.railBackground.ignoresSafeArea())
         .opensRequestedChannel($path, detailChannelId: $detailChannelId)
         .environment(\.presentSearch, showSearch)
-        .fullScreenCover(item: $searchRoute) { route in
+        .fullScreen(item: $searchRoute) { route in
             NavigationStack {
                 SearchScreen(channelId: route.channelId, directMessages: route.directMessages)
                     .toolbar {
-                        ToolbarItem(placement: .topBarLeading) {
+                        ToolbarItem(placement: .barLeading) {
                             Button("Close", systemImage: "chevron.left", action: closeSearch)
                         }
                     }
@@ -373,7 +373,7 @@ struct HomeView: View {
     private func settleChat(expanded: Bool) {
         // put back beside the list the chat is no longer being typed in
         if !expanded {
-            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            Platform.dismissKeyboard()
         }
 
         // let go where it started beside the list, there is nothing to animate
@@ -408,7 +408,7 @@ struct HomeView: View {
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Theme.chatBackground)
-            .toolbarVisibility(.hidden, for: .navigationBar)
+            .navigationBarHidden()
         }
     }
 

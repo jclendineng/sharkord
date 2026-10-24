@@ -93,7 +93,7 @@ struct EditProfileSheet: View {
 
                 Section("Display Name") {
                     TextField("Name", text: $name)
-                        .textInputAutocapitalization(.never)
+                        .noAutocapitalization()
                 }
 
                 Section {
@@ -120,7 +120,7 @@ struct EditProfileSheet: View {
             .scrollContentBackground(.hidden)
             .background(Theme.deepBackground)
             .navigationTitle("Edit Profile")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     // on the button, which the question points at as it opens

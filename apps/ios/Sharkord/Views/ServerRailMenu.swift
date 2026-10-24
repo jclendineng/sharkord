@@ -21,7 +21,7 @@ struct ServerRailMenu: View {
         GeometryReader { proxy in
             ZStack(alignment: .topLeading) {
                 // the phone's long press dims what is behind, a mac's menus never do
-                Color.black.opacity(ProcessInfo.processInfo.isiOSAppOnMac ? 0 : 0.55)
+                Color.black.opacity(Platform.isMac ? 0 : 0.55)
                     .ignoresSafeArea()
                     .contentShape(.rect)
                     .onTapGesture(perform: close)

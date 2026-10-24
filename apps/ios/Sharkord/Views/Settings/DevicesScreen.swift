@@ -72,7 +72,7 @@ struct DevicesScreen: View {
             await load()
         }
         .navigationTitle("Devices")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
         .confirmationDialog("Log out every other device?", isPresented: $isConfirmingLogOutAll, titleVisibility: .visible) {
             Button("Log Out All", role: .destructive, action: logOutAll)
         }

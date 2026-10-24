@@ -93,7 +93,7 @@ struct MessageContentView: View {
         }
 
         if let url = resolve(imageSource), let image = emojiCache.image(for: url, pointSize: size) {
-            return Text("\(Image(uiImage: image))").baselineOffset(-size * 0.2)
+            return Text("\(Image(platformImage: image))").baselineOffset(-size * 0.2)
         }
 
         return Text(":\(name):")

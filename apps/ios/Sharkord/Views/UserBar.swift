@@ -84,9 +84,9 @@ struct UserBar: View {
             }
             .buttonStyle(.plain)
             // the system's pointer platter drew under the highlight, in a shape of its own
-            .hoverEffectDisabled()
+            .noHoverEffect()
 
-            if ProcessInfo.processInfo.isiOSAppOnMac {
+            if Platform.isMac {
                 // discord's mac: mute, deafen and settings at hand, the inbox up in the top bar
                 UserBarButton(
                     title: session.micMuted ? "Unmute" : "Mute",
@@ -181,7 +181,7 @@ struct UserBar: View {
 
     // only the mac's popover hands them over, a phone or ipad's profile sheet shows its own
     private var profileOpener: ((ProfileSheet) -> Void)? {
-        guard ProcessInfo.processInfo.isiOSAppOnMac else {
+        guard Platform.isMac else {
             return nil
         }
 
@@ -224,7 +224,7 @@ private struct UserBarButton: View {
         .hoverHighlight(cornerRadius: highlightRadius)
             .hoverPop()
             .buttonStyle(.plain)
-            .hoverEffectDisabled()
+            .noHoverEffect()
     }
 }
 
@@ -234,7 +234,7 @@ private struct ProfilePresentation<Profile: View>: ViewModifier {
     @ViewBuilder let profile: () -> Profile
 
     func body(content: Content) -> some View {
-        if ProcessInfo.processInfo.isiOSAppOnMac {
+        if Platform.isMac {
             content
                 .popover(isPresented: $isPresented, arrowEdge: .bottom) {
                     profile()

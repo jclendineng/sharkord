@@ -9,7 +9,7 @@ struct RolesScreen: View {
     @State private var isLoading = true
     @State private var isReordering = false
 
-    private let isOnMac = ProcessInfo.processInfo.isiOSAppOnMac
+    private let isOnMac = Platform.isMac
 
     // the owner's role stays on top and the default one at the bottom, as discord's do, and the
     // roles between them are what moves. the server sends them in order
@@ -56,22 +56,22 @@ struct RolesScreen: View {
         .settingsListStyle()
         // the phone drags by edit mode's handles, a mac gets arrows: there edit mode blanked the
         // rows and its handles never moved
-        .environment(\.editMode, .constant(isReordering && !isOnMac ? .active : .inactive))
+        .editing(isReordering && !isOnMac)
         .overlay {
             if isLoading {
                 ProgressView()
             }
         }
         .navigationTitle("Roles")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
         .toolbar {
             if movableRoles.count > 1 {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .barTrailing) {
                     Button(isReordering ? "Done" : "Reorder", action: toggleReordering)
                 }
             }
 
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .barTrailing) {
                 Button("New Role", systemImage: "plus", action: addRole)
             }
         }
@@ -272,7 +272,7 @@ private struct RoleEditor: View {
         }
         .settingsListStyle()
         .navigationTitle(role.name)
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 if isSaving {

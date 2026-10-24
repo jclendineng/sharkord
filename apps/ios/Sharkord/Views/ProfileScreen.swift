@@ -243,7 +243,7 @@ private struct ProfileSheetPresentation: ViewModifier {
                 screen(for: sheet)
                     .appSheet()
             }
-            .fullScreenCover(item: fullWindowBinding) { sheet in
+            .fullScreen(item: fullWindowBinding) { sheet in
                 screen(for: sheet)
                     .appSheet()
             }

@@ -211,7 +211,7 @@ struct ConnectView: View {
 
         Group {
             if let loginRequest, let url = approvalURL(for: loginRequest), let image = QRCode.image(url) {
-                Image(uiImage: image)
+                Image(platformImage: image)
                     .interpolation(.none)
                     .resizable()
                     .scaledToFit()
@@ -255,9 +255,9 @@ struct ConnectView: View {
 
         AuthField(label: "Server Address") {
             TextField("", text: $serverURL, prompt: Text("chat.example.com").foregroundStyle(Theme.muted))
-                .keyboardType(.URL)
+                .keyboard(.url)
                 .textContentType(.URL)
-                .textInputAutocapitalization(.never)
+                .noAutocapitalization()
                 .autocorrectionDisabled()
                 .submitLabel(.next)
                 .onSubmit { checkServer(for: intent) }
@@ -326,8 +326,8 @@ struct ConnectView: View {
         if serverInfo?.allowNewUsers != true {
             AuthField(label: "Invite Link") {
                 TextField("", text: $invite, prompt: Text("Paste the invite link you were sent").foregroundStyle(Theme.muted))
-                    .keyboardType(.URL)
-                    .textInputAutocapitalization(.never)
+                    .keyboard(.url)
+                    .noAutocapitalization()
                     .autocorrectionDisabled()
                     .accessibilityLabel("Invite Link")
             }
@@ -356,13 +356,13 @@ struct ConnectView: View {
 
 
     @ViewBuilder
-    private func credentialFields(passwordContent: UITextContentType) -> some View {
+    private func credentialFields(passwordContent: PlatformTextContentType) -> some View {
         AuthField(label: "Username") {
             TextField("", text: $identity)
                 .accessibilityLabel("Username")
                 .accessibilityIdentifier("username")
                 .textContentType(.username)
-                .textInputAutocapitalization(.never)
+                .noAutocapitalization()
                 .autocorrectionDisabled()
                 .submitLabel(.next)
         }
@@ -375,8 +375,8 @@ struct ConnectView: View {
             AuthField(label: "Authenticator Code") {
                 TextField("", text: $twoFactorCode, prompt: Text("Or a recovery code").foregroundStyle(Theme.muted))
                     .textContentType(.oneTimeCode)
-                    .keyboardType(.asciiCapable)
-                    .textInputAutocapitalization(.never)
+                    .keyboard(.ascii)
+                    .noAutocapitalization()
                     .autocorrectionDisabled()
                     .submitLabel(.go)
                     .onSubmit(signIn)
@@ -744,7 +744,7 @@ private struct AuthButton: View {
 
 private struct PasswordField: View {
     @Binding var text: String
-    let contentType: UITextContentType
+    let contentType: PlatformTextContentType
     let onSubmit: () -> Void
 
     @State private var isRevealed = false
@@ -754,7 +754,7 @@ private struct PasswordField: View {
             Group {
                 if isRevealed {
                     TextField("", text: $text)
-                        .textInputAutocapitalization(.never)
+                        .noAutocapitalization()
                         .autocorrectionDisabled()
                 } else {
                     SecureField("", text: $text)

@@ -51,7 +51,7 @@ struct PluginAccessScreen: View {
             }
         }
         .navigationTitle("Who Can Use It")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
         .task {
             await load()
         }
@@ -199,7 +199,7 @@ private struct CapabilityAccessEditor: View {
         }
         .settingsListStyle()
         .navigationTitle(capability.name)
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
         .onAppear {
             isRestricted = capability.mode == "restricted"
             roleIds = Set(capability.roleIds)

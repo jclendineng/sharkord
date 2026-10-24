@@ -35,7 +35,7 @@ struct NotificationSettingsScreen: View {
 
                 Button("Open \(SystemSettings.name)", action: openSettings)
             } footer: {
-                Text(ProcessInfo.processInfo.isiOSAppOnMac
+                Text(Platform.isMac
                     ? "Sounds, banners and alerts are set in System Settings, under Notifications."
                     : "Sounds, banners and the lock screen are set in Settings.")
             }
@@ -52,7 +52,7 @@ struct NotificationSettingsScreen: View {
         }
         .settingsListStyle()
         .navigationTitle("Notifications")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
         .task {
             status = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
         }

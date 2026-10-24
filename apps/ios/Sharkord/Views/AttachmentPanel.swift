@@ -128,6 +128,10 @@ struct AttachmentPanel: View {
 
     // apple's own picker for which photos a limited library shares, adding or removing them
     private func selectMore() {
+        #if os(macOS)
+        // a mac has no picker for a limited library, its photos are chosen in System Settings
+        openSettings()
+        #else
         guard let presenter = UIApplication.shared.topViewController else {
             return
         }
@@ -137,6 +141,7 @@ struct AttachmentPanel: View {
                 await library.load()
             }
         }
+        #endif
     }
 }
 
@@ -322,7 +327,7 @@ final class PhotoLibrary {
     }
 
     // size is in pixels, the cell knows its screen's scale and this does not
-    func thumbnail(for asset: PHAsset, size: CGSize) async -> UIImage? {
+    func thumbnail(for asset: PHAsset, size: CGSize) async -> PlatformImage? {
         let options = PHImageRequestOptions()
 
         options.deliveryMode = .opportunistic
@@ -330,7 +335,7 @@ final class PhotoLibrary {
         options.resizeMode = .fast
 
         // opportunistic delivery calls back twice, a quick degraded image and then the real one
-        let stream = AsyncStream<UIImage?> { continuation in
+        let stream = AsyncStream<PlatformImage?> { continuation in
             imageManager.requestImage(for: asset, targetSize: size, contentMode: .aspectFill, options: options) { image, info in
                 continuation.yield(image)
 
@@ -342,7 +347,7 @@ final class PhotoLibrary {
             }
         }
 
-        var latest: UIImage?
+        var latest: PlatformImage?
 
         for await image in stream {
             latest = image ?? latest
@@ -384,7 +389,7 @@ final class PhotoLibrary {
 
         // heic doesn't open in most browsers, the web client has to show it too
         if let type = UTType(original.uniformTypeIdentifier), type.conforms(to: .heic) || type.conforms(to: .heif),
-           let image = UIImage(data: data), let jpeg = image.jpegData(compressionQuality: 0.9) {
+           let image = PlatformImage(data: data), let jpeg = image.jpegData(compressionQuality: 0.9) {
             let target = directory.appending(path: "\(name).jpg")
 
             try jpeg.write(to: target)
@@ -426,7 +431,7 @@ private struct AssetCell: View {
 
     @Environment(\.displayScale) private var displayScale
 
-    @State private var image: UIImage?
+    @State private var image: PlatformImage?
 
     private var duration: String {
         let seconds = Int(asset.duration.rounded())
@@ -439,7 +444,7 @@ private struct AssetCell: View {
             .aspectRatio(1, contentMode: .fit)
             .overlay {
                 if let image {
-                    Image(uiImage: image)
+                    Image(platformImage: image)
                         .resizable()
                         .scaledToFill()
                 } else {
@@ -546,6 +551,7 @@ private struct PollGlyph: View {
     }
 }
 
+#if os(iOS)
 extension UIApplication {
     // what a uikit only api like the limited library picker has to present from
     var topViewController: UIViewController? {
@@ -562,6 +568,7 @@ extension UIApplication {
         return top
     }
 }
+#endif
 
 // where the attachment panel sits, shared so the panel, the composer and the conversation can
 // all drag it. a drag up grows the panel, which is drawn over the conversation, so nothing else
@@ -575,11 +582,15 @@ final class AttachPanelModel {
 
         // a rotation keeps the last height, measured in the other orientation, and a portrait
         // keyboard's 300pt covered most of a landscape phone. cap it against its own window
+        #if os(iOS)
         guard let window = UIApplication.shared.topViewController?.view.window else {
             return keyboardHeight
         }
 
         return min(keyboardHeight, window.bounds.height * 0.55)
+        #else
+        return keyboardHeight
+        #endif
     }
 
     // the composer has two panels in the keyboard's place, they share this one position
@@ -616,11 +627,17 @@ final class AttachPanelModel {
 
     // all but a sliver of the conversation under the navigation bar, as discord leaves it
     var expandedHeight: CGFloat {
+        #if os(macOS)
+        let height = NSApp.keyWindow?.contentView?.bounds.height ?? 800
+
+        return height - 110
+        #else
         let window = UIApplication.shared.topViewController?.view.window
         let height = window?.bounds.height ?? 800
         let insets = window?.safeAreaInsets ?? .zero
 
         return height - insets.top - insets.bottom - 110
+        #endif
     }
 
     // the panel's own height, never less than resting, a drag below that is a slide instead

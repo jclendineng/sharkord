@@ -13,7 +13,7 @@ struct ExpressionPanel: View {
 
         // the order the tabs run in, the mac's matching its buttons in the message box
         static var shown: [Tab] {
-            ProcessInfo.processInfo.isiOSAppOnMac ? [.gifs, .stickers, .emoji] : allCases
+            Platform.isMac ? [.gifs, .stickers, .emoji] : allCases
         }
     }
 
@@ -151,7 +151,7 @@ private struct SearchField: View {
 
             TextField("", text: $text, prompt: Text(prompt).foregroundStyle(Theme.muted))
                 .foregroundStyle(Theme.header)
-                .textInputAutocapitalization(.never)
+                .noAutocapitalization()
                 .autocorrectionDisabled()
                 .submitLabel(.search)
                 .focused($isFocused)
@@ -703,7 +703,7 @@ private struct StickerCell: View {
 
     var body: some View {
         Button(action: action) {
-            AnimatedImage(url: session.address?.fileURL(sticker.file), maxPointSize: 100, contentMode: .scaleAspectFit)
+            AnimatedImage(url: session.address?.fileURL(sticker.file), maxPointSize: 100, contentMode: .fit)
                 .aspectRatio(1, contentMode: .fit)
                 .hoverHighlight(cornerRadius: 8)
         }

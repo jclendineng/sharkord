@@ -50,6 +50,6 @@ struct AboutScreen: View {
         }
         .settingsListStyle()
         .navigationTitle("About")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
     }
 }

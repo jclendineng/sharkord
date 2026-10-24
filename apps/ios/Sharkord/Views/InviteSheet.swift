@@ -158,7 +158,7 @@ struct InviteSheet: View {
             .padding(20)
             .background(Theme.listBackground)
             .navigationTitle("Invite to \(session.displayName)")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done", action: close)
@@ -297,7 +297,7 @@ struct InviteSheet: View {
     }
 
     private func copy() {
-        UIPasteboard.general.url = inviteURL
+        Platform.copy(inviteURL)
         isCopied = true
     }
 

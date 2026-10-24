@@ -20,11 +20,11 @@ struct SearchRoute: Hashable, Identifiable {
 extension EnvironmentValues {
     // the mac's desktop layout, which an ipad showing the list beside the chat takes too: search
     // drops down under its box, threads open in a panel, settings fill the window
-    @Entry var usesDesktopLayout = ProcessInfo.processInfo.isiOSAppOnMac
+    @Entry var usesDesktopLayout = Platform.isMac
     // the desktop layout's search, dropping down under its box. an ipad in landscape with only its
     // screen's keyboard keeps the full screen search: that keyboard covers half the screen and
     // left the dropdown no room
-    @Entry var usesDesktopSearch = ProcessInfo.processInfo.isiOSAppOnMac
+    @Entry var usesDesktopSearch = Platform.isMac
     // set on the ipad's side by side layout, where search covers the whole screen as discord's
     // does rather than opening in the chat's column
     @Entry var presentSearch: (@MainActor (SearchRoute) -> Void)?

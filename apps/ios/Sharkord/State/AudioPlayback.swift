@@ -79,6 +79,7 @@ final class AudioPlayback {
 
     // in a call the session already plays and records, switching it would cut the call
     private func prepareSession() {
+        #if os(iOS)
         let session = AVAudioSession.sharedInstance()
 
         guard session.category != .playAndRecord else {
@@ -87,5 +88,6 @@ final class AudioPlayback {
 
         try? session.setCategory(.playback, mode: .default)
         try? session.setActive(true)
+        #endif
     }
 }

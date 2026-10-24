@@ -1,9 +1,13 @@
 import CoreImage.CIFilterBuiltins
+#if os(macOS)
+import AppKit
+#else
 import UIKit
+#endif
 
 // a qr code for a sign in, drawn sharp at any size with nearest neighbour scaling
 enum QRCode {
-    static func image(_ text: String) -> UIImage? {
+    static func image(_ text: String) -> PlatformImage? {
         let filter = CIFilter.qrCodeGenerator()
         filter.message = Data(text.utf8)
         filter.correctionLevel = "M"
@@ -15,6 +19,6 @@ enum QRCode {
             return nil
         }
 
-        return UIImage(cgImage: cgImage)
+        return PlatformImage(cgImage: cgImage)
     }
 }

@@ -1,5 +1,9 @@
 import SwiftUI
+#if os(macOS)
+import AppKit
+#else
 import UIKit
+#endif
 
 // discord's long press sheet for a message: quick reactions, then what can be done with it.
 // your own messages can be edited and deleted, anyone else's mentioned or reported
@@ -253,7 +257,7 @@ struct MessageActionsSheet: View {
     }
 
     private func copy() {
-        UIPasteboard.general.string = HTMLText.plainText(from: message.content ?? "")
+        Platform.copy(HTMLText.plainText(from: message.content ?? ""))
         closeMenu()
     }
 

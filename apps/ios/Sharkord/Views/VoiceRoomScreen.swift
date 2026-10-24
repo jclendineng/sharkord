@@ -432,7 +432,7 @@ private struct ScreenShareTile: View {
     @Environment(SessionStore.self) private var session
 
     var body: some View {
-        VideoView(track: track, contentMode: .scaleAspectFit)
+        VideoView(track: track, contentMode: .fit)
             .reportsVideoSize(of: VoiceStreamKey(kind: .screen, remoteId: userId))
             .aspectRatio(fills ? nil : 16 / 9, contentMode: .fit)
             .background(Color.black)
@@ -619,7 +619,7 @@ private struct CallSettingsSheet: View {
             }
             .background(Theme.listBackground)
             .navigationTitle("Voice Settings")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done", action: close)

@@ -18,7 +18,7 @@ struct ServerSettingsScreen: View {
     }
 
     var body: some View {
-        if ProcessInfo.processInfo.isiOSAppOnMac {
+        if Platform.isMac {
             splitView
         } else {
             stackView
@@ -46,7 +46,7 @@ struct ServerSettingsScreen: View {
             }
             .settingsListStyle()
             .navigationTitle("Server Settings")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close", systemImage: "xmark", action: close)
@@ -81,7 +81,7 @@ struct ServerSettingsScreen: View {
             }
             .settingsSidebarStyle()
             .navigationTitle("Server Settings")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close", systemImage: "xmark", action: close)

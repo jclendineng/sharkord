@@ -242,7 +242,7 @@ struct SearchHome: View {
                         .tag(tab)
                 }
             }
-            .tabViewStyle(.page(indexDisplayMode: .never))
+            .pagedTabs()
         }
     }
 }
@@ -257,7 +257,7 @@ private struct SearchTabBar: View {
     // a mac draws its own scroll bar under a horizontal scroll view whatever it is told, so the
     // tabs sit flat when they fit and only scroll when they do not
     private var spacing: CGFloat {
-        ProcessInfo.processInfo.isiOSAppOnMac ? 22 : 28
+        Platform.isMac ? 22 : 28
     }
 
     var body: some View {
@@ -823,9 +823,11 @@ private struct MediaGrid: View {
         .padding(.horizontal, 14)
         // handed over by hand: on a mac a sheet's background is worked out before it inherits
         // anything, so a sheet reading a store it was not given crashed on opening
-        .fullScreenCover(item: $viewing) { item in
+        .fullScreen(item: $viewing) { item in
             MediaViewer(items: items, startingAt: item, onJump: onJump)
+                #if os(iOS)
                 .navigationTransition(.zoom(sourceID: item.id, in: zoom))
+                #endif
                 .environment(session)
                 .environment(servers)
         }
@@ -870,7 +872,7 @@ private struct MediaGrid: View {
     private func save(from url: URL) {
         Task {
             if await PhotoSaver.save(from: url) {
-                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                Haptics.success()
             } else {
                 session.showError(AuthAPI.RequestError(message: "This picture could not be saved to Photos."))
             }
@@ -912,14 +914,14 @@ private struct MediaTile: View {
 struct VideoThumbnail: View {
     let url: URL
 
-    @State private var image: UIImage?
+    @State private var image: PlatformImage?
 
     var body: some View {
         ZStack {
             Theme.listBackground
 
             if let image {
-                Image(uiImage: image)
+                Image(platformImage: image)
                     .resizable()
                     .scaledToFill()
             }
@@ -936,7 +938,7 @@ struct VideoThumbnail: View {
             generator.maximumSize = CGSize(width: 400, height: 400)
 
             if let (still, _) = try? await generator.image(at: .zero) {
-                image = UIImage(cgImage: still)
+                image = PlatformImage(cgImage: still)
             }
         }
     }
@@ -984,13 +986,13 @@ struct PinnedMessageRow: View {
                     }
 
                     if let sticker = message.sticker {
-                        AnimatedImage(url: session.address?.fileURL(sticker.file), maxPointSize: 120, contentMode: .scaleAspectFit)
+                        AnimatedImage(url: session.address?.fileURL(sticker.file), maxPointSize: 120, contentMode: .fit)
                             .frame(width: 120, height: 120)
                             .accessibilityLabel(sticker.name)
                     }
 
                     ForEach(message.mediaImages, id: \.url) { media in
-                        AnimatedImage(url: URL(string: media.url), maxPointSize: 240, contentMode: .scaleAspectFit, sizesToImage: true)
+                        AnimatedImage(url: URL(string: media.url), maxPointSize: 240, contentMode: .fit, sizesToImage: true)
                             .frame(maxWidth: 220, maxHeight: 240, alignment: .leading)
                             .clipShape(.rect(cornerRadius: 8))
                     }
@@ -1028,7 +1030,7 @@ struct PinnedMessageRow: View {
     }
 
     private func copyText() {
-        UIPasteboard.general.string = text
+        Platform.copy(text)
     }
 
     private func unpin() {

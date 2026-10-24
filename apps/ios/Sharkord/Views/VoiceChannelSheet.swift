@@ -31,7 +31,7 @@ struct VoiceChannelSheet: View {
     // middle with no heights to move between, so there it stays one list. asked of the device,
     // not the size class: inside that form an ipad is compact too, and got the phone's sheet
     private var growsIntoSettings: Bool {
-        UIDevice.current.userInterfaceIdiom == .phone
+        Platform.isPhone
     }
 
     var body: some View {
@@ -603,6 +603,21 @@ private struct OutputTile: View {
 }
 
 // the system's own picker for where the call plays, the speaker, headphones or airpods
+#if os(macOS)
+private struct AudioRoutePicker: NSViewRepresentable {
+    func makeNSView(context: Context) -> AVRoutePickerView {
+        let picker = AVRoutePickerView()
+
+        picker.isRoutePickerButtonBordered = false
+        picker.setRoutePickerButtonColor(NSColor(Theme.header), for: .normal)
+        picker.setRoutePickerButtonColor(NSColor(Theme.blurple), for: .active)
+
+        return picker
+    }
+
+    func updateNSView(_ picker: AVRoutePickerView, context: Context) {}
+}
+#else
 private struct AudioRoutePicker: UIViewRepresentable {
     func makeUIView(context: Context) -> AVRoutePickerView {
         let picker = AVRoutePickerView()
@@ -615,6 +630,7 @@ private struct AudioRoutePicker: UIViewRepresentable {
 
     func updateUIView(_ picker: AVRoutePickerView, context: Context) {}
 }
+#endif
 
 // the system's own panel for the mic or the camera, the ones control center shows during a call
 private struct SystemPanelRow: View {

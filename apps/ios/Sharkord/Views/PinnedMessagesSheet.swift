@@ -43,9 +43,9 @@ struct PinnedMessagesSheet: View {
             NavigationStack {
                 list
                     .navigationTitle("Pinned Messages")
-                    .navigationBarTitleDisplayMode(.inline)
+                    .inlineNavigationTitle()
                     .toolbar {
-                        if !ProcessInfo.processInfo.isiOSAppOnMac {
+                        if !Platform.isMac {
                             ToolbarItem(placement: .confirmationAction) {
                                 Button("Done", action: close)
                             }

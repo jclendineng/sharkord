@@ -120,7 +120,7 @@ struct SiteIcon<Fallback: View>: View {
     let url: URL
     let fallback: Fallback
 
-    @State private var image: UIImage?
+    @State private var image: PlatformImage?
     @State private var hasFailed = false
 
     private static var tileSize: CGFloat { 64 }
@@ -128,7 +128,7 @@ struct SiteIcon<Fallback: View>: View {
     var body: some View {
         Group {
             if let image {
-                Image(uiImage: image)
+                Image(platformImage: image)
                     .resizable()
                     // a tiny favicon grown to the tile keeps hard pixel edges rather than a smear
                     .interpolation(isTiny(image) ? .none : .high)
@@ -147,7 +147,7 @@ struct SiteIcon<Fallback: View>: View {
         }
     }
 
-    private func isTiny(_ image: UIImage) -> Bool {
+    private func isTiny(_ image: PlatformImage) -> Bool {
         image.size.width * image.scale < Self.tileSize
     }
 
@@ -155,7 +155,7 @@ struct SiteIcon<Fallback: View>: View {
         guard
             let (data, response) = try? await URLSession.shared.data(from: url),
             (response as? HTTPURLResponse)?.statusCode == 200,
-            let loaded = UIImage(data: data)
+            let loaded = PlatformImage(data: data)
         else {
             hasFailed = true
             return

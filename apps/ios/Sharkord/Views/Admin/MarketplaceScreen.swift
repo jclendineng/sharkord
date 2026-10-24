@@ -56,7 +56,7 @@ struct MarketplaceScreen: View {
             }
         }
         .navigationTitle("Browse Plugins")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
         // handed over by hand: on a mac a sheet's background is worked out before it inherits
         // anything, so a sheet reading a store it was not given crashed on opening
         .sheet(item: $confirming) { entry in
@@ -256,7 +256,7 @@ private struct InstallWarningSheet: View {
             }
             .settingsListStyle()
             .navigationTitle(isUpdate ? "Update \(entry.plugin.name)?" : "Install \(entry.plugin.name)?")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", action: close)

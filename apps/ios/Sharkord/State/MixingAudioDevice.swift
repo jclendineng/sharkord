@@ -2,6 +2,21 @@ import AVFoundation
 import os
 import WebRTC
 
+#if os(macOS)
+// a mac call uses webrtc's own audio device, which records the mic and plays the call itself.
+// sharing app audio and hearing yourself are not built for the mac yet, so this is never made
+// there and the call never asks for it
+nonisolated final class MixingAudioDevice: @unchecked Sendable {
+    var isMicMuted = false
+    var isMonitoring = false
+
+    init(options: VoiceConnection.AudioOptions) {}
+
+    func writeGameAudio(_ samples: UnsafeBufferPointer<Float>) {}
+
+    func clearGameAudio() {}
+}
+#else
 // webrtc's own ios audio device only ever records the microphone. this one stands in for it
 // when a screen share should carry the game's sound: it records the mic and plays the call
 // through AVAudioEngine like the built in one does, and mixes in the game audio ScreenCapture
@@ -477,3 +492,4 @@ nonisolated final class GameAudioRing: @unchecked Sendable {
         state.withLock { $0 = (0, 0) }
     }
 }
+#endif

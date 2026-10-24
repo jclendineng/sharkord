@@ -110,7 +110,7 @@ struct PollCreatorSheet: View {
             }
             .settingsListStyle()
             .navigationTitle("Create a Poll")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", action: close)

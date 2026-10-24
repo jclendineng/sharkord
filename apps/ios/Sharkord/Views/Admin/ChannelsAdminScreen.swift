@@ -71,18 +71,18 @@ struct ChannelsAdminScreen: View {
         .settingsListStyle()
         // the phone drags by the handles edit mode shows. on a mac edit mode blanked the rows and
         // its handles never moved, so there the rows get arrows instead
-        .environment(\.editMode, .constant(isReordering && !isOnMac ? .active : .inactive))
+        .editing(isReordering && !isOnMac)
         .navigationTitle("Channels")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
         .toolbar {
             // out in the bar rather than in the menu, where nobody found it
             if session.can(.manageChannels) {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .barTrailing) {
                     Button(isReordering ? "Done" : "Reorder", action: toggleReordering)
                 }
             }
 
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .barTrailing) {
                 Menu {
                     if session.can(.manageChannels) {
                         Button("New Text Channel", systemImage: "number") { creating = .text }
@@ -130,7 +130,7 @@ struct ChannelsAdminScreen: View {
         }
     }
 
-    private let isOnMac = ProcessInfo.processInfo.isiOSAppOnMac
+    private let isOnMac = Platform.isMac
 
     private func toggleReordering() {
         withAnimation {
@@ -300,7 +300,7 @@ struct ChannelEditor: View {
         List {
             Section("Name") {
                 TextField("Channel name", text: $name)
-                    .textInputAutocapitalization(.never)
+                    .noAutocapitalization()
             }
 
             if channel.type == .text {
@@ -343,7 +343,7 @@ struct ChannelEditor: View {
         }
         .settingsListStyle()
         .navigationTitle(channel.name)
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 if isSaving {
@@ -443,7 +443,7 @@ struct NewChannelSheet: View {
 
                 Section("Name") {
                     TextField(type == .voice ? "General Voice" : "general", text: $name)
-                        .textInputAutocapitalization(.never)
+                        .noAutocapitalization()
                 }
 
                 Section("Category") {
@@ -465,7 +465,7 @@ struct NewChannelSheet: View {
             }
             .settingsListStyle()
             .navigationTitle(type == .voice ? "New Voice Channel" : "New Text Channel")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", action: close)
@@ -529,7 +529,7 @@ private struct CategoryOrderSheet: View {
     @State private var ordered: [ChannelCategory]
     @State private var errorMessage: String?
 
-    private let isOnMac = ProcessInfo.processInfo.isiOSAppOnMac
+    private let isOnMac = Platform.isMac
 
     init(categories: [ChannelCategory]) {
         _ordered = State(initialValue: categories)
@@ -571,9 +571,9 @@ private struct CategoryOrderSheet: View {
             }
             .settingsListStyle()
             // as the channels: a mac's edit mode blanked the rows and never dragged
-            .environment(\.editMode, .constant(isOnMac ? .inactive : .active))
+            .editing(!isOnMac)
             .navigationTitle("Reorder Categories")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", action: close)

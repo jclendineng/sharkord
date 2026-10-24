@@ -1,11 +1,26 @@
-import UIKit
 import UserNotifications
+#if os(macOS)
+import AppKit
 
-// remote notifications still only reach an app through its UIKit delegate
-final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
-    // handed over by SharkordApp, UIKit creates the delegate before any SwiftUI state exists
+typealias PlatformApplication = NSApplication
+typealias PlatformApplicationDelegate = NSApplicationDelegate
+#else
+import UIKit
+
+typealias PlatformApplication = UIApplication
+typealias PlatformApplicationDelegate = UIApplicationDelegate
+#endif
+
+// remote notifications still only reach an app through its UIKit or AppKit delegate
+final class AppDelegate: NSObject, PlatformApplicationDelegate, UNUserNotificationCenterDelegate {
+    // handed over by SharkordApp, the system creates the delegate before any SwiftUI state exists
     var servers: ServerListStore?
 
+    #if os(macOS)
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        UNUserNotificationCenter.current().delegate = self
+    }
+    #else
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
@@ -14,9 +29,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
 
         return true
     }
+    #endif
 
     // the same token goes to every server, each one only pushes for its own account
-    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+    func application(_ application: PlatformApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         let token = deviceToken.map { String(format: "%02x", $0) }.joined()
 
         Task {
