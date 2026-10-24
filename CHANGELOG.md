@@ -236,6 +236,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - A name another member already uses, whatever its case, can't be taken on rename ([#828](https://github.com/Sharkord/sharkord/issues/828)).
 - An open voice channel chat follows you when you switch voice channels. It still never opens by itself ([#716](https://github.com/Sharkord/sharkord/issues/716)).
 - The web invite page on an iPhone, iPad or Mac puts **Open in the Sharkord app** first, with the browser sign in below it.
+  - **Get the app** sits below it, and on an iPhone or iPad without the app, Open moves on to the beta after Safari's error.
 - The app decodes each live update once, straight from the message, instead of parsing it, writing it back out and decoding it again.
 - The iOS app now needs iOS 27 or later.
 - The iPhone app stays in portrait. Landscape is for the iPad.

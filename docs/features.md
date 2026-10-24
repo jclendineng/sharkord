@@ -653,7 +653,8 @@ up, as the web client's invite links do.
 Invite links open the app on any server. The app is tied to no domain, so on an iPhone, iPad or Mac
 the web invite page leads with **Open in the Sharkord app**, a
 `sharkord://join?server=…&invite=…` link, above the invite and the browser sign in. A server already signed in to just opens, and any
-other goes straight to making an account with the invite filled in.
+other goes straight to making an account with the invite filled in. **Get the app** below it links to the beta,
+and on an iPhone or iPad a tap on Open that leaves the page showing (no app installed) moves on to the beta after a moment.
 
 New login alerts, as Discord's: whenever an account signs in somewhere (a password or single sign
 on), every other device it has the app on with notifications gets **New login detected**, naming

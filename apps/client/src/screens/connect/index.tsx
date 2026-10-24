@@ -3,6 +3,7 @@ import { PluginSlotRenderer } from '@/components/plugin-slot-renderer';
 import { connect } from '@/features/server/actions';
 import { useInfo } from '@/features/server/hooks';
 import { getFileUrl, getUrlFromServer } from '@/helpers/get-file-url';
+import { IOS_APP_URL, isIosDevice } from '@/helpers/ios-app';
 import {
   getLocalStorageItem,
   getLocalStorageItemBool,
@@ -87,6 +88,28 @@ const Connect = memo(() => {
 
     // with the subpath a server behind a proxy is served under, which the origin alone leaves out
     return `sharkord://join?server=${encodeURIComponent(getUrlFromServer())}&invite=${encodeURIComponent(invite)}`;
+  }, []);
+
+  // safari can't tell whether the app is installed, so a page still showing after the tap means it isn't
+  const onOpenInAppClick = useCallback(() => {
+    // a mac keeps the page showing even when the app opens
+    if (!isIosDevice) {
+      return;
+    }
+
+    let timer = 0;
+
+    const onHidden = () => {
+      window.clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onHidden);
+    };
+
+    timer = window.setTimeout(() => {
+      onHidden();
+      window.location.href = IOS_APP_URL;
+    }, 1500);
+
+    document.addEventListener('visibilitychange', onHidden);
   }, []);
 
   const inviteCode = useMemo(() => {
@@ -293,7 +316,18 @@ const Connect = memo(() => {
                 <div className="flex flex-col gap-2">
                   {inviteAlert}
                   <Button asChild>
-                    <a href={appInviteLink}>{t('openInApp')}</a>
+                    <a href={appInviteLink} onClick={onOpenInAppClick}>
+                      {t('openInApp')}
+                    </a>
+                  </Button>
+                  <Button variant="outline" asChild>
+                    <a
+                      href={IOS_APP_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {t('getApp')}
+                    </a>
                   </Button>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Separator className="w-auto flex-1" />
