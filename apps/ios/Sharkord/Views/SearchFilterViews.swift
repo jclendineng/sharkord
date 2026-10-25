@@ -67,11 +67,15 @@ struct FilterMenu: View {
             }
         } label: {
             Image(systemName: "slider.horizontal.3")
-                .font(.system(size: 18, weight: .medium))
-                .foregroundStyle(isFiltering ? Theme.blurple : Theme.text)
-                .frame(width: 40, height: 40)
-                .hoverHighlight(cornerRadius: 10)
+                .font(.system(size: 17, weight: .medium))
+                .foregroundStyle(isFiltering ? Theme.blurple : Theme.muted)
+                .frame(width: 36, height: 36)
+                .hoverHighlight(cornerRadius: 8)
         }
+        // a mac's toolbar draws a menu as a pull down with a chevron beside it
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
     }
 }
 
@@ -123,7 +127,7 @@ struct FilterChips: View {
             }
             .padding(.horizontal, 16)
         }
-        .scrollIndicators(.hidden)
+        .scrollIndicators(.never)
     }
 }
 
@@ -288,11 +292,11 @@ struct DateFilterSheet: View {
                 .navigationTitle(picker.dateTitle)
                 .inlineNavigationTitle()
                 .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
+                    ActionToolbarItem(placement: .cancellationAction) {
                         Button("Cancel", action: close)
                     }
 
-                    ToolbarItem(placement: .confirmationAction) {
+                    ActionToolbarItem(placement: .confirmationAction) {
                         Button("Save", action: save)
                             .fontWeight(.semibold)
                     }

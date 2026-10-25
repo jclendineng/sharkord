@@ -137,7 +137,7 @@ struct HomeView: View {
             NavigationStack {
                 DevicesScreen()
                     .toolbar {
-                        ToolbarItem(placement: .confirmationAction) {
+                        ActionToolbarItem(placement: .confirmationAction) {
                             Button("Done", action: closeDevices)
                         }
                     }
@@ -190,6 +190,7 @@ struct HomeView: View {
                 styledPanel
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+            .phoneButtons()
             .background(Theme.railBackground.ignoresSafeArea())
             .navigationBarHidden()
             .chatDestinations()
@@ -212,6 +213,7 @@ struct HomeView: View {
                         .padding(.top, Self.cardGap)
                 }
                 .frame(width: listWidth)
+                .phoneButtons()
                 .overlay {
                     if servers.isChatDropdownOpen && !Platform.isMac {
                         Color.clear
@@ -746,6 +748,13 @@ private struct ChatHandle: View {
     let onRelease: (CGFloat, CGFloat) -> Void
     let onTap: () -> Void
 
+    @State private var isHovered = false
+
+    // a mac's divider is invisible until the pointer reaches it, as a split view's is
+    private var isShown: Bool {
+        !Platform.isMac || isHovered
+    }
+
     var body: some View {
         Capsule()
             .fill(Theme.muted)
@@ -753,13 +762,21 @@ private struct ChatHandle: View {
             .frame(width: 22, height: 70)
             .background(Color(hex: "#3D3F46"), in: .capsule)
             .shadow(color: .black.opacity(0.45), radius: 8)
+            .opacity(isShown ? 1 : 0)
+            .animation(.easeOut(duration: 0.15), value: isShown)
             .frame(width: Self.width, height: 96)
             .contentShape(.rect)
+            .onHover(perform: setHovered)
+            .resizePointer()
             .gesture(drag)
             .accessibilityElement()
             .accessibilityLabel("Resize chat")
             .accessibilityAddTraits(.isButton)
             .accessibilityAction { onTap() }
+    }
+
+    private func setHovered(_ hovered: Bool) {
+        isHovered = hovered
     }
 
     // measured on the screen, the grip moving under the finger along with the card

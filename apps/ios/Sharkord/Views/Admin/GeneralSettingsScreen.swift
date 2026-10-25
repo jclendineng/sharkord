@@ -76,7 +76,7 @@ struct GeneralSettingsScreen: View {
     }
 
     private func form(_ settings: Binding<AdminServerSettings>) -> some View {
-        List {
+        SettingsForm {
             Section {
                 HStack(spacing: 16) {
                     iconPreview
@@ -107,15 +107,17 @@ struct GeneralSettingsScreen: View {
             }
 
             Section {
-                TextField("What is this server about?", text: Binding(
+                TextField("", text: Binding(
                     get: { settings.wrappedValue.description ?? "" },
                     set: { settings.wrappedValue.description = $0 }
-                ), axis: .vertical)
+                ), prompt: Text("What is this server about?"), axis: .vertical)
+                .labelsHidden()
                 .lineLimit(2...5)
             } header: {
                 Text("Description")
             } footer: {
                 Text("\((settings.wrappedValue.description ?? "").count)/\(Self.descriptionLimit)")
+                    .wrappingFooter()
             }
 
             Section {
@@ -143,10 +145,11 @@ struct GeneralSettingsScreen: View {
             }
 
             Section {
-                TextField("reports@example.com", text: Binding(
+                TextField("", text: Binding(
                     get: { settings.wrappedValue.reportEmail ?? "" },
                     set: { settings.wrappedValue.reportEmail = $0 }
-                ))
+                ), prompt: Text("reports@example.com"))
+                .labelsHidden()
                 .keyboard(.email)
                 .textContentType(.emailAddress)
                 .noAutocapitalization()
@@ -155,32 +158,37 @@ struct GeneralSettingsScreen: View {
                 Text("Report Email")
             } footer: {
                 Text("Where people send questions and reports about this server or a message on it. The apps show it as the contact in About, and Report opens an email to it.")
+                    .wrappingFooter()
             }
 
             Section {
-                SecureField("Paste a key to turn on GIFs", text: Binding(
+                SecureField("", text: Binding(
                     get: { settings.wrappedValue.klipyApiKey ?? "" },
                     set: { settings.wrappedValue.klipyApiKey = $0 }
-                ))
+                ), prompt: Text("Paste a key to turn on GIFs"))
+                .labelsHidden()
                 .noAutocapitalization()
                 .autocorrectionDisabled()
             } header: {
                 Text("Klipy API Key")
             } footer: {
                 Text("Turns on GIFs. Get a free key at klipy.com/developers. Searches go through this server, so the key stays private.")
+                    .wrappingFooter()
             }
 
             Section {
-                SecureField("Paste a key to turn on sound search", text: Binding(
+                SecureField("", text: Binding(
                     get: { settings.wrappedValue.freesoundApiKey ?? "" },
                     set: { settings.wrappedValue.freesoundApiKey = $0 }
-                ))
+                ), prompt: Text("Paste a key to turn on sound search"))
+                .labelsHidden()
                 .noAutocapitalization()
                 .autocorrectionDisabled()
             } header: {
                 Text("Freesound API Key")
             } footer: {
                 Text("Turns on searching Freesound for soundboard sounds. Get a free key at freesound.org/apiv2/apply, it's the client secret. Searches go through this server, so the key stays private.")
+                    .wrappingFooter()
             }
 
             if let showsContent = settings.wrappedValue.pushShowMessageContent {
@@ -193,6 +201,7 @@ struct GeneralSettingsScreen: View {
                     Text("Push Notifications")
                 } footer: {
                     Text("Notifications pass through Apple. Off, they only say who sent something, never what or in which channel.")
+                        .wrappingFooter()
                 }
             }
 
@@ -206,6 +215,7 @@ struct GeneralSettingsScreen: View {
                     Text("Link Previews")
                 } footer: {
                     Text("Lets previews load from addresses on the server's own network, like a home server's other apps. Only with members you trust, anyone could make the server load pages only it can reach. Also previewPrivateNetwork under [links] in config.ini.")
+                        .wrappingFooter()
                 }
             }
 
@@ -235,6 +245,7 @@ struct GeneralSettingsScreen: View {
                     Text("AFK")
                 } footer: {
                     Text("Members silent in a call for the timeout are moved to the AFK channel.")
+                        .wrappingFooter()
                 }
             }
 
@@ -247,7 +258,7 @@ struct GeneralSettingsScreen: View {
         }
         .settingsListStyle()
         .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
+            ActionToolbarItem(placement: .confirmationAction) {
                 if isSaving {
                     ProgressView()
                 } else {

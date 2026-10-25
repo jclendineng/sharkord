@@ -18,7 +18,7 @@ struct DevicesScreen: View {
     }
 
     var body: some View {
-        List {
+        SettingsForm {
             Section {
                 Text("These are the devices signed in to your account on \(session.displayName). Sign out of any you don't recognize, and change your password if you think someone else has it.")
                     .font(.subheadline)

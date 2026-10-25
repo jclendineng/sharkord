@@ -152,7 +152,7 @@ struct VoiceRoomScreen: View {
                     }
                 }
             }
-            .scrollIndicators(.hidden)
+            .scrollIndicators(.never)
             .frame(height: 112)
         }
         .padding(12)
@@ -556,7 +556,7 @@ private struct ReactionBar: View {
             }
             .padding(.horizontal, 12)
         }
-        .scrollIndicators(.hidden)
+        .scrollIndicators(.never)
         .padding(.bottom, 6)
     }
 
@@ -621,7 +621,7 @@ private struct CallSettingsSheet: View {
             .navigationTitle("Voice Settings")
             .inlineNavigationTitle()
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
+                ActionToolbarItem(placement: .confirmationAction) {
                     Button("Done", action: close)
                 }
             }

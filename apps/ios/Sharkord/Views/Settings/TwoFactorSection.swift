@@ -80,6 +80,7 @@ struct TwoFactorSection: View {
             Text("Two-Factor Authentication")
         } footer: {
             Text("After your password, a code from an authenticator app such as Apple Passwords, Google Authenticator or 1Password is asked for. Each recovery code works once if you lose it.")
+                .wrappingFooter()
         }
         .task {
             let status: Status? = try? await session.request("users.getTwoFactor")

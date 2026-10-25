@@ -162,18 +162,19 @@ private struct CategoryNotificationsSheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            SettingsForm {
                 Section {
                     NotificationLevelChoices(selected: session.sharedNotificationLevel(of: channelIds), onPick: setLevel)
                 } footer: {
                     Text("Applies to every channel in \(category.name). Each one can still be changed on its own.")
+                        .wrappingFooter()
                 }
             }
             .settingsListStyle()
             .navigationTitle("Notifications")
             .inlineNavigationTitle()
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
+                ActionToolbarItem(placement: .confirmationAction) {
                     Button("Done", action: close)
                 }
             }
@@ -215,7 +216,7 @@ struct CategoryEditor: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            SettingsForm {
                 Section("Name") {
                     TextField("Category name", text: $name)
                 }
@@ -235,11 +236,11 @@ struct CategoryEditor: View {
             .navigationTitle("Edit Category")
             .inlineNavigationTitle()
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ActionToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", action: close)
                 }
 
-                ToolbarItem(placement: .confirmationAction) {
+                ActionToolbarItem(placement: .confirmationAction) {
                     if isSaving {
                         ProgressView()
                     } else {

@@ -33,12 +33,14 @@ struct RulesSetupSheet: View {
                     Text("Reacting Gives")
                 } footer: {
                     Text("New members land here, the only channel they can see, until they react.")
+                        .wrappingFooter()
                 }
 
                 Section {
                     Toggle("Close Other Channels to New Members", isOn: $closesOtherChannels)
                 } footer: {
                     Text("Makes every other public channel private, open to every role except the one new members start with. Channels already private keep their own permissions.")
+                        .wrappingFooter()
                 }
 
                 if let defaultRoleName {
@@ -46,6 +48,7 @@ struct RulesSetupSheet: View {
                         Toggle("Take Away \(defaultRoleName) Once They React", isOn: $removesDefaultRole)
                     } footer: {
                         Text("For a role that only means someone has not accepted the rules yet. Leave it off if \(defaultRoleName) gives permissions members need.")
+                            .wrappingFooter()
                     }
                 }
 
@@ -53,6 +56,7 @@ struct RulesSetupSheet: View {
                     Toggle("Give it to everyone already here", isOn: $givesExistingMembers)
                 } footer: {
                     Text("Without it, members who joined before the rules lose the channels you close.")
+                        .wrappingFooter()
                 }
 
                 if let errorMessage {
@@ -68,11 +72,11 @@ struct RulesSetupSheet: View {
             .navigationTitle("Rules Message")
             .inlineNavigationTitle()
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ActionToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", action: close)
                 }
 
-                ToolbarItem(placement: .confirmationAction) {
+                ActionToolbarItem(placement: .confirmationAction) {
                     if isSaving {
                         ProgressView()
                     } else {

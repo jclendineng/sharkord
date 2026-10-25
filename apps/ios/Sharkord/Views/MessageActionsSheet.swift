@@ -163,7 +163,7 @@ struct MessageActionsSheet: View {
             EmojiPickerView(
                 includesCustom: true,
                 title: "Edit default",
-                subtitle: "Choose double tap emoji",
+                subtitle: Platform.isMac ? "Choose double click emoji" : "Choose double tap emoji",
                 // straight to full height, the whole list scrolls without a drag up first
                 detents: [.large],
                 onPick: setDoubleTapReaction
@@ -199,7 +199,7 @@ struct MessageActionsSheet: View {
 
     private var doubleTapHint: some View {
         HStack(spacing: 4) {
-            Text("Double tap a message to")
+            Text(Platform.isMac ? "Double click a message to" : "Double tap a message to")
 
             EmojiView(value: AppSettings.shared.doubleTapReaction, size: 16)
 

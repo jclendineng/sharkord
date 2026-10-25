@@ -155,6 +155,8 @@ struct ChatScreen: View {
         .safeAreaInset(edge: .top, spacing: 0) {
             SessionBanners(showsVoiceTakenOver: expandChat == nil)
         }
+        // the chat's own buttons, applied under the toolbar so the bar keeps its own
+        .phoneButtons()
         .inlineNavigationTitle()
         .navigationBarBackground(Theme.chatBackground)
         .navigationBarBackgroundVisible()
@@ -186,72 +188,89 @@ struct ChatScreen: View {
                 }
             }
 
-            if canShowMembers {
-                ToolbarItem(placement: .barTrailing) {
-                    Button(action: toggleMemberList) {
-                        Image(systemName: isMemberListShown ? "person.2.fill" : "person.2")
-                            .foregroundStyle(isMemberListShown ? Theme.header : Theme.text)
-                            .hoverPop()
-                    }
-                    .accessibilityLabel(isMemberListShown ? "Hide Member List" : "Show Member List")
-                    // the icon grows under the pointer, as discord's do. the system's own circle drawn behind
-                    // it on top of that read as a shadow
-                    .noHoverEffect()
-                }
-            }
+            // discord's mac: the search box and one flat row of icons, each the same size and the
+            // same distance apart. the bar's own glass grouped them into capsules of two, the
+            // bell's menu with a chevron
+            if Platform.isMac {
+                PlainToolbarItem(placement: .barTrailing) {
+                    HStack(spacing: 4) {
+                        // with the icons rather than in the middle of the bar, where it took the
+                        // room they needed and a narrow window put them away under a chevron
+                        if usesDesktopSearch {
+                            desktopSearch
+                                .padding(.trailing, 8)
+                        }
 
-            if canShowThreadPanel {
+                        if canShowThreadPanel {
+                            HeaderButton(title: "Threads", systemImage: "bubble.left.and.text.bubble.right", action: showThreads)
+                        }
+
+                        if channel?.isDm == false {
+                            NotificationBell(channelId: channelId)
+                        }
+
+                        HeaderButton(title: "Pinned Messages", systemImage: "pin.fill", action: showPins)
+
+                        if canShowMembers {
+                            HeaderButton(
+                                title: isMemberListShown ? "Hide Member List" : "Show Member List",
+                                systemImage: "person.2.fill",
+                                isOn: isMemberListShown,
+                                action: toggleMemberList
+                            )
+                        }
+
+                        InboxButton(action: showInbox)
+                    }
+                }
+            } else {
+                if canShowMembers {
+                    ToolbarItem(placement: .barTrailing) {
+                        Button(action: toggleMemberList) {
+                            Image(systemName: isMemberListShown ? "person.2.fill" : "person.2")
+                                .foregroundStyle(isMemberListShown ? Theme.header : Theme.text)
+                                .hoverPop()
+                        }
+                        .accessibilityLabel(isMemberListShown ? "Hide Member List" : "Show Member List")
+                        // the icon grows under the pointer, as discord's do. the system's own circle drawn behind
+                        // it on top of that read as a shadow
+                        .noHoverEffect()
+                    }
+                }
+
+                if canShowThreadPanel {
+                    ToolbarItem(placement: .barTrailing) {
+                        Button(action: showThreads) {
+                            Image(systemName: "bubble.left.and.text.bubble.right")
+                                .foregroundStyle(Theme.text)
+                                .hoverPop()
+                        }
+                        .accessibilityLabel("Threads")
+                        .noHoverEffect()
+                    }
+                }
+
                 ToolbarItem(placement: .barTrailing) {
-                    Button(action: showThreads) {
-                        Image(systemName: "bubble.left.and.text.bubble.right")
+                    Button(action: showPins) {
+                        Image(systemName: "pin")
                             .foregroundStyle(Theme.text)
                             .hoverPop()
                     }
-                    .accessibilityLabel("Threads")
+                    .accessibilityLabel("Pinned Messages")
                     .noHoverEffect()
-                }
-            }
-
-            if Platform.isMac && channel?.isDm == false {
-                ToolbarItem(placement: .barTrailing) {
-                    NotificationBell(channelId: channelId)
-                }
-            }
-
-            ToolbarItem(placement: .barTrailing) {
-                Button(action: showPins) {
-                    Image(systemName: "pin")
-                        .foregroundStyle(Theme.text)
-                        .hoverPop()
-                }
-                .accessibilityLabel("Pinned Messages")
-                .noHoverEffect()
-            }
-
-            // discord's mac keeps the inbox at the top right rather than in the user bar
-            if Platform.isMac {
-                ToolbarItem(placement: .barTrailing) {
-                    InboxButton(action: showInbox)
                 }
             }
 
             if hasDesktopRoom && usesDesktopSearch {
-                // discord's mac: the box itself sits in the top bar, the results drop down under.
-                // the principal place, the bar's trailing group collapses a text field to nothing
-                ToolbarItem(placement: .principal) {
-                    HStack(spacing: 8) {
-                        SearchBox(
-                            model: searchModel,
-                            prompt: searchModel.prompt(in: session, directMessages: false),
-                            isFocused: $isSearchFocused
-                        )
-                        .frame(width: 240)
-
-                        FilterMenu(isFiltering: !searchModel.filters.isEmpty, onChoose: chooseFilter)
+                // the box itself sits in the top bar, the results drop down under. a wide ipad's
+                // in the middle of the bar, a mac's in its icon row
+                if !Platform.isMac {
+                    ToolbarItem(placement: .principal) {
+                        desktopSearch
+                            .frame(maxWidth: .infinity, alignment: .trailing)
                     }
-                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .sharedBackgroundVisibility(.hidden)
                 }
-                .sharedBackgroundVisibility(.hidden)
             } else {
                 ToolbarItem(placement: .barTrailing) {
                     SearchLink(route: SearchRoute(channelId: channelId)) {
@@ -304,6 +323,19 @@ struct ChatScreen: View {
     // the desktop layout's top bar and thread panel, once the chat is wide enough for them beside
     // the conversation. an ipad in portrait is not, and pushes threads and opens search from
     // its magnifier instead
+    private var desktopSearch: some View {
+        HStack(spacing: 8) {
+            SearchBox(
+                model: searchModel,
+                prompt: searchModel.prompt(in: session, directMessages: false),
+                isFocused: $isSearchFocused
+            )
+            .frame(width: 240)
+
+            FilterMenu(isFiltering: searchModel.filters.narrowsPastChannel, onChoose: chooseFilter)
+        }
+    }
+
     private var hasDesktopRoom: Bool {
         Platform.isMac || (usesDesktopLayout && chatWidth >= 640)
     }
@@ -486,12 +518,13 @@ private struct NotificationBell: View {
             }
             .pickerStyle(.inline)
         } label: {
-            Image(systemName: isMuted ? "bell.slash.fill" : "bell.fill")
-                .foregroundStyle(Theme.text)
-                .hoverPop()
+            HeaderIcon(systemImage: isMuted ? "bell.slash.fill" : "bell.fill")
         }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
         .accessibilityLabel("Notification Settings")
-        .noHoverEffect()
+        .help("Notification Settings")
     }
 
     private func setLevel(_ newLevel: ChannelNotificationLevel) {
@@ -508,6 +541,37 @@ private struct NotificationBell: View {
 
     private func unmute() {
         setLevel(.mentions)
+    }
+}
+
+// an icon in the mac's header row, the same size as the search filter beside it
+private struct HeaderIcon: View {
+    let systemImage: String
+    var isOn = false
+
+    var body: some View {
+        Image(systemName: systemImage)
+            .font(.system(size: 17, weight: .medium))
+            .foregroundStyle(isOn ? Theme.header : Theme.muted)
+            .frame(width: 36, height: 36)
+            .contentShape(.rect)
+            .hoverHighlight(cornerRadius: 8)
+    }
+}
+
+private struct HeaderButton: View {
+    let title: String
+    let systemImage: String
+    var isOn = false
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HeaderIcon(systemImage: systemImage, isOn: isOn)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
+        .help(title)
     }
 }
 
@@ -691,19 +755,18 @@ private struct InboxButton: View {
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: "tray.fill")
-                .foregroundStyle(Theme.text)
-                .hoverPop()
+            HeaderIcon(systemImage: "tray.fill")
                 .overlay(alignment: .topTrailing) {
                     if hasUnread {
                         Circle()
                             .fill(Theme.red)
                             .frame(width: 8, height: 8)
-                            .offset(x: 4, y: -3)
+                            .offset(x: -8, y: 8)
                     }
                 }
         }
+        .buttonStyle(.plain)
         .accessibilityLabel("Inbox")
-        .noHoverEffect()
+        .help("Inbox")
     }
 }

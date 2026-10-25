@@ -55,6 +55,8 @@ final class ServerListStore {
     // it away, as one anywhere puts the search card away, which the chat's own catcher cannot reach
     var isChatDropdownOpen = false
     var chatDropdownDismissals = 0
+    // bumped by the mac's Settings… menu item, which the user bar answers by opening settings
+    var settingsRequests = 0
     // the call over everything, opened by the call bar so it grows out of the bar and goes back
     // into it. a voice channel's sheet asks for it here once it has put itself away
     var isCallPresented = false

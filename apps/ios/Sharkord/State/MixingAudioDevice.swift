@@ -7,6 +7,9 @@ import WebRTC
 // sharing app audio and hearing yourself are not built for the mac yet, so this is never made
 // there and the call never asks for it
 nonisolated final class MixingAudioDevice: @unchecked Sendable {
+    // what offers hearing yourself in a call and sharing app audio, which both need this device
+    static let isSupported = false
+
     var isMicMuted = false
     var isMonitoring = false
 
@@ -23,6 +26,8 @@ nonisolated final class MixingAudioDevice: @unchecked Sendable {
 // hands over. it also plays the mic back for hearing yourself. only used when "share app audio"
 // or "hear yourself in calls" is on, every other call keeps webrtc's device
 nonisolated final class MixingAudioDevice: NSObject, RTCAudioDevice, @unchecked Sendable {
+    // what offers hearing yourself in a call and sharing app audio, which both need this device
+    static let isSupported = true
     // what ScreenCapture hands over
     static let gameSampleRate = 48_000.0
     // enough for the largest buffer core audio hands a callback

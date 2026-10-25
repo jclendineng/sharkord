@@ -21,7 +21,7 @@ struct NotificationSettingsScreen: View {
     }
 
     var body: some View {
-        List {
+        SettingsForm {
             Section {
                 HStack {
                     Text("Allow Notifications")
@@ -38,6 +38,7 @@ struct NotificationSettingsScreen: View {
                 Text(Platform.isMac
                     ? "Sounds, banners and alerts are set in System Settings, under Notifications."
                     : "Sounds, banners and the lock screen are set in Settings.")
+                    .wrappingFooter()
             }
 
             Section {
@@ -48,6 +49,7 @@ struct NotificationSettingsScreen: View {
                 Text("Push Notifications")
             } footer: {
                 Text("Direct messages, mentions and replies to you. A server only offers this when its owner has set it up.")
+                    .wrappingFooter()
             }
         }
         .settingsListStyle()

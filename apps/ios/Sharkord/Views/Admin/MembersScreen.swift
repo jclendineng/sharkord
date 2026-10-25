@@ -22,7 +22,7 @@ struct MembersScreen: View {
     }
 
     var body: some View {
-        List {
+        SettingsForm {
             if let errorMessage {
                 Text(errorMessage)
                     .foregroundStyle(Theme.red)
@@ -39,7 +39,7 @@ struct MembersScreen: View {
             }
         }
         .settingsListStyle()
-        .searchable(text: $query, prompt: "Search members")
+        .pageSearchable(text: $query, prompt: "Search members")
         .overlay {
             if isLoading {
                 ProgressView()
@@ -143,7 +143,7 @@ private struct MemberDetail: View {
     }
 
     var body: some View {
-        List {
+        SettingsForm {
             Section {
                 HStack(spacing: 14) {
                     AvatarView(user: session.usersById[user.id], size: 56, showsStatus: true)
@@ -214,6 +214,7 @@ private struct MemberDetail: View {
                     Text("Moderation")
                 } footer: {
                     Text("Kicking disconnects them, they can join again. A ban keeps them out until unbanned.")
+                        .wrappingFooter()
                 }
             }
 
@@ -230,6 +231,7 @@ private struct MemberDetail: View {
                     Text("Password")
                 } footer: {
                     Text("A link they open to set a new password. It works once, for 24 hours, and signs them out everywhere.")
+                        .wrappingFooter()
                 }
             }
 
@@ -388,16 +390,18 @@ private struct ConfirmModeration: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            SettingsForm {
                 if action == .delete {
                     Section {
                         Toggle("Also Delete Their Messages", isOn: $wipe)
                     } footer: {
                         Text("Otherwise their messages stay, shown as from a deleted user. This can't be undone.")
+                            .wrappingFooter()
                     }
                 } else {
                     Section("Reason (optional)") {
-                        TextField("Why?", text: $reason, axis: .vertical)
+                        TextField("", text: $reason, prompt: Text("Why?"), axis: .vertical)
+                            .labelsHidden()
                             .lineLimit(2...4)
                     }
                 }
@@ -407,6 +411,7 @@ private struct ConfirmModeration: View {
                         Toggle("Also Ban Their IP Addresses", isOn: $banIps)
                     } footer: {
                         Text("Blocks the public addresses they signed in from, so a new account from there is refused. Anyone else on those networks, like a household, is locked out too. Unbanning lifts it.")
+                            .wrappingFooter()
                     }
                 }
 
@@ -421,7 +426,7 @@ private struct ConfirmModeration: View {
             .navigationTitle(title)
             .inlineNavigationTitle()
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ActionToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", action: close)
                 }
             }
@@ -524,6 +529,7 @@ private struct MemberActivity: View {
             } footer: {
                 if info.files.count > Self.shownCount {
                     Text("The latest \(Self.shownCount) of \(info.files.count).")
+                        .wrappingFooter()
                 }
             }
         }
@@ -555,6 +561,7 @@ private struct MemberActivity: View {
             } footer: {
                 if info.messages.count > Self.shownCount {
                     Text("The latest \(Self.shownCount) of \(info.messages.count).")
+                        .wrappingFooter()
                 }
             }
         }

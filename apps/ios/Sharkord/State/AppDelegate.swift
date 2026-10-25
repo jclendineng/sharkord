@@ -19,6 +19,8 @@ final class AppDelegate: NSObject, PlatformApplicationDelegate, UNUserNotificati
     #if os(macOS)
     func applicationDidFinishLaunching(_ notification: Notification) {
         UNUserNotificationCenter.current().delegate = self
+        // one window, as messages has, with no tab bar to show in the view menu
+        NSWindow.allowsAutomaticWindowTabbing = false
     }
     #else
     func application(

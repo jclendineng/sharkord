@@ -126,6 +126,8 @@ struct InviteSheet: View {
                                 Text(option.rawValue).tag(option)
                             }
                         }
+                        // the row names it already, a mac's menu would say it again beside the choice
+                        .labelsHidden()
                     }
 
                     Divider()
@@ -137,6 +139,7 @@ struct InviteSheet: View {
                                 Text(count == 0 ? "No limit" : "\(count) \(count == 1 ? "use" : "uses")").tag(count)
                             }
                         }
+                        .labelsHidden()
                     }
                 }
                 .background(Theme.deepBackground, in: .rect(cornerRadius: 10))
@@ -160,7 +163,7 @@ struct InviteSheet: View {
             .navigationTitle("Invite to \(session.displayName)")
             .inlineNavigationTitle()
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
+                ActionToolbarItem(placement: .confirmationAction) {
                     Button("Done", action: close)
                 }
             }

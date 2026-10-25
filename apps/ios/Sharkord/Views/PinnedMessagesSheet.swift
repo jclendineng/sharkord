@@ -46,7 +46,7 @@ struct PinnedMessagesSheet: View {
                     .inlineNavigationTitle()
                     .toolbar {
                         if !Platform.isMac {
-                            ToolbarItem(placement: .confirmationAction) {
+                            ActionToolbarItem(placement: .confirmationAction) {
                                 Button("Done", action: close)
                             }
                         }
@@ -63,7 +63,7 @@ struct PinnedMessagesSheet: View {
                         ContentUnavailableView(
                             "No Pinned Messages",
                             systemImage: "pin",
-                            description: Text("Long press a message and choose Pin Message to keep it here.")
+                            description: Text(Platform.isMac ? "Right click a message and choose Pin Message to keep it here." : "Long press a message and choose Pin Message to keep it here.")
                         )
                         .padding(.top, 60)
                     } else {

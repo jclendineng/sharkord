@@ -197,7 +197,7 @@ private struct NoteCard: View {
     var body: some View {
         if saved != nil {
             ProfileCard(title: "Note (only visible to you)") {
-                TextField("Tap to add a note", text: $note, axis: .vertical)
+                TextField(Platform.isMac ? "Click to add a note" : "Tap to add a note", text: $note, axis: .vertical)
                     .foregroundStyle(Theme.text)
                     .lineLimit(1...6)
                     .focused($isFocused)

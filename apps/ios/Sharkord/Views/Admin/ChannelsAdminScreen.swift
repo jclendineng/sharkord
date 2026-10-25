@@ -22,7 +22,7 @@ struct ChannelsAdminScreen: View {
     }
 
     var body: some View {
-        List {
+        SettingsForm {
             if let errorMessage {
                 Text(errorMessage)
                     .foregroundStyle(Theme.red)
@@ -63,6 +63,8 @@ struct ChannelsAdminScreen: View {
                             } label: {
                                 Image(systemName: "ellipsis.circle")
                             }
+                            // the icon alone, a mac form draws a menu as a bordered pull down
+                            .buttonStyle(.borderless)
                         }
                     }
                 }
@@ -155,19 +157,14 @@ struct ChannelsAdminScreen: View {
             Spacer()
 
             if isOnMac {
-                Button("Move Up", systemImage: "arrow.up") {
-                    move(in: category, from: IndexSet(integer: index), to: index - 1)
-                }
-                .disabled(index == 0)
-
-                Button("Move Down", systemImage: "arrow.down") {
-                    move(in: category, from: IndexSet(integer: index), to: index + 2)
-                }
-                .disabled(index == siblings.count - 1)
+                ReorderArrows(
+                    canMoveUp: index > 0,
+                    canMoveDown: index < siblings.count - 1,
+                    moveUp: { move(in: category, from: IndexSet(integer: index), to: index - 1) },
+                    moveDown: { move(in: category, from: IndexSet(integer: index), to: index + 2) }
+                )
             }
         }
-        .labelStyle(.iconOnly)
-        .buttonStyle(.borderless)
     }
 
     private func icon(for channel: Channel) -> String {
@@ -297,7 +294,7 @@ struct ChannelEditor: View {
     }
 
     var body: some View {
-        List {
+        SettingsForm {
             Section("Name") {
                 TextField("Channel name", text: $name)
                     .noAutocapitalization()
@@ -305,12 +302,14 @@ struct ChannelEditor: View {
 
             if channel.type == .text {
                 Section {
-                    TextField("What is this channel for?", text: $topic, axis: .vertical)
+                    TextField("", text: $topic, prompt: Text("What is this channel for?"), axis: .vertical)
+                        .labelsHidden()
                         .lineLimit(2...4)
                 } header: {
                     Text("Topic")
                 } footer: {
                     Text("\(topic.count)/\(Self.topicLimit)")
+                        .wrappingFooter()
                 }
             }
 
@@ -325,8 +324,10 @@ struct ChannelEditor: View {
             } footer: {
                 if isPrivate {
                     Text("Only the roles and members given access in Permissions can see a private channel.")
+                        .wrappingFooter()
                 } else {
                     Text("Everyone can see and use a public channel. Permissions only apply once it is private.")
+                        .wrappingFooter()
                 }
             }
 
@@ -345,7 +346,7 @@ struct ChannelEditor: View {
         .navigationTitle(channel.name)
         .inlineNavigationTitle()
         .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
+            ActionToolbarItem(placement: .confirmationAction) {
                 if isSaving {
                     ProgressView()
                 } else {
@@ -432,13 +433,14 @@ struct NewChannelSheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            SettingsForm {
                 Section {
                     Picker("Type", selection: $type) {
                         Label("Text", systemImage: "number").tag(ChannelType.text)
                         Label("Voice", systemImage: "speaker.wave.2").tag(ChannelType.voice)
                     }
                     .pickerStyle(.segmented)
+                    .labelsHidden()
                 }
 
                 Section("Name") {
@@ -467,11 +469,11 @@ struct NewChannelSheet: View {
             .navigationTitle(type == .voice ? "New Voice Channel" : "New Text Channel")
             .inlineNavigationTitle()
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ActionToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", action: close)
                 }
 
-                ToolbarItem(placement: .confirmationAction) {
+                ActionToolbarItem(placement: .confirmationAction) {
                     if isSaving {
                         ProgressView()
                     } else {
@@ -537,7 +539,7 @@ private struct CategoryOrderSheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            SettingsForm {
                 if let errorMessage {
                     Text(errorMessage)
                         .foregroundStyle(Theme.red)
@@ -551,19 +553,14 @@ private struct CategoryOrderSheet: View {
                         Spacer()
 
                         if isOnMac {
-                            Button("Move Up", systemImage: "arrow.up") {
-                                ordered.move(fromOffsets: IndexSet(integer: index), toOffset: index - 1)
-                            }
-                            .disabled(index == 0)
-
-                            Button("Move Down", systemImage: "arrow.down") {
-                                ordered.move(fromOffsets: IndexSet(integer: index), toOffset: index + 2)
-                            }
-                            .disabled(index == ordered.count - 1)
+                            ReorderArrows(
+                                canMoveUp: index > 0,
+                                canMoveDown: index < ordered.count - 1,
+                                moveUp: { ordered.move(fromOffsets: IndexSet(integer: index), toOffset: index - 1) },
+                                moveDown: { ordered.move(fromOffsets: IndexSet(integer: index), toOffset: index + 2) }
+                            )
                         }
                     }
-                    .labelStyle(.iconOnly)
-                    .buttonStyle(.borderless)
                 }
                 .onMove { from, to in
                     ordered.move(fromOffsets: from, toOffset: to)
@@ -575,11 +572,11 @@ private struct CategoryOrderSheet: View {
             .navigationTitle("Reorder Categories")
             .inlineNavigationTitle()
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ActionToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", action: close)
                 }
 
-                ToolbarItem(placement: .confirmationAction) {
+                ActionToolbarItem(placement: .confirmationAction) {
                     Button("Save", action: save)
                 }
             }

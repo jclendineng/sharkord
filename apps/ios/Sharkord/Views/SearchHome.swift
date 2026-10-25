@@ -236,13 +236,9 @@ struct SearchHome: View {
         VStack(spacing: 0) {
             SearchTabBar(tabs: tabs, inDirectMessages: model.inDirectMessages, selection: $model.tab)
 
-            TabView(selection: $model.tab) {
-                ForEach(tabs) { tab in
-                    SearchTabPage(model: model, tab: tab, onOpenChannel: onOpenChannel, onOpenMessage: onOpenMessage, onOpenUser: onOpenUser, onInvite: onInvite)
-                        .tag(tab)
-                }
+            PagedTabs(selection: $model.tab, items: tabs, value: { $0 }) { tab in
+                SearchTabPage(model: model, tab: tab, onOpenChannel: onOpenChannel, onOpenMessage: onOpenMessage, onOpenUser: onOpenUser, onInvite: onInvite)
             }
-            .pagedTabs()
         }
     }
 }
@@ -268,7 +264,7 @@ private struct SearchTabBar: View {
                 ScrollView(.horizontal) {
                     strip
                 }
-                .scrollIndicators(.hidden)
+                .scrollIndicators(.never)
                 .onChange(of: selection) { _, tab in
                     withAnimation(.smooth(duration: 0.3)) {
                         proxy.scrollTo(tab, anchor: .center)

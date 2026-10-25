@@ -17,6 +17,9 @@ struct SharkordApp: App {
                 .overlay {
                     PointerMenuLayer()
                 }
+                .phoneControlStyle()
+                .windowTitleBlank()
+                .macWindowMinimumSize()
                 .guardsLeavingLinks(servers: servers)
                 .environment(servers)
                 .task {
@@ -42,5 +45,17 @@ struct SharkordApp: App {
                     }
                 }
         }
+        // a mac opens a new window at its content's smallest otherwise
+        .defaultSize(width: 1280, height: 820)
+        .commands {
+            CommandGroup(replacing: .appSettings) {
+                Button("Settings…", action: requestSettings)
+                    .keyboardShortcut(",")
+            }
+        }
+    }
+
+    private func requestSettings() {
+        servers.settingsRequests += 1
     }
 }

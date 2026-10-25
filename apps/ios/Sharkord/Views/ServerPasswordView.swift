@@ -14,6 +14,7 @@ struct ServerPasswordView: View {
                         .onSubmit(join)
                 } footer: {
                     Text("This server requires a password to join.")
+                        .wrappingFooter()
                 }
 
                 if let errorMessage = session.errorMessage {
@@ -30,6 +31,9 @@ struct ServerPasswordView: View {
                     Button("Cancel", role: .cancel, action: cancel)
                 }
             }
+            // a mac lays a plain form out in two columns with the labels right aligned. grouped
+            // is a phone's own anyway
+            .formStyle(.grouped)
             .navigationTitle("Server Password")
         }
     }

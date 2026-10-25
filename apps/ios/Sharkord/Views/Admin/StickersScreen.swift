@@ -19,7 +19,7 @@ struct StickersScreen: View {
     @State private var newDescription = ""
 
     var body: some View {
-        List {
+        SettingsForm {
             Section {
                 PhotosPicker(selection: $photoItems, maxSelectionCount: 10, matching: .images) {
                     Label("Add from Photos", systemImage: "photo.on.rectangle")
@@ -41,6 +41,7 @@ struct StickersScreen: View {
                 }
             } footer: {
                 Text("PNG, APNG, GIF or WebP, 512 KB at most. Everyone on the server can send them.")
+                    .wrappingFooter()
             }
 
             if let errorMessage {
@@ -57,10 +58,8 @@ struct StickersScreen: View {
                     } label: {
                         StickerRow(sticker: sticker)
                     }
-                    .swipeActions {
-                        Button("Delete", systemImage: "trash", role: .destructive) {
-                            delete(sticker)
-                        }
+                    .rowDeleteAction {
+                        delete(sticker)
                     }
                 }
             }

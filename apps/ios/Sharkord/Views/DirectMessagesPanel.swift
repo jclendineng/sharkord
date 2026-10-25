@@ -160,7 +160,7 @@ private struct FriendsRow: View {
                 }
             }
         }
-        .scrollIndicators(.hidden)
+        .scrollIndicators(.never)
         .padding(.bottom, 4)
     }
 }
@@ -644,7 +644,7 @@ private struct NewDirectMessageSheet: View {
             .navigationTitle("New Message")
             .inlineNavigationTitle()
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ActionToolbarItem(placement: .cancellationAction) {
                     Button("Close", systemImage: "xmark", action: close)
                 }
             }

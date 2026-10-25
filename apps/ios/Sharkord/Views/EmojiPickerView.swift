@@ -69,23 +69,8 @@ struct EmojiPickerView: View {
             }
             .background(Theme.chatBackground)
             .searchable(text: $query, placement: .alwaysShown, prompt: "Find the perfect emoji")
-            .navigationTitle(title)
+            .titleWithSubtitle(title, subtitle: subtitle)
             .inlineNavigationTitle()
-            .toolbar {
-                if let subtitle {
-                    ToolbarItem(placement: .principal) {
-                        VStack(spacing: 1) {
-                            Text(title)
-                                .font(.headline)
-                                .foregroundStyle(Theme.header)
-
-                            Text(subtitle)
-                                .font(.caption)
-                                .foregroundStyle(Theme.muted)
-                        }
-                    }
-                }
-            }
         }
         .sheetDetents(detents)
         .presentationBackground(Theme.chatBackground)

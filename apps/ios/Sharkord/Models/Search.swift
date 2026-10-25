@@ -186,6 +186,15 @@ struct SearchFilters: Hashable {
 
         return unscoped == SearchFilters()
     }
+
+    // a filter beyond the channel being searched, which the search box's prompt names already
+    var narrowsPastChannel: Bool {
+        var rest = self
+
+        rest.channel = nil
+
+        return !rest.isEmpty
+    }
 }
 
 // what goes to the server, nil fields are left out of the json

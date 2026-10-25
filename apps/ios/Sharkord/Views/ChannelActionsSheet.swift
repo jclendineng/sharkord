@@ -364,20 +364,21 @@ struct ChannelNotificationsSheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            SettingsForm {
                 Section {
                     LevelRow(level: .all, title: "All Messages", channel: channel)
                     LevelRow(level: .mentions, title: "Only @mentions", channel: channel)
                     LevelRow(level: .none, title: "Nothing", channel: channel)
                 } footer: {
                     Text("Replies to you count as mentions. Direct messages notify for every message unless set to nothing.")
+                        .wrappingFooter()
                 }
             }
             .settingsListStyle()
             .navigationTitle("Notifications")
             .inlineNavigationTitle()
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
+                ActionToolbarItem(placement: .confirmationAction) {
                     Button("Done", action: close)
                 }
             }

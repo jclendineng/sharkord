@@ -118,21 +118,10 @@ struct GroupFriendPicker: View {
         .listHoverHighlight()
         .background(Theme.deepBackground)
         .searchable(text: $query, placement: .alwaysShown, prompt: "Search")
+        .titleWithSubtitle(title, subtitle: "\(count) of \(GroupLimits.maxMembers) members")
         .inlineNavigationTitle()
         .toolbar {
-            ToolbarItem(placement: .principal) {
-                VStack(spacing: 1) {
-                    Text(title)
-                        .font(.headline)
-                        .foregroundStyle(Theme.header)
-
-                    Text("\(count) of \(GroupLimits.maxMembers) members")
-                        .font(.caption)
-                        .foregroundStyle(Theme.muted)
-                }
-            }
-
-            ToolbarItem(placement: .confirmationAction) {
+            ActionToolbarItem(placement: .confirmationAction) {
                 Button(saveTitle, action: save)
                     .disabled(!canSave)
             }

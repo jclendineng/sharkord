@@ -101,7 +101,7 @@ struct ChannelListPanel: View {
                 .contentShape(.rect)
             }
             .buttonStyle(.plain)
-            .popover(isPresented: isServerMenuShown, arrowEdge: .top) {
+            .popover(isPresented: isServerMenuShown, opensAwayFrom: .top) {
                 ServerSheet(onOpen: openFromMenu)
                     .frame(width: 360, height: 600)
                     .macPopover()
@@ -391,7 +391,7 @@ private struct ChannelRow: View {
                 NavigationStack {
                     ChannelEditor(channel: channel)
                         .toolbar {
-                            ToolbarItem(placement: .cancellationAction) {
+                            ActionToolbarItem(placement: .cancellationAction) {
                                 Button("Cancel", action: closeEditor)
                             }
                         }

@@ -33,7 +33,7 @@ struct MarketplaceScreen: View {
     }
 
     var body: some View {
-        List {
+        SettingsForm {
             if let errorMessage {
                 Text(errorMessage)
                     .foregroundStyle(Theme.red)
@@ -49,7 +49,7 @@ struct MarketplaceScreen: View {
             }
         }
         .settingsListStyle()
-        .searchable(text: $query, prompt: "Search plugins")
+        .pageSearchable(text: $query, prompt: "Search plugins")
         .overlay {
             if isLoading {
                 ProgressView()
@@ -232,7 +232,7 @@ private struct InstallWarningSheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            SettingsForm {
                 Section {
                     Text("Plugins are a powerful way to extend Sharkord, and they carry real risk. A plugin runs inside the server with nothing around it.")
                         .foregroundStyle(Theme.text)
@@ -244,6 +244,7 @@ private struct InstallWarningSheet: View {
                     warning("A malicious one can take over accounts, steal data or damage the server", systemImage: "exclamationmark.shield.fill")
                 } footer: {
                     Text("Running Sharkord in Docker keeps the damage contained. Only install plugins you trust.")
+                        .wrappingFooter()
                 }
 
                 Section {
@@ -258,7 +259,7 @@ private struct InstallWarningSheet: View {
             .navigationTitle(isUpdate ? "Update \(entry.plugin.name)?" : "Install \(entry.plugin.name)?")
             .inlineNavigationTitle()
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ActionToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", action: close)
                 }
             }

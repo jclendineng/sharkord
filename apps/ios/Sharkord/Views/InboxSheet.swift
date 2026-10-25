@@ -40,7 +40,7 @@ struct InboxSheet: View {
                     .navigationTitle("Inbox")
                     .inlineNavigationTitle()
                     .toolbar {
-                        ToolbarItem(placement: .confirmationAction) {
+                        ActionToolbarItem(placement: .confirmationAction) {
                             Button("Done", action: close)
                         }
                     }
@@ -57,6 +57,7 @@ struct InboxSheet: View {
                 }
             }
             .pickerStyle(.segmented)
+            .labelsHidden()
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
 

@@ -83,6 +83,7 @@ struct ConnectView: View {
             }
         }
         .animation(.snappy(duration: 0.3), value: step)
+        .transparentWindowBar()
         .onAppear(perform: resumeSignIn)
         // handed over by hand: on a mac a sheet's background is worked out before it inherits
         // anything, so a sheet reading a store it was not given crashed on opening
@@ -128,7 +129,7 @@ struct ConnectView: View {
                     .minimumScaleFactor(0.6)
                     .lineLimit(2)
 
-                Text("Your server, your people. Tap below to get started!")
+                Text(Platform.isMac ? "Your server, your people. Click below to get started!" : "Your server, your people. Tap below to get started!")
                     .font(.callout)
                     .foregroundStyle(.white.opacity(0.9))
                     .multilineTextAlignment(.center)

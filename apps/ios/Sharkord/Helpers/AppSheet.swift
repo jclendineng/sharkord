@@ -5,8 +5,8 @@ extension View {
     // out, so the drag is turned off there. a sheet with no close of its own gets an x like the
     // toolbar's in a row across its top, everywhere: a mac has no other way out, and a phone's
     // swipe is not obvious to everyone
-    func appSheet(addsClose: Bool = false) -> some View {
-        modifier(AppSheet(addsClose: addsClose))
+    func appSheet(addsClose: Bool = false, fitsContent: Bool = false) -> some View {
+        modifier(AppSheet(addsClose: addsClose, fitsContent: fitsContent))
     }
 
     // a sheet given heights pins itself to the bottom of a mac window and runs off it, so there
@@ -24,6 +24,8 @@ extension View {
     // bottom. discord's hang off their button at any width, a phone still gets the sheet
     func macPopover() -> some View {
         presentationCompactAdaptation(Platform.isMac ? .popover : .automatic)
+            .phoneControlStyle()
+            .phoneButtons()
     }
 }
 
@@ -60,6 +62,7 @@ private struct SheetDetents: ViewModifier {
 
 private struct AppSheet: ViewModifier {
     let addsClose: Bool
+    let fitsContent: Bool
 
     @Environment(\.dismiss) private var dismiss
 
@@ -70,6 +73,9 @@ private struct AppSheet: ViewModifier {
             // left alone elsewhere: an outer false here would override a sheet that turns the
             // swipe off for itself, the voice channel's open one does
             .modifier(MacDismissLock(isOnMac: isOnMac))
+            .macSheetMinimumSize(fitsContent: fitsContent)
+            .phoneControlStyle()
+            .phoneButtons()
             // escape closes it, as it does a mac sheet
             .background {
                 if isOnMac {
@@ -78,6 +84,20 @@ private struct AppSheet: ViewModifier {
                         .hidden()
                 }
             }
+            #if os(macOS)
+            // a mac sheet ends in a done button at its bottom right rather than an x over its top
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if addsClose {
+                    HStack {
+                        Spacer()
+
+                        Button("Done", action: close)
+                            .buttonStyle(.automatic)
+                    }
+                    .padding(12)
+                }
+            }
+            #else
             .safeAreaInset(edge: .top, spacing: 0) {
                 if addsClose {
                     HStack {
@@ -91,6 +111,7 @@ private struct AppSheet: ViewModifier {
                     .padding(.bottom, 8)
                 }
             }
+            #endif
     }
 
     private func close() {

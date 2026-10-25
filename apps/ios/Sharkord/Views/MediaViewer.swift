@@ -32,13 +32,9 @@ struct MediaViewer: View {
         VStack(spacing: 0) {
             topBar
 
-            TabView(selection: $selection) {
-                ForEach(items) { item in
-                    MediaPage(item: item, url: url(for: item))
-                        .tag(item.id)
-                }
+            PagedTabs(selection: $selection, items: items, value: \.id) { item in
+                MediaPage(item: item, url: url(for: item))
             }
-            .pagedTabs()
 
             ThumbnailStrip(items: items, selection: $selection, url: url(for:))
         }
@@ -230,7 +226,7 @@ private struct ThumbnailStrip: View {
                 }
                 .padding(.horizontal, 12)
             }
-            .scrollIndicators(.hidden)
+            .scrollIndicators(.never)
             .frame(height: 64)
             .padding(.vertical, 8)
             .background(.black)

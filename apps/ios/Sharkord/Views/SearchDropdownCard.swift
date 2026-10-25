@@ -9,6 +9,10 @@ struct SearchDropdownCard: View {
     let dropdown: ServerListStore.SearchDropdown
 
     @Environment(ServerListStore.self) private var servers
+    @Environment(SessionStore.self) private var session
+
+    @State private var model = SearchQueryModel()
+    @FocusState private var isFieldFocused: Bool
 
     var body: some View {
         GeometryReader { proxy in
@@ -20,8 +24,29 @@ struct SearchDropdownCard: View {
                     .contentShape(.rect)
                     .onTapGesture(perform: close)
 
-                NavigationStack {
-                    SearchScreen(channelId: dropdown.route.channelId, directMessages: dropdown.route.directMessages)
+                // the box at the card's top rather than in the screen's own bar: a stack inside the
+                // window has no bar of its own on a mac, and its box and filters went up into the
+                // window's toolbar beside the chat's
+                VStack(spacing: 0) {
+                    HStack(spacing: 8) {
+                        SearchBox(
+                            model: model,
+                            prompt: model.prompt(in: session, directMessages: dropdown.route.directMessages),
+                            isFocused: $isFieldFocused
+                        )
+
+                        FilterMenu(isFiltering: model.filters.narrowsPastChannel, onChoose: chooseFilter)
+                    }
+                    .padding(10)
+
+                    NavigationStack {
+                        SearchScreen(
+                            channelId: dropdown.route.channelId,
+                            directMessages: dropdown.route.directMessages,
+                            model: model,
+                            showsSearchBox: false
+                        )
+                    }
                 }
                 .frame(width: Self.width)
                 .frame(maxHeight: min(Self.maxHeight, proxy.size.height - top - 12))
@@ -42,6 +67,25 @@ struct SearchDropdownCard: View {
                 .keyboardShortcut(.cancelAction)
                 .hidden()
         }
+        // a moment after it appears, before which the window has not settled its first responder
+        .task {
+            try? await Task.sleep(for: .milliseconds(50))
+            isFieldFocused = true
+        }
+        .onChange(of: model.focusRequest) {
+            isFieldFocused = true
+        }
+    }
+
+    private func chooseFilter(_ picker: FilterPicker) {
+        if picker.isDate {
+            model.pendingDatePicker = picker
+            return
+        }
+
+        model.token = picker
+        model.query = ""
+        isFieldFocused = true
     }
 
     private func close() {

@@ -12,7 +12,7 @@ struct EmojiManagerScreen: View {
         NavigationStack {
             EmojiManagerList()
                 .toolbar {
-                    ToolbarItem(placement: .confirmationAction) {
+                    ActionToolbarItem(placement: .confirmationAction) {
                         Button("Done", action: close)
                     }
                 }
@@ -40,7 +40,7 @@ struct EmojiManagerList: View {
     @State private var newName = ""
 
     var body: some View {
-        List {
+        SettingsForm {
             Section {
                 PhotosPicker(selection: $photoItems, maxSelectionCount: 50, matching: .images) {
                     Label("Add from Photos", systemImage: "photo.on.rectangle")
@@ -62,6 +62,7 @@ struct EmojiManagerList: View {
                 }
             } footer: {
                 Text("A pack is a set of images picked together, each named after its file. Square PNGs look best.")
+                    .wrappingFooter()
             }
 
             if let errorMessage {
@@ -76,10 +77,8 @@ struct EmojiManagerList: View {
                     Button(action: { startRenaming(emoji) }) {
                         EmojiRow(emoji: emoji)
                     }
-                    .swipeActions {
-                        Button("Delete", systemImage: "trash", role: .destructive) {
-                            delete(emoji)
-                        }
+                    .rowDeleteAction {
+                        delete(emoji)
                     }
                 }
             }

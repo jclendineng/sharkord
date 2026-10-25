@@ -46,7 +46,7 @@ struct VoiceVideoSettingsScreen: View {
     var body: some View {
         @Bindable var settings = settings
 
-        List {
+        SettingsForm {
             // discord's input and output devices. a mac has no route picker of its own in the
             // app, and many have no mic either, a headset's is used once one is plugged in
             if isOnMac {
@@ -79,6 +79,7 @@ struct VoiceVideoSettingsScreen: View {
                     SectionTitle("Devices")
                 } footer: {
                     Text("Automatic uses a headset's mic whenever one is plugged in.")
+                        .wrappingFooter()
                 }
             }
 
@@ -130,6 +131,7 @@ struct VoiceVideoSettingsScreen: View {
                 SectionTitle("Input")
             } footer: {
                 Text(micFooter)
+                    .wrappingFooter()
             }
 
             Section {
@@ -153,6 +155,7 @@ struct VoiceVideoSettingsScreen: View {
                 SectionTitle("Soundboard")
             } footer: {
                 Text("Controls how loud sounds are for you personally.")
+                    .wrappingFooter()
             }
 
             Section {
@@ -182,18 +185,21 @@ struct VoiceVideoSettingsScreen: View {
                     isOn: $settings.autoGainControl
                 )
 
-                DetailToggle(
-                    title: "Hear Yourself in Calls",
-                    subtitle: hearYourselfFooter,
-                    isOn: $settings.hearYourselfInCalls
-                )
-                .onChange(of: settings.hearYourselfInCalls) { _, hears in
-                    servers.voiceSession?.setHearsYourself(hears)
+                if MixingAudioDevice.isSupported {
+                    DetailToggle(
+                        title: "Hear Yourself in Calls",
+                        subtitle: hearYourselfFooter,
+                        isOn: $settings.hearYourselfInCalls
+                    )
+                    .onChange(of: settings.hearYourselfInCalls) { _, hears in
+                        servers.voiceSession?.setHearsYourself(hears)
+                    }
                 }
             } header: {
                 SectionTitle("Voice Processing")
             } footer: {
                 Text("Noise suppression, echo cancellation and gain control apply the next time you join a voice channel.")
+                    .wrappingFooter()
             }
 
             Section {
@@ -202,11 +208,13 @@ struct VoiceVideoSettingsScreen: View {
                     Text("High (1080p)").tag(AppSettings.StreamQuality.high)
                 }
 
-                DetailToggle(
-                    title: "Share App Audio",
-                    subtitle: "Beta. Sends the sound of what you share, like a game, mixed into your voice. Takes effect the next time you join.",
-                    isOn: $settings.shareAppAudio
-                )
+                if MixingAudioDevice.isSupported {
+                    DetailToggle(
+                        title: "Share App Audio",
+                        subtitle: "Beta. Sends the sound of what you share, like a game, mixed into your voice. Takes effect the next time you join.",
+                        isOn: $settings.shareAppAudio
+                    )
+                }
             } header: {
                 SectionTitle("Screen Share")
             }
@@ -228,6 +236,7 @@ struct VoiceVideoSettingsScreen: View {
             } footer: {
                 if isInCall {
                     Text("Leave the voice channel to preview your camera.")
+                        .wrappingFooter()
                 }
             }
         }
@@ -325,12 +334,18 @@ private struct SectionTitle: View {
         self.title = title
     }
 
+    // a mac's grouped form draws its own section headers, bold like the other settings pages'
+    @ViewBuilder
     var body: some View {
-        Text(title)
-            .font(.body)
-            .foregroundStyle(Theme.muted)
-            .textCase(nil)
-            .padding(.leading, -4)
+        if Platform.isMac {
+            Text(title)
+        } else {
+            Text(title)
+                .font(.body)
+                .foregroundStyle(Theme.muted)
+                .textCase(nil)
+                .padding(.leading, -4)
+        }
     }
 }
 
@@ -362,6 +377,7 @@ private struct VoiceIsolationHint: View {
             }
         }
         .padding(.top, 4)
+        .wrappingFooter()
     }
 
     private func openMicModes() {

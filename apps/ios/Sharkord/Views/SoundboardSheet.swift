@@ -45,7 +45,7 @@ struct SoundboardSheet: View {
         .presentationBackground(Theme.deepBackground)
         // a form as tall as its sounds on an ipad and a mac, where the heights above do nothing
         .presentationSizing(.form.fitted(horizontal: false, vertical: true))
-        .appSheet()
+        .appSheet(fitsContent: true)
     }
 }
 

@@ -143,7 +143,7 @@ struct ChannelPermissionsScreen: View {
     }
 
     var body: some View {
-        List {
+        SettingsForm {
             // overrides on a public channel are saved but do nothing, which read as a bug when it
             // was a grey line, so it warns and offers the fix in place
             if let channel, !channel.private {
@@ -182,6 +182,7 @@ struct ChannelPermissionsScreen: View {
                     Text("Members")
                 } footer: {
                     Text("A member's own settings win over their roles.")
+                        .wrappingFooter()
                 }
             }
         }
@@ -251,10 +252,8 @@ struct ChannelPermissionsScreen: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .swipeActions {
-            Button("Remove", systemImage: "trash", role: .destructive) {
-                remove(target)
-            }
+        .rowDeleteAction("Remove") {
+            remove(target)
         }
     }
 
@@ -436,7 +435,7 @@ private struct PermissionOverrideEditor: View {
     }
 
     var body: some View {
-        List {
+        SettingsForm {
             Section {
                 PermissionTargetLabel(target: target)
             }
@@ -457,6 +456,7 @@ private struct PermissionOverrideEditor: View {
                 }
             } footer: {
                 Text("Without View Channel nothing else applies, the channel stays hidden.")
+                    .wrappingFooter()
             }
 
             Section {
@@ -464,6 +464,7 @@ private struct PermissionOverrideEditor: View {
                     .disabled(isSaving)
             } footer: {
                 Text("Removing them leaves only what their roles allow.")
+                    .wrappingFooter()
             }
 
             if let errorMessage {
@@ -553,7 +554,7 @@ private struct AddPermissionTargetSheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            SettingsForm {
                 if !roles.isEmpty {
                     Section("Roles") {
                         ForEach(roles) { role in
@@ -575,7 +576,7 @@ private struct AddPermissionTargetSheet: View {
             .navigationTitle("Add Roles or Members")
             .inlineNavigationTitle()
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ActionToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", action: close)
                 }
             }

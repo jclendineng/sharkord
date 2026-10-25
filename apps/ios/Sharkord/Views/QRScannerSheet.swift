@@ -18,7 +18,7 @@ struct QRScannerSheet: View {
                 .navigationTitle("Scan a QR Code")
                 .inlineNavigationTitle()
                 .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
+                    ActionToolbarItem(placement: .cancellationAction) {
                         Button("Cancel", action: close)
                     }
                 }

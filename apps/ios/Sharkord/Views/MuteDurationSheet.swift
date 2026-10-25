@@ -27,21 +27,10 @@ struct MuteDurationSheet: View {
             .scrollContentBackground(.hidden)
             .listHoverHighlight()
             .background(Theme.deepBackground)
+            .titleWithSubtitle(title, subtitle: subtitle)
             .inlineNavigationTitle()
             .toolbar {
-                ToolbarItem(placement: .principal) {
-                    VStack(spacing: 1) {
-                        Text(title)
-                            .font(.headline)
-                            .foregroundStyle(Theme.header)
-
-                        Text(subtitle)
-                            .font(.caption)
-                            .foregroundStyle(Theme.muted)
-                    }
-                }
-
-                ToolbarItem(placement: .cancellationAction) {
+                ActionToolbarItem(placement: .cancellationAction) {
                     Button("Close", systemImage: "xmark", action: close)
                 }
             }

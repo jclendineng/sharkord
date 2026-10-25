@@ -97,13 +97,15 @@ struct EditProfileSheet: View {
                 }
 
                 Section {
-                    TextField("Tell people about yourself", text: $bio, axis: .vertical)
+                    TextField("", text: $bio, prompt: Text("Tell people about yourself"), axis: .vertical)
+                        .labelsHidden()
                         .lineLimit(3...6)
                 } header: {
                     Text("About Me")
                 } footer: {
                     Text("\(bio.count)/\(Self.bioLimit)")
                         .foregroundStyle(bio.count > Self.bioLimit ? Theme.red : Theme.muted)
+                        .wrappingFooter()
                 }
 
                 Section("Profile Color") {
@@ -117,12 +119,15 @@ struct EditProfileSheet: View {
                     }
                 }
             }
+            // a mac lays a plain form out in two columns with the labels right aligned. grouped
+            // is a phone's own anyway
+            .formStyle(.grouped)
             .scrollContentBackground(.hidden)
             .background(Theme.deepBackground)
             .navigationTitle("Edit Profile")
             .inlineNavigationTitle()
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ActionToolbarItem(placement: .cancellationAction) {
                     // on the button, which the question points at as it opens
                     Button("Cancel", action: close)
                         .confirmationDialog("Discard your changes?", isPresented: $isConfirmingDiscard, titleVisibility: .visible) {
@@ -130,7 +135,7 @@ struct EditProfileSheet: View {
                         }
                 }
 
-                ToolbarItem(placement: .confirmationAction) {
+                ActionToolbarItem(placement: .confirmationAction) {
                     if isSaving {
                         ProgressView()
                     } else {

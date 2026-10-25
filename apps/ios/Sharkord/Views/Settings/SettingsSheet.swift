@@ -9,6 +9,9 @@ struct SettingsSheet: View {
 
     @State private var selection: UserSettingsPage? = .account
     @State private var query = ""
+    // the sidebar's search takes the cursor as the window opens, as system settings' does. a mac
+    // otherwise put it in the first page's password field, bringing up the passwords list unasked
+    @FocusState private var isSearchFocused: Bool
 
     // discord's sidebar search, narrowing the pages by name
     private var sections: [(title: String, pages: [UserSettingsPage])] {
@@ -31,7 +34,7 @@ struct SettingsSheet: View {
 
     private var stackView: some View {
         NavigationStack {
-            List {
+            SettingsForm {
                 ForEach(UserSettingsPage.sections, id: \.title) { section in
                     Section(section.title) {
                         ForEach(section.pages, id: \.self) { page in
@@ -50,13 +53,14 @@ struct SettingsSheet: View {
                     }
                 } footer: {
                     Text("Logs out of \(session.displayName) on this device.")
+                        .wrappingFooter()
                 }
             }
             .settingsListStyle()
             .navigationTitle("Settings")
             .inlineNavigationTitle()
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ActionToolbarItem(placement: .cancellationAction) {
                     Button("Close", systemImage: "xmark", action: close)
                 }
             }
@@ -68,12 +72,13 @@ struct SettingsSheet: View {
 
     private var splitView: some View {
         NavigationSplitView {
-            List(selection: $selection) {
+            List {
                 ForEach(sections, id: \.title) { section in
                     Section {
                         ForEach(section.pages, id: \.self) { page in
-                            SettingsSidebarRow(title: page.title, systemImage: page.systemImage, isSelected: selection == page)
-                                .tag(page)
+                            SettingsSidebarRow(title: page.title, systemImage: page.systemImage, isSelected: selection == page) {
+                                selection = page
+                            }
                         }
                     } header: {
                         Text(section.title.uppercased())
@@ -84,22 +89,24 @@ struct SettingsSheet: View {
                 }
 
                 Section {
-                    Button(action: logOut) {
-                        SettingsSidebarRow(title: "Log Out", systemImage: "rectangle.portrait.and.arrow.right", isSelected: false, tint: Theme.red)
-                    }
-                    .buttonStyle(.plain)
-                    .listRowInsets(EdgeInsets(top: 1, leading: 8, bottom: 1, trailing: 8))
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
+                    SettingsSidebarRow(
+                        title: "Log Out",
+                        systemImage: "rectangle.portrait.and.arrow.right",
+                        isSelected: false,
+                        tint: Theme.red,
+                        action: logOut
+                    )
                 }
                 .listSectionSeparator(.hidden)
             }
             .settingsSidebarStyle()
             .searchable(text: $query, placement: .sidebar, prompt: "Search")
+            .searchFocused($isSearchFocused)
+            .onAppear(perform: focusSearch)
             .navigationTitle("Settings")
             .inlineNavigationTitle()
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ActionToolbarItem(placement: .cancellationAction) {
                     Button("Close", systemImage: "xmark", action: close)
                 }
             }
@@ -115,6 +122,10 @@ struct SettingsSheet: View {
         }
         .navigationSplitViewStyle(.balanced)
         .background(Theme.deepBackground)
+    }
+
+    private func focusSearch() {
+        isSearchFocused = true
     }
 
     private func close() {
@@ -138,7 +149,8 @@ struct SettingsRow: View {
             Image(systemName: systemImage)
                 .font(.system(size: 18))
                 .foregroundStyle(tint)
-                .frame(width: 28)
+                // a fixed height too, or a taller symbol made its row taller than the rest
+                .frame(width: 28, height: 24)
 
             Text(title)
                 .foregroundStyle(tint)

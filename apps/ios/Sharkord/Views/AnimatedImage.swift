@@ -29,6 +29,20 @@ struct AnimatedImage: View {
         }
     }
 
+    // a nil ratio is not left alone: it takes the content's own shape, which squeezed a tile
+    // meant to fill its cell down to the gif's
+    @ViewBuilder
+    private var sized: some View {
+        let image = AnimatedImageView(image: shown, contentMode: contentMode)
+            .appKitAspect(of: shown?.size, contentMode: contentMode)
+
+        if let aspectRatio {
+            image.aspectRatio(aspectRatio, contentMode: .fit)
+        } else {
+            image
+        }
+    }
+
     private var aspectRatio: CGFloat? {
         guard sizesToImage, let size = shown?.size, size.height > 0 else {
             return nil
@@ -38,8 +52,7 @@ struct AnimatedImage: View {
     }
 
     var body: some View {
-        AnimatedImageView(image: shown, contentMode: contentMode)
-            .aspectRatio(aspectRatio, contentMode: .fit)
+        sized
             .task(id: url) {
                 image = nil
 
@@ -61,7 +74,8 @@ struct AnimatedImage: View {
 }
 
 #if os(macOS)
-// plays a gif by itself, from the image made of the file's own data
+// plays a gif by itself, from the image made of the file's own data. it stretches to its frame,
+// appKitAspect gives that frame the image's shape
 private struct AnimatedImageView: NSViewRepresentable {
     let image: PlatformImage?
     let contentMode: ContentMode
@@ -70,24 +84,50 @@ private struct AnimatedImageView: NSViewRepresentable {
         let view = NSImageView()
 
         view.animates = true
-        view.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        view.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
-        view.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        view.setContentHuggingPriority(.defaultLow, for: .vertical)
+        view.imageScaling = .scaleAxesIndependently
 
         return view
     }
 
     func updateNSView(_ view: NSImageView, context: Context) {
-        // appkit has no aspect fill, so a filled image is fitted for now
-        view.imageScaling = .scaleProportionallyUpOrDown
-
         if view.image !== image {
             view.image = image
         }
     }
+
+    // whatever room it is offered. asked for its own size, the image view answered with the
+    // image's, and a tile stayed small
+    func sizeThatFits(_ proposal: ProposedViewSize, nsView: NSImageView, context: Context) -> CGSize? {
+        let size = image?.size ?? .zero
+
+        return CGSize(width: proposal.width ?? size.width, height: proposal.height ?? size.height)
+    }
+}
+
+private extension View {
+    // appkit's image view has no aspect fill and only a fit that ignores swiftui's layout, so the
+    // image is given its own shape inside the room offered and clipped to it, as a phone draws it
+    @ViewBuilder
+    func appKitAspect(of size: CGSize?, contentMode: ContentMode) -> some View {
+        if let size, size.width > 0, size.height > 0 {
+            Color.clear
+                .overlay {
+                    aspectRatio(size.width / size.height, contentMode: contentMode)
+                }
+                .clipped()
+        } else {
+            self
+        }
+    }
 }
 #else
+private extension View {
+    // a phone's image view fills and fits by itself
+    func appKitAspect(of size: CGSize?, contentMode: ContentMode) -> some View {
+        self
+    }
+}
+
 private struct AnimatedImageView: UIViewRepresentable {
     let image: PlatformImage?
     let contentMode: ContentMode

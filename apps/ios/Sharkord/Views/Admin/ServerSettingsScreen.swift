@@ -27,7 +27,7 @@ struct ServerSettingsScreen: View {
 
     private var stackView: some View {
         NavigationStack {
-            List {
+            SettingsForm {
                 ForEach(sections, id: \.pages) { section in
                     Section {
                         ForEach(section.pages, id: \.self) { page in
@@ -48,7 +48,7 @@ struct ServerSettingsScreen: View {
             .navigationTitle("Server Settings")
             .inlineNavigationTitle()
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ActionToolbarItem(placement: .cancellationAction) {
                     Button("Close", systemImage: "xmark", action: close)
                 }
             }
@@ -62,12 +62,13 @@ struct ServerSettingsScreen: View {
         NavigationSplitView {
             // discord's settings sidebar: plain rows with a soft rounded highlight, no cards or
             // lines between them
-            List(selection: $selection) {
+            List {
                 ForEach(sections, id: \.pages) { section in
                     Section {
                         ForEach(section.pages, id: \.self) { page in
-                            SettingsSidebarRow(title: page.title, systemImage: page.systemImage, isSelected: selection == page)
-                                .tag(page)
+                            SettingsSidebarRow(title: page.title, systemImage: page.systemImage, isSelected: selection == page) {
+                                selection = page
+                            }
                         }
                     } header: {
                         if let title = section.title {
@@ -83,7 +84,7 @@ struct ServerSettingsScreen: View {
             .navigationTitle("Server Settings")
             .inlineNavigationTitle()
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ActionToolbarItem(placement: .cancellationAction) {
                     Button("Close", systemImage: "xmark", action: close)
                 }
             }

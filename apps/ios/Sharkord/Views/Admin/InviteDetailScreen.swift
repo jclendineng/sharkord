@@ -26,7 +26,7 @@ struct InviteDetailScreen: View {
     }
 
     var body: some View {
-        List {
+        SettingsForm {
             Section {
                 Text(invite.code)
                     .font(.body.monospaced())
@@ -41,6 +41,7 @@ struct InviteDetailScreen: View {
             } footer: {
                 if invite.isDeleted {
                     Text("This invite was deleted and no longer works. It is kept so you can see who joined with it.")
+                        .wrappingFooter()
                 }
             }
 
@@ -73,6 +74,7 @@ struct InviteDetailScreen: View {
             } footer: {
                 if unlistedUses > 0 {
                     Text("\(unlistedUses) \(unlistedUses == 1 ? "use isn't" : "uses aren't") listed: from before Sharkord kept who joined, or an account deleted since.")
+                        .wrappingFooter()
                 }
             }
 

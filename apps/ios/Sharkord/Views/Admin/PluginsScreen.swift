@@ -9,7 +9,7 @@ struct PluginsScreen: View {
     @State private var isLoading = true
 
     var body: some View {
-        List {
+        SettingsForm {
             if let errorMessage {
                 Text(errorMessage)
                     .foregroundStyle(Theme.red)
@@ -151,7 +151,7 @@ private struct PluginDetailScreen: View {
     }
 
     var body: some View {
-        List {
+        SettingsForm {
             if let plugin {
                 Section {
                     HStack(alignment: .top, spacing: 14) {
@@ -291,13 +291,14 @@ private struct PluginSettingsScreen: View {
     }
 
     var body: some View {
-        List {
+        SettingsForm {
             ForEach(definitions) { definition in
                 Section {
                     field(for: definition)
                 } footer: {
                     if let description = definition.description, !description.isEmpty {
                         Text(description)
+                            .wrappingFooter()
                     }
                 }
             }
@@ -320,7 +321,7 @@ private struct PluginSettingsScreen: View {
         .navigationTitle("Settings")
         .inlineNavigationTitle()
         .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
+            ActionToolbarItem(placement: .confirmationAction) {
                 if isSaving {
                     ProgressView()
                 } else {
@@ -479,7 +480,7 @@ private struct PluginLogsScreen: View {
     @State private var isLoading = true
 
     var body: some View {
-        List {
+        SettingsForm {
             if let errorMessage {
                 Text(errorMessage)
                     .foregroundStyle(Theme.red)

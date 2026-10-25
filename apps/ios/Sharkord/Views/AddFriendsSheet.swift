@@ -11,7 +11,7 @@ struct AddFriendsSheet: View {
         NavigationStack {
             AddFriendsScreen()
                 .toolbar {
-                    ToolbarItem(placement: .confirmationAction) {
+                    ActionToolbarItem(placement: .confirmationAction) {
                         Button("Done", action: close)
                     }
                 }

@@ -15,10 +15,11 @@ struct SetStatusSheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            SettingsForm {
                 Section {
                     HStack {
-                        TextField("What's on your mind?", text: $message)
+                        TextField("", text: $message, prompt: Text("What's on your mind?"))
+                            .labelsHidden()
 
                         if !message.isEmpty {
                             Button("Clear", systemImage: "xmark.circle.fill", action: clearMessage)
@@ -32,6 +33,7 @@ struct SetStatusSheet: View {
                 } footer: {
                     Text("\(message.count)/\(Self.messageLimit)")
                         .foregroundStyle(message.count > Self.messageLimit ? Theme.red : Theme.muted)
+                        .wrappingFooter()
                 }
 
                 Section {
@@ -78,11 +80,11 @@ struct SetStatusSheet: View {
             .navigationTitle("Set Status")
             .inlineNavigationTitle()
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ActionToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", action: close)
                 }
 
-                ToolbarItem(placement: .confirmationAction) {
+                ActionToolbarItem(placement: .confirmationAction) {
                     if isSaving {
                         ProgressView()
                     } else {

@@ -26,7 +26,7 @@ struct ForwardSheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            SettingsForm {
                 if let errorMessage {
                     Text(errorMessage)
                         .foregroundStyle(Theme.red)
@@ -65,7 +65,7 @@ struct ForwardSheet: View {
             .navigationTitle("Forward To")
             .inlineNavigationTitle()
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ActionToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", action: close)
                 }
             }

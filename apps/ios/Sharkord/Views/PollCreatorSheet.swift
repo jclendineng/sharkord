@@ -46,9 +46,10 @@ struct PollCreatorSheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            SettingsForm {
                 Section {
-                    TextField("What question do you want to ask?", text: $question, axis: .vertical)
+                    TextField("", text: $question, prompt: Text("What question do you want to ask?"), axis: .vertical)
+                        .labelsHidden()
                         .lineLimit(1...4)
                         .onChange(of: question) { _, value in
                             question = String(value.prefix(Self.questionLimit))
@@ -57,6 +58,7 @@ struct PollCreatorSheet: View {
                     Text("Question")
                 } footer: {
                     Text("\(question.count)/\(Self.questionLimit)")
+                        .wrappingFooter()
                 }
 
                 Section("Answers") {
@@ -112,11 +114,11 @@ struct PollCreatorSheet: View {
             .navigationTitle("Create a Poll")
             .inlineNavigationTitle()
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ActionToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", action: close)
                 }
 
-                ToolbarItem(placement: .confirmationAction) {
+                ActionToolbarItem(placement: .confirmationAction) {
                     if isPosting {
                         ProgressView()
                     } else {

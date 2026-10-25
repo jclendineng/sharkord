@@ -37,7 +37,7 @@ struct StorageSettingsScreen: View {
     private func form(_ settings: Binding<AdminStorage.Settings>, storage: AdminStorage) -> some View {
         let uploadsOn = settings.wrappedValue.storageUploadEnabled
 
-        return List {
+        return SettingsForm {
             Section("Disk") {
                 DiskUsageBar(disk: storage.diskMetrics, quota: settings.wrappedValue.storageQuota)
 
@@ -66,6 +66,7 @@ struct StorageSettingsScreen: View {
                 Text("Uploads")
             } footer: {
                 Text("Turning uploads off doesn't touch files already uploaded.")
+                    .wrappingFooter()
             }
 
             Section {
@@ -93,6 +94,7 @@ struct StorageSettingsScreen: View {
                 Text("Quotas")
             } footer: {
                 Text("The quota isn't a hard limit: an upload is written first and the rule applies after, so keep more disk free than the quota. 0 per member means unlimited, a role can override it in Roles.")
+                    .wrappingFooter()
             }
             .disabled(!uploadsOn)
 
@@ -150,6 +152,7 @@ struct StorageSettingsScreen: View {
                 Text("Images")
             } footer: {
                 Text("Converts uploaded images to WebP. Higher quality keeps more detail and uses more space.")
+                    .wrappingFooter()
             }
 
             Section {
@@ -162,6 +165,7 @@ struct StorageSettingsScreen: View {
                 Text("Security")
             } footer: {
                 Text("Every file link carries a token that expires, handed only to people who can see the file, so nobody can guess their way to one. The apps fetch fresh links on their own.")
+                    .wrappingFooter()
             }
 
             if let errorMessage {
@@ -173,7 +177,7 @@ struct StorageSettingsScreen: View {
         }
         .settingsListStyle()
         .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
+            ActionToolbarItem(placement: .confirmationAction) {
                 if isSaving {
                     ProgressView()
                 } else {

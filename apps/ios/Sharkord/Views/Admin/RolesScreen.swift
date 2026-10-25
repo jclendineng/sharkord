@@ -26,7 +26,7 @@ struct RolesScreen: View {
     }
 
     var body: some View {
-        List {
+        SettingsForm {
             if let errorMessage {
                 Text(errorMessage)
                     .foregroundStyle(Theme.red)
@@ -51,6 +51,7 @@ struct RolesScreen: View {
                 }
             } footer: {
                 Text("A member shows as their highest role with a color, and the member list groups them under it. The default role is given to everyone who joins.")
+                    .wrappingFooter()
             }
         }
         .settingsListStyle()
@@ -135,19 +136,14 @@ struct RolesScreen: View {
             roleLabel(for: role)
 
             if isOnMac {
-                Button("Move Up", systemImage: "arrow.up") {
-                    move(from: IndexSet(integer: index), to: index - 1)
-                }
-                .disabled(index == 0)
-
-                Button("Move Down", systemImage: "arrow.down") {
-                    move(from: IndexSet(integer: index), to: index + 2)
-                }
-                .disabled(index == movableRoles.count - 1)
+                ReorderArrows(
+                    canMoveUp: index > 0,
+                    canMoveDown: index < movableRoles.count - 1,
+                    moveUp: { move(from: IndexSet(integer: index), to: index - 1) },
+                    moveDown: { move(from: IndexSet(integer: index), to: index + 2) }
+                )
             }
         }
-        .labelStyle(.iconOnly)
-        .buttonStyle(.borderless)
     }
 
     private func toggleReordering() {
@@ -224,7 +220,7 @@ private struct RoleEditor: View {
     }
 
     var body: some View {
-        List {
+        SettingsForm {
             Section("Name") {
                 TextField("Role name", text: $name)
             }
@@ -247,6 +243,7 @@ private struct RoleEditor: View {
                 Text("Admin Permissions")
             } footer: {
                 Text("These let the role change the server itself. Give them out carefully.")
+                    .wrappingFooter()
             }
 
             if !role.isDefault {
@@ -254,6 +251,7 @@ private struct RoleEditor: View {
                     Button("Make Default Role", action: makeDefault)
                 } footer: {
                     Text("New members get the default role when they join.")
+                        .wrappingFooter()
                 }
             }
 
@@ -274,7 +272,7 @@ private struct RoleEditor: View {
         .navigationTitle(role.name)
         .inlineNavigationTitle()
         .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
+            ActionToolbarItem(placement: .confirmationAction) {
                 if isSaving {
                     ProgressView()
                 } else {

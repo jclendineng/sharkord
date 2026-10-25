@@ -34,7 +34,7 @@ struct SoundboardScreen: View {
     }
 
     var body: some View {
-        List {
+        SettingsForm {
             Section {
                 Button(action: showImporter) {
                     Label("Upload a Sound", systemImage: "folder")
@@ -51,6 +51,7 @@ struct SoundboardScreen: View {
                 }
             } footer: {
                 Text("MP3, WAV or M4A, 512 KB at most. Anyone in a call can play them for everyone there.")
+                    .wrappingFooter()
             }
 
             if let errorMessage {
@@ -67,10 +68,8 @@ struct SoundboardScreen: View {
                     } label: {
                         SoundRow(name: sound.name, emoji: sound.emoji, detail: sound.attribution)
                     }
-                    .swipeActions {
-                        Button("Delete", systemImage: "trash", role: .destructive) {
-                            delete(sound)
-                        }
+                    .rowDeleteAction {
+                        delete(sound)
                     }
                 }
             }
@@ -98,6 +97,7 @@ struct SoundboardScreen: View {
                     Text("Freesound")
                 } footer: {
                     Text("Only sounds free to reuse are shown. A sound that asks for credit keeps it.")
+                        .wrappingFooter()
                 }
             }
 
@@ -128,6 +128,7 @@ struct SoundboardScreen: View {
                     Text("Library")
                 } footer: {
                     Text("Free sounds that come with the server, from Kenney (kenney.nl).")
+                        .wrappingFooter()
                 }
             }
         }
@@ -150,7 +151,7 @@ struct SoundboardScreen: View {
             NavigationStack {
                 SoundEditor(sound: sound)
                     .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
+                        ActionToolbarItem(placement: .cancellationAction) {
                             Button("Close", systemImage: "xmark", action: closeEditor)
                         }
                     }
@@ -405,7 +406,7 @@ private struct SoundSearchField: ViewModifier {
 
     func body(content: Content) -> some View {
         if isEnabled {
-            content.searchable(text: $query, prompt: "Search Freesound")
+            content.pageSearchable(text: $query, prompt: "Search Freesound")
         } else {
             content
         }
@@ -461,11 +462,14 @@ private struct SoundEditor: View {
                 }
             }
         }
+        // a mac lays a plain form out in two columns with the labels right aligned. grouped
+        // is a phone's own anyway
+        .formStyle(.grouped)
         .settingsListStyle()
         .navigationTitle("Edit Sound")
         .inlineNavigationTitle()
         .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
+            ActionToolbarItem(placement: .confirmationAction) {
                 Button("Save", action: save)
                     .disabled(name.trimmingCharacters(in: .whitespaces).count < 2)
             }

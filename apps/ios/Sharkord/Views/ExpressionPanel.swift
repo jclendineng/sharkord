@@ -308,7 +308,7 @@ private struct EmojiTab: View {
         .buttonStyle(.plain)
     }
 
-    // discord's bar of section icons along the bottom, with a backspace at its end
+    // discord's bar of section icons along the bottom, with a backspace at its end on a phone
     private func categoryBar(_ proxy: ScrollViewProxy) -> some View {
         HStack(spacing: 0) {
             ScrollView(.horizontal) {
@@ -330,15 +330,19 @@ private struct EmojiTab: View {
                 }
                 .padding(.horizontal, 10)
             }
-            .scrollIndicators(.hidden)
+            .scrollIndicators(.never)
 
-            Button(action: onBackspace) {
-                Label("Delete", systemImage: "delete.left.fill")
-                    .labelStyle(.iconOnly)
-                    .font(.system(size: 18))
-                    .foregroundStyle(Theme.muted)
-                    .frame(width: 52, height: 40)
-                    .contentShape(.rect)
+            // the panel stands in for the on screen keyboard on a phone, so it has the
+            // keyboard's backspace. a mac's keyboard stays, and has its own
+            if !Platform.isMac {
+                Button(action: onBackspace) {
+                    Label("Delete", systemImage: "delete.left.fill")
+                        .labelStyle(.iconOnly)
+                        .font(.system(size: 18))
+                        .foregroundStyle(Theme.muted)
+                        .frame(width: 52, height: 40)
+                        .contentShape(.rect)
+                }
             }
         }
         .padding(.vertical, 6)

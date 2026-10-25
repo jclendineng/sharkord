@@ -155,7 +155,7 @@ private struct MemberColumnRow: View {
         // where a profile opening rightwards was squeezed into what little room was left. a fixed
         // size, so it can never be narrower than its content: a mac popover takes no ideal height
         // and opened short, the note cut off under a scroll bar
-        .popover(isPresented: $isProfilePresented, arrowEdge: .trailing) {
+        .popover(isPresented: $isProfilePresented, opensAwayFrom: .trailing) {
             MemberProfileSheet(user: user, onMessage: openDirectMessage)
                 .frame(width: 340 * scale, height: 600 * scale)
                 .presentationCompactAdaptation(.popover)

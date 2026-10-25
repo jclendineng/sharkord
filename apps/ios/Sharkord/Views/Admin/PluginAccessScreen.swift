@@ -20,7 +20,7 @@ struct PluginAccessScreen: View {
     ]
 
     var body: some View {
-        List {
+        SettingsForm {
             if let errorMessage {
                 Text(errorMessage)
                     .foregroundStyle(Theme.red)
@@ -134,7 +134,7 @@ private struct CapabilityAccessEditor: View {
     }
 
     var body: some View {
-        List {
+        SettingsForm {
             Section {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(capability.type == "command" ? "/\(capability.name)" : capability.name)
@@ -155,10 +155,12 @@ private struct CapabilityAccessEditor: View {
                     Text("Only Some Roles").tag(true)
                 }
                 .pickerStyle(.segmented)
+                .labelsHidden()
                 .disabled(isSaving)
             } footer: {
                 if let requires = capability.requires {
                     Text("By default only roles with \(Permission(rawValue: requires)?.title ?? requires) can use it.")
+                        .wrappingFooter()
                 }
             }
 
@@ -180,6 +182,7 @@ private struct CapabilityAccessEditor: View {
                     Text("Roles")
                 } footer: {
                     Text("The server owner can always use it.")
+                        .wrappingFooter()
                 }
             }
 

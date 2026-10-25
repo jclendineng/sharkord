@@ -24,7 +24,7 @@ struct InvitesScreen: View {
     }
 
     var body: some View {
-        List {
+        SettingsForm {
             if let errorMessage {
                 Text(errorMessage)
                     .foregroundStyle(Theme.red)
@@ -37,14 +37,13 @@ struct InvitesScreen: View {
                     } label: {
                         InviteRow(invite: invite)
                     }
-                    .swipeActions {
-                        Button("Delete", systemImage: "trash", role: .destructive) {
-                            pendingDelete = invite
-                        }
+                    .rowDeleteAction {
+                        pendingDelete = invite
                     }
                 }
             } footer: {
-                Text("Tap an invite to see who joined with it, swipe to delete it.")
+                Text(Platform.isMac ? "Click an invite to see who joined with it, right click to delete it." : "Tap an invite to see who joined with it, swipe to delete it.")
+                    .wrappingFooter()
             }
 
             if !deletedInvites.isEmpty {
@@ -202,7 +201,7 @@ private struct CreateInviteSheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            SettingsForm {
                 Section("Expires After") {
                     Picker("Expires After", selection: $expiry) {
                         ForEach(InviteExpiry.allCases, id: \.self) { option in
@@ -210,6 +209,7 @@ private struct CreateInviteSheet: View {
                         }
                     }
                     .pickerStyle(.segmented)
+                    .labelsHidden()
                 }
 
                 Section {
@@ -229,6 +229,7 @@ private struct CreateInviteSheet: View {
                         }
                     } footer: {
                         Text("People who join with this invite get the role.")
+                            .wrappingFooter()
                     }
                 }
 
@@ -243,11 +244,11 @@ private struct CreateInviteSheet: View {
             .navigationTitle("New Invite")
             .inlineNavigationTitle()
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ActionToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", action: close)
                 }
 
-                ToolbarItem(placement: .confirmationAction) {
+                ActionToolbarItem(placement: .confirmationAction) {
                     if isSaving {
                         ProgressView()
                     } else {

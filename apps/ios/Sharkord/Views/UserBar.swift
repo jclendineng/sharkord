@@ -136,6 +136,7 @@ struct UserBar: View {
                 .environment(servers)
         })
         .profileSheet($profileSheet)
+        .onChange(of: servers.settingsRequests, openSettings)
     }
 
     private var unreadsButton: some View {
@@ -236,7 +237,7 @@ private struct ProfilePresentation<Profile: View>: ViewModifier {
     func body(content: Content) -> some View {
         if Platform.isMac {
             content
-                .popover(isPresented: $isPresented, arrowEdge: .bottom) {
+                .popover(isPresented: $isPresented, opensAwayFrom: .bottom) {
                     profile()
                         // a fixed size: a mac popover takes no ideal height, and the log out
                         // at the bottom sat under a scroll

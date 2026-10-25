@@ -49,7 +49,7 @@ struct ApproveDeviceSheet: View {
             .navigationTitle("Sign In Another Device")
             .inlineNavigationTitle()
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ActionToolbarItem(placement: .cancellationAction) {
                     Button("Close", systemImage: "xmark", action: close)
                 }
             }

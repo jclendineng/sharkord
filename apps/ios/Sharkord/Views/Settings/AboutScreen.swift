@@ -6,7 +6,7 @@ struct AboutScreen: View {
     @Environment(SessionStore.self) private var session
 
     var body: some View {
-        List {
+        SettingsForm {
             Section("App") {
                 LabeledContent("Version", value: AppInfo.version)
                 LabeledContent("Build", value: AppInfo.build)
@@ -39,6 +39,7 @@ struct AboutScreen: View {
             } footer: {
                 if session.reportEmail != nil {
                     Text("Contact goes to this server's admins. Report a Problem is for the app itself.")
+                        .wrappingFooter()
                 }
             }
 
