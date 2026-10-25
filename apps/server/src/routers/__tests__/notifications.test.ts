@@ -11,11 +11,13 @@ import {
 } from '../../db/schema';
 import { drainPushNotificationsQueue } from '../../queues/push-notifications';
 import * as apns from '../../utils/apns';
+import * as pushRelay from '../../utils/push-relay';
 
 /**
  * APNs itself is not reached: the harness has no network to apple and no key to sign with,
  * so sendApnsNotification is spied and everything that decides who it is called for is
- * covered here instead.
+ * covered here instead. the push relay is spied the same way, its signed request is covered
+ * in utils/__tests__/push-relay.test.ts and the relay itself in apps/push-relay.
  */
 
 const deviceToken = (userId: number) => `${userId}`.padStart(64, 'a');
@@ -608,5 +610,300 @@ describe('do not disturb', () => {
     await drainPushNotificationsQueue();
 
     expect(notifiedTokens(spy)).toEqual([]);
+  });
+});
+
+describe('push through the relay', () => {
+  const RELAY_URL = 'https://relay.test';
+
+  type TDeviceKey = { privateKey: CryptoKey; encryptionKey: string };
+
+  // what the app does: a p-256 key pair per server, the public half sent as x963 base64url
+  const createDeviceKey = async (): Promise<TDeviceKey> => {
+    const pair = (await crypto.subtle.generateKey(
+      { name: 'ECDH', namedCurve: 'P-256' },
+      true,
+      ['deriveBits']
+    )) as CryptoKeyPair;
+    const raw = await crypto.subtle.exportKey('raw', pair.publicKey);
+
+    return {
+      privateKey: pair.privateKey,
+      encryptionKey: Buffer.from(raw).toString('base64url')
+    };
+  };
+
+  // the app's side of utils/push-encryption, so a test proves the payload opens
+  const decrypt = async (privateKey: CryptoKey, encrypted: string) => {
+    const bytes = Buffer.from(encrypted, 'base64url');
+    const ephemeralPublicKey = bytes.subarray(0, 65);
+    const ephemeral = await crypto.subtle.importKey(
+      'raw',
+      ephemeralPublicKey,
+      { name: 'ECDH', namedCurve: 'P-256' },
+      false,
+      []
+    );
+    const sharedSecret = await crypto.subtle.deriveBits(
+      { name: 'ECDH', public: ephemeral },
+      privateKey,
+      256
+    );
+    const hkdfKey = await crypto.subtle.importKey(
+      'raw',
+      sharedSecret,
+      'HKDF',
+      false,
+      ['deriveKey']
+    );
+    const aesKey = await crypto.subtle.deriveKey(
+      {
+        name: 'HKDF',
+        hash: 'SHA-256',
+        salt: ephemeralPublicKey,
+        info: new TextEncoder().encode('sharkord push v1')
+      },
+      hkdfKey,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['decrypt']
+    );
+    const opened = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: bytes.subarray(65, 77) },
+      aesKey,
+      bytes.subarray(77)
+    );
+
+    return JSON.parse(new TextDecoder().decode(opened));
+  };
+
+  const relayId = (userId: number) => `${userId}`.padStart(64, 'c');
+  const relayTicket = (userId: number) => `ticket-for-${userId}`;
+
+  const registerRelayDevice = async (userId: number) => {
+    const key = await createDeviceKey();
+    const { caller } = await initTest(userId);
+
+    await caller.notifications.registerDevice({
+      token: relayId(userId),
+      relayTicket: relayTicket(userId),
+      encryptionKey: key.encryptionKey
+    });
+
+    return key;
+  };
+
+  const spyOnRelay = (status = 200, reason?: string) =>
+    spyOn(pushRelay, 'sendRelayNotification').mockResolvedValue({
+      status,
+      reason
+    });
+
+  beforeEach(() => {
+    config.push.enabled = false;
+    config.push.relayUrl = RELAY_URL;
+  });
+
+  test('should store the ticket and key without a server apns key', async () => {
+    const key = await registerRelayDevice(2);
+
+    const device = await tdb
+      .select()
+      .from(pushDevices)
+      .where(eq(pushDevices.token, relayId(2)))
+      .get();
+
+    expect(device?.userId).toBe(2);
+    expect(device?.relayTicket).toBe(relayTicket(2));
+    expect(device?.encryptionKey).toBe(key.encryptionKey);
+    expect(device?.sandbox).toBe(false);
+  });
+
+  test('should replace the ticket when the app refreshes it', async () => {
+    const key = await createDeviceKey();
+    const { caller } = await initTest(2);
+
+    await caller.notifications.registerDevice({
+      token: relayId(2),
+      relayTicket: 'first',
+      encryptionKey: key.encryptionKey
+    });
+    await caller.notifications.registerDevice({
+      token: relayId(2),
+      relayTicket: 'second',
+      encryptionKey: key.encryptionKey
+    });
+
+    const devices = await tdb.select().from(pushDevices);
+
+    expect(devices).toHaveLength(1);
+    expect(devices[0]!.relayTicket).toBe('second');
+  });
+
+  test('should refuse a relay device when the server has no relay', async () => {
+    config.push.relayUrl = '';
+    config.push.enabled = true;
+
+    const key = await createDeviceKey();
+    const { caller } = await initTest(2);
+
+    await expect(
+      caller.notifications.registerDevice({
+        token: relayId(2),
+        relayTicket: relayTicket(2),
+        encryptionKey: key.encryptionKey
+      })
+    ).rejects.toThrow('Push notifications are not enabled on this server.');
+  });
+
+  test('should refuse a direct token when the server only has the relay', async () => {
+    const { caller } = await initTest(2);
+
+    await expect(
+      caller.notifications.registerDevice({
+        token: deviceToken(2),
+        sandbox: false
+      })
+    ).rejects.toThrow('Push notifications are not enabled on this server.');
+  });
+
+  test('should refuse an encryption key that is not a p-256 point', async () => {
+    const { caller } = await initTest(2);
+
+    await expect(
+      caller.notifications.registerDevice({
+        token: relayId(2),
+        relayTicket: relayTicket(2),
+        encryptionKey: 'A'.repeat(87)
+      })
+    ).rejects.toThrow('This device sent an encryption key that is not valid.');
+
+    expect(await tdb.select().from(pushDevices)).toHaveLength(0);
+  });
+
+  test('should refuse a ticket with characters a ticket never has', async () => {
+    const key = await createDeviceKey();
+    const { caller } = await initTest(2);
+
+    await expect(
+      caller.notifications.registerDevice({
+        token: relayId(2),
+        relayTicket: 'not a ticket!',
+        encryptionKey: key.encryptionKey
+      })
+    ).rejects.toThrow();
+
+    expect(await tdb.select().from(pushDevices)).toHaveLength(0);
+  });
+
+  test('should send the payload encrypted to the recipient only', async () => {
+    const [, recipientKey] = await Promise.all([
+      registerRelayDevice(3),
+      registerRelayDevice(4)
+    ]);
+    const spy = spyOnRelay();
+    const { caller } = await initTest(3);
+
+    await caller.messages.send({ channelId: 3, content: 'hey b', files: [] });
+    await drainPushNotificationsQueue();
+
+    expect(spy).toHaveBeenCalledTimes(1);
+
+    const [notification] = spy.mock.calls[0]!;
+    const { serverId } = await getSettings();
+
+    expect(notification.ticket).toBe(relayTicket(4));
+    expect(notification.encrypted).not.toContain('hey b');
+    expect(
+      await decrypt(recipientKey.privateKey, notification.encrypted)
+    ).toMatchObject({
+      aps: { alert: { title: 'User A', body: 'hey b' } },
+      serverId,
+      channelId: 3
+    });
+  });
+
+  test("should not open with another device's key", async () => {
+    await registerRelayDevice(4);
+
+    const otherKey = await createDeviceKey();
+    const spy = spyOnRelay();
+    const { caller } = await initTest(3);
+
+    await caller.messages.send({ channelId: 3, content: 'hey b', files: [] });
+    await drainPushNotificationsQueue();
+
+    const [notification] = spy.mock.calls[0]!;
+
+    await expect(
+      decrypt(otherKey.privateKey, notification.encrypted)
+    ).rejects.toThrow();
+  });
+
+  test('should skip a direct device while the server has no apns key', async () => {
+    await tdb.insert(pushDevices).values({
+      userId: 4,
+      token: deviceToken(4),
+      tokenVersion: 0,
+      sandbox: false,
+      createdAt: Date.now()
+    });
+
+    const apnsSpy = spyOnApns();
+    const relaySpy = spyOnRelay();
+    const { caller } = await initTest(3);
+
+    await caller.messages.send({ channelId: 3, content: 'hey b', files: [] });
+    await drainPushNotificationsQueue();
+
+    expect(apnsSpy).not.toHaveBeenCalled();
+    expect(relaySpy).not.toHaveBeenCalled();
+    expect(await tdb.select().from(pushDevices)).toHaveLength(1);
+  });
+
+  test('should skip a relay device once the relay is turned off', async () => {
+    await registerRelayDevice(4);
+
+    config.push.relayUrl = '';
+    config.push.enabled = true;
+
+    const apnsSpy = spyOnApns();
+    const relaySpy = spyOnRelay();
+    const { caller } = await initTest(3);
+
+    await caller.messages.send({ channelId: 3, content: 'hey b', files: [] });
+    await drainPushNotificationsQueue();
+
+    expect(apnsSpy).not.toHaveBeenCalled();
+    expect(relaySpy).not.toHaveBeenCalled();
+  });
+
+  test.each(['BadTicket', 'ExpiredTicket', 'TicketNotForServer'])(
+    'should forget a device the relay answers %s for',
+    async (reason) => {
+      await registerRelayDevice(4);
+
+      spyOnRelay(reason === 'TicketNotForServer' ? 403 : 410, reason);
+
+      const { caller } = await initTest(3);
+
+      await caller.messages.send({ channelId: 3, content: 'hey b', files: [] });
+      await drainPushNotificationsQueue();
+
+      expect(await tdb.select().from(pushDevices)).toHaveLength(0);
+    }
+  );
+
+  test('should keep a device the relay is rate limiting', async () => {
+    await registerRelayDevice(4);
+
+    spyOnRelay(429, 'TooManyRequests');
+
+    const { caller } = await initTest(3);
+
+    await caller.messages.send({ channelId: 3, content: 'hey b', files: [] });
+    await drainPushNotificationsQueue();
+
+    expect(await tdb.select().from(pushDevices)).toHaveLength(1);
   });
 });

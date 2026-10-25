@@ -77,6 +77,24 @@
         "vite": "^8.3.5",
       },
     },
+    "apps/push-relay": {
+      "name": "@sharkord/push-relay",
+      "version": "0.0.27",
+      "devDependencies": {
+        "@eslint/js": "^10.0.1",
+        "@types/bun": "latest",
+        "globals": "^17.13.0",
+        "typescript-eslint": "^8.72.0",
+      },
+      "peerDependencies": {
+        "@typescript-eslint/eslint-plugin": "^8.72.0",
+        "eslint": "^10.13.0",
+        "eslint-plugin-unused-imports": "^4.4.1",
+        "prettier": "^3.9.10",
+        "prettier-plugin-organize-imports": "^4.3.0",
+        "typescript": "^6.0.3",
+      },
+    },
     "apps/server": {
       "name": "@sharkord/server",
       "version": "0.0.27",
@@ -660,6 +678,8 @@
     "@sharkord/e2e": ["@sharkord/e2e@workspace:packages/e2e"],
 
     "@sharkord/plugin-sdk": ["@sharkord/plugin-sdk@workspace:packages/plugin-sdk"],
+
+    "@sharkord/push-relay": ["@sharkord/push-relay@workspace:apps/push-relay"],
 
     "@sharkord/scripts": ["@sharkord/scripts@workspace:packages/scripts"],
 

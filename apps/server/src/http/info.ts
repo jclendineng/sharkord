@@ -3,12 +3,16 @@ import http from 'http';
 import { config } from '../config';
 import { getSettings } from '../db/queries/server';
 import { getOidcServerInfo } from '../helpers/oidc/settings';
+import { getPushRelayKey } from '../utils/push-relay-key';
 
 const infoRouteHandler = async (
   req: http.IncomingMessage,
   res: http.ServerResponse
 ) => {
-  const settings = await getSettings();
+  const [settings, pushRelayKey] = await Promise.all([
+    getSettings(),
+    config.push.relayUrl ? getPushRelayKey() : undefined
+  ]);
 
   const info: TServerInfo = {
     serverId: settings.serverId,
@@ -19,6 +23,7 @@ const infoRouteHandler = async (
     // public so a report can be sent before signing in, and without an account at all
     reportEmail: settings.reportEmail,
     pushEnabled: config.push.enabled,
+    pushRelayKey: pushRelayKey?.publicKey ?? null,
     ...getOidcServerInfo()
   };
 

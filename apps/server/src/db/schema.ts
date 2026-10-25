@@ -1024,6 +1024,8 @@ const pushDevices = sqliteTable(
     userId: integer('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
+    // the apns device token, or for a device behind the push relay the relay's id for it,
+    // which never reveals the token
     token: text('token').notNull(),
     tokenVersion: integer('token_version').notNull(),
     // signing that session out removes the device with it. null for one registered by a token
@@ -1033,6 +1035,9 @@ const pushDevices = sqliteTable(
     }),
     // a development build's token is only accepted by the apns sandbox
     sandbox: integer('sandbox', { mode: 'boolean' }).notNull().default(false),
+    // set together for a device behind the push relay, null for one apns is sent to directly
+    relayTicket: text('relay_ticket'),
+    encryptionKey: text('encryption_key'),
     createdAt: integer('created_at').notNull()
   },
   (t) => [

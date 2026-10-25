@@ -1,0 +1,28 @@
+{
+  "name": "sharkord-push-relay",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "vars": {
+    "APNS_TOPIC": "com.sharkord.ios"
+  },
+  // secrets, set with `bunx wrangler secret put <name>`: TICKET_SECRET, APNS_TEAM_ID,
+  // APNS_KEY_ID, APNS_KEY, APNS_SANDBOX_KEY_ID, APNS_SANDBOX_KEY
+  "ratelimits": [
+    {
+      "name": "TICKETS_LIMITER",
+      "namespace_id": "1001",
+      "simple": { "limit": 20, "period": 60 }
+    },
+    {
+      "name": "SERVER_LIMITER",
+      "namespace_id": "1002",
+      "simple": { "limit": 600, "period": 60 }
+    },
+    {
+      "name": "DEVICE_LIMITER",
+      "namespace_id": "1003",
+      "simple": { "limit": 60, "period": 60 }
+    }
+  ]
+}

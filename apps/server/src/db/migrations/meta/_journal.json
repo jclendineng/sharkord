@@ -526,6 +526,13 @@
       "when": 1792701913435,
       "tag": "0074_grant_moderation_permissions",
       "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "6",
+      "when": 1792955017957,
+      "tag": "0075_push_relay",
+      "breakpoints": true
     }
   ]
 }

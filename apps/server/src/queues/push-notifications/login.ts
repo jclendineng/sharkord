@@ -11,7 +11,9 @@ const getLoginNotificationDevices = (userId: number, sessionId: string) =>
     .select({
       id: pushDevices.id,
       token: pushDevices.token,
-      sandbox: pushDevices.sandbox
+      sandbox: pushDevices.sandbox,
+      relayTicket: pushDevices.relayTicket,
+      encryptionKey: pushDevices.encryptionKey
     })
     .from(pushDevices)
     .innerJoin(users, eq(users.id, pushDevices.userId))

@@ -76,7 +76,10 @@ const zConfig = z.object({
     apnsKeyId: z.string(),
     apnsTeamId: z.string(),
     apnsKeyPath: z.string(),
-    apnsBundleId: z.string()
+    apnsBundleId: z.string(),
+    // the relay devices on this server get their notifications through, so the server needs
+    // no apns key of its own. empty turns it off
+    relayUrl: z.string().trim()
   }),
   // mirrored with the settings screens by helpers/config-file-sync, which owns these keys, so
   // they are kept as they are here rather than given defaults
@@ -156,7 +159,8 @@ const defaultConfig: TConfig = {
     apnsKeyId: '',
     apnsTeamId: '',
     apnsKeyPath: '',
-    apnsBundleId: 'com.sharkord.ios'
+    apnsBundleId: 'com.sharkord.ios',
+    relayUrl: ''
   },
   registration: {},
   storage: {},
@@ -360,6 +364,7 @@ const envOverridesMap: Record<string, string> = {
   'push.apnsTeamId': 'SHARKORD_PUSH_APNS_TEAM_ID',
   'push.apnsKeyPath': 'SHARKORD_PUSH_APNS_KEY_PATH',
   'push.apnsBundleId': 'SHARKORD_PUSH_APNS_BUNDLE_ID',
+  'push.relayUrl': 'SHARKORD_PUSH_RELAY_URL',
   'webRtc.port': 'SHARKORD_WEBRTC_PORT',
   'webRtc.listenIp': 'SHARKORD_WEBRTC_LISTEN_IP',
   'webRtc.announcedAddress': 'SHARKORD_WEBRTC_ANNOUNCED_ADDRESS',

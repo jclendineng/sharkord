@@ -15,6 +15,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - Database migrations run by themselves at startup.
   - This release adds tables for friends, group direct messages, private notes, the new member lounge, QR sign in and the soundboard.
   - Upstream's plugin storage migrations run as this fork's `0060_plugin_storage`, after the fork's own, so a database that already ran `0059` still gets them.
+  - `0075_push_relay` adds the relay ticket and encryption key columns to push devices. Devices registered before it keep going straight to Apple.
   - `0074_grant_moderation_permissions` gives Kick Members, Ban Members and Assign Roles to every role that had Manage Users, so nobody loses what they could do. Manage Users is now called Manage Accounts and covers deleting accounts and password reset links.
   - `0073_invite_uses` adds the table of who signed up with which invite, and marks deleted invites instead of removing them. Sign ups from before it have only the count.
   - `0072_role_positions` gives roles an order, starting from the order they were made in.
@@ -140,6 +141,10 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 - Device sessions: see where you are signed in and sign devices out.
 - Push previews can leave out message text.
+- A push relay so any server can send notifications without an Apple developer account. The app side is still to come.
+  - The relay is a Cloudflare Worker in `apps/push-relay` that holds the app's keys. A server turns it on with `SHARKORD_PUSH_RELAY_URL`.
+  - Each notification is encrypted to the receiving device, so the relay and Apple only see ciphertext.
+  - A ticket only works for the server it was issued to, so a server can only notify the people on it.
 - A report address in server settings, used by Report in the apps.
 - The app refuses plain `http` servers off the local network.
 

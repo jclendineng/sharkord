@@ -28,8 +28,27 @@ answered.
 
 ## Push notifications
 
-The server sends to Apple's push service directly with the operator's own key. Off until
-configured:
+Two ways to send, and a server can do both.
+
+**Through the push relay**, which needs no Apple account. The relay (`apps/push-relay`, a
+Cloudflare Worker) holds the app's keys and forwards for every server:
+
+```bash
+SHARKORD_PUSH_RELAY_URL=https://...
+```
+
+- The server makes an ed25519 key on first use (`push-relay-key.pem` in the data folder) and
+  publishes the public half in `/info` as `pushRelayKey`. Keep the file: a new key makes every
+  device register again.
+- The app asks the relay for a ticket naming its device and this server's key, then registers
+  the ticket here with a P-256 public key of its own. The server never sees the device token.
+- Each notification is encrypted to that device's key and signed with the server's. The relay
+  only sends a ticket for the server that signs it, so a server can only reach devices that
+  registered with it, and the relay and Apple only see ciphertext.
+- The app side (ticket request, notification service extension) is not built yet.
+
+**Directly to Apple** with the operator's own key, for someone with their own app build. Off
+until configured:
 
 ```bash
 SHARKORD_PUSH_ENABLED=true
@@ -46,7 +65,8 @@ notify for all. Do not disturb silences every device.
 a notification only says who sent something, never what it says or where, so the text never
 passes through Apple. Setting: `pushShowMessageContent`.
 
-Code: `apps/server/src/utils/apns.ts`, `apps/server/src/queues/push-notifications`,
+Code: `apps/server/src/utils/apns.ts`, `apps/server/src/utils/push-relay.ts`,
+`apps/server/src/utils/push-encryption.ts`, `apps/server/src/queues/push-notifications`,
 routes `notifications.registerDevice` and `notifications.unregisterDevice`.
 
 ## Per channel notifications

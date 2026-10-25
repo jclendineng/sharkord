@@ -85,4 +85,30 @@ describe('/info', () => {
       expect(data.oidcDisableLocalLogin).toBe(false);
     });
   });
+  describe('push relay key', () => {
+    afterEach(() => {
+      config.push.relayUrl = '';
+    });
+
+    test('should publish no relay key while the relay is off', async () => {
+      const response = await fetch(`${testsBaseUrl}/info`);
+      const data = (await response.json()) as TServerInfo;
+
+      expect(data.pushRelayKey).toBeNull();
+    });
+
+    test('should publish the same key on every call once the relay is on', async () => {
+      config.push.relayUrl = 'https://relay.test';
+
+      const first = (await (
+        await fetch(`${testsBaseUrl}/info`)
+      ).json()) as TServerInfo;
+      const second = (await (
+        await fetch(`${testsBaseUrl}/info`)
+      ).json()) as TServerInfo;
+
+      expect(first.pushRelayKey).toMatch(/^[A-Za-z0-9_-]{43}$/);
+      expect(second.pushRelayKey).toBe(first.pushRelayKey);
+    });
+  });
 });

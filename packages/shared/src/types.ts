@@ -169,6 +169,9 @@ export type TServerInfo = Pick<
   oidcEnabled: boolean;
   oidcDisableLocalLogin: boolean;
   pushEnabled: boolean;
+  // set when the server sends through the push relay: its public key, which the app asks the
+  // relay to seal into the device's ticket
+  pushRelayKey: string | null;
 };
 
 export enum OidcError {

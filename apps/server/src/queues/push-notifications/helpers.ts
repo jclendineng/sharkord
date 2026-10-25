@@ -39,6 +39,8 @@ type TPushDevice = {
   userId: number;
   token: string;
   sandbox: boolean;
+  relayTicket: string | null;
+  encryptionKey: string | null;
 };
 
 const getPushMessage = (messageId: number): TPushMessage | undefined =>
@@ -72,7 +74,9 @@ const getActiveDevices = (senderId: number | null) =>
       id: pushDevices.id,
       userId: pushDevices.userId,
       token: pushDevices.token,
-      sandbox: pushDevices.sandbox
+      sandbox: pushDevices.sandbox,
+      relayTicket: pushDevices.relayTicket,
+      encryptionKey: pushDevices.encryptionKey
     })
     .from(pushDevices)
     .innerJoin(users, eq(users.id, pushDevices.userId))

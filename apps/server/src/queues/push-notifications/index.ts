@@ -7,7 +7,9 @@ import { db } from '../../db';
 import { pushDevices } from '../../db/schema';
 import { logger } from '../../logger';
 import type { TConnectionInfo } from '../../types';
-import { sendApnsNotification } from '../../utils/apns';
+import { sendApnsNotification, type TApnsResult } from '../../utils/apns';
+import { encryptForDevice } from '../../utils/push-encryption';
+import { sendRelayNotification } from '../../utils/push-relay';
 import { drainQueue } from '../drain';
 import {
   buildPushPayload,
@@ -17,11 +19,14 @@ import {
 import { buildLoginPayload, getLoginNotificationDevices } from './login';
 
 // apple's answers for a token that will never work again, see "handling notification
-// responses from apns" in its documentation
+// responses from apns" in its documentation, and the relay's for a ticket that won't
 const DEAD_TOKEN_REASONS = new Set([
   'BadDeviceToken',
   'Unregistered',
-  'DeviceTokenNotForTopic'
+  'DeviceTokenNotForTopic',
+  'BadTicket',
+  'ExpiredTicket',
+  'TicketNotForServer'
 ]);
 
 const pushNotificationsQueue = new Queue({
@@ -36,21 +41,43 @@ type TDeliveryDevice = {
   id: number;
   token: string;
   sandbox: boolean;
+  relayTicket: string | null;
+  encryptionKey: string | null;
 };
 
-// one payload to each device, dropping the ones apple says will never work again
+const isPushEnabled = () => config.push.enabled || !!config.push.relayUrl;
+
+// a device behind the relay gets the payload encrypted to its own key, so the relay and apple
+// only ever carry ciphertext. one apns is sent to directly needs this server's own key
+const sendToDevice = async (
+  device: TDeliveryDevice,
+  payload: Record<string, unknown>
+): Promise<TApnsResult | undefined> => {
+  if (device.relayTicket && device.encryptionKey) {
+    if (!config.push.relayUrl) return undefined;
+
+    return sendRelayNotification({
+      ticket: device.relayTicket,
+      encrypted: await encryptForDevice(device.encryptionKey, payload)
+    });
+  }
+
+  if (!config.push.enabled) return undefined;
+
+  return sendApnsNotification({
+    deviceToken: device.token,
+    sandbox: device.sandbox,
+    payload
+  });
+};
+
+// one payload to each device, dropping the ones apple or the relay says will never work again
 const deliver = async (
   devices: TDeliveryDevice[],
   payload: Record<string, unknown>
 ) => {
   const results = await Promise.allSettled(
-    devices.map((device) =>
-      sendApnsNotification({
-        deviceToken: device.token,
-        sandbox: device.sandbox,
-        payload
-      })
-    )
+    devices.map((device) => sendToDevice(device, payload))
   );
 
   const deadDeviceIds: number[] = [];
@@ -58,12 +85,14 @@ const deliver = async (
   results.forEach((result, index) => {
     if (result.status === 'rejected') {
       logger.warn(
-        `${chalk.dim('[Push]')} Could not reach APNs: %s`,
+        `${chalk.dim('[Push]')} Could not reach APNs or the relay: %s`,
         getErrorMessage(result.reason)
       );
 
       return;
     }
+
+    if (!result.value) return;
 
     const { status, reason } = result.value;
 
@@ -71,7 +100,7 @@ const deliver = async (
       deadDeviceIds.push(devices[index]!.id);
     } else if (status !== 200) {
       logger.warn(
-        `${chalk.dim('[Push]')} APNs refused a notification with %d (%s)`,
+        `${chalk.dim('[Push]')} A notification was refused with %d (%s)`,
         status,
         reason ?? 'no reason'
       );
@@ -108,7 +137,7 @@ const sendLoginNotifications = async (
 };
 
 const enqueuePushNotification = (messageId: number) => {
-  if (!config.push.enabled) return;
+  if (!isPushEnabled()) return;
 
   pushNotificationsQueue.push(async (callback) => {
     try {
@@ -131,7 +160,7 @@ const enqueueLoginNotification = (
   sessionId: string,
   info: TConnectionInfo | undefined
 ) => {
-  if (!config.push.enabled) return;
+  if (!isPushEnabled()) return;
 
   pushNotificationsQueue.push(async (callback) => {
     try {
