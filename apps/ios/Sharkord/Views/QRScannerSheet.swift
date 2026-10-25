@@ -15,6 +15,7 @@ struct QRScannerSheet: View {
     var body: some View {
         NavigationStack {
             content
+                .sheetBarBackground()
                 .navigationTitle("Scan a QR Code")
                 .inlineNavigationTitle()
                 .toolbar {

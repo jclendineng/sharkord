@@ -98,6 +98,8 @@ struct InviteSheet: View {
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.bordered)
+                        // the secondary beside share: tinted it was a dark blurple that read as off
+                        .tint(Theme.header)
                     }
                     .controlSize(.large)
 
@@ -160,6 +162,7 @@ struct InviteSheet: View {
             }
             .padding(20)
             .background(Theme.listBackground)
+            .sheetBarBackground(Theme.listBackground)
             .navigationTitle("Invite to \(session.displayName)")
             .inlineNavigationTitle()
             .toolbar {

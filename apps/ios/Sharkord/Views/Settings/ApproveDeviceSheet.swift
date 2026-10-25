@@ -46,6 +46,7 @@ struct ApproveDeviceSheet: View {
             .frame(maxWidth: 520, maxHeight: .infinity)
             .frame(maxWidth: .infinity)
             .background(Theme.deepBackground)
+            .sheetBarBackground()
             .navigationTitle("Sign In Another Device")
             .inlineNavigationTitle()
             .toolbar {

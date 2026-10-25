@@ -239,9 +239,10 @@ private struct ProfilePresentation<Profile: View>: ViewModifier {
             content
                 .popover(isPresented: $isPresented, opensAwayFrom: .bottom) {
                     profile()
-                        // a fixed size: a mac popover takes no ideal height, and the log out
-                        // at the bottom sat under a scroll
-                        .frame(width: 380, height: 700)
+                        // its content's own height: a mac popover takes no ideal height, and
+                        // the log out at the bottom sat under a scroll
+                        .frame(width: 380)
+                        .fixedSize(horizontal: false, vertical: true)
                         .macPopover()
                 }
         } else {

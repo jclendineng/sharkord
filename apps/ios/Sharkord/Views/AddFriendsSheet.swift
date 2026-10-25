@@ -16,6 +16,10 @@ struct AddFriendsSheet: View {
                     }
                 }
         }
+        #if os(macOS)
+        // a pushed page's back button in the bar's neutral colour, not a blurple disc
+        .tint(Theme.header)
+        #endif
         .sheetDetents([.large])
         .presentationBackground(Theme.deepBackground)
     }
@@ -48,7 +52,7 @@ struct AddFriendsScreen: View {
     }
 
     var body: some View {
-        List {
+        SettingsForm {
             Section {
                 NavigationLink {
                     AddByUsernameScreen()
@@ -118,7 +122,8 @@ struct AddFriendsScreen: View {
         .scrollContentBackground(.hidden)
         .listHoverHighlight()
         .background(Theme.deepBackground)
-        .searchable(text: $query, placement: .alwaysShown, prompt: "Search people")
+        .sheetSearchable(text: $query, prompt: "Search people")
+        .sheetBarBackground()
         .navigationTitle("Add Friends")
         .inlineNavigationTitle()
     }
@@ -144,49 +149,36 @@ private struct AddByUsernameScreen: View {
         !name.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
+    // a form as the page before it is, so on a mac it fills the sheet and keeps a bar, where a
+    // bare stack left the sheet's lower half see through and its done button gone
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Who would you like to add as a friend?")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Theme.muted)
-
-            TextField("Enter a username", text: $name)
-                .noAutocapitalization()
-                .autocorrectionDisabled()
-                .focused($isFocused)
-                .onSubmit(send)
-                .foregroundStyle(Theme.header)
-                .padding(.horizontal, 14)
-                .frame(height: 52)
-                .background(Theme.inputBackground, in: .rect(cornerRadius: 12, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(isFocused ? Theme.blurple : Theme.divider, lineWidth: 1)
+        SettingsForm {
+            Section {
+                TextField("", text: $name, prompt: Text("Enter a username"))
+                    .labelsHidden()
+                    .noAutocapitalization()
+                    .autocorrectionDisabled()
+                    .focused($isFocused)
+                    .onSubmit(send)
+            } header: {
+                Text("Who would you like to add as a friend?")
+            } footer: {
+                if let message {
+                    Text(message)
+                        .foregroundStyle(isSent ? Theme.green : Theme.red)
+                        .wrappingFooter()
                 }
-
-            if let message {
-                Text(message)
-                    .font(.footnote)
-                    .foregroundStyle(isSent ? Theme.green : Theme.red)
             }
-
-            Button(action: send) {
-                Text("Send Friend Request")
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(.white.opacity(canSend ? 1 : 0.5))
-                    .frame(maxWidth: .infinity, minHeight: 50)
-                    .background(Theme.blurple.opacity(canSend ? 1 : 0.5), in: .rect(cornerRadius: 12, style: .continuous))
-            }
-            .buttonStyle(.plain)
-            .disabled(!canSend)
-            .padding(.top, 14)
-
-            Spacer(minLength: 0)
         }
-        .padding(18)
-        .background(Theme.deepBackground)
+        .settingsListStyle()
         .navigationTitle("Add by Username")
         .inlineNavigationTitle()
+        .toolbar {
+            ActionToolbarItem(placement: .confirmationAction) {
+                Button("Send Request", action: send)
+                    .disabled(!canSend)
+            }
+        }
         .onAppear(perform: focus)
     }
 

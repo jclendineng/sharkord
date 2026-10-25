@@ -45,7 +45,8 @@ enum Permission: String, CaseIterable, Codable {
 
         return rawValue
             .split(separator: "_")
-            .map { $0.prefix(1) + $0.dropFirst().lowercased() }
+            // an initialism stays in capitals, pin dm messages read as "Pin Dm Messages"
+            .map { $0 == "DM" ? "DM" : $0.prefix(1) + $0.dropFirst().lowercased() }
             .joined(separator: " ")
     }
 

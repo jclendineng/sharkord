@@ -45,7 +45,7 @@ struct CategoryActionsSheet: View {
                     ActionRow(title: "Mark As Read", systemImage: "eye", action: markAsRead)
 
                     if isPointerMenu && !isMuted {
-                        SubmenuRow(title: "Mute Category") {
+                        SubmenuRow(title: "Mute Category", systemImage: "bell.slash.fill") {
                             MuteChoices(onPick: mute)
                         }
                     } else {
@@ -59,6 +59,7 @@ struct CategoryActionsSheet: View {
                     if isPointerMenu {
                         SubmenuRow(
                             title: "Notification Settings",
+                            systemImage: "bell",
                             subtitle: session.sharedNotificationLevel(of: channelIds).map(NotificationLevelChoices.title(for:))
                         ) {
                             NotificationLevelChoices(selected: session.sharedNotificationLevel(of: channelIds), onPick: setLevel)
@@ -218,10 +219,11 @@ struct CategoryEditor: View {
         NavigationStack {
             SettingsForm {
                 Section("Name") {
-                    TextField("Category name", text: $name)
+                    TextField("", text: $name, prompt: Text("Category name"))
+                        .labelsHidden()
                 }
 
-                Section {
+                SettingsActions {
                     Button("Delete Category", role: .destructive) { isConfirmingDelete = true }
                 }
 

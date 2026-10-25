@@ -13,18 +13,12 @@ struct ThreadsListPanel: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 8) {
-                Image(systemName: "bubble.left.and.text.bubble.right")
-                    .foregroundStyle(Theme.muted)
-
-                Text("Threads")
-                    .font(.headline)
-                    .foregroundStyle(Theme.header)
-
-                Spacer()
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            Text("Threads")
+                .font(.headline)
+                .foregroundStyle(Theme.header)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
 
             Theme.divider
                 .frame(height: 1)

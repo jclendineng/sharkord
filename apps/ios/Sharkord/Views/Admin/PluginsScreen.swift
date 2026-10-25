@@ -213,7 +213,7 @@ private struct PluginDetailScreen: View {
                     }
                 }
 
-                Section {
+                SettingsActions {
                     Button("Remove Plugin", role: .destructive) { isConfirmingRemove = true }
                         .disabled(isWorking)
                 }

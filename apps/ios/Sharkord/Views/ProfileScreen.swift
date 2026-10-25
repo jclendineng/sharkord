@@ -146,8 +146,11 @@ struct ProfileScreen: View {
         }
         .background(Theme.deepBackground)
         .overlay(alignment: .topLeading) {
-            BannerButton(title: "Close", systemImage: "xmark", weight: .bold, size: 15, action: close)
-                .padding(10)
+            // a mac's popover closes with a click outside it, as the member profile beside it does
+            if !Platform.isMac {
+                BannerButton(title: "Close", systemImage: "xmark", weight: .bold, size: 15, action: close)
+                    .padding(10)
+            }
         }
         .overlay(alignment: .topTrailing) {
             BannerButton(title: "Settings", systemImage: "gearshape.fill", weight: .semibold, size: 17, action: showSettings)

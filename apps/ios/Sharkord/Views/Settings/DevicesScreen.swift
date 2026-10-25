@@ -19,11 +19,11 @@ struct DevicesScreen: View {
 
     var body: some View {
         SettingsForm {
+            // a footer, so it reads as the page's description rather than a row in a card
             Section {
+            } footer: {
                 Text("These are the devices signed in to your account on \(session.displayName). Sign out of any you don't recognize, and change your password if you think someone else has it.")
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.muted)
-                    .listRowBackground(Color.clear)
+                    .wrappingFooter()
             }
 
             if let errorMessage {
@@ -48,17 +48,8 @@ struct DevicesScreen: View {
                     }
                 }
 
-                Section {
-                    Button(role: .destructive, action: confirmLogOutAll) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Log Out All Known Devices")
-                                .foregroundStyle(Theme.red)
-
-                            Text("Every other device will have to log in again.")
-                                .font(.caption)
-                                .foregroundStyle(Theme.red.opacity(0.8))
-                        }
-                    }
+                SettingsActions {
+                    Button("Log Out All Known Devices", role: .destructive, action: confirmLogOutAll)
                 }
             }
         }
@@ -75,6 +66,8 @@ struct DevicesScreen: View {
         .inlineNavigationTitle()
         .confirmationDialog("Log out every other device?", isPresented: $isConfirmingLogOutAll, titleVisibility: .visible) {
             Button("Log Out All", role: .destructive, action: logOutAll)
+        } message: {
+            Text("Every other device will have to log in again.")
         }
         .task {
             await load()

@@ -33,8 +33,8 @@ struct SettingsSidebarRow: View {
     var body: some View {
         Button(action: action) {
             SettingsRow(title: title, systemImage: systemImage, tint: labelTint)
+                .lineLimit(1)
                 .padding(.horizontal, 10)
-                .padding(.vertical, 7)
                 .background(fill, in: .rect(cornerRadius: 6, style: .continuous))
                 .contentShape(.rect)
         }
@@ -50,6 +50,19 @@ struct SettingsSidebarRow: View {
     }
 }
 
+// a sidebar section's title, lined up over its rows' icons rather than out at the list's edge
+struct SettingsSidebarHeader: View {
+    let title: String
+
+    var body: some View {
+        Text(title.uppercased())
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(Theme.muted)
+            // the row's 8 inset and 10 padding, and the icon's own 2 inside its frame
+            .padding(.leading, 20)
+    }
+}
+
 extension View {
     // a mac settings sidebar list, plain rows with no cards or lines between them
     func settingsSidebarStyle() -> some View {
@@ -58,6 +71,22 @@ extension View {
             .background(Theme.listBackground)
             // a mac sheet's split view squeezed the sidebar to a sliver. a column width here
             // crashed swiftui on opening, a frame does not
-            .frame(minWidth: 220)
+            .frame(minWidth: 260)
+    }
+
+    // a settings page beside the sidebar. its bar takes the page's colour only when set on the
+    // page itself, set on the split view a mac drew it a shade off. a mac's close sits in the
+    // page's own bottom bar, beside a page's save: one in the sidebar went on a bar of the
+    // window's across the whole sheet, tinted by the desktop
+    func settingsPage(onClose close: @escaping () -> Void) -> some View {
+        navigationBarBackground(Theme.deepBackground)
+            .navigationBarBackgroundVisible()
+            #if os(macOS)
+            .toolbar {
+                ActionToolbarItem(placement: .cancellationAction) {
+                    Button("Close", action: close)
+                }
+            }
+            #endif
     }
 }

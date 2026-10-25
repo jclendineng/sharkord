@@ -146,6 +146,7 @@ struct StorageSettingsScreen: View {
                             in: 1...100,
                             step: 1
                         )
+                        .tint(Theme.blurple)
                     }
                 }
             } header: {

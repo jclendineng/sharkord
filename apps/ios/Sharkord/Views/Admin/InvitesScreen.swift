@@ -77,7 +77,7 @@ struct InvitesScreen: View {
         .navigationTitle("Invites")
         .inlineNavigationTitle()
         .toolbar {
-            ToolbarItem(placement: .barTrailing) {
+            ActionToolbarItem(placement: .pageAction) {
                 Button("New Invite", systemImage: "plus", action: showCreate)
             }
         }
@@ -209,6 +209,7 @@ private struct CreateInviteSheet: View {
                         }
                     }
                     .pickerStyle(.segmented)
+                    .tint(Theme.blurple)
                     .labelsHidden()
                 }
 

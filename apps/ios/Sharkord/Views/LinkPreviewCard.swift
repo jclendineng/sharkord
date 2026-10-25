@@ -78,17 +78,15 @@ struct LinkPreviewCard: View {
                     AsyncImage(url: imageURL) { phase in
                         switch phase {
                         case .success(let image):
-                            // the picture fills a box the card's width, a wide one would
-                            // otherwise ask for its own width and push the card off the screen
-                            Color.clear
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 180)
-                                .overlay {
-                                    image
-                                        .resizable()
-                                        .scaledToFill()
-                                }
+                            // the whole picture, discord's way, where filling the box cut a page's
+                            // screenshot off at both sides. no taller than the placeholder, so the
+                            // chat never grows once it loads, and the card's width stops a wide
+                            // one asking for its own and pushing the card off screen
+                            image
+                                .resizable()
+                                .scaledToFit()
                                 .clipShape(.rect(cornerRadius: 8, style: .continuous))
+                                .frame(maxWidth: .infinity, maxHeight: 180, alignment: .leading)
                         case .failure:
                             EmptyView()
                         default:

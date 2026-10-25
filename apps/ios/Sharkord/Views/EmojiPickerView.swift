@@ -51,7 +51,7 @@ struct EmojiPickerView: View {
 
                     if normalizedQuery.isEmpty {
                         ForEach(EmojiCatalog.groups, id: \.name) { group in
-                            section(group.name) {
+                            section(EmojiCatalog.title(for: group.name)) {
                                 ForEach(group.emoji) { entry in
                                     cell(value: entry.shortcode, file: nil)
                                 }
@@ -65,10 +65,12 @@ struct EmojiPickerView: View {
                         }
                     }
                 }
-                .padding(.horizontal)
+                // in line with the search field, which a mac's page has above it
+                .padding(.horizontal, Platform.isMac ? 20 : 16)
             }
             .background(Theme.chatBackground)
-            .searchable(text: $query, placement: .alwaysShown, prompt: "Find the perfect emoji")
+            .sheetSearchable(text: $query, prompt: "Find the perfect emoji")
+            .sheetBarBackground(Theme.chatBackground)
             .titleWithSubtitle(title, subtitle: subtitle)
             .inlineNavigationTitle()
         }

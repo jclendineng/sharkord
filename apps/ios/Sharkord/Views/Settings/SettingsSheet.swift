@@ -81,9 +81,7 @@ struct SettingsSheet: View {
                             }
                         }
                     } header: {
-                        Text(section.title.uppercased())
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(Theme.muted)
+                        SettingsSidebarHeader(title: section.title)
                     }
                     .listSectionSeparator(.hidden)
                 }
@@ -105,22 +103,27 @@ struct SettingsSheet: View {
             .onAppear(perform: focusSearch)
             .navigationTitle("Settings")
             .inlineNavigationTitle()
+            #if !os(macOS)
             .toolbar {
                 ActionToolbarItem(placement: .cancellationAction) {
                     Button("Close", systemImage: "xmark", action: close)
                 }
             }
+            #endif
         } detail: {
             // a stack of its own per page, so a page's own links push inside it and picking
             // another page starts over
             NavigationStack {
                 if let selection {
                     selection.screen
+                        .settingsPage(onClose: close)
                 }
             }
             .id(selection)
         }
         .navigationSplitViewStyle(.balanced)
+        // a pushed page's back button in the bar's neutral colour, not a blurple disc
+        .tint(Theme.header)
         .background(Theme.deepBackground)
     }
 
@@ -174,12 +177,19 @@ extension View {
         let grouped = listStyle(.insetGrouped)
         #endif
 
-        return grouped
+        let styled = grouped
             .scrollContentBackground(.hidden)
             .background(Theme.deepBackground)
             .listHoverHighlight()
             .listRowBackground(Theme.listBackground)
-            .tint(Theme.blurple)
+
+        #if os(macOS)
+        // a mac's settings form tints its own rows. a tint on the whole page reached a pushed
+        // page's back button, a blurple disc in a neutral bar
+        return styled
+        #else
+        return styled.tint(Theme.blurple)
+        #endif
     }
 
     // a list styled some other way still lights the row under a mac pointer

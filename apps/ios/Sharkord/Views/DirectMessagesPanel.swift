@@ -30,7 +30,7 @@ struct DirectMessagesPanel: View {
                 }
             }
             .padding(.horizontal, 10)
-            .padding(.vertical, 8)
+            .padding(.bottom, 8)
         }
         .overlay {
             if session.directMessages.isEmpty {
@@ -71,19 +71,19 @@ struct DirectMessagesPanel: View {
         HStack(spacing: 8) {
             SearchLink(route: SearchRoute(channelId: nil, directMessages: true)) {
                 Image(systemName: "magnifyingglass")
-                    .font(.body.weight(.semibold))
+                    .font(.subheadline.weight(.medium))
                     .foregroundStyle(Theme.text)
-                    .frame(width: 44, height: 44)
-                    .background(Theme.listBackground, in: .rect(cornerRadius: 12, style: .continuous))
+                    .frame(width: 44, height: 40)
+                    .background(Theme.panelControl, in: .rect(cornerRadius: 12, style: .continuous))
             }
             .accessibilityLabel("Search")
 
             Button(action: openAddFriends) {
                 Label("Add Friends", systemImage: "person.badge.plus")
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(Theme.header)
-                    .frame(maxWidth: .infinity, minHeight: 44)
-                    .background(Theme.listBackground, in: .rect(cornerRadius: 12, style: .continuous))
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Theme.text)
+                    .frame(maxWidth: .infinity, minHeight: 40)
+                    .background(Theme.panelControl, in: .rect(cornerRadius: 12, style: .continuous))
             }
             .buttonStyle(.plain)
 
@@ -92,7 +92,7 @@ struct DirectMessagesPanel: View {
                     .font(.body.weight(.semibold))
                     .symbolRenderingMode(.palette)
                     .foregroundStyle(Theme.blurple, .white)
-                    .frame(width: 44, height: 44)
+                    .frame(width: 44, height: 40)
                     .background(Theme.blurple, in: .rect(cornerRadius: 12, style: .continuous))
             }
             .buttonStyle(.plain)
@@ -408,22 +408,25 @@ private struct DirectMessageActionsSheet: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: isPointerMenu ? 0 : 16) {
-                HStack(spacing: isPointerMenu ? 8 : 12) {
-                    if conversation.group != nil {
-                        GroupAvatar(size: isPointerMenu ? 22 : 48)
-                    } else {
-                        AvatarView(user: user, size: isPointerMenu ? 22 : 48)
+                // the sheet names who it is for. a right click menu sits on the row itself and
+                // has no title, as the channel and message ones have none
+                if !isPointerMenu {
+                    HStack(spacing: 12) {
+                        if conversation.group != nil {
+                            GroupAvatar(size: 48)
+                        } else {
+                            AvatarView(user: user, size: 48)
+                        }
+
+                        Text(conversation.group == nil ? "@\(user?.name ?? "Unknown")" : session.conversationTitle(for: channelId))
+                            .font(.title3.bold())
+                            .foregroundStyle(Theme.header)
+                            .lineLimit(1)
                     }
-
-                    Text(conversation.group == nil ? "@\(user?.name ?? "Unknown")" : session.conversationTitle(for: channelId))
-                        .font(isPointerMenu ? .subheadline.weight(.semibold) : .title3.bold())
-                        .foregroundStyle(Theme.header)
-                        .lineLimit(1)
+                    .padding(.top, 20)
                 }
-                .padding(.horizontal, isPointerMenu ? 8 : 0)
-                .padding(.top, isPointerMenu ? 8 : 20)
 
-                ActionGroup {
+                ActionGroup(isFirst: isPointerMenu) {
                     if user != nil, conversation.group == nil {
                         ActionRow(title: "Profile", systemImage: "person.crop.circle", action: showProfile)
                     }
@@ -447,7 +450,7 @@ private struct DirectMessageActionsSheet: View {
                     ActionRow(title: "Mark As Read", systemImage: "eye", action: markAsRead)
 
                     if isPointerMenu && !isMuted {
-                        SubmenuRow(title: "Mute Conversation") {
+                        SubmenuRow(title: "Mute Conversation", systemImage: "bell.slash.fill") {
                             MuteChoices(onPick: mute)
                         }
                     } else {
@@ -594,7 +597,7 @@ private struct NewDirectMessageSheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            SettingsForm {
                 if let errorMessage {
                     Text(errorMessage)
                         .foregroundStyle(Theme.red)
@@ -606,16 +609,27 @@ private struct NewDirectMessageSheet: View {
                         NavigationLink {
                             GroupFriendPicker(mode: .create, onDone: openGroup)
                         } label: {
-                            Label("New Group", systemImage: "person.2.badge.plus")
-                                .foregroundStyle(Theme.header)
+                            Label {
+                                Text("New Group")
+                            } icon: {
+                                // one width for both symbols, or the two titles start apart
+                                Image(systemName: "person.2.badge.plus")
+                                    .frame(width: 24)
+                            }
+                            .foregroundStyle(Theme.header)
                         }
                         .listRowBackground(Theme.listBackground)
 
                         NavigationLink {
                             AddFriendsScreen()
                         } label: {
-                            Label("Add a Friend", systemImage: "person.badge.plus")
-                                .foregroundStyle(Theme.header)
+                            Label {
+                                Text("Add a Friend")
+                            } icon: {
+                                Image(systemName: "person.badge.plus")
+                                    .frame(width: 24)
+                            }
+                            .foregroundStyle(Theme.header)
                         }
                         .listRowBackground(Theme.listBackground)
                     }
@@ -640,7 +654,8 @@ private struct NewDirectMessageSheet: View {
             .scrollContentBackground(.hidden)
             .listHoverHighlight()
             .background(Theme.deepBackground)
-            .searchable(text: $query, placement: .alwaysShown, prompt: "To: Search people")
+            .sheetSearchable(text: $query, prompt: "To: Search people")
+            .sheetBarBackground()
             .navigationTitle("New Message")
             .inlineNavigationTitle()
             .toolbar {
@@ -649,6 +664,10 @@ private struct NewDirectMessageSheet: View {
                 }
             }
         }
+        #if os(macOS)
+        // a pushed page's back button in the bar's neutral colour, not a blurple disc
+        .tint(Theme.header)
+        #endif
         .sheetDetents([.large])
         .presentationBackground(Theme.deepBackground)
     }

@@ -237,8 +237,9 @@ struct HomeView: View {
                             .chatDestinations()
                     }
                     // the message bar clear of the card's rounded bottom and level with the user
-                    // bar beside it, which is lifted the same way
-                    .padding(.bottom, 16)
+                    // bar beside it, which is lifted the same way. a safe area rather than
+                    // padding, so a pushed page's own background still reaches the card's edge
+                    .safeAreaPadding(.bottom, 16)
                     .background(Theme.chatBackground)
                     // a swipe in from the card's edge goes back. the system's own loses it to a
                     // screen that pages sideways, channel info's tabs among them

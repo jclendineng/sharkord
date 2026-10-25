@@ -541,7 +541,7 @@ private struct MemberResultRow: View {
             }
             .contentShape(.rect)
         }
-        .listRowBackground(Theme.listBackground)
+        .listRowBackground(Color.searchResultRow)
     }
 }
 
@@ -606,11 +606,19 @@ private struct MessageResultRow: View {
                     .lineLimit(1)
 
                     if let text {
-                        Text(text)
-                            .font(.subheadline)
-                            .foregroundStyle(Theme.text)
-                            .lineLimit(3)
-                            .multilineTextAlignment(.leading)
+                        if let content = message.content {
+                            // drawn as the chat and the inbox draw it, a mention as a tinted name
+                            // rather than the raw @ the plain text has
+                            MessageContentView(html: content)
+                                .lineLimit(3)
+                                .allowsHitTesting(false)
+                        } else {
+                            Text(text)
+                                .font(.subheadline)
+                                .foregroundStyle(Theme.text)
+                                .lineLimit(3)
+                                .multilineTextAlignment(.leading)
+                        }
                     }
 
                     ForEach(images, id: \.self) { url in
@@ -622,7 +630,7 @@ private struct MessageResultRow: View {
             }
             .contentShape(.rect)
         }
-        .listRowBackground(Theme.listBackground)
+        .listRowBackground(Color.searchResultRow)
     }
 }
 
@@ -651,6 +659,18 @@ private struct FileResultRow: View {
                 }
             }
         }
-        .listRowBackground(Theme.listBackground)
+        .listRowBackground(Color.searchResultRow)
+    }
+}
+
+private extension Color {
+    // a phone's results are grouped cards. a mac's list cannot round a group, so its rows sit on
+    // the card around them, as pinned messages do, rather than on a band to its edges
+    static var searchResultRow: Color {
+        #if os(macOS)
+        .clear
+        #else
+        Theme.listBackground
+        #endif
     }
 }

@@ -223,7 +223,7 @@ private struct EmojiTab: View {
             list.append(("server", "server.rack"))
         }
 
-        return list + EmojiCatalog.groups.map { ($0.name, Self.symbol(for: $0.name)) }
+        return list + EmojiCatalog.groups.map { ($0.name, EmojiCatalog.symbol(for: $0.name)) }
     }
 
     var body: some View {
@@ -250,7 +250,7 @@ private struct EmojiTab: View {
                             }
 
                             ForEach(EmojiCatalog.groups, id: \.name) { group in
-                                section(Self.title(for: group.name), id: group.name) {
+                                section(EmojiCatalog.title(for: group.name), id: group.name) {
                                     ForEach(group.emoji) { entry in
                                         cell(value: entry.shortcode, file: nil)
                                     }
@@ -308,29 +308,44 @@ private struct EmojiTab: View {
         .buttonStyle(.plain)
     }
 
+    // a nil width shares the bar out between the icons
+    private func categoryButtons(_ proxy: ScrollViewProxy, width: CGFloat?) -> some View {
+        ForEach(sections, id: \.id) { section in
+            Button {
+                withAnimation(.snappy) {
+                    proxy.scrollTo(section.id, anchor: .top)
+                }
+            } label: {
+                Image(systemName: section.symbol)
+                    .font(.system(size: 17))
+                    .foregroundStyle(Theme.muted)
+                    .frame(width: width, height: 40)
+                    .frame(maxWidth: width == nil ? .infinity : nil)
+                    .hoverHighlight(cornerRadius: 8)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
     // discord's bar of section icons along the bottom, with a backspace at its end on a phone
     private func categoryBar(_ proxy: ScrollViewProxy) -> some View {
         HStack(spacing: 0) {
-            ScrollView(.horizontal) {
-                HStack(spacing: 6) {
-                    ForEach(sections, id: \.id) { section in
-                        Button {
-                            withAnimation(.snappy) {
-                                proxy.scrollTo(section.id, anchor: .top)
-                            }
-                        } label: {
-                            Image(systemName: section.symbol)
-                                .font(.system(size: 17))
-                                .foregroundStyle(Theme.muted)
-                                .frame(width: 40, height: 40)
-                                .hoverHighlight(cornerRadius: 8)
-                        }
-                        .buttonStyle(.plain)
-                    }
+            if Platform.isMac {
+                // spread across the bar: a mouse has no sideways swipe for a row that runs past
+                // a narrow panel's edge, and its last icons sat cut off there
+                HStack(spacing: 0) {
+                    categoryButtons(proxy, width: nil)
                 }
-                .padding(.horizontal, 10)
+                .padding(.horizontal, 6)
+            } else {
+                ScrollView(.horizontal) {
+                    HStack(spacing: 6) {
+                        categoryButtons(proxy, width: 40)
+                    }
+                    .padding(.horizontal, 10)
+                }
+                .scrollIndicators(.never)
             }
-            .scrollIndicators(.never)
 
             // the panel stands in for the on screen keyboard on a phone, so it has the
             // keyboard's backspace. a mac's keyboard stays, and has its own
@@ -355,28 +370,6 @@ private struct EmojiTab: View {
     private func pick(_ value: String) {
         onPick(value)
         FrequentExpressions.use(emoji: value)
-    }
-
-    // the github emoji groups by their names in emoji.json, as discord labels its sections
-    private static let groupNames: [String: (title: String, symbol: String)] = [
-        "other": ("Smileys", "face.smiling"),
-        "people & body": ("People", "hand.wave"),
-        "animals & nature": ("Nature", "leaf"),
-        "food & drink": ("Food & Drink", "fork.knife"),
-        "travel & places": ("Travel & Places", "car"),
-        "activities": ("Activities", "soccerball"),
-        "objects": ("Objects", "lightbulb"),
-        "symbols": ("Symbols", "heart"),
-        "flags": ("Flags", "flag"),
-        "GitHub": ("GitHub", "chevron.left.forwardslash.chevron.right")
-    ]
-
-    private static func title(for group: String) -> String {
-        groupNames[group]?.title ?? group.capitalized
-    }
-
-    private static func symbol(for group: String) -> String {
-        groupNames[group]?.symbol ?? "circle.grid.2x2"
     }
 }
 
@@ -658,12 +651,12 @@ private struct StickerTab: View {
                 .padding(.bottom, 8)
 
             if session.stickers.isEmpty {
-                Text("This server has no stickers yet. Admins can add some in Server Settings.")
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.muted)
-                    .multilineTextAlignment(.center)
-                    .padding(30)
-                    .frame(maxHeight: .infinity)
+                ContentUnavailableView(
+                    "No stickers yet",
+                    systemImage: "note.text",
+                    description: Text("Admins can add some in Server Settings.")
+                )
+                .frame(maxHeight: .infinity)
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {

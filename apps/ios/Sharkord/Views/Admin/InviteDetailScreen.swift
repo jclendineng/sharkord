@@ -86,7 +86,7 @@ struct InviteDetailScreen: View {
             }
 
             if !invite.isDeleted {
-                Section {
+                SettingsActions {
                     Button("Delete Invite", role: .destructive, action: confirmDelete)
                 }
             }

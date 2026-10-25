@@ -618,6 +618,7 @@ private struct CallSettingsSheet: View {
                     .padding(.top, 8)
             }
             .background(Theme.listBackground)
+            .sheetBarBackground()
             .navigationTitle("Voice Settings")
             .inlineNavigationTitle()
             .toolbar {

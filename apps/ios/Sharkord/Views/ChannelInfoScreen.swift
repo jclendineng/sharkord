@@ -200,7 +200,8 @@ struct ChannelInfoScreen: View {
             }
         }
         .padding(.horizontal, 18)
-        .padding(.top, 4)
+        // a phone's sits under its bar, a mac's at the very top of the chat's card
+        .padding(.top, Platform.isMac ? 16 : 4)
         .padding(.bottom, 6)
     }
 

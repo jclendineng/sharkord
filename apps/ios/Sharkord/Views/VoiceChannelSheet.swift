@@ -593,6 +593,10 @@ private struct OutputTile: View {
         VStack(spacing: 8) {
             AudioRoutePicker()
                 .frame(width: 32, height: 28)
+                #if os(macOS)
+                // a mac draws its picker's glyph at 16 points, the tiles beside it at 22
+                .scaleEffect(1.4)
+                #endif
 
             Text("Output")
                 .font(.footnote.weight(.semibold))

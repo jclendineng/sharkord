@@ -98,12 +98,17 @@ struct GeneralSettingsScreen: View {
                             ProgressView()
                         }
                     }
+                    // two buttons in one phone row, each its own tap. a mac keeps the form's
+                    // push buttons, as its other pages have
+                    #if !os(macOS)
                     .buttonStyle(.borderless)
+                    #endif
                 }
             }
 
             Section("Server Name") {
-                TextField("Name", text: settings.name)
+                TextField("", text: settings.name, prompt: Text("Name"))
+                    .labelsHidden()
             }
 
             Section {
@@ -148,7 +153,7 @@ struct GeneralSettingsScreen: View {
                 TextField("", text: Binding(
                     get: { settings.wrappedValue.reportEmail ?? "" },
                     set: { settings.wrappedValue.reportEmail = $0 }
-                ), prompt: Text("reports@example.com"))
+                ), prompt: Text(verbatim: "reports@example.com"))
                 .labelsHidden()
                 .keyboard(.email)
                 .textContentType(.emailAddress)
@@ -303,7 +308,13 @@ struct GeneralSettingsScreen: View {
 
     private func load() async {
         do {
-            let loaded: AdminServerSettings = try await session.request("others.getSettings")
+            var loaded: AdminServerSettings = try await session.request("others.getSettings")
+
+            // a deleted channel leaves its id behind, which no picker row matches and a mac
+            // popup then shows blank. it reads as none, the way the server treats it
+            if let id = loaded.afkChannelId, !afkChannelChoices.contains(where: { $0.id == id }) {
+                loaded.afkChannelId = nil
+            }
 
             settings = loaded
             saved = loaded

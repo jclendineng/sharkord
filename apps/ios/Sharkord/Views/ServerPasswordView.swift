@@ -34,6 +34,7 @@ struct ServerPasswordView: View {
             // a mac lays a plain form out in two columns with the labels right aligned. grouped
             // is a phone's own anyway
             .formStyle(.grouped)
+            .sheetBarBackground()
             .navigationTitle("Server Password")
         }
     }

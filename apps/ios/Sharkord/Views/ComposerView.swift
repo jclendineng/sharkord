@@ -387,7 +387,8 @@ struct ComposerView: View {
 
                         FunEmojiButton(action: openEmoji)
                     }
-                    .padding(.bottom, 8)
+                    // centered on the first line, as the mic and the field's text are
+                    .frame(height: 44)
                 } else {
                     // discord's emoji button turns into a keyboard one while the panel is up
                     Button(action: toggleExpressions) {

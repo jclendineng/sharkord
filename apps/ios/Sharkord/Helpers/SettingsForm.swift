@@ -10,9 +10,14 @@ struct SettingsForm<Content: View>: View {
         #if os(macOS)
         Form {
             content
+                // neutral, as a mac's own forms are: a pop up's value in the accent read as a
+                // link. the switches carry the app's colour themselves
+                .tint(Theme.header)
         }
         .formStyle(.grouped)
         .buttonStyle(FormButtonStyle())
+        // every form here is a page in a sheet, or pushed inside one
+        .sheetBarBackground()
         #else
         List {
             content
@@ -31,8 +36,10 @@ private struct FormButtonStyle: PrimitiveButtonStyle {
                 .buttonStyle(.automatic)
                 .tint(Theme.red)
         } else {
+            // the label's own colour, as a mac's push buttons are, not the form's accent tint
             Button(configuration)
                 .buttonStyle(.automatic)
+                .tint(Theme.header)
         }
     }
 }

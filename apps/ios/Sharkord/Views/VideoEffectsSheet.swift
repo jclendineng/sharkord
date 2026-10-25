@@ -81,6 +81,7 @@ struct VideoEffectsSheet: View {
                 .padding(.bottom, 24)
             }
             .background(Theme.listBackground)
+            .sheetBarBackground(Theme.listBackground)
             .navigationTitle("Video Effects")
             .inlineNavigationTitle()
             .toolbar {

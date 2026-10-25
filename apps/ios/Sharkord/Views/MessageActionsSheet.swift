@@ -67,8 +67,9 @@ struct MessageActionsSheet: View {
                                 .frame(maxWidth: .infinity, minHeight: isPointerMenu ? 34 : 52)
                                 .background(Theme.listBackground, in: .rect(cornerRadius: isPointerMenu ? 17 : 14))
                                 .contentShape(.rect(cornerRadius: isPointerMenu ? 17 : 14))
+                                .hoverBrighten(cornerRadius: isPointerMenu ? 17 : 14)
                         }
-                            .hoverBrighten(cornerRadius: isPointerMenu ? 17 : 14)
+                        .buttonStyle(.plain)
                     }
 
                     // a mac has no double tap
@@ -80,7 +81,7 @@ struct MessageActionsSheet: View {
 
                 ActionGroup {
                     if isPointerMenu {
-                        SubmenuRow(title: "Add Reaction") {
+                        SubmenuRow(title: "Add Reaction", systemImage: "face.smiling") {
                             ForEach(FrequentExpressions.emoji.prefix(10), id: \.self) { shortcode in
                                 EmojiChoiceRow(shortcode: shortcode) {
                                     react(shortcode)

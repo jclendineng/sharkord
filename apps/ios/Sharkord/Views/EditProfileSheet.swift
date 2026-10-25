@@ -38,7 +38,7 @@ struct EditProfileSheet: View {
 
     var body: some View {
         NavigationStack {
-            Form {
+            SettingsForm {
                 Section {
                     // discord's profile header: the banner, the avatar over its bottom edge
                     ZStack(alignment: .bottomLeading) {
@@ -92,7 +92,8 @@ struct EditProfileSheet: View {
                 }
 
                 Section("Display Name") {
-                    TextField("Name", text: $name)
+                    TextField("", text: $name, prompt: Text("Name"))
+                        .labelsHidden()
                         .noAutocapitalization()
                 }
 

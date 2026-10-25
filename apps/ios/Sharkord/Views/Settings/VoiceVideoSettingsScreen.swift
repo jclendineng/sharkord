@@ -78,8 +78,11 @@ struct VoiceVideoSettingsScreen: View {
                 } header: {
                     SectionTitle("Devices")
                 } footer: {
+                    // about the input picker above, which the native mac app leaves out
+                    #if os(iOS)
                     Text("Automatic uses a headset's mic whenever one is plugged in.")
                         .wrappingFooter()
+                    #endif
                 }
             }
 
@@ -362,7 +365,7 @@ private struct VoiceIsolationHint: View {
                 Label("Voice Isolation is on. Apple's own suppression already cleans your mic, so Standard adds little.", systemImage: "checkmark.circle.fill")
                     .labelStyle(HintLabelStyle(tint: Theme.green))
             } else {
-                Label("For the strongest noise suppression, turn on Voice Isolation. It is Apple's own and runs on the phone.", systemImage: "waveform.badge.mic")
+                Label("For the strongest noise suppression, turn on Voice Isolation. It is Apple's own and runs on this device.", systemImage: "waveform.badge.mic")
                     .labelStyle(HintLabelStyle(tint: Theme.blurple))
 
                 if isMicInUse {
@@ -437,6 +440,7 @@ private struct VolumeSlider: View {
                     .foregroundStyle(Theme.muted)
 
                 Slider(value: $value, in: range)
+                    .tint(Theme.blurple)
 
                 Image(systemName: highIcon)
                     .foregroundStyle(Theme.muted)

@@ -34,6 +34,16 @@ extension View {
         #endif
     }
 
+    // a sheet's search, always shown. a mac's toolbar field gave a sheet a second row in its bar
+    // with the title stranded under the field, so there it sits at the top of the page too
+    func sheetSearchable(text: Binding<String>, prompt: String) -> some View {
+        #if os(macOS)
+        pageSearchable(text: text, prompt: prompt)
+        #else
+        searchable(text: text, placement: .alwaysShown, prompt: Text(prompt))
+        #endif
+    }
+
     // a mac list cuts a section's footer off at one line, where a phone's wraps
     func wrappingFooter() -> some View {
         lineLimit(nil)
@@ -121,6 +131,19 @@ extension View {
         toolbarBackground(color, for: .windowToolbar)
         #else
         toolbarBackground(color, for: .navigationBar)
+        #endif
+    }
+
+    // a sheet page's bars in the page's own colour. a mac draws a sheet's bars in a material that
+    // takes the tint of the desktop behind the window, a brown band over a dark sheet, and only a
+    // background set on the page itself reaches them, not one on the sheet or its stack
+    func sheetBarBackground(_ color: Color = Theme.deepBackground) -> some View {
+        #if os(macOS)
+        navigationBarBackground(color)
+            .navigationBarBackgroundVisible()
+            .background(SheetBottomBarClear(color: color))
+        #else
+        self
         #endif
     }
 
@@ -247,7 +270,8 @@ private struct PageSearchField: View {
         .padding(.horizontal, 10)
         .frame(height: 32)
         .background(Theme.inputBackground, in: .rect(cornerRadius: 8))
-        .padding(.horizontal, 16)
+        // a grouped form's sections, which every page with one sits over, are inset by 20
+        .padding(.horizontal, 20)
         .padding(.vertical, 8)
     }
 }
@@ -272,9 +296,11 @@ private struct PhoneSwitchToggleStyle: ToggleStyle {
 
             Spacer(minLength: 8)
 
+            // the app's colour on the switch itself, so a form can keep its own tint neutral
             Toggle("", isOn: configuration.$isOn)
                 .toggleStyle(.switch)
                 .labelsHidden()
+                .tint(Theme.blurple)
         }
     }
 }
@@ -377,3 +403,60 @@ extension SearchFieldPlacement {
         #endif
     }
 }
+
+#if os(macOS)
+// a sheet's bottom bar, where its done and cancel sit, has no toolbar background a mac lets a page
+// set. its material is hidden instead, over a window in the page's colour. it comes in a moment
+// after the page, so it is looked for again for a little while
+private struct SheetBottomBarClear: NSViewRepresentable {
+    let color: Color
+
+    func makeNSView(context: Context) -> NSView {
+        SheetBottomBarClearView(color: NSColor(color))
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {}
+}
+
+private final class SheetBottomBarClearView: NSView {
+    private let color: NSColor
+
+    init(color: NSColor) {
+        self.color = color
+
+        super.init(frame: .zero)
+    }
+
+    required init?(coder: NSCoder) {
+        nil
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+
+        guard let window else {
+            return
+        }
+
+        window.backgroundColor = color
+
+        for delay in [0.0, 0.3, 1.0] {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                if let frame = window.contentView?.superview {
+                    Self.hideMaterials(in: frame)
+                }
+            }
+        }
+    }
+
+    private static func hideMaterials(in view: NSView) {
+        if let material = view as? NSVisualEffectView {
+            material.isHidden = true
+        }
+
+        for subview in view.subviews {
+            hideMaterials(in: subview)
+        }
+    }
+}
+#endif

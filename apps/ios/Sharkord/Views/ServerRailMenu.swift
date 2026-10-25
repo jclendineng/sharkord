@@ -53,6 +53,57 @@ struct ServerRailMenu: View {
     }
 
     private var card: some View {
+        Group {
+            #if os(macOS)
+            pointerCard
+            #else
+            phoneCard
+            #endif
+        }
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.height
+        } action: { newHeight in
+            height = newHeight
+        }
+    }
+
+    // a right click menu, drawn as the channel and message ones are: their rows and card, and no
+    // title, which none of them has
+    private var pointerCard: some View {
+        VStack(spacing: 0) {
+            ActionGroup(isFirst: true) {
+                ActionRow(title: "Mark As Read", systemImage: "eye", action: markAsRead)
+
+                if server.serverInfo?.pushEnabled == true {
+                    ActionRow(
+                        title: server.isPushEnabled ? "Mute Notifications" : "Unmute Notifications",
+                        systemImage: server.isPushEnabled ? "bell.slash" : "bell",
+                        action: togglePush
+                    )
+                }
+
+                ActionRow(title: "More Options", systemImage: "gearshape", action: moreOptions)
+            }
+
+            ActionGroup {
+                ActionRow(title: "Log Out", systemImage: "rectangle.portrait.and.arrow.right", tint: Theme.red, action: logOut)
+            }
+        }
+        .padding(.horizontal, 6)
+        .padding(.bottom, 6)
+        .environment(\.isPointerMenu, true)
+        .frame(width: 220)
+        .background(Theme.deepBackground)
+        .clipShape(.rect(cornerRadius: 8, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .strokeBorder(Theme.panelEdge, lineWidth: 1)
+        }
+        .shadow(color: .black.opacity(0.12), radius: 8, y: 3)
+        .compositingGroup()
+    }
+
+    private var phoneCard: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(server.displayName)
                 .font(.headline)
@@ -91,11 +142,6 @@ struct ServerRailMenu: View {
         }
         .shadow(color: .black.opacity(0.12), radius: 8, y: 3)
         .compositingGroup()
-        .onGeometryChange(for: CGFloat.self) { proxy in
-            proxy.size.height
-        } action: { newHeight in
-            height = newHeight
-        }
     }
 
     // level with the icon, moved up when that would run off the bottom

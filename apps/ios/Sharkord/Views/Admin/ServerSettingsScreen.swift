@@ -13,7 +13,8 @@ struct ServerSettingsScreen: View {
         ServerSettingsPage.sections.compactMap { section in
             let pages = section.pages.filter { $0.isAllowed(in: session) }
 
-            return pages.isEmpty ? nil : (section.title, pages)
+            // the first group under the server's own name, as discord's, so every group has one
+            return pages.isEmpty ? nil : (section.title ?? session.serverName, pages)
         }
     }
 
@@ -47,11 +48,13 @@ struct ServerSettingsScreen: View {
             .settingsListStyle()
             .navigationTitle("Server Settings")
             .inlineNavigationTitle()
+            #if !os(macOS)
             .toolbar {
                 ActionToolbarItem(placement: .cancellationAction) {
                     Button("Close", systemImage: "xmark", action: close)
                 }
             }
+            #endif
         }
         // a page on ipad, the same size user settings opens at, rather than a narrow card
         .presentationSizing(.page)
@@ -72,33 +75,38 @@ struct ServerSettingsScreen: View {
                         }
                     } header: {
                         if let title = section.title {
-                            Text(title.uppercased())
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(Theme.muted)
+                            SettingsSidebarHeader(title: title)
                         }
                     }
                     .listSectionSeparator(.hidden)
                 }
             }
             .settingsSidebarStyle()
+            // its first rows have no title or search above them, and sat against the sheet's edge
+            .safeAreaPadding(.top, 10)
             .navigationTitle("Server Settings")
             .inlineNavigationTitle()
+            #if !os(macOS)
             .toolbar {
                 ActionToolbarItem(placement: .cancellationAction) {
                     Button("Close", systemImage: "xmark", action: close)
                 }
             }
+            #endif
         } detail: {
             // a stack of its own per page, so a page's own links push inside it and picking
             // another page starts over
             NavigationStack {
                 if let selection {
                     selection.screen
+                        .settingsPage(onClose: close)
                 }
             }
             .id(selection)
         }
         .navigationSplitViewStyle(.balanced)
+        // a pushed page's back button in the bar's neutral colour, not a blurple disc
+        .tint(Theme.header)
         .background(Theme.deepBackground)
         .onAppear(perform: selectFirstPage)
     }

@@ -80,7 +80,8 @@ struct PollCreatorSheet: View {
                             }
                             .buttonStyle(.plain)
 
-                            TextField("Type your answer", text: $answer.text)
+                            TextField("", text: $answer.text, prompt: Text("Type your answer"))
+                                .labelsHidden()
                                 .onChange(of: answer.text) { _, value in
                                     answer.text = String(value.prefix(Self.answerLimit))
                                 }

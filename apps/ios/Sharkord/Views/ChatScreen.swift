@@ -488,10 +488,14 @@ private struct NotificationBell: View {
         session.isMuted(channelId)
     }
 
-    private var level: Binding<ChannelNotificationLevel> {
+    private func isLevel(_ level: ChannelNotificationLevel) -> Binding<Bool> {
         Binding(
-            get: { session.notificationLevel(for: channelId) },
-            set: setLevel
+            get: { session.notificationLevel(for: channelId) == level },
+            set: { isOn in
+                if isOn {
+                    setLevel(level)
+                }
+            }
         )
     }
 
@@ -511,12 +515,13 @@ private struct NotificationBell: View {
 
             Divider()
 
-            Picker("Notifications", selection: level) {
-                Text("All Messages").tag(ChannelNotificationLevel.all)
-                Text("Only @mentions").tag(ChannelNotificationLevel.mentions)
-                Text("Nothing").tag(ChannelNotificationLevel.none)
+            // toggles rather than an inline picker, which a mac menu drew greyed out with a
+            // stray checkmark row of its own
+            Section("Notifications") {
+                Toggle("All Messages", isOn: isLevel(.all))
+                Toggle("Only @mentions", isOn: isLevel(.mentions))
+                Toggle("Nothing", isOn: isLevel(.none))
             }
-            .pickerStyle(.inline)
         } label: {
             HeaderIcon(systemImage: isMuted ? "bell.slash.fill" : "bell.fill")
         }

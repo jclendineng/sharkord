@@ -286,5 +286,6 @@ private struct UnreadRow: View {
             }
             .contentShape(.rect)
         }
+        .buttonStyle(.plain)
     }
 }

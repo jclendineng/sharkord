@@ -67,12 +67,12 @@ struct RolesScreen: View {
         .inlineNavigationTitle()
         .toolbar {
             if movableRoles.count > 1 {
-                ToolbarItem(placement: .barTrailing) {
+                ActionToolbarItem(placement: .pageAction) {
                     Button(isReordering ? "Done" : "Reorder", action: toggleReordering)
                 }
             }
 
-            ToolbarItem(placement: .barTrailing) {
+            ActionToolbarItem(placement: .pageAction) {
                 Button("New Role", systemImage: "plus", action: addRole)
             }
         }
@@ -222,7 +222,8 @@ private struct RoleEditor: View {
     var body: some View {
         SettingsForm {
             Section("Name") {
-                TextField("Role name", text: $name)
+                TextField("", text: $name, prompt: Text("Role name"))
+                    .labelsHidden()
             }
 
             Section("Color") {
@@ -256,7 +257,7 @@ private struct RoleEditor: View {
             }
 
             if !role.isPersistent && !role.isDefault {
-                Section {
+                SettingsActions {
                     Button("Delete Role", role: .destructive, action: confirmDelete)
                 }
             }

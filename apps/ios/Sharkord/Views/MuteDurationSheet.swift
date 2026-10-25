@@ -27,6 +27,7 @@ struct MuteDurationSheet: View {
             .scrollContentBackground(.hidden)
             .listHoverHighlight()
             .background(Theme.deepBackground)
+            .sheetBarBackground()
             .titleWithSubtitle(title, subtitle: subtitle)
             .inlineNavigationTitle()
             .toolbar {

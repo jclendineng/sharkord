@@ -25,8 +25,29 @@ enum EmojiCatalog {
             return []
         }
 
-        return entries
+        return entries.map(withEmojiPresentation)
     }()
+
+    // the data keeps some symbols bare, ☺ or ⬆, which a Text draws as a flat glyph in the text
+    // colour. the variation selector asks for the colour emoji a keyboard would have sent
+    private nonisolated static func withEmojiPresentation(_ entry: EmojiEntry) -> EmojiEntry {
+        guard
+            let emoji = entry.emoji,
+            emoji.unicodeScalars.count == 1,
+            let scalar = emoji.unicodeScalars.first,
+            !scalar.properties.isEmojiPresentation
+        else {
+            return entry
+        }
+
+        return EmojiEntry(
+            emoji: emoji + "\u{FE0F}",
+            name: entry.name,
+            shortcodes: entry.shortcodes,
+            group: entry.group,
+            image: entry.image
+        )
+    }
 
     static let groups: [(name: String, emoji: [EmojiEntry])] = {
         var order: [String] = []
@@ -47,6 +68,28 @@ enum EmojiCatalog {
         return order.map { ($0, byGroup[$0, default: []]) }
     }()
 
+    // the github emoji groups by their names in emoji.json, as discord labels its sections
+    private static let groupNames: [String: (title: String, symbol: String)] = [
+        "other": ("Smileys", "face.smiling"),
+        "people & body": ("People", "hand.wave"),
+        "animals & nature": ("Nature", "leaf"),
+        "food & drink": ("Food & Drink", "fork.knife"),
+        "travel & places": ("Travel & Places", "car"),
+        "activities": ("Activities", "soccerball"),
+        "objects": ("Objects", "lightbulb"),
+        "symbols": ("Symbols", "heart"),
+        "flags": ("Flags", "flag"),
+        "GitHub": ("GitHub", "chevron.left.forwardslash.chevron.right")
+    ]
+
+    static func title(for group: String) -> String {
+        groupNames[group]?.title ?? group.capitalized
+    }
+
+    static func symbol(for group: String) -> String {
+        groupNames[group]?.symbol ?? "circle.grid.2x2"
+    }
+
     private static let lookup: [String: EmojiEntry] = {
         var lookup: [String: EmojiEntry] = [:]
 
@@ -60,7 +103,13 @@ enum EmojiCatalog {
     }()
 
     // a reaction from the web client is a shortcode, one sent by a plugin can be the character itself
+    // a symbol may come with or without the emoji variation selector (⬆️ against ⬆), which swift
+    // does not count as the same string, so it is looked up both ways
     static func find(_ value: String) -> EmojiEntry? {
-        lookup[value]
+        if let entry = lookup[value] {
+            return entry
+        }
+
+        return lookup[value + "\u{FE0F}"] ?? lookup[value.replacingOccurrences(of: "\u{FE0F}", with: "")]
     }
 }

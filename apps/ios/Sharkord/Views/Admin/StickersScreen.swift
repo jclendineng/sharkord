@@ -51,15 +51,19 @@ struct StickersScreen: View {
                 }
             }
 
-            Section("\(session.stickers.count) Stickers") {
-                ForEach(session.stickers) { sticker in
-                    Button {
-                        startEditing(sticker)
-                    } label: {
-                        StickerRow(sticker: sticker)
-                    }
-                    .rowDeleteAction {
-                        delete(sticker)
+            if !session.stickers.isEmpty {
+                Section("\(session.stickers.count) Stickers") {
+                    ForEach(session.stickers) { sticker in
+                        Button {
+                            startEditing(sticker)
+                        } label: {
+                            StickerRow(sticker: sticker)
+                        }
+                        // the whole row, where a mac form's push button drew a box inside it
+                        .buttonStyle(.plain)
+                        .rowDeleteAction {
+                            delete(sticker)
+                        }
                     }
                 }
             }
@@ -264,5 +268,6 @@ private struct StickerRow: View {
 
             Spacer()
         }
+        .contentShape(.rect)
     }
 }

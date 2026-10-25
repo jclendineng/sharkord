@@ -201,7 +201,7 @@ struct ChannelPermissionsScreen: View {
         .navigationTitle("Permissions")
         .inlineNavigationTitle()
         .toolbar {
-            ToolbarItem(placement: .barTrailing) {
+            ActionToolbarItem(placement: .pageAction) {
                 Button("Add Roles or Members", systemImage: "plus", action: showAdd)
             }
         }
@@ -572,7 +572,7 @@ private struct AddPermissionTargetSheet: View {
                 }
             }
             .settingsListStyle()
-            .searchable(text: $query, placement: .alwaysShown, prompt: "Search roles and members")
+            .sheetSearchable(text: $query, prompt: "Search roles and members")
             .navigationTitle("Add Roles or Members")
             .inlineNavigationTitle()
             .toolbar {

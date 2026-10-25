@@ -108,6 +108,7 @@ struct ConnectView: View {
                             .frame(width: 44, height: 44)
                             .contentShape(.rect)
                     }
+                    .buttonStyle(.plain)
 
                     Spacer()
                 }
@@ -311,6 +312,7 @@ struct ConnectView: View {
 
                 Button("Register", action: switchToRegister)
                     .foregroundStyle(Theme.link)
+                    .buttonStyle(.plain)
             }
             .font(.footnote)
             .frame(maxWidth: .infinity)
@@ -657,6 +659,7 @@ private struct AuthCard<Content: View>: View {
                         .frame(width: 36, height: 36, alignment: .leading)
                         .contentShape(.rect)
                 }
+                .buttonStyle(.plain)
 
                 content
             }
@@ -770,6 +773,7 @@ private struct PasswordField: View {
             Button(isRevealed ? "Hide Password" : "Show Password", systemImage: isRevealed ? "eye.slash" : "eye", action: toggle)
                 .labelStyle(.iconOnly)
                 .foregroundStyle(Theme.muted)
+                .buttonStyle(.plain)
         }
     }
 

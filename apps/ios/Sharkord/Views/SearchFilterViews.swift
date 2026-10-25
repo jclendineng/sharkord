@@ -289,6 +289,7 @@ struct DateFilterSheet: View {
                 #endif
                 .labelsHidden()
                 .frame(maxWidth: .infinity)
+                .sheetBarBackground(Theme.listBackground)
                 .navigationTitle(picker.dateTitle)
                 .inlineNavigationTitle()
                 .toolbar {

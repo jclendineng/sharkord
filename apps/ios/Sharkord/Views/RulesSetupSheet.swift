@@ -69,6 +69,7 @@ struct RulesSetupSheet: View {
             .scrollContentBackground(.hidden)
             .listHoverHighlight()
             .background(Theme.deepBackground)
+            .sheetBarBackground()
             .navigationTitle("Rules Message")
             .inlineNavigationTitle()
             .toolbar {

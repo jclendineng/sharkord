@@ -67,7 +67,10 @@ struct SoundboardScreen: View {
                         editing = sound
                     } label: {
                         SoundRow(name: sound.name, emoji: sound.emoji, detail: sound.attribution)
+                            .contentShape(.rect)
                     }
+                    // a row that opens the sound, not a mac form's push button the row wide
+                    .buttonStyle(.plain)
                     .rowDeleteAction {
                         delete(sound)
                     }
@@ -435,16 +438,19 @@ private struct SoundEditor: View {
     var body: some View {
         Form {
             Section("Name") {
-                TextField("Name", text: $name)
+                TextField("", text: $name, prompt: Text("Name"))
+                    .labelsHidden()
             }
 
             Section("Emoji") {
-                TextField("Emoji", text: $emoji)
+                TextField("", text: $emoji, prompt: Text("Emoji"))
+                    .labelsHidden()
             }
 
             Section("Volume") {
                 HStack(spacing: 12) {
                     Slider(value: $volume, in: 0...100, step: 5)
+                        .tint(Theme.blurple)
 
                     Text("\(Int(volume))%")
                         .monospacedDigit()
@@ -466,6 +472,7 @@ private struct SoundEditor: View {
         // is a phone's own anyway
         .formStyle(.grouped)
         .settingsListStyle()
+        .sheetBarBackground()
         .navigationTitle("Edit Sound")
         .inlineNavigationTitle()
         .toolbar {

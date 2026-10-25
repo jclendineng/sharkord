@@ -59,7 +59,7 @@ struct ChannelActionsSheet: View {
                     ActionRow(title: "Mark As Read", systemImage: "eye", action: markAsRead)
 
                     if isPointerMenu && !isMuted {
-                        SubmenuRow(title: "Mute Channel") {
+                        SubmenuRow(title: "Mute Channel", systemImage: "bell.slash.fill") {
                             MuteChoices(onPick: mute)
                         }
                     } else {
@@ -73,6 +73,7 @@ struct ChannelActionsSheet: View {
                     if isPointerMenu {
                         SubmenuRow(
                             title: "Notification Settings",
+                            systemImage: "bell",
                             subtitle: NotificationLevelChoices.title(for: session.notificationLevel(for: channel.id))
                         ) {
                             NotificationLevelChoices(selected: session.notificationLevel(for: channel.id), onPick: setLevel)
@@ -245,6 +246,8 @@ struct ChannelActionsSheet: View {
 // the menu closes them again
 struct SubmenuRow<Submenu: View>: View {
     let title: String
+    // in the same column as the action rows' symbols around it
+    var systemImage = ""
     // what is picked now, under the title as discord shows it
     var subtitle: String?
     @ViewBuilder let submenu: () -> Submenu
@@ -264,7 +267,11 @@ struct SubmenuRow<Submenu: View>: View {
 
     var body: some View {
         Button(action: open) {
-            HStack(spacing: 10) {
+            HStack(spacing: 8) {
+                if !systemImage.isEmpty {
+                    MenuRowIcon(systemImage: systemImage)
+                }
+
                 VStack(alignment: .leading, spacing: 1) {
                     Text(title)
                         .font(.subheadline.weight(.medium))
@@ -416,6 +423,8 @@ private struct LevelRow: View {
             }
             .contentShape(.rect)
         }
+        // the whole row, where a mac form's push button drew a box inside it
+        .buttonStyle(.plain)
     }
 
     private func select() {
@@ -516,9 +525,7 @@ struct ActionRow: View {
         Button(action: action) {
             HStack(spacing: 8) {
                 if !systemImage.isEmpty {
-                    Image(systemName: systemImage)
-                        .font(.system(size: 13))
-                        .frame(width: 18)
+                    MenuRowIcon(systemImage: systemImage)
                 }
 
                 Text(title)
@@ -563,5 +570,48 @@ struct ActionRow: View {
         if hovered && isPointerMenu && !isInSubmenu {
             PointerMenus.hideSubmenu()
         }
+    }
+}
+
+// a menu row's symbol. a fixed height too, or a taller symbol made its row taller than the rest
+struct MenuRowIcon: View {
+    let systemImage: String
+
+    var body: some View {
+        Image(systemName: systemImage)
+            .font(.system(size: 13))
+            .frame(width: 18, height: 16)
+    }
+}
+
+// a switch in a sheet's group, its symbol and title lined up with the action rows around it
+struct ActionToggle: View {
+    let title: String
+    var subtitle: String?
+    let systemImage: String
+    @Binding var isOn: Bool
+
+    var body: some View {
+        Toggle(isOn: $isOn) {
+            HStack(spacing: 14) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 18))
+                    .frame(width: 26)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+
+                    if let subtitle {
+                        Text(subtitle)
+                            .font(.caption)
+                            .foregroundStyle(Theme.muted)
+                    }
+                }
+            }
+        }
+        .foregroundStyle(Theme.header)
+        .tint(Theme.blurple)
+        .padding(.horizontal, 16)
+        .padding(.vertical, subtitle == nil ? 14 : 10)
     }
 }

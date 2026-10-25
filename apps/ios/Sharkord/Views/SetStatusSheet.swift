@@ -64,6 +64,8 @@ struct SetStatusSheet: View {
                             }
                             .contentShape(.rect)
                         }
+                        // the whole row, where a mac form's push button drew a box inside it
+                        .buttonStyle(.plain)
                     }
                 } header: {
                     Text("Online Status")

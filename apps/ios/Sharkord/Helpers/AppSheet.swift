@@ -85,18 +85,7 @@ private struct AppSheet: ViewModifier {
                 }
             }
             #if os(macOS)
-            // a mac sheet ends in a done button at its bottom right rather than an x over its top
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                if addsClose {
-                    HStack {
-                        Spacer()
-
-                        Button("Done", action: close)
-                            .buttonStyle(.automatic)
-                    }
-                    .padding(12)
-                }
-            }
+            .modifier(MacDoneBar(isShown: addsClose, close: close))
             #else
             .safeAreaInset(edge: .top, spacing: 0) {
                 if addsClose {
@@ -118,6 +107,38 @@ private struct AppSheet: ViewModifier {
         dismiss()
     }
 }
+
+#if os(macOS)
+// a mac sheet ends in a done button at its bottom right rather than an x over its top. laid out
+// under the page, as the sheets with a bar of their own are: as a safe area inset a scrolling
+// page ran on beneath it, the button floating over its rows
+private struct MacDoneBar: ViewModifier {
+    let isShown: Bool
+    let close: () -> Void
+
+    func body(content: Content) -> some View {
+        if isShown {
+            VStack(spacing: 0) {
+                content
+
+                Theme.divider.frame(height: 1)
+
+                HStack {
+                    Spacer()
+
+                    // filled, as the done of a sheet with a bar of its own is
+                    Button("Done", action: close)
+                        .buttonStyle(.borderedProminent)
+                        .tint(Theme.blurple)
+                }
+                .padding(20)
+            }
+        } else {
+            content
+        }
+    }
+}
+#endif
 
 private struct MacDismissLock: ViewModifier {
     let isOnMac: Bool

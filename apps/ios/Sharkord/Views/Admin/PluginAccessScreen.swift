@@ -155,6 +155,7 @@ private struct CapabilityAccessEditor: View {
                     Text("Only Some Roles").tag(true)
                 }
                 .pickerStyle(.segmented)
+                .tint(Theme.blurple)
                 .labelsHidden()
                 .disabled(isSaving)
             } footer: {

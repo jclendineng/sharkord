@@ -9,12 +9,24 @@ struct MembersColumn: View {
     // how much larger than its smallest it is drawn, growing with a wide mac window
     var scale: CGFloat = 1
 
+    #if os(macOS)
+    // the native mac draws at full size, where the ipad app on one shrinks everything, so its
+    // list keeps the channel list's text sizes rather than growing past them
+    static let minimumScale: CGFloat = 1
+    static let maximumScale: CGFloat = 1
+    static let nameSize: CGFloat = 13
+    static let detailSize: CGFloat = 11
+    #else
     // a mac's starts a third larger than its smallest and grows with the chat past that, its rows
     // and text too, up to a limit, so a narrower window does not shrink it to nothing
     static let minimumScale: CGFloat = 1.35
+    static let maximumScale: CGFloat = 1.9
+    static let nameSize: CGFloat = 15
+    static let detailSize: CGFloat = 12
+    #endif
 
     static func scale(forChatWidth width: CGFloat) -> CGFloat {
-        let scale = min(max(width / 1100, minimumScale), 1.9)
+        let scale = min(max(width / 1100, minimumScale), maximumScale)
 
         // in steps, so a window being resized does not redraw the list at every point
         return (scale * 20).rounded() / 20
@@ -53,7 +65,7 @@ struct MembersColumn: View {
             LazyVStack(alignment: .leading, spacing: 2) {
                 ForEach(sections, id: \.title) { section in
                     Text("\(section.title.uppercased()) · \(section.users.count)")
-                        .font(.system(size: 12 * scale, weight: .semibold))
+                        .font(.system(size: Self.detailSize * scale, weight: .semibold))
                         .foregroundStyle(Theme.muted)
                         .padding(.horizontal, 10)
                         .padding(.top, 16)
@@ -119,13 +131,13 @@ private struct MemberColumnRow: View {
 
                 VStack(alignment: .leading, spacing: 1) {
                     Text(user.name)
-                        .font(.system(size: 15 * scale, weight: .medium))
+                        .font(.system(size: MembersColumn.nameSize * scale, weight: .medium))
                         .foregroundStyle(Color(hex: session.roleColor(for: user) ?? "#F2F3F5"))
                         .lineLimit(1)
 
                     if let customStatus = user.customStatus, !customStatus.isEmpty {
                         Text(customStatus)
-                            .font(.system(size: 12 * scale))
+                            .font(.system(size: MembersColumn.detailSize * scale))
                             .foregroundStyle(Theme.muted)
                             .lineLimit(1)
                     }
@@ -152,12 +164,13 @@ private struct MemberColumnRow: View {
         }
         // handed the stores by hand: on a mac a presentation is worked out before it inherits
         // to the left, over the chat, as discord's is: the column sits at the window's right edge,
-        // where a profile opening rightwards was squeezed into what little room was left. a fixed
-        // size, so it can never be narrower than its content: a mac popover takes no ideal height
-        // and opened short, the note cut off under a scroll bar
+        // where a profile opening rightwards was squeezed into what little room was left. its
+        // content's own height: a mac popover takes no ideal height and opened short, the note
+        // cut off under a scroll bar, and a fixed one left your own shorter profile half empty
         .popover(isPresented: $isProfilePresented, opensAwayFrom: .trailing) {
             MemberProfileSheet(user: user, onMessage: openDirectMessage)
-                .frame(width: 340 * scale, height: 600 * scale)
+                .frame(width: 340 * scale)
+                .fixedSize(horizontal: false, vertical: true)
                 .presentationCompactAdaptation(.popover)
                 .environment(session)
                 .environment(servers)

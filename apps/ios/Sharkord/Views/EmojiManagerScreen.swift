@@ -72,13 +72,17 @@ struct EmojiManagerList: View {
                 }
             }
 
-            Section("\(session.customEmojis.count) Emoji") {
-                ForEach(session.customEmojis) { emoji in
-                    Button(action: { startRenaming(emoji) }) {
-                        EmojiRow(emoji: emoji)
-                    }
-                    .rowDeleteAction {
-                        delete(emoji)
+            if !session.customEmojis.isEmpty {
+                Section("\(session.customEmojis.count) Emoji") {
+                    ForEach(session.customEmojis) { emoji in
+                        Button(action: { startRenaming(emoji) }) {
+                            EmojiRow(emoji: emoji)
+                        }
+                        // the whole row, where a mac form's push button drew a box inside it
+                        .buttonStyle(.plain)
+                        .rowDeleteAction {
+                            delete(emoji)
+                        }
                     }
                 }
             }
@@ -252,5 +256,6 @@ private struct EmojiRow: View {
 
             Spacer()
         }
+        .contentShape(.rect)
     }
 }

@@ -79,12 +79,12 @@ struct ChannelsAdminScreen: View {
         .toolbar {
             // out in the bar rather than in the menu, where nobody found it
             if session.can(.manageChannels) {
-                ToolbarItem(placement: .barTrailing) {
+                ActionToolbarItem(placement: .pageAction) {
                     Button(isReordering ? "Done" : "Reorder", action: toggleReordering)
                 }
             }
 
-            ToolbarItem(placement: .barTrailing) {
+            ActionToolbarItem(placement: .pageAction) {
                 Menu {
                     if session.can(.manageChannels) {
                         Button("New Text Channel", systemImage: "number") { creating = .text }
@@ -102,7 +102,7 @@ struct ChannelsAdminScreen: View {
                         }
                     }
                 } label: {
-                    Image(systemName: "plus")
+                    Label("New", systemImage: "plus")
                 }
             }
         }
@@ -141,9 +141,15 @@ struct ChannelsAdminScreen: View {
     }
 
     private func channelLabel(_ channel: Channel) -> some View {
-        Label(channel.name, systemImage: icon(for: channel))
-            .labelStyle(.titleAndIcon)
-            .foregroundStyle(Theme.header)
+        Label {
+            Text(channel.name)
+        } icon: {
+            // one width for every symbol, or a lock's and a speaker's names start apart
+            Image(systemName: icon(for: channel))
+                .frame(width: 20)
+        }
+        .labelStyle(.titleAndIcon)
+        .foregroundStyle(Theme.header)
     }
 
     // a plain row while reordering, a link would light up under the drag
@@ -296,7 +302,8 @@ struct ChannelEditor: View {
     var body: some View {
         SettingsForm {
             Section("Name") {
-                TextField("Channel name", text: $name)
+                TextField("", text: $name, prompt: Text("Channel name"))
+                    .labelsHidden()
                     .noAutocapitalization()
             }
 
@@ -331,7 +338,7 @@ struct ChannelEditor: View {
                 }
             }
 
-            Section {
+            SettingsActions {
                 Button("Delete Channel", role: .destructive) { isConfirmingDelete = true }
             }
 
@@ -440,11 +447,13 @@ struct NewChannelSheet: View {
                         Label("Voice", systemImage: "speaker.wave.2").tag(ChannelType.voice)
                     }
                     .pickerStyle(.segmented)
+                    .tint(Theme.blurple)
                     .labelsHidden()
                 }
 
                 Section("Name") {
-                    TextField(type == .voice ? "General Voice" : "general", text: $name)
+                    TextField("", text: $name, prompt: Text(type == .voice ? "General Voice" : "general"))
+                        .labelsHidden()
                         .noAutocapitalization()
                 }
 
@@ -455,6 +464,7 @@ struct NewChannelSheet: View {
                         }
                     }
                     .pickerStyle(.inline)
+                    .tint(Theme.blurple)
                     .labelsHidden()
                 }
 

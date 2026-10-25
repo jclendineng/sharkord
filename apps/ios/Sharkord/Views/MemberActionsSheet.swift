@@ -75,7 +75,7 @@ struct MemberActionsSheet: View {
                 if !moveTargets.isEmpty {
                     ActionGroup {
                         if isPointerMenu {
-                            SubmenuRow(title: "Move To") {
+                            SubmenuRow(title: "Move To", systemImage: "arrow.right.circle") {
                                 moveRows
                             }
                         } else {
@@ -88,7 +88,7 @@ struct MemberActionsSheet: View {
                     ActionGroup {
                         // a submenu beside the pointer on a mac, a sheet lists them in place
                         if isPointerMenu {
-                            SubmenuRow(title: "Roles") {
+                            SubmenuRow(title: "Roles", systemImage: "shield") {
                                 roleRows
                             }
                         } else {

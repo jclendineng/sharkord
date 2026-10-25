@@ -68,23 +68,14 @@ struct ServerSheet: View {
                 ActionGroup {
                     ActionRow(title: "Edit Server Profile", systemImage: "person.crop.circle", action: editProfile)
 
-                    Toggle(isOn: hideMutedChannels) {
-                        Label("Hide Muted Channels", systemImage: "bell.slash")
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
+                    ActionToggle(title: "Hide Muted Channels", systemImage: "bell.slash", isOn: hideMutedChannels)
 
-                    Toggle(isOn: allowDirectMessages) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Label("Allow Direct Messages", systemImage: "bubble.left.and.bubble.right")
-
-                            Text("Anyone on the server can start a conversation with you")
-                                .font(.caption)
-                                .foregroundStyle(Theme.muted)
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
+                    ActionToggle(
+                        title: "Allow Direct Messages",
+                        subtitle: "Anyone on the server can start a conversation with you",
+                        systemImage: "bubble.left.and.bubble.right",
+                        isOn: allowDirectMessages
+                    )
 
                     ActionRow(title: "Report Server", systemImage: "flag", tint: Theme.red, action: report)
                 }

@@ -9,6 +9,14 @@ struct ComposerField: View {
     @Binding var selection: AttributedTextSelection
     var isFocused: FocusState<Bool>.Binding
 
+    // a phone's 22 point line and a mac's 16 point one each padded out to 44. the phone's 11 on a
+    // mac left the box 38 high, and sat low in the row it is aligned to the bottom of
+    #if os(macOS)
+    static let verticalInset: CGFloat = 14
+    #else
+    static let verticalInset: CGFloat = 11
+    #endif
+
     private var isEmpty: Bool {
         text.characters.isEmpty
     }
@@ -22,7 +30,7 @@ struct ComposerField: View {
             .opacity(isEmpty ? 1 : 0)
             .frame(maxWidth: .infinity, alignment: .leading)
             // one line comes to 44 points, the buttons' height beside it, so its text is centered
-            .padding(.vertical, 11)
+            .padding(.vertical, Self.verticalInset)
             .overlay {
                 TextEditor(text: $text, selection: $selection)
                     .attributedTextFormattingDefinition(ComposerFormatting())
@@ -30,12 +38,25 @@ struct ComposerField: View {
                     .foregroundStyle(Theme.text)
                     .scrollContentBackground(.hidden)
                     .textEditorStyle(.plain)
-                    // the text view insets its text 8 points and its line sits 3 lower than a
-                    // Text's, measured on a phone, which together land it on the measured copy
-                    .padding(.top, 0)
-                    .padding(.bottom, 6)
-                    .padding(.horizontal, -5)
+                    .editorInsets()
             }
+    }
+}
+
+private extension View {
+    func editorInsets() -> some View {
+        #if os(macOS)
+        // a mac's text view has no inset of its own, so its text sat at the top of the box. moved
+        // down onto the measured copy, it still runs to the bottom of the box
+        padding(.top, ComposerField.verticalInset)
+            .padding(.horizontal, -5)
+        #else
+        // the text view insets its text 8 points and its line sits 3 lower than a Text's,
+        // measured on a phone, which together land it on the measured copy
+        padding(.top, 0)
+            .padding(.bottom, 6)
+            .padding(.horizontal, -5)
+        #endif
     }
 }
 

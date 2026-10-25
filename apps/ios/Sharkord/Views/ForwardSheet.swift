@@ -61,7 +61,7 @@ struct ForwardSheet: View {
                 }
             }
             .settingsListStyle()
-            .searchable(text: $query, prompt: "Search")
+            .pageSearchable(text: $query, prompt: "Search")
             .navigationTitle("Forward To")
             .inlineNavigationTitle()
             .toolbar {
@@ -91,6 +91,8 @@ struct ForwardSheet: View {
             }
             .contentShape(.rect)
         }
+        // the whole row, where a mac form's push button drew a box inside it
+        .buttonStyle(.plain)
         .disabled(sendingTo != nil)
     }
 

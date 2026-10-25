@@ -77,7 +77,7 @@ struct GroupFriendPicker: View {
     }
 
     var body: some View {
-        List {
+        SettingsForm {
             if let errorMessage {
                 Text(errorMessage)
                     .foregroundStyle(Theme.red)
@@ -117,7 +117,8 @@ struct GroupFriendPicker: View {
         .scrollContentBackground(.hidden)
         .listHoverHighlight()
         .background(Theme.deepBackground)
-        .searchable(text: $query, placement: .alwaysShown, prompt: "Search")
+        .sheetSearchable(text: $query, prompt: "Search")
+        .sheetBarBackground()
         .titleWithSubtitle(title, subtitle: "\(count) of \(GroupLimits.maxMembers) members")
         .inlineNavigationTitle()
         .toolbar {
