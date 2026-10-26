@@ -86,20 +86,7 @@ describe('/info', () => {
     });
   });
   describe('push relay key', () => {
-    afterEach(() => {
-      config.push.relayUrl = '';
-    });
-
-    test('should publish no relay key while the relay is off', async () => {
-      const response = await fetch(`${testsBaseUrl}/info`);
-      const data = (await response.json()) as TServerInfo;
-
-      expect(data.pushRelayKey).toBeNull();
-    });
-
-    test('should publish the same key on every call once the relay is on', async () => {
-      config.push.relayUrl = 'https://relay.test';
-
+    test('should publish the same key on every call while push is on', async () => {
       const first = (await (
         await fetch(`${testsBaseUrl}/info`)
       ).json()) as TServerInfo;
@@ -111,9 +98,7 @@ describe('/info', () => {
       expect(second.pushRelayKey).toBe(first.pushRelayKey);
     });
 
-    test('should publish no relay key once the admins turn the relay off', async () => {
-      config.push.relayUrl = 'https://relay.test';
-
+    test('should publish no relay key once the admins turn push off', async () => {
       const { caller } = await initTest(1);
 
       await caller.others.updateSettings({ pushRelayEnabled: false });
