@@ -33,6 +33,10 @@ struct HomeView: View {
     @State private var searchRoute: SearchRoute?
     // the ipad's search cover following a swipe in from the left edge, as a pushed screen would
     @State private var searchSwipe: CGFloat = 0
+    #if os(macOS)
+    // where the call zooms out of and back into, see MacCallZoom
+    @State private var voiceBarFrame = CGRect.zero
+    #endif
 
     // narrower in portrait, where the chat beside it has less room to read in
     private var panelWidth: CGFloat {
@@ -110,6 +114,19 @@ struct HomeView: View {
             }
         }
         .animation(.snappy, value: session.toastMessage)
+        #if os(macOS)
+        .overlay {
+            if servers.isCallPresented, let voiceSession = servers.voiceSession {
+                MacCallZoom(source: voiceBarFrame, isPresented: isCallPresented) {
+                    VoiceRoomScreen()
+                        .environment(voiceSession)
+                        .environment(servers)
+                        .phoneControlStyle()
+                        .phoneButtons()
+                }
+            }
+        }
+        #endif
         .onChange(of: ObjectIdentifier(session)) {
             path = NavigationPath()
             detailChannelId = nil
@@ -462,6 +479,11 @@ struct HomeView: View {
             if let voiceSession = servers.voiceSession {
                 VoiceBar()
                     .environment(voiceSession)
+                    #if os(macOS)
+                    .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }) { newFrame in
+                        voiceBarFrame = newFrame
+                    }
+                    #endif
             }
 
             UserBar(isCompact: isSplit)
@@ -603,6 +625,15 @@ struct HomeView: View {
             set: { _ in }
         )
     }
+
+    #if os(macOS)
+    private var isCallPresented: Binding<Bool> {
+        Binding(
+            get: { servers.isCallPresented },
+            set: { servers.isCallPresented = $0 }
+        )
+    }
+    #endif
 
     // a different server opens its default channel straight away, like discord does
     private func selectServer(_ selected: SessionStore) {

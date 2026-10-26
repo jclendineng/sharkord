@@ -13,7 +13,9 @@ struct VoiceBar: View {
     }
 
     var body: some View {
+        #if os(iOS)
         @Bindable var servers = servers
+        #endif
 
         HStack(spacing: 12) {
             Button(action: showRoom) {
@@ -68,11 +70,13 @@ struct VoiceBar: View {
                 PictureInPictureSource(track: pictureInPictureTrack)
             }
         }
-        #endif
+        // the native mac's call is drawn over the window by HomeView instead: a mac's sheet slid
+        // in with its own dimming, and the call opened and closed twice
         .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }) { newFrame in
             frame = newFrame
         }
         .modifier(CallPresentation(isPresented: $servers.isCallPresented, source: frame, zoom: zoom))
+        #endif
     }
 
     // what picture in picture shows away from the app: a screen share first, then the camera of

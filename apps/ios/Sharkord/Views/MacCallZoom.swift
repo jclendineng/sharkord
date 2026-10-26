@@ -35,6 +35,9 @@ struct MacCallZoom<Content: View>: View {
             let scale = frame.width / max(full.width, 1)
 
             content
+                #if os(macOS)
+                .background(ArrowCursorArea())
+                #endif
                 .frame(width: full.width, height: full.height)
                 .scaleEffect(scale, anchor: .topLeading)
                 .frame(width: frame.width, height: frame.height, alignment: .topLeading)
@@ -42,7 +45,10 @@ struct MacCallZoom<Content: View>: View {
                 .offset(x: frame.minX, y: frame.minY)
                 .opacity(isOpen ? 1 : 0)
         }
+        // the native mac's call is drawn under the window's toolbar, which hid its header
+        #if os(iOS)
         .ignoresSafeArea()
+        #endif
         .presentationBackground(.clear)
         .environment(\.closeCall, close)
         .onAppear(perform: open)
@@ -68,3 +74,44 @@ struct MacCallZoom<Content: View>: View {
         }
     }
 }
+
+#if os(macOS)
+// the native mac's call is drawn over the chat, and the message box's text view under it still
+// set its i-beam over the call's controls. a cursor rect lost to the text view's own tracking, so
+// the arrow is set again on every move over the call
+private struct ArrowCursorArea: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        ArrowCursorView()
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {}
+}
+
+private final class ArrowCursorView: NSView {
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+
+        addTrackingArea(NSTrackingArea(
+            rect: .zero,
+            options: [.mouseEnteredAndExited, .mouseMoved, .cursorUpdate, .activeInKeyWindow, .inVisibleRect],
+            owner: self
+        ))
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func cursorUpdate(with event: NSEvent) {
+        NSCursor.arrow.set()
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        NSCursor.arrow.set()
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        NSCursor.arrow.set()
+    }
+}
+#endif

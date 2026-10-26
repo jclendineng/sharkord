@@ -365,6 +365,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - A member's new name no longer goes back to the old one when lots of people join at once.
 - On a Mac every button takes a click anywhere on the shape it draws, not just on its icon, so a click near a button's edge or in a list row's gap no longer needs a second try.
 - On a Mac the call zooms out of the voice bar and back into it, instead of sliding off the bottom of the window.
+- The native Mac app opens and closes a call once, over the whole window, instead of in a smaller sheet that came and went on its own after the call, and the pointer over the call's controls is an arrow, not the message box's text cursor.
 - An animated GIF in a message shows its first frame straight away, and after a launch it is there at once instead of leaving a gap while it loads.
 - An empty channel's chat fills the screen, instead of leaving black strips down both sides.
 - The app's invite list says "1 use", not "1 uses".
