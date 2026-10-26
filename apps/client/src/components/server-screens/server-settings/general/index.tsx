@@ -39,6 +39,7 @@ type TServerGeneralValues = {
   enableSearch: boolean;
   showWelcomeDialog: boolean;
   pushShowMessageContent: boolean;
+  pushRelayEnabled: boolean;
   linkPreviewsPrivateNetwork: boolean;
   reportEmail: string;
   klipyApiKey: string;
@@ -64,6 +65,7 @@ const INITIAL_VALUES: TServerGeneralValues = {
   enableSearch: true,
   showWelcomeDialog: true,
   pushShowMessageContent: true,
+  pushRelayEnabled: true,
   linkPreviewsPrivateNetwork: false,
   reportEmail: '',
   klipyApiKey: '',
@@ -91,6 +93,7 @@ const General = memo(() => {
       enableSearch: values.enableSearch,
       showWelcomeDialog: values.showWelcomeDialog,
       pushShowMessageContent: values.pushShowMessageContent,
+      pushRelayEnabled: values.pushRelayEnabled,
       linkPreviewsPrivateNetwork: values.linkPreviewsPrivateNetwork,
       reportEmail: values.reportEmail.trim() || null,
       klipyApiKey: values.klipyApiKey.trim() || null,
@@ -128,6 +131,7 @@ const General = memo(() => {
       enableSearch: settings.enableSearch ?? true,
       showWelcomeDialog: settings.showWelcomeDialog ?? true,
       pushShowMessageContent: settings.pushShowMessageContent ?? true,
+      pushRelayEnabled: settings.pushRelayEnabled ?? true,
       linkPreviewsPrivateNetwork: settings.linkPreviewsPrivateNetwork ?? false,
       reportEmail: settings.reportEmail ?? '',
       klipyApiKey: settings.klipyApiKey ?? '',
@@ -193,6 +197,10 @@ const General = memo(() => {
   );
   const handlePushContentChange = useCallback(
     (checked: boolean) => onChange('pushShowMessageContent', checked),
+    [onChange]
+  );
+  const handlePushRelayChange = useCallback(
+    (checked: boolean) => onChange('pushRelayEnabled', checked),
     [onChange]
   );
   const handlePrivatePreviewsChange = useCallback(
@@ -379,6 +387,16 @@ const General = memo(() => {
         <Switch
           checked={values.pushShowMessageContent}
           onCheckedChange={handlePushContentChange}
+        />
+      </Group>
+
+      <Group
+        label={t('pushRelayEnabledLabel')}
+        description={t('pushRelayEnabledDesc')}
+      >
+        <Switch
+          checked={values.pushRelayEnabled}
+          onCheckedChange={handlePushRelayChange}
         />
       </Group>
 

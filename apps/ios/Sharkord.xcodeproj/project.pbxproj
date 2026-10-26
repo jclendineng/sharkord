@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		AB0000000000000000000001 /* Mediasoup in Frameworks */ = {isa = PBXBuildFile; productRef = AC0000000000000000000001 /* Mediasoup */; };
+		AB0000000000000000000002 /* SharkordNotifications.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E10000000000000000000001 /* SharkordNotifications.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -17,6 +18,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = A50000000000000000000001;
 			remoteInfo = Sharkord;
+		};
+		E70000000000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A70000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E50000000000000000000001;
+			remoteInfo = SharkordNotifications;
 		};
 		D70000000000000000000001 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -28,12 +36,24 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		AF0000000000000000000001 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				AB0000000000000000000002 /* SharkordNotifications.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		A10000000000000000000001 /* Sharkord.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Sharkord.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000002 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		C10000000000000000000001 /* SharkordTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SharkordTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E10000000000000000000001 /* SharkordNotifications.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SharkordNotifications.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		D10000000000000000000001 /* SharkordUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SharkordUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -51,6 +71,16 @@
 		D20000000000000000000001 /* SharkordUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = SharkordUITests;
+			sourceTree = "<group>";
+		};
+		E20000000000000000000001 /* SharkordNotifications */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = SharkordNotifications;
+			sourceTree = "<group>";
+		};
+		E20000000000000000000002 /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Shared;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -78,6 +108,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E30000000000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -86,6 +123,8 @@
 			children = (
 				A10000000000000000000002 /* Info.plist */,
 				A20000000000000000000001 /* Sharkord */,
+				E20000000000000000000002 /* Shared */,
+				E20000000000000000000001 /* SharkordNotifications */,
 				C20000000000000000000001 /* SharkordTests */,
 				D20000000000000000000001 /* SharkordUITests */,
 				A40000000000000000000002 /* Products */,
@@ -96,6 +135,7 @@
 			isa = PBXGroup;
 			children = (
 				A10000000000000000000001 /* Sharkord.app */,
+				E10000000000000000000001 /* SharkordNotifications.appex */,
 				C10000000000000000000001 /* SharkordTests.xctest */,
 				D10000000000000000000001 /* SharkordUITests.xctest */,
 			);
@@ -112,14 +152,17 @@
 				A60000000000000000000001 /* Sources */,
 				A30000000000000000000001 /* Frameworks */,
 				A60000000000000000000002 /* Resources */,
+				AF0000000000000000000001 /* Embed Foundation Extensions */,
 				AE0000000000000000000001 /* Package dSYMs */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				E70000000000000000000002 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				A20000000000000000000001 /* Sharkord */,
+				E20000000000000000000002 /* Shared */,
 			);
 			name = Sharkord;
 			packageProductDependencies = (
@@ -171,6 +214,27 @@
 			productReference = D10000000000000000000001 /* SharkordUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		E50000000000000000000001 /* SharkordNotifications */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E80000000000000000000001 /* Build configuration list for PBXNativeTarget "SharkordNotifications" */;
+			buildPhases = (
+				E60000000000000000000001 /* Sources */,
+				E30000000000000000000001 /* Frameworks */,
+				E60000000000000000000002 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				E20000000000000000000001 /* SharkordNotifications */,
+				E20000000000000000000002 /* Shared */,
+			);
+			name = SharkordNotifications;
+			productName = SharkordNotifications;
+			productReference = E10000000000000000000001 /* SharkordNotifications.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -199,6 +263,7 @@
 			projectRoot = "";
 			targets = (
 				A50000000000000000000001 /* Sharkord */,
+				E50000000000000000000001 /* SharkordNotifications */,
 				C50000000000000000000001 /* SharkordTests */,
 				D50000000000000000000001 /* SharkordUITests */,
 			);
@@ -221,6 +286,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		D60000000000000000000002 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E60000000000000000000002 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -277,6 +349,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E60000000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -289,6 +368,11 @@
 			isa = PBXTargetDependency;
 			target = A50000000000000000000001 /* Sharkord */;
 			targetProxy = D70000000000000000000001 /* PBXContainerItemProxy */;
+		};
+		E70000000000000000000002 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E50000000000000000000001 /* SharkordNotifications */;
+			targetProxy = E70000000000000000000001 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -373,6 +457,7 @@
 				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.sharkord.ios;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SHARKORD_PUSH_RELAY_URL = "https://sharkord-push-relay.compmx.workers.dev";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -414,6 +499,7 @@
 				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.sharkord.ios;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SHARKORD_PUSH_RELAY_URL = "https://sharkord-push-relay.compmx.workers.dev";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -496,6 +582,76 @@
 			};
 			name = Release;
 		};
+		E90000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = SharkordNotifications.entitlements;
+				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "SharkordNotifications-macOS.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				"ENABLE_HARDENED_RUNTIME[sdk=macosx*]" = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "SharkordNotifications-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Sharkord;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sharkord.ios.notifications;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		E90000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = SharkordNotifications.entitlements;
+				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "SharkordNotifications-macOS.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				"ENABLE_HARDENED_RUNTIME[sdk=macosx*]" = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "SharkordNotifications-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Sharkord;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sharkord.ios.notifications;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -531,6 +687,15 @@
 			buildConfigurations = (
 				D90000000000000000000001 /* Debug */,
 				D90000000000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E80000000000000000000001 /* Build configuration list for PBXNativeTarget "SharkordNotifications" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E90000000000000000000001 /* Debug */,
+				E90000000000000000000002 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

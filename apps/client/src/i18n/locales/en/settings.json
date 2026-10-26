@@ -160,6 +160,8 @@
   "showWelcomeDialogDesc": "Show a profile setup dialog to users the first time they join the server.",
   "pushShowMessageContentLabel": "Show Message Text in Push Notifications",
   "pushShowMessageContentDesc": "Push notifications pass through Apple's servers. Turn this off to only say who sent a message, never what it says or which channel it is in.",
+  "pushRelayEnabledLabel": "Send Push Notifications Through the Relay",
+  "pushRelayEnabledDesc": "The Sharkord app's relay delivers notifications to iPhones and iPads, so this server needs no Apple developer account. It only sees encrypted content. Turn this off to keep notifications away from any third party service. Phones then get notifications only if this server has its own Apple push key.",
   "linkPreviewsPrivateNetworkLabel": "Preview Links on the Server's Network",
   "linkPreviewsPrivateNetworkDesc": "Let link previews load from addresses on the server's own network, like a home server's other apps. Only turn this on if you trust every member, since anyone could then make the server load pages only it can reach. Also set as previewPrivateNetwork under [links] in config.ini.",
   "reportEmailLabel": "Report Email",

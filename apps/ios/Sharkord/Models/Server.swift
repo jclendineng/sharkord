@@ -10,8 +10,16 @@ struct ServerInfo: Decodable {
     let oidcEnabled: Bool?
     let oidcDisableLocalLogin: Bool?
     let pushEnabled: Bool?
+    // the key the server signs relay pushes with, nil when it has no relay or its admins turned
+    // the relay off
+    let pushRelayKey: String?
     // where reports about the server or a message on it go, set by its admins
     let reportEmail: String?
+
+    // straight from the server's own apns key, or through the relay when this build has one
+    var offersPush: Bool {
+        pushEnabled == true || (pushRelayKey != nil && PushRelay.url != nil)
+    }
 }
 
 struct Handshake: Decodable {

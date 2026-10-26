@@ -906,4 +906,81 @@ describe('push through the relay', () => {
 
     expect(await tdb.select().from(pushDevices)).toHaveLength(1);
   });
+
+  describe('the setting that turns the relay off', () => {
+    test('should leave the relay on by default', async () => {
+      const { pushRelayEnabled } = await getSettings();
+
+      expect(pushRelayEnabled).toBe(true);
+    });
+
+    test('should store the relay as off', async () => {
+      const { caller } = await initTest(1);
+
+      await caller.others.updateSettings({ pushRelayEnabled: false });
+
+      const { pushRelayEnabled } = await getSettings();
+
+      expect(pushRelayEnabled).toBe(false);
+    });
+
+    test('should refuse to turn the relay off without permission to manage settings', async () => {
+      const { caller } = await initTest(2);
+
+      await expect(
+        caller.others.updateSettings({ pushRelayEnabled: false })
+      ).rejects.toThrow('Insufficient permissions');
+
+      const { pushRelayEnabled } = await getSettings();
+
+      expect(pushRelayEnabled).toBe(true);
+    });
+
+    test('should refuse a relay device while the relay is turned off', async () => {
+      const { caller: owner } = await initTest(1);
+
+      await owner.others.updateSettings({ pushRelayEnabled: false });
+
+      const key = await createDeviceKey();
+      const { caller } = await initTest(2);
+
+      await expect(
+        caller.notifications.registerDevice({
+          token: relayId(2),
+          relayTicket: relayTicket(2),
+          encryptionKey: key.encryptionKey
+        })
+      ).rejects.toThrow('Push notifications are not enabled on this server.');
+
+      expect(await tdb.select().from(pushDevices)).toHaveLength(0);
+    });
+
+    test('should still take a direct token while the relay is turned off', async () => {
+      config.push.enabled = true;
+
+      const { caller: owner } = await initTest(1);
+
+      await owner.others.updateSettings({ pushRelayEnabled: false });
+      await registerDevices(2);
+
+      expect(await tdb.select().from(pushDevices)).toHaveLength(1);
+    });
+
+    test('should send nothing to the relay while it is turned off', async () => {
+      await registerRelayDevice(4);
+
+      const { caller: owner } = await initTest(1);
+
+      await owner.others.updateSettings({ pushRelayEnabled: false });
+
+      const relaySpy = spyOnRelay();
+      const { caller } = await initTest(3);
+
+      await caller.messages.send({ channelId: 3, content: 'hey b', files: [] });
+      await drainPushNotificationsQueue();
+
+      expect(relaySpy).not.toHaveBeenCalled();
+      expect(await tdb.select().from(pushDevices)).toHaveLength(1);
+    });
+  });
 });

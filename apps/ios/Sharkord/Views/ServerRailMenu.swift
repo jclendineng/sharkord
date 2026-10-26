@@ -74,7 +74,7 @@ struct ServerRailMenu: View {
             ActionGroup(isFirst: true) {
                 ActionRow(title: "Mark As Read", systemImage: "eye", action: markAsRead)
 
-                if server.serverInfo?.pushEnabled == true {
+                if server.serverInfo?.offersPush == true {
                     ActionRow(
                         title: server.isPushEnabled ? "Mute Notifications" : "Unmute Notifications",
                         systemImage: server.isPushEnabled ? "bell.slash" : "bell",
@@ -118,7 +118,7 @@ struct ServerRailMenu: View {
             VStack(spacing: 0) {
                 MenuRow(title: "Mark As Read", systemImage: "envelope.fill", action: markAsRead)
 
-                if server.serverInfo?.pushEnabled == true {
+                if server.serverInfo?.offersPush == true {
                     MenuRow(
                         title: server.isPushEnabled ? "Mute Notifications" : "Unmute Notifications",
                         systemImage: server.isPushEnabled ? "bell.slash.fill" : "bell.fill",

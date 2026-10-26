@@ -849,6 +849,11 @@ final class SessionStore {
             JoinSnapshot.delete(for: address)
         }
 
+        // the next sign in makes a new one, so nothing the server held opens again
+        if let serverId = serverInfo?.serverId {
+            PushKeys.delete(for: serverId)
+        }
+
         if let address {
             FileTokens.shared.setClient(nil, for: address.baseURL.host() ?? "")
         }
@@ -1296,11 +1301,42 @@ final class SessionStore {
         #endif
 
         do {
-            try await client.mutation("notifications.registerDevice", input: DeviceInput(token: token, sandbox: sandbox))
-            pushToken = token
+            if let serverKey = serverInfo?.pushRelayKey, let relay = PushRelay.url {
+                try await registerRelayDevice(token, sandbox: sandbox, serverKey: serverKey, relay: relay, on: client)
+            } else {
+                try await client.mutation("notifications.registerDevice", input: DeviceInput(token: token, sandbox: sandbox))
+                pushToken = token
+            }
         } catch {
             showError(error)
         }
+    }
+
+    // the server gets a ticket only the relay can open and a key of this device's to encrypt to,
+    // never the device token itself. the ticket runs out after a while, so every launch asks
+    // for a fresh one
+    private func registerRelayDevice(_ token: String, sandbox: Bool, serverKey: String, relay: URL, on client: TRPCClient) async throws {
+        struct RelayDeviceInput: Encodable {
+            let token: String
+            let relayTicket: String
+            let encryptionKey: String
+        }
+
+        guard let serverId = serverInfo?.serverId, let encryptionKey = PushKeys.encryptionKey(for: serverId) else {
+            return
+        }
+
+        let ticket = try await PushRelay.ticket(relay: relay, deviceToken: token, sandbox: sandbox, serverKey: serverKey)
+
+        try await client.mutation(
+            "notifications.registerDevice",
+            input: RelayDeviceInput(token: ticket.id, relayTicket: ticket.ticket, encryptionKey: encryptionKey)
+        )
+        pushToken = ticket.id
+
+        // a build from before the relay registered the bare token, which would push each
+        // message a second time
+        try? await client.mutation("notifications.unregisterDevice", input: ["token": token])
     }
 
     func messages(for channelId: Int) -> ChannelMessagesStore {
@@ -1742,7 +1778,7 @@ final class SessionStore {
             return false
         }
 
-        return serverInfo?.pushEnabled == true && !CredentialStore.isPushMuted(for: address)
+        return serverInfo?.offersPush == true && !CredentialStore.isPushMuted(for: address)
     }
 
     func setPushEnabled(_ enabled: Bool) async {
@@ -2137,7 +2173,7 @@ final class SessionStore {
         hasRequestedPush = true
 
         guard
-            serverInfo?.pushEnabled == true,
+            serverInfo?.offersPush == true,
             (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])) == true
         else {
             return

@@ -1,0 +1,1 @@
+ALTER TABLE `settings` ADD `push_relay_enabled` integer DEFAULT true NOT NULL;

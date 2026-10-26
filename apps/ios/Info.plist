@@ -42,6 +42,8 @@
 	<string>Sharkord saves pictures you choose to save into your photo library.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Sharkord shows your recent photos and videos so you can attach them to a message.</string>
+	<key>SharkordPushRelayURL</key>
+	<string>$(SHARKORD_PUSH_RELAY_URL)</string>
 	<key>PHPhotoLibraryPreventAutomaticLimitedAccessAlert</key>
 	<true/>
 	<key>UILaunchScreen</key>

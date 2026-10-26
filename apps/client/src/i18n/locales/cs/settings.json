@@ -158,6 +158,8 @@
   "showWelcomeDialogDesc": "Zobrazit uživatelům dialog pro nastavení profilu při jejich prvním připojení k serveru.",
   "pushShowMessageContentLabel": "Zobrazovat text zprávy v push oznámeních",
   "pushShowMessageContentDesc": "Push oznámení procházejí servery Applu. Po vypnutí oznámení uvede jen, kdo zprávu poslal, nikdy její obsah ani kanál.",
+  "pushRelayEnabledLabel": "Posílat oznámení přes relay",
+  "pushRelayEnabledDesc": "Relay aplikace Sharkord doručuje oznámení do iPhonů a iPadů, takže tento server nepotřebuje vývojářský účet Apple. Vidí jen zašifrovaný obsah. Vypněte to, aby oznámení neprocházela žádnou službou třetí strany. Telefony pak dostanou oznámení jen tehdy, když má tento server vlastní klíč Apple pro oznámení.",
   "linkPreviewsPrivateNetworkLabel": "Náhledy odkazů v síti serveru",
   "linkPreviewsPrivateNetworkDesc": "Povolí načítání náhledů odkazů z adres ve vlastní síti serveru, například z dalších aplikací domácího serveru. Zapněte jen tehdy, když důvěřujete všem členům, protože kdokoli by pak mohl server přimět načíst stránky dostupné jen jemu. Nastavuje se také jako previewPrivateNetwork v sekci [links] v config.ini.",
   "reportEmailLabel": "E-mail pro nahlášení",

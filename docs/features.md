@@ -45,7 +45,16 @@ SHARKORD_PUSH_RELAY_URL=https://...
 - Each notification is encrypted to that device's key and signed with the server's. The relay
   only sends a ticket for the server that signs it, so a server can only reach devices that
   registered with it, and the relay and Apple only see ciphertext.
-- The app side (ticket request, notification service extension) is not built yet.
+- The app's notification service extension decrypts each push with the key it made for that
+  server, so the real title and body show. One that will not open shows "New notification".
+  Every launch asks for a fresh ticket, which lasts 30 days.
+- The relay address is a build setting of the app (`SHARKORD_PUSH_RELAY_URL` in the Xcode
+  project), not of any server. A fork with its own app build deploys its own relay.
+- **Send Through the Relay** (Server Settings, Overview, Push Notifications) is on by default.
+  An admin who would rather no third party service carried notifications turns it off: the
+  server stops publishing its relay key, refuses relay devices and sends nothing to the relay.
+  Phones then get notifications only through the server's own Apple key, if it has one.
+  Setting: `pushRelayEnabled`.
 
 **Directly to Apple** with the operator's own key, for someone with their own app build. Off
 until configured:

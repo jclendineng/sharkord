@@ -210,6 +210,18 @@ struct GeneralSettingsScreen: View {
                 }
             }
 
+            if let usesRelay = settings.wrappedValue.pushRelayEnabled {
+                Section {
+                    Toggle("Send Through the Relay", isOn: Binding(
+                        get: { usesRelay },
+                        set: { settings.wrappedValue.pushRelayEnabled = $0 }
+                    ))
+                } footer: {
+                    Text("The app's relay delivers notifications, so this server needs no Apple developer account, and it only sees them encrypted. Off, no third party service carries them, and phones get notifications only if this server has its own Apple push key.")
+                        .wrappingFooter()
+                }
+            }
+
             if let previewsPrivate = settings.wrappedValue.linkPreviewsPrivateNetwork {
                 Section {
                     Toggle("Preview Links on the Server's Network", isOn: Binding(
@@ -343,6 +355,7 @@ struct GeneralSettingsScreen: View {
             let showWelcomeDialog: Bool
             let webRtcSimulcastEnabled: Bool
             let pushShowMessageContent: Bool?
+            let pushRelayEnabled: Bool?
             let linkPreviewsPrivateNetwork: Bool?
             let reportEmail: String?
             let klipyApiKey: String?
@@ -365,6 +378,7 @@ struct GeneralSettingsScreen: View {
                 try container.encode(showWelcomeDialog, forKey: .showWelcomeDialog)
                 try container.encode(webRtcSimulcastEnabled, forKey: .webRtcSimulcastEnabled)
                 try container.encodeIfPresent(pushShowMessageContent, forKey: .pushShowMessageContent)
+                try container.encodeIfPresent(pushRelayEnabled, forKey: .pushRelayEnabled)
                 try container.encodeIfPresent(linkPreviewsPrivateNetwork, forKey: .linkPreviewsPrivateNetwork)
                 // null clears it, an older server drops the key it doesn't know
                 try container.encode(reportEmail, forKey: .reportEmail)
@@ -381,7 +395,7 @@ struct GeneralSettingsScreen: View {
             private enum CodingKeys: String, CodingKey {
                 case name, description, password, onlyAskForPasswordOnFirstJoin, allowNewUsers
                 case directMessagesEnabled, enablePlugins, enableSearch, showWelcomeDialog, webRtcSimulcastEnabled
-                case pushShowMessageContent, linkPreviewsPrivateNetwork, reportEmail, klipyApiKey
+                case pushShowMessageContent, pushRelayEnabled, linkPreviewsPrivateNetwork, reportEmail, klipyApiKey
                 case freesoundApiKey, afkChannelId, afkTimeoutSeconds
             }
         }
@@ -398,6 +412,7 @@ struct GeneralSettingsScreen: View {
             showWelcomeDialog: settings.showWelcomeDialog,
             webRtcSimulcastEnabled: settings.webRtcSimulcastEnabled,
             pushShowMessageContent: settings.pushShowMessageContent,
+            pushRelayEnabled: settings.pushRelayEnabled,
             linkPreviewsPrivateNetwork: settings.linkPreviewsPrivateNetwork,
             reportEmail: trimmedOrNil(settings.reportEmail),
             klipyApiKey: trimmedOrNil(settings.klipyApiKey),

@@ -110,5 +110,19 @@ describe('/info', () => {
       expect(first.pushRelayKey).toMatch(/^[A-Za-z0-9_-]{43}$/);
       expect(second.pushRelayKey).toBe(first.pushRelayKey);
     });
+
+    test('should publish no relay key once the admins turn the relay off', async () => {
+      config.push.relayUrl = 'https://relay.test';
+
+      const { caller } = await initTest(1);
+
+      await caller.others.updateSettings({ pushRelayEnabled: false });
+
+      const data = (await (
+        await fetch(`${testsBaseUrl}/info`)
+      ).json()) as TServerInfo;
+
+      expect(data.pushRelayKey).toBeNull();
+    });
   });
 });

@@ -2,6 +2,7 @@ import type { TServerInfo } from '@sharkord/shared';
 import http from 'http';
 import { config } from '../config';
 import { getSettings } from '../db/queries/server';
+import { isPushRelayOn } from '../helpers/is-push-relay-on';
 import { getOidcServerInfo } from '../helpers/oidc/settings';
 import { getPushRelayKey } from '../utils/push-relay-key';
 
@@ -9,10 +10,11 @@ const infoRouteHandler = async (
   req: http.IncomingMessage,
   res: http.ServerResponse
 ) => {
-  const [settings, pushRelayKey] = await Promise.all([
-    getSettings(),
-    config.push.relayUrl ? getPushRelayKey() : undefined
-  ]);
+  const settings = await getSettings();
+  // without the key the app never asks the relay for a ticket
+  const pushRelayKey = isPushRelayOn(settings)
+    ? await getPushRelayKey()
+    : undefined;
 
   const info: TServerInfo = {
     serverId: settings.serverId,

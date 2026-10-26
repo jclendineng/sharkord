@@ -158,6 +158,8 @@
   "showWelcomeDialogDesc": "在用户首次加入服务器时向其显示个人资料设置对话框。",
   "pushShowMessageContentLabel": "在推送通知中显示消息内容",
   "pushShowMessageContentDesc": "推送通知会经过 Apple 的服务器。关闭后，通知只显示发送者，不显示消息内容或所在频道。",
+  "pushRelayEnabledLabel": "通过中继发送推送通知",
+  "pushRelayEnabledDesc": "Sharkord 应用的中继将通知送达 iPhone 和 iPad，因此此服务器无需 Apple 开发者账户。中继只能看到加密内容。关闭后通知不会经过任何第三方服务。届时只有当此服务器拥有自己的 Apple 推送密钥时，手机才会收到通知。",
   "linkPreviewsPrivateNetworkLabel": "预览服务器网络中的链接",
   "linkPreviewsPrivateNetworkDesc": "允许从服务器自身网络中的地址加载链接预览，例如家庭服务器上的其他应用。仅在你信任所有成员时开启，否则任何人都可以让服务器加载只有它能访问的页面。也可在 config.ini 的 [links] 中通过 previewPrivateNetwork 设置。",
   "reportEmailLabel": "举报邮箱",

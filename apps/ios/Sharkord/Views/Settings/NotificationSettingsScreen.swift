@@ -73,7 +73,7 @@ private struct ServerPushToggle: View {
     @State private var isOn = false
 
     private var isAvailable: Bool {
-        server.serverInfo?.pushEnabled == true
+        server.serverInfo?.offersPush == true
     }
 
     var body: some View {

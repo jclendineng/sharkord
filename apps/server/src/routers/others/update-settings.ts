@@ -74,6 +74,7 @@ const zGeneralSettings = z.object({
   enableSearch: z.boolean().optional(),
   showWelcomeDialog: z.boolean().optional(),
   pushShowMessageContent: z.boolean().optional(),
+  pushRelayEnabled: z.boolean().optional(),
   linkPreviewsPrivateNetwork: z.boolean().optional(),
   // where people send reports about the server or a message on it, shown in the apps
   reportEmail: z

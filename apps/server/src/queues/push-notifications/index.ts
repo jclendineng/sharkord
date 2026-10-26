@@ -4,7 +4,9 @@ import { inArray } from 'drizzle-orm';
 import Queue from 'queue';
 import { config } from '../../config';
 import { db } from '../../db';
+import { getSettings } from '../../db/queries/server';
 import { pushDevices } from '../../db/schema';
+import { isPushRelayOn } from '../../helpers/is-push-relay-on';
 import { logger } from '../../logger';
 import type { TConnectionInfo } from '../../types';
 import { sendApnsNotification, type TApnsResult } from '../../utils/apns';
@@ -51,10 +53,11 @@ const isPushEnabled = () => config.push.enabled || !!config.push.relayUrl;
 // only ever carry ciphertext. one apns is sent to directly needs this server's own key
 const sendToDevice = async (
   device: TDeliveryDevice,
-  payload: Record<string, unknown>
+  payload: Record<string, unknown>,
+  isRelayOn: boolean
 ): Promise<TApnsResult | undefined> => {
   if (device.relayTicket && device.encryptionKey) {
-    if (!config.push.relayUrl) return undefined;
+    if (!isRelayOn) return undefined;
 
     return sendRelayNotification({
       ticket: device.relayTicket,
@@ -76,8 +79,9 @@ const deliver = async (
   devices: TDeliveryDevice[],
   payload: Record<string, unknown>
 ) => {
+  const isRelayOn = isPushRelayOn(await getSettings());
   const results = await Promise.allSettled(
-    devices.map((device) => sendToDevice(device, payload))
+    devices.map((device) => sendToDevice(device, payload, isRelayOn))
   );
 
   const deadDeviceIds: number[] = [];

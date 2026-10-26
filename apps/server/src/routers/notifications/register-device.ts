@@ -1,7 +1,9 @@
 import { z } from 'zod';
 import { config } from '../../config';
 import { db } from '../../db';
+import { getSettings } from '../../db/queries/server';
 import { pushDevices } from '../../db/schema';
+import { isPushRelayOn } from '../../helpers/is-push-relay-on';
 import { invariant } from '../../utils/invariant';
 import { protectedProcedure, rateLimitedProcedure } from '../../utils/trpc';
 
@@ -46,8 +48,11 @@ const registerDeviceRoute = rateLimitedProcedure(protectedProcedure, {
   .input(z.union([zRelayDevice, zDirectDevice]))
   .mutation(async ({ input, ctx }) => {
     const isRelay = 'relayTicket' in input;
+    const isAvailable = isRelay
+      ? isPushRelayOn(await getSettings())
+      : config.push.enabled;
 
-    invariant(isRelay ? !!config.push.relayUrl : config.push.enabled, {
+    invariant(isAvailable, {
       code: 'FORBIDDEN',
       message: 'Push notifications are not enabled on this server.'
     });

@@ -106,6 +106,13 @@ const settings = sqliteTable(
     })
       .notNull()
       .default(true),
+    // push through the relay, the third party service that holds the app's apns keys. on by
+    // default, only takes effect with a relay url configured, and off leaves direct apns only
+    pushRelayEnabled: integer('push_relay_enabled', {
+      mode: 'boolean'
+    })
+      .notNull()
+      .default(true),
     // link previews may be fetched from addresses on the server's own network. off by default:
     // any member could otherwise have the server load pages only it can reach
     linkPreviewsPrivateNetwork: integer('link_previews_private_network', {
