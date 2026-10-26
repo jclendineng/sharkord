@@ -1575,6 +1575,13 @@ final class SessionStore {
             JoinSnapshot.save(data, for: address)
         }
 
+        // the chats loaded before this connection, which missed whatever arrived while there was
+        // none. one loaded from here on, such as a chat a tapped notification opened on launch,
+        // goes out on this connection with the subscriptions listening, and reloading it would
+        // only fetch it twice
+        let stores = Array(messageStores.values) + Array(threadStores.values)
+        let missedStores = stores.filter(\.hasLoaded)
+
         self.handshakeHash = nil
         reconnectAttempt = 0
         phase = .connected
@@ -1602,8 +1609,7 @@ final class SessionStore {
         }
         _ = await (directMessages, push, renewedToken, personalSettings, friends)
 
-        // anything that arrived while disconnected was missed by the subscriptions
-        for store in Array(messageStores.values) + Array(threadStores.values) where store.hasLoaded {
+        for store in missedStores {
             await store.reload()
         }
     }

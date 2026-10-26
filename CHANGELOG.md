@@ -376,6 +376,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - The native Mac app opens and closes a call once, over the whole window, instead of in a smaller sheet that came and went on its own after the call, and the pointer over the call's controls is an arrow, not the message box's text cursor.
 - Tapping a notification opens what it is about, even when it starts the app: a direct message opens that conversation, a mention or a reply jumps to the message, a reply in a thread opens the thread, and a new login opens Devices. It used to land on the home screen.
 - On a Mac, and an iPad with a keyboard, Return sends a message and Shift Return starts a new line.
+- A chat opened while the app is still connecting, such as from a tapped notification, loads its messages once instead of again a moment later.
 - An animated GIF in a message shows its first frame straight away, and after a launch it is there at once instead of leaving a gap while it loads.
 - An empty channel's chat fills the screen, instead of leaving black strips down both sides.
 - The app's invite list says "1 use", not "1 uses".
