@@ -46,6 +46,7 @@ struct MessageListView<Header: View>: View {
             messageList
                 .task(id: store.focusedMessageId) {
                     await scrollToFocused(proxy)
+                    openPendingThread()
                 }
                 .overlay(alignment: .bottomTrailing) {
                     if isAwayFromBottom, !store.hasNewer {
@@ -479,6 +480,23 @@ struct MessageListView<Header: View>: View {
     private func openThread(_ message: Message) {
         threadAfterActions = message
         actionsMessage = nil
+    }
+
+    private func openPendingThread() {
+        guard
+            let parentId = store.pendingThreadParentId,
+            let parent = store.messages.first(where: { $0.id == parentId })
+        else {
+            return
+        }
+
+        store.pendingThreadParentId = nil
+
+        if let openThreadPanel {
+            openThreadPanel(parent)
+        } else {
+            openedThread = parent
+        }
     }
 
     private func openThreadAfterActions() {

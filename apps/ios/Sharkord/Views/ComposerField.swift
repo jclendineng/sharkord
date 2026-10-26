@@ -8,6 +8,7 @@ struct ComposerField: View {
     @Binding var text: AttributedString
     @Binding var selection: AttributedTextSelection
     var isFocused: FocusState<Bool>.Binding
+    let onSubmit: () -> Void
 
     // a phone's 22 point line and a mac's 16 point one each padded out to 44. the phone's 11 on a
     // mac left the box 38 high, and sat low in the row it is aligned to the bottom of
@@ -39,7 +40,20 @@ struct ComposerField: View {
                     .scrollContentBackground(.hidden)
                     .textEditorStyle(.plain)
                     .editorInsets()
+                    .onKeyPress(.return, phases: .down, action: submit)
             }
+    }
+
+    // return sends and shift return starts a new line, as on discord. only a hardware keyboard
+    // reaches this, so a phone's own keyboard still starts a new line
+    private func submit(_ press: KeyPress) -> KeyPress.Result {
+        guard !press.modifiers.contains(.shift) else {
+            return .ignored
+        }
+
+        onSubmit()
+
+        return .handled
     }
 }
 

@@ -90,8 +90,8 @@ const getActiveDevices = (senderId: number | null) =>
     )
     .all();
 
-// mirrors what the web client notifies for: direct messages, mentions and replies, and only
-// for people who can see the channel at all. a channel's notification setting overrides it
+// direct messages, mentions, replies and replies in a thread someone started, and only for
+// people who can see the channel at all. a channel's notification setting overrides it
 const getRecipientDevices = async (
   message: TPushMessage
 ): Promise<TPushDevice[]> => {
@@ -100,21 +100,25 @@ const getRecipientDevices = async (
   if (devices.length === 0) return [];
 
   const deviceUserIds = [...new Set(devices.map(({ userId }) => userId))];
+  // the message replied to, and the one a thread hangs off, each answer their author
+  const answeredMessageIds = [
+    message.replyToMessageId,
+    message.parentMessageId
+  ].filter((id): id is number => id !== null);
 
-  const [roleRows, repliedTo, settingRows] = await Promise.all([
+  const [roleRows, answeredRows, settingRows] = await Promise.all([
     db
       .select({ userId: userRoles.userId, roleId: userRoles.roleId })
       .from(userRoles)
       .where(inArray(userRoles.userId, deviceUserIds))
       .all(),
-    message.replyToMessageId
+    answeredMessageIds.length > 0
       ? db
           .select({ userId: messages.userId })
           .from(messages)
-          .where(eq(messages.id, message.replyToMessageId))
-          .limit(1)
-          .get()
-      : undefined,
+          .where(inArray(messages.id, answeredMessageIds))
+          .all()
+      : [],
     db
       .select({
         userId: channelNotificationSettings.userId,
@@ -132,6 +136,7 @@ const getRecipientDevices = async (
   ]);
 
   const now = Date.now();
+  const answeredUserIds = new Set(answeredRows.map(({ userId }) => userId));
 
   // a mute that has run out is the default again
   const levelByUser = new Map(
@@ -158,7 +163,7 @@ const getRecipientDevices = async (
 
     return (
       message.isDm ||
-      userId === repliedTo?.userId ||
+      answeredUserIds.has(userId) ||
       hasMention(message.content, userId, roleIdsByUser.get(userId))
     );
   });

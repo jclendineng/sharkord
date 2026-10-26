@@ -11,10 +11,54 @@ typealias PlatformApplication = UIApplication
 typealias PlatformApplicationDelegate = UIApplicationDelegate
 #endif
 
+// what a tapped notification opens, read from the payload the server built in
+// queues/push-notifications
+enum NotificationTarget {
+    case message(serverId: String, channelId: Int, messageId: Int?, threadParentId: Int?)
+    // someone signed in somewhere else: the devices, to sign it out if it was not you
+    case newLogin(serverId: String)
+
+    var serverId: String {
+        switch self {
+        case let .message(serverId, _, _, _), let .newLogin(serverId):
+            serverId
+        }
+    }
+
+    init?(_ userInfo: [AnyHashable: Any]) {
+        guard let serverId = userInfo["serverId"] as? String else {
+            return nil
+        }
+
+        if userInfo["kind"] as? String == "newLogin" {
+            self = .newLogin(serverId: serverId)
+        } else if let channelId = userInfo["channelId"] as? Int {
+            self = .message(
+                serverId: serverId,
+                channelId: channelId,
+                messageId: userInfo["messageId"] as? Int,
+                threadParentId: userInfo["parentMessageId"] as? Int
+            )
+        } else {
+            return nil
+        }
+    }
+}
+
 // remote notifications still only reach an app through its UIKit or AppKit delegate
 final class AppDelegate: NSObject, PlatformApplicationDelegate, UNUserNotificationCenterDelegate {
     // handed over by SharkordApp, the system creates the delegate before any SwiftUI state exists
-    var servers: ServerListStore?
+    var servers: ServerListStore? {
+        didSet {
+            if let servers, let pendingTarget {
+                self.pendingTarget = nil
+                servers.open(pendingTarget)
+            }
+        }
+    }
+
+    // a tap that launched the app comes in before SharkordApp has handed the servers over
+    private var pendingTarget: NotificationTarget?
 
     #if os(macOS)
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -58,29 +102,20 @@ final class AppDelegate: NSObject, PlatformApplicationDelegate, UNUserNotificati
     }
 
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
-        let userInfo = response.notification.request.content.userInfo
-
-        // a new login somewhere else: the devices, to sign it out if it was not you
-        if
-            userInfo["kind"] as? String == "newLogin",
-            let serverId = userInfo["serverId"] as? String,
-            let session = servers?.session(serverId: serverId)
-        {
-            servers?.showDevices(for: session)
+        guard let target = NotificationTarget(response.notification.request.content.userInfo) else {
             return
         }
 
-        if let (session, channelId) = target(response.notification) {
-            servers?.open(channelId: channelId, in: session)
+        if let servers {
+            servers.open(target)
+        } else {
+            pendingTarget = target
         }
     }
 
     private func target(_ notification: UNNotification) -> (SessionStore, Int)? {
-        let userInfo = notification.request.content.userInfo
-
         guard
-            let serverId = userInfo["serverId"] as? String,
-            let channelId = userInfo["channelId"] as? Int,
+            case let .message(serverId, channelId, _, _) = NotificationTarget(notification.request.content.userInfo),
             let session = servers?.session(serverId: serverId)
         else {
             return nil

@@ -221,6 +221,52 @@ describe('push notifications for new messages', () => {
     expect(notifiedTokens(spy)).toEqual([deviceToken(1)]);
   });
 
+  test('should notify whoever started a thread about a reply in it', async () => {
+    await registerDevices(1);
+
+    const spy = spyOnApns();
+    const { caller } = await initTest(2);
+
+    await caller.messages.send({
+      channelId: 1,
+      content: 'in the thread',
+      parentMessageId: 1,
+      files: []
+    });
+    await drainPushNotificationsQueue();
+
+    expect(notifiedTokens(spy)).toEqual([deviceToken(1)]);
+
+    const [[notification]] = spy.mock.calls as unknown as [
+      [apns.TApnsNotification]
+    ];
+
+    // what the app opens the thread from
+    expect(notification.payload).toMatchObject({ parentMessageId: 1 });
+  });
+
+  test('should keep each line of the message on its own line', async () => {
+    await registerDevices(4);
+
+    const spy = spyOnApns();
+    const { caller } = await initTest(3);
+
+    await caller.messages.send({
+      channelId: 3,
+      content: '<p>line one</p><p>line two</p>',
+      files: []
+    });
+    await drainPushNotificationsQueue();
+
+    const [[notification]] = spy.mock.calls as unknown as [
+      [apns.TApnsNotification]
+    ];
+
+    expect(notification.payload).toMatchObject({
+      aps: { alert: { body: 'line one\nline two' } }
+    });
+  });
+
   test('should not notify the sender about their own message', async () => {
     await registerDevices(1);
 

@@ -380,6 +380,28 @@ describe('channel references in message helpers', () => {
     expect(isEmptyMessage('<p><span></span></p>')).toBe(true);
   });
 
+  test('getPlainTextFromHtml should keep each paragraph and line break on its own line', () => {
+    expect(getPlainTextFromHtml('<p>line one</p><p>line two</p>')).toBe(
+      'line one\nline two'
+    );
+    expect(getPlainTextFromHtml('<p>first<br>second</p>')).toBe(
+      'first\nsecond'
+    );
+    expect(
+      getPlainTextFromHtml('<ul><li><p>a</p></li><li><p>b</p></li></ul>')
+    ).toBe('a\nb');
+  });
+
+  test('getPlainTextFromHtml should keep an empty paragraph as a blank line', () => {
+    expect(getPlainTextFromHtml('<p>a</p><p></p><p>b</p>')).toBe('a\n\nb');
+  });
+
+  test('getPlainTextFromHtml should not end on a trailing break', () => {
+    expect(
+      getPlainTextFromHtml('<p>last<br class="ProseMirror-trailingBreak"></p>')
+    ).toBe('last');
+  });
+
   test('getPlainTextFromHtml should not expose the channel name', () => {
     const legacy =
       '<p>go to <span data-type="channel-reference" data-channel-id="42">#secret-project</span> now</p>';

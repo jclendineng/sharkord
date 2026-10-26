@@ -341,6 +341,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - Sticker images are no longer swept up as orphaned files.
 - Search names a direct message after its person or group, not "DM - 2:5".
 - Signing out many devices in a row no longer hits a rate limit.
+- A reply in a thread notifies whoever started it.
+- Notifications keep each line of a message on its own line, instead of running the end of one into the start of the next. Webhooks and search get the same line breaks.
 
 #### Security
 
@@ -369,6 +371,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - On a Mac every button takes a click anywhere on the shape it draws, not just on its icon, so a click near a button's edge or in a list row's gap no longer needs a second try.
 - On a Mac the call zooms out of the voice bar and back into it, instead of sliding off the bottom of the window.
 - The native Mac app opens and closes a call once, over the whole window, instead of in a smaller sheet that came and went on its own after the call, and the pointer over the call's controls is an arrow, not the message box's text cursor.
+- Tapping a notification opens what it is about, even when it starts the app: a direct message opens that conversation, a mention or a reply jumps to the message, a reply in a thread opens the thread, and a new login opens Devices. It used to land on the home screen.
+- On a Mac, and an iPad with a keyboard, Return sends a message and Shift Return starts a new line.
 - An animated GIF in a message shows its first frame straight away, and after a launch it is there at once instead of leaving a gap while it loads.
 - An empty channel's chat fills the screen, instead of leaving black strips down both sides.
 - The app's invite list says "1 use", not "1 uses".

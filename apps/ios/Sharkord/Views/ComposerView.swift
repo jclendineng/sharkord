@@ -364,7 +364,7 @@ struct ComposerView: View {
             }
 
             HStack(alignment: .bottom, spacing: 10) {
-                ComposerField(placeholder: placeholder, text: $field, selection: $selection, isFocused: $isFieldFocused)
+                ComposerField(placeholder: placeholder, text: $field, selection: $selection, isFocused: $isFieldFocused, onSubmit: sendIfReady)
 
                 if Platform.isMac {
                     // discord's mac: gifs, stickers and emoji each a button in the box
@@ -698,6 +698,13 @@ struct ComposerView: View {
 
             try? FileManager.default.removeItem(at: url)
             isSending = false
+        }
+    }
+
+    // the return key has no button to hide while there is nothing to send
+    private func sendIfReady() {
+        if canSend {
+            send()
         }
     }
 

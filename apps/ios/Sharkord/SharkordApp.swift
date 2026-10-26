@@ -34,6 +34,11 @@ struct SharkordApp: App {
                 .onOpenURL { url in
                     servers.open(inviteURL: url)
                 }
+                // a session learns its server's id from the last join on disk or the live one,
+                // and a tapped notification for that server can open then
+                .onChange(of: servers.sessions.map(\.serverId)) {
+                    servers.openPendingNotification()
+                }
                 .onChange(of: scenePhase) { _, newPhase in
                     switch newPhase {
                     case .active:

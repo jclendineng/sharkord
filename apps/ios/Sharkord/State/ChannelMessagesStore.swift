@@ -22,6 +22,9 @@ final class ChannelMessagesStore {
     var focusedMessageId: Int?
     // a jump asked for from another screen, made when the chat next appears
     var pendingJumpMessageId: Int?
+    // a thread to open once the jump has brought its first message into the list, for a tapped
+    // notification about a reply in it
+    var pendingThreadParentId: Int?
     private(set) var hasLoaded = false
     private(set) var isLoading = false
     var errorMessage: String?

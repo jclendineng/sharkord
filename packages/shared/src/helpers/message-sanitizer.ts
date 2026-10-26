@@ -24,6 +24,15 @@ const removeProseMirrorArtifacts = (html: string): string =>
     .replace(/<img(?=[^<>]*ProseMirror-separator)[^<>]*>/gi, '')
     .replace(/<br(?=[^<>]*ProseMirror-trailingBreak)[^<>]*>/gi, '');
 
+// a line break or the end of a paragraph, list item, heading or quote is a new line in the text,
+// which stripping the tags alone ran into the next line's first word. blocks closing together,
+// a paragraph inside a list item, end one line
+const breakLines = (html: string): string =>
+  html.replace(
+    /(?:<br\b[^<>]*>|<\/(?:p|li|h[1-6]|blockquote|pre|div)>)+/gi,
+    '\n'
+  );
+
 const removeCommandElements = (html: string): string =>
   html.replace(/<command\b[^<>]*>.*?<\/command>/gi, '');
 
@@ -77,7 +86,8 @@ const getPlainTextFromHtml = (html: string): string => {
     removeProseMirrorArtifacts,
     removeEmojiElements,
     removeCommandElements,
-    removeChannelReferenceElements
+    removeChannelReferenceElements,
+    breakLines
   ]);
 };
 

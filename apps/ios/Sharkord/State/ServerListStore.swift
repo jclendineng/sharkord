@@ -153,6 +153,8 @@ final class ServerListStore {
     var pendingLinkLogin: LinkLogin?
     // another device's code asking to be signed in, scanned here, waiting to be approved
     var pendingApproval: LoginApproval?
+    // a tapped notification waiting for its server, see open(_:)
+    private var pendingNotification: NotificationTarget?
 
     struct LoginApproval: Identifiable, Equatable {
         let server: String
@@ -341,9 +343,15 @@ final class ServerListStore {
 
     // a tapped notification or an entry in the unreads inbox
     // with a message, the chat opens at it rather than at the newest
-    func open(channelId: Int, messageId: Int? = nil, in session: SessionStore) {
-        if let messageId {
-            session.messages(for: channelId).pendingJumpMessageId = messageId
+    func open(channelId: Int, messageId: Int? = nil, threadParentId: Int? = nil, in session: SessionStore) {
+        let store = session.messages(for: channelId)
+
+        // a reply in a thread opens the thread, from its first message in the channel
+        if let threadParentId {
+            store.pendingJumpMessageId = threadParentId
+            store.pendingThreadParentId = threadParentId
+        } else if let messageId {
+            store.pendingJumpMessageId = messageId
         }
 
         searchDropdown = nil
@@ -417,6 +425,30 @@ final class ServerListStore {
 
     func session(serverId: String) -> SessionStore? {
         sessions.first { $0.serverId == serverId }
+    }
+
+    // a tapped notification. one that launched the app arrives before its server has loaded,
+    // so it waits here until a session knows that server's id
+    func open(_ target: NotificationTarget) {
+        guard let session = session(serverId: target.serverId) else {
+            pendingNotification = target
+            return
+        }
+
+        pendingNotification = nil
+
+        switch target {
+        case let .message(_, channelId, messageId, threadParentId):
+            open(channelId: channelId, messageId: messageId, threadParentId: threadParentId, in: session)
+        case .newLogin:
+            showDevices(for: session)
+        }
+    }
+
+    func openPendingNotification() {
+        if let pendingNotification {
+            open(pendingNotification)
+        }
     }
 
     func registerPushDevice(_ token: String) async {
