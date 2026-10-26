@@ -38,6 +38,9 @@ struct MessageRow: View {
     }
 
     var body: some View {
+        // a reply's line is part of the message: the gap goes above it, not between it and its
+        // message, and the press card takes it in. otherwise it sat flush against the message
+        // before, under that one's jump glow, and its own press card cut through it
         VStack(alignment: .leading, spacing: 2) {
             if message.replyToMessageId != nil {
                 ReplyLine(preview: message.replyTo)
@@ -45,6 +48,38 @@ struct MessageRow: View {
 
             row
         }
+        // the press: a rounded card a few points past the message, inset from the screen's edges,
+        // rather than a band taking in the gap above a header. between two lines of one stretch it
+        // only reaches into the small gap, past that it covered the edge of the line next to it
+        .background {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Theme.hover)
+                .padding(.horizontal, 6)
+                .padding(.top, showsHeader ? -6 : -2)
+                .padding(.bottom, isFollowedClosely ? -2 : -6)
+                .opacity(isPressed ? 1 : 0)
+        }
+        .animation(.easeOut(duration: isPressed ? 0.08 : 0.2), value: isPressed)
+        .padding(.top, showsHeader ? 16 : 2)
+        .background(isHovered ? Color.black.opacity(0.08) : .clear)
+        // over the message's top right, discord's quick reactions, reply and the menu
+        .overlay(alignment: .topTrailing) {
+            if isHovered, let hoverActions {
+                MessageHoverBar(actions: hoverActions)
+                    .padding(.trailing, 16)
+                    .offset(y: showsHeader ? -2 : -16)
+            }
+        }
+        .onHover(perform: setHovered)
+        .contentShape(.rect)
+        .onTapGesture(count: 2, perform: onDoubleTap)
+        // simultaneous so it also works over an attachment's own button, a voice message's play
+        // button for one. the sheet opening cancels that button's tap
+        .simultaneousGesture(LongPressGesture(minimumDuration: 0.3).onEnded(longPressed))
+        #if os(iOS)
+        .gesture(PressTracker(isPressed: $isFingerDown))
+        #endif
+        .onSecondaryClick(perform: onSecondaryClick)
     }
 
     private var row: some View {
@@ -116,38 +151,6 @@ struct MessageRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.horizontal, 16)
-        // the press: a rounded card a few points past the message, inset from the screen's edges,
-        // rather than a band taking in the gap above a header. between two lines of one stretch it
-        // only reaches into the small gap, past that it covered the edge of the line next to it
-        .background {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Theme.hover)
-                .padding(.horizontal, 6)
-                .padding(.top, showsHeader ? -6 : -2)
-                .padding(.bottom, isFollowedClosely ? -2 : -6)
-                .opacity(isPressed ? 1 : 0)
-        }
-        .animation(.easeOut(duration: isPressed ? 0.08 : 0.2), value: isPressed)
-        .padding(.top, showsHeader ? 16 : 2)
-        .background(isHovered ? Color.black.opacity(0.08) : .clear)
-        // over the row's top right, discord's quick reactions, reply and the menu
-        .overlay(alignment: .topTrailing) {
-            if isHovered, let hoverActions {
-                MessageHoverBar(actions: hoverActions)
-                    .padding(.trailing, 16)
-                    .offset(y: showsHeader ? -2 : -16)
-            }
-        }
-        .onHover(perform: setHovered)
-        .contentShape(.rect)
-        .onTapGesture(count: 2, perform: onDoubleTap)
-        // simultaneous so it also works over an attachment's own button, a voice message's play
-        // button for one. the sheet opening cancels that button's tap
-        .simultaneousGesture(LongPressGesture(minimumDuration: 0.3).onEnded(longPressed))
-        #if os(iOS)
-        .gesture(PressTracker(isPressed: $isFingerDown))
-        #endif
-        .onSecondaryClick(perform: onSecondaryClick)
     }
 
     // the mac's panel beside the chat, a page of its own everywhere else
