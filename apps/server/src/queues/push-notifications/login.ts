@@ -10,8 +10,6 @@ const getLoginNotificationDevices = (userId: number, sessionId: string) =>
   db
     .select({
       id: pushDevices.id,
-      token: pushDevices.token,
-      sandbox: pushDevices.sandbox,
       relayTicket: pushDevices.relayTicket,
       encryptionKey: pushDevices.encryptionKey
     })

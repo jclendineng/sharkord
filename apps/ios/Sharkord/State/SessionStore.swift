@@ -1281,16 +1281,28 @@ final class SessionStore {
         messageStores[channelId]?.isVisible == true
     }
 
+    // the server gets a ticket only the relay can open and a key of this device's to encrypt to,
+    // never the device token itself. the ticket runs out after a while, so every launch asks
+    // for a fresh one
     func registerPushDevice(_ token: String) async {
         CredentialStore.devicePushToken = token
 
-        guard let client, let address, !CredentialStore.isPushMuted(for: address) else {
+        guard
+            let client,
+            let address,
+            !CredentialStore.isPushMuted(for: address),
+            let serverId = serverInfo?.serverId,
+            let serverKey = serverInfo?.pushRelayKey,
+            let relay = PushRelay.url,
+            let encryptionKey = PushKeys.encryptionKey(for: serverId)
+        else {
             return
         }
 
         struct DeviceInput: Encodable {
             let token: String
-            let sandbox: Bool
+            let relayTicket: String
+            let encryptionKey: String
         }
 
         // a debug build is signed for the apns sandbox, which only accepts its own tokens
@@ -1301,42 +1313,16 @@ final class SessionStore {
         #endif
 
         do {
-            if let serverKey = serverInfo?.pushRelayKey, let relay = PushRelay.url {
-                try await registerRelayDevice(token, sandbox: sandbox, serverKey: serverKey, relay: relay, on: client)
-            } else {
-                try await client.mutation("notifications.registerDevice", input: DeviceInput(token: token, sandbox: sandbox))
-                pushToken = token
-            }
+            let ticket = try await PushRelay.ticket(relay: relay, deviceToken: token, sandbox: sandbox, serverKey: serverKey)
+
+            try await client.mutation(
+                "notifications.registerDevice",
+                input: DeviceInput(token: ticket.id, relayTicket: ticket.ticket, encryptionKey: encryptionKey)
+            )
+            pushToken = ticket.id
         } catch {
             showError(error)
         }
-    }
-
-    // the server gets a ticket only the relay can open and a key of this device's to encrypt to,
-    // never the device token itself. the ticket runs out after a while, so every launch asks
-    // for a fresh one
-    private func registerRelayDevice(_ token: String, sandbox: Bool, serverKey: String, relay: URL, on client: TRPCClient) async throws {
-        struct RelayDeviceInput: Encodable {
-            let token: String
-            let relayTicket: String
-            let encryptionKey: String
-        }
-
-        guard let serverId = serverInfo?.serverId, let encryptionKey = PushKeys.encryptionKey(for: serverId) else {
-            return
-        }
-
-        let ticket = try await PushRelay.ticket(relay: relay, deviceToken: token, sandbox: sandbox, serverKey: serverKey)
-
-        try await client.mutation(
-            "notifications.registerDevice",
-            input: RelayDeviceInput(token: ticket.id, relayTicket: ticket.ticket, encryptionKey: encryptionKey)
-        )
-        pushToken = ticket.id
-
-        // a build from before the relay registered the bare token, which would push each
-        // message a second time
-        try? await client.mutation("notifications.unregisterDevice", input: ["token": token])
     }
 
     func messages(for channelId: Int) -> ChannelMessagesStore {

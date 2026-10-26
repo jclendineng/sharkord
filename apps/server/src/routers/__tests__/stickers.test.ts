@@ -1,12 +1,17 @@
 import { ServerEvents, type TTempFile } from '@sharkord/shared';
 import { describe, expect, spyOn, test } from 'bun:test';
 import { eq } from 'drizzle-orm';
-import { initTest, sendMessage, uploadFile } from '../../__tests__/helpers';
+import {
+  initTest,
+  pushedPayload,
+  registerPushDevice,
+  sendMessage,
+  spyOnPushRelay,
+  uploadFile
+} from '../../__tests__/helpers';
 import { tdb } from '../../__tests__/setup';
-import { config } from '../../config';
 import { messages, stickers } from '../../db/schema';
 import { drainPushNotificationsQueue } from '../../queues/push-notifications';
-import * as apns from '../../utils/apns';
 import { pubsub } from '../../utils/pubsub';
 
 const uploadSticker = async (
@@ -260,35 +265,16 @@ describe('sending a sticker', () => {
 describe('sticker push notifications', () => {
   test('should name the sticker in the push for a direct message', async () => {
     const stickerId = await addSticker('wave');
-    const original = config.push.enabled;
 
-    config.push.enabled = true;
+    await registerPushDevice(4);
 
-    const { caller: userB } = await initTest(4);
+    const spy = spyOnPushRelay();
+    const { caller: userA } = await initTest(3);
 
-    await userB.notifications.registerDevice({
-      token: '4'.padStart(64, 'a'),
-      sandbox: false
-    });
+    await userA.messages.send({ channelId: 3, content: '', stickerId });
+    await drainPushNotificationsQueue();
 
-    const spy = spyOn(apns, 'sendApnsNotification').mockResolvedValue({
-      status: 200
-    });
-
-    try {
-      const { caller: userA } = await initTest(3);
-
-      await userA.messages.send({ channelId: 3, content: '', stickerId });
-      await drainPushNotificationsQueue();
-    } finally {
-      config.push.enabled = original;
-    }
-
-    const [[notification]] = spy.mock.calls as unknown as [
-      [apns.TApnsNotification]
-    ];
-
-    expect(notification.payload).toMatchObject({
+    expect(await pushedPayload(spy)).toMatchObject({
       aps: { alert: { body: 'Sent a sticker: wave' } }
     });
   });

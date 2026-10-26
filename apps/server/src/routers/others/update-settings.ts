@@ -97,7 +97,8 @@ const CONFIG_FILE_SETTING_KEYS = [
   'allowNewUsers',
   'klipyApiKey',
   'freesoundApiKey',
-  'linkPreviewsPrivateNetwork'
+  'linkPreviewsPrivateNetwork',
+  'pushRelayEnabled'
 ];
 
 const STORAGE_SETTING_KEYS = Object.keys(zStorageSettings.shape);

@@ -37,10 +37,8 @@ type TPushMessage = {
 type TPushDevice = {
   id: number;
   userId: number;
-  token: string;
-  sandbox: boolean;
-  relayTicket: string | null;
-  encryptionKey: string | null;
+  relayTicket: string;
+  encryptionKey: string;
 };
 
 const getPushMessage = (messageId: number): TPushMessage | undefined =>
@@ -73,8 +71,6 @@ const getActiveDevices = (senderId: number | null) =>
     .select({
       id: pushDevices.id,
       userId: pushDevices.userId,
-      token: pushDevices.token,
-      sandbox: pushDevices.sandbox,
       relayTicket: pushDevices.relayTicket,
       encryptionKey: pushDevices.encryptionKey
     })

@@ -168,9 +168,8 @@ export type TServerInfo = Pick<
   version?: string;
   oidcEnabled: boolean;
   oidcDisableLocalLogin: boolean;
-  pushEnabled: boolean;
-  // set when the server sends through the push relay: its public key, which the app asks the
-  // relay to seal into the device's ticket
+  // the key the server signs relay pushes with, which the app asks the relay to seal into the
+  // device's ticket. null while push is turned off
   pushRelayKey: string | null;
 };
 

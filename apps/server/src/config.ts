@@ -19,6 +19,9 @@ const deepFreeze = <T>(value: T): T => {
   return value;
 };
 
+// apps/push-relay as deployed for the published app
+const DEFAULT_PUSH_RELAY_URL = 'https://sharkord-push-relay.compmx.workers.dev';
+
 const zRateLimiter = z.object({
   maxRequests: z.coerce.number().int().positive(),
   windowMs: z.coerce.number().int().positive()
@@ -72,14 +75,16 @@ const zConfig = z.object({
     disableLocalLogin: z.coerce.boolean()
   }),
   push: z.object({
-    enabled: z.coerce.boolean(),
-    apnsKeyId: z.string(),
-    apnsTeamId: z.string(),
-    apnsKeyPath: z.string(),
-    apnsBundleId: z.string(),
-    // the relay devices on this server get their notifications through, so the server needs
-    // no apns key of its own. empty turns it off
-    relayUrl: z.string().trim()
+    // the relay every notification goes through, which holds the app's apns keys. empty is the
+    // one the published app uses, a fork with its own app build sets its own
+    relayUrl: z
+      .string()
+      .trim()
+      .transform((url) => url || DEFAULT_PUSH_RELAY_URL),
+    // whether push is on at all, mirrored with the settings screens by helpers/config-file-sync,
+    // which reads it from the file. kept as it is here so a value it does not understand never
+    // throws the whole file away
+    relayEnabled: z.unknown().optional()
   }),
   // mirrored with the settings screens by helpers/config-file-sync, which owns these keys, so
   // they are kept as they are here rather than given defaults
@@ -154,13 +159,9 @@ const defaultConfig: TConfig = {
     redirectUri: '',
     disableLocalLogin: false
   },
+  // relayEnabled is left to config-file-sync, which writes the settings' value into the file
   push: {
-    enabled: false,
-    apnsKeyId: '',
-    apnsTeamId: '',
-    apnsKeyPath: '',
-    apnsBundleId: 'com.sharkord.ios',
-    relayUrl: ''
+    relayUrl: DEFAULT_PUSH_RELAY_URL
   },
   registration: {},
   storage: {},
@@ -359,11 +360,6 @@ const envOverridesMap: Record<string, string> = {
   'oidc.clientSecret': 'SHARKORD_OIDC_CLIENT_SECRET',
   'oidc.redirectUri': 'SHARKORD_OIDC_REDIRECT_URI',
   'oidc.disableLocalLogin': 'SHARKORD_OIDC_DISABLE_LOCAL_LOGIN',
-  'push.enabled': 'SHARKORD_PUSH_ENABLED',
-  'push.apnsKeyId': 'SHARKORD_PUSH_APNS_KEY_ID',
-  'push.apnsTeamId': 'SHARKORD_PUSH_APNS_TEAM_ID',
-  'push.apnsKeyPath': 'SHARKORD_PUSH_APNS_KEY_PATH',
-  'push.apnsBundleId': 'SHARKORD_PUSH_APNS_BUNDLE_ID',
   'push.relayUrl': 'SHARKORD_PUSH_RELAY_URL',
   'webRtc.port': 'SHARKORD_WEBRTC_PORT',
   'webRtc.listenIp': 'SHARKORD_WEBRTC_LISTEN_IP',

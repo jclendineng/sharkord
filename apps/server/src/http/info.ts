@@ -1,8 +1,6 @@
 import type { TServerInfo } from '@sharkord/shared';
 import http from 'http';
-import { config } from '../config';
 import { getSettings } from '../db/queries/server';
-import { isPushRelayOn } from '../helpers/is-push-relay-on';
 import { getOidcServerInfo } from '../helpers/oidc/settings';
 import { getPushRelayKey } from '../utils/push-relay-key';
 
@@ -11,8 +9,8 @@ const infoRouteHandler = async (
   res: http.ServerResponse
 ) => {
   const settings = await getSettings();
-  // without the key the app never asks the relay for a ticket
-  const pushRelayKey = isPushRelayOn(settings)
+  // without the key the app never asks the relay for a ticket, so push is off
+  const pushRelayKey = settings.pushRelayEnabled
     ? await getPushRelayKey()
     : undefined;
 
@@ -24,7 +22,6 @@ const infoRouteHandler = async (
     allowNewUsers: settings.allowNewUsers,
     // public so a report can be sent before signing in, and without an account at all
     reportEmail: settings.reportEmail,
-    pushEnabled: config.push.enabled,
     pushRelayKey: pushRelayKey?.publicKey ?? null,
     ...getOidcServerInfo()
   };

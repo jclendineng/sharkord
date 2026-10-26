@@ -9,16 +9,15 @@ struct ServerInfo: Decodable {
     // optional so servers from before oidc still decode
     let oidcEnabled: Bool?
     let oidcDisableLocalLogin: Bool?
-    let pushEnabled: Bool?
-    // the key the server signs relay pushes with, nil when it has no relay or its admins turned
-    // the relay off
+    // the key the server signs relay pushes with, nil when its admins turned push off or it is
+    // from before the relay
     let pushRelayKey: String?
     // where reports about the server or a message on it go, set by its admins
     let reportEmail: String?
 
-    // straight from the server's own apns key, or through the relay when this build has one
+    // through the relay, the only way a server reaches the app
     var offersPush: Bool {
-        pushEnabled == true || (pushRelayKey != nil && PushRelay.url != nil)
+        pushRelayKey != nil && PushRelay.url != nil
     }
 }
 

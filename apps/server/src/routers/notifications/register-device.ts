@@ -3,15 +3,8 @@ import { config } from '../../config';
 import { db } from '../../db';
 import { getSettings } from '../../db/queries/server';
 import { pushDevices } from '../../db/schema';
-import { isPushRelayOn } from '../../helpers/is-push-relay-on';
 import { invariant } from '../../utils/invariant';
 import { protectedProcedure, rateLimitedProcedure } from '../../utils/trpc';
-
-const zDirectDevice = z.object({
-  // an apns device token, hex encoded. 32 bytes today, apple says not to rely on it
-  token: z.string().regex(/^[0-9a-fA-F]{64,200}$/),
-  sandbox: z.boolean()
-});
 
 const zRelayDevice = z.object({
   // the relay's id for this device on this server, stable across ticket refreshes
@@ -45,32 +38,26 @@ const registerDeviceRoute = rateLimitedProcedure(protectedProcedure, {
   windowMs: config.rateLimiters.pushDevice.windowMs,
   logLabel: 'registerPushDevice'
 })
-  .input(z.union([zRelayDevice, zDirectDevice]))
+  .input(zRelayDevice)
   .mutation(async ({ input, ctx }) => {
-    const isRelay = 'relayTicket' in input;
-    const isAvailable = isRelay
-      ? isPushRelayOn(await getSettings())
-      : config.push.enabled;
+    const { pushRelayEnabled } = await getSettings();
 
-    invariant(isAvailable, {
+    invariant(pushRelayEnabled, {
       code: 'FORBIDDEN',
       message: 'Push notifications are not enabled on this server.'
     });
 
-    if (isRelay) {
-      invariant(await isValidEncryptionKey(input.encryptionKey), {
-        code: 'BAD_REQUEST',
-        message: 'This device sent an encryption key that is not valid.'
-      });
-    }
+    invariant(await isValidEncryptionKey(input.encryptionKey), {
+      code: 'BAD_REQUEST',
+      message: 'This device sent an encryption key that is not valid.'
+    });
 
     const values = {
       userId: ctx.userId,
       tokenVersion: ctx.user.tokenVersion,
       sessionId: ctx.sessionId ?? null,
-      sandbox: isRelay ? false : input.sandbox,
-      relayTicket: isRelay ? input.relayTicket : null,
-      encryptionKey: isRelay ? input.encryptionKey : null,
+      relayTicket: input.relayTicket,
+      encryptionKey: input.encryptionKey,
       createdAt: Date.now()
     };
 

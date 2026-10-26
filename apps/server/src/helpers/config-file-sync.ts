@@ -16,6 +16,7 @@ type TMirroredValues = {
   klipyApiKey: string;
   freesoundApiKey: string;
   previewPrivateNetwork: boolean;
+  relayEnabled: boolean;
 };
 
 type TFileValues = Partial<TMirroredValues> & {
@@ -27,7 +28,8 @@ const MIRRORED_KEYS = [
   'allowNewUsers',
   'klipyApiKey',
   'freesoundApiKey',
-  'previewPrivateNetwork'
+  'previewPrivateNetwork',
+  'relayEnabled'
 ] as const;
 
 // what was last written to the file, so a value that differs from it is known to be an edit
@@ -69,6 +71,7 @@ const readFileValues = async (): Promise<TFileValues> => {
   const gifs = toSection(parsed.gifs);
   const links = toSection(parsed.links);
   const sounds = toSection(parsed.sounds);
+  const push = toSection(parsed.push);
   const klipyApiKey = gifs.klipyApiKey;
   const freesoundApiKey = sounds.freesoundApiKey;
 
@@ -79,6 +82,7 @@ const readFileValues = async (): Promise<TFileValues> => {
     freesoundApiKey:
       typeof freesoundApiKey === 'string' ? freesoundApiKey.trim() : undefined,
     previewPrivateNetwork: toBoolean(links.previewPrivateNetwork),
+    relayEnabled: toBoolean(push.relayEnabled),
     inviteOnly: toBoolean(registration.inviteOnly)
   };
 };
@@ -90,7 +94,8 @@ const readDatabaseValues = async (): Promise<TMirroredValues> => {
     allowNewUsers: settings.allowNewUsers,
     klipyApiKey: settings.klipyApiKey ?? '',
     freesoundApiKey: settings.freesoundApiKey ?? '',
-    previewPrivateNetwork: settings.linkPreviewsPrivateNetwork
+    previewPrivateNetwork: settings.linkPreviewsPrivateNetwork,
+    relayEnabled: settings.pushRelayEnabled
   };
 };
 
@@ -113,7 +118,8 @@ const applyToDatabase = async (changes: Partial<TMirroredValues>) => {
       changes.freesoundApiKey === undefined
         ? undefined
         : changes.freesoundApiKey || null,
-    linkPreviewsPrivateNetwork: changes.previewPrivateNetwork
+    linkPreviewsPrivateNetwork: changes.previewPrivateNetwork,
+    pushRelayEnabled: changes.relayEnabled
   });
 };
 
@@ -125,6 +131,7 @@ const writeFile = async (values: TMirroredValues) => {
   const gifs = toSection(parsed.gifs);
   const links = toSection(parsed.links);
   const sounds = toSection(parsed.sounds);
+  const push = toSection(parsed.push);
 
   delete registration.inviteOnly;
   // file links are always signed now, there is nothing left to switch
@@ -146,6 +153,7 @@ const writeFile = async (values: TMirroredValues) => {
     ...links,
     previewPrivateNetwork: values.previewPrivateNetwork
   };
+  parsed.push = { ...push, relayEnabled: values.relayEnabled };
 
   // recorded first, so the watcher sees the write as already in sync
   await fs.writeFile(LAST_SYNC_PATH, JSON.stringify(values));

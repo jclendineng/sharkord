@@ -212,12 +212,12 @@ struct GeneralSettingsScreen: View {
 
             if let usesRelay = settings.wrappedValue.pushRelayEnabled {
                 Section {
-                    Toggle("Send Through the Relay", isOn: Binding(
+                    Toggle("Send Push Notifications", isOn: Binding(
                         get: { usesRelay },
                         set: { settings.wrappedValue.pushRelayEnabled = $0 }
                     ))
                 } footer: {
-                    Text("The app's relay delivers notifications, so this server needs no Apple developer account, and it only sees them encrypted. Off, no third party service carries them, and phones get notifications only if this server has its own Apple push key.")
+                    Text("Notifications reach devices through the app's relay, which only sees them encrypted. Off, this server sends no push notifications. The same switch is relayEnabled under [push] in config.ini.")
                         .wrappingFooter()
                 }
             }

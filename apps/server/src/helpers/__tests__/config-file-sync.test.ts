@@ -42,6 +42,11 @@ const resetToUnsynced = async () => {
   delete parsed.links;
   delete parsed.sounds;
 
+  // the relay's address stays, only the switch is mirrored
+  if (parsed.push) {
+    delete parsed.push.relayEnabled;
+  }
+
   await writeIni(parsed);
   await fs.rm(LAST_SYNC_PATH, { force: true });
 };
@@ -71,6 +76,7 @@ describe('syncConfigFile', () => {
     expect(parsed.gifs).toEqual({ klipyApiKey: '' });
     expect(parsed.sounds).toEqual({ freesoundApiKey: '' });
     expect(parsed.links).toEqual({ previewPrivateNetwork: false });
+    expect(parsed.push.relayEnabled).toBe(true);
   });
 
   test('should keep the rest of the file as it was', async () => {
@@ -102,6 +108,38 @@ describe('syncConfigFile', () => {
     expect(allowNewUsers).toBe(false);
     expect(klipyApiKey).toBe('from-the-file');
     expect(linkPreviewsPrivateNetwork).toBe(true);
+  });
+
+  test('should turn push off from the file, keeping the relay address', async () => {
+    await syncConfigFile();
+
+    const parsed = await readIni();
+    const { relayUrl } = parsed.push;
+
+    parsed.push = { ...parsed.push, relayEnabled: false };
+    await writeIni(parsed);
+
+    await syncConfigFile();
+
+    const { pushRelayEnabled } = await getSettings();
+    const after = await readIni();
+
+    expect(pushRelayEnabled).toBe(false);
+    expect(after.push).toEqual({ relayUrl, relayEnabled: false });
+  });
+
+  // every file written before the relay holds enabled=false, which meant direct push to apple
+  test('should not turn push off for the old direct push switch', async () => {
+    const parsed = await readIni();
+
+    parsed.push = { ...parsed.push, enabled: false };
+    await writeIni(parsed);
+
+    await syncConfigFile();
+
+    const { pushRelayEnabled } = await getSettings();
+
+    expect(pushRelayEnabled).toBe(true);
   });
 
   test('should apply a freesound key added to the file', async () => {
@@ -241,6 +279,18 @@ describe('others.updateSettings', () => {
     expect(parsed.storage).toBeUndefined();
     expect(parsed.gifs).toEqual({ klipyApiKey: 'typed-key' });
     expect(parsed.links).toEqual({ previewPrivateNetwork: true });
+  });
+
+  test('should write push turned off in the settings into the file', async () => {
+    await syncConfigFile();
+
+    const { caller } = await initTest(1);
+
+    await caller.others.updateSettings({ pushRelayEnabled: false });
+
+    const parsed = await readIni();
+
+    expect(parsed.push.relayEnabled).toBe(false);
   });
 
   test('should leave the file alone for other settings', async () => {

@@ -5,7 +5,7 @@ import { pushDevices, sessions, users } from '../../../db/schema';
 import { buildLoginPayload, getLoginNotificationDevices } from '../login';
 
 // user 1 signed in on two devices with push, "old" and "new", the second just now
-const signIn = async (sessionId: string, token: string) => {
+const signIn = async (sessionId: string, ticket: string) => {
   const user = await tdb
     .select({ tokenVersion: users.tokenVersion })
     .from(users)
@@ -21,25 +21,29 @@ const signIn = async (sessionId: string, token: string) => {
 
   await tdb.insert(pushDevices).values({
     userId: 1,
-    token,
+    token: `${sessionId}-device`,
     tokenVersion: user!.tokenVersion,
     sessionId,
+    relayTicket: ticket,
+    encryptionKey: 'key',
     createdAt: Date.now()
   });
 };
 
 describe('new login notifications', () => {
   test('should go to every other device and not the one that signed in', async () => {
-    await signIn('old', 'old-token');
-    await signIn('new', 'new-token');
+    await signIn('old', 'old-ticket');
+    await signIn('new', 'new-ticket');
 
     const devices = await getLoginNotificationDevices(1, 'new');
 
-    expect(devices.map(({ token }) => token)).toEqual(['old-token']);
+    expect(devices.map(({ relayTicket }) => relayTicket)).toEqual([
+      'old-ticket'
+    ]);
   });
 
   test('should skip devices from before the sessions were ended', async () => {
-    await signIn('old', 'old-token');
+    await signIn('old', 'old-ticket');
     await tdb.update(users).set({ tokenVersion: 99 }).where(eq(users.id, 1));
 
     expect(await getLoginNotificationDevices(1, 'new')).toEqual([]);

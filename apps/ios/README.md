@@ -154,32 +154,17 @@ bound to a PKCE style challenge the app sends up and proves with its verifier on
 
 ## Push notifications
 
-Through the push relay when the server publishes a `pushRelayKey` in `/info`, otherwise
-straight from the server with its own APNs key.
+Through the push relay, on any server whose `/info` publishes a `pushRelayKey`; a server whose
+admins turned push off publishes none. For each server the app makes a P-256 key
+(`Shared/PushKeys.swift`, in the `com.sharkord.shared` keychain group so the extension can read
+it), asks the relay for a ticket (`Networking/PushRelay.swift`) and registers the ticket and the
+public key with the server. The relay's address is the `SHARKORD_PUSH_RELAY_URL` build setting,
+read from `SharkordPushRelayURL` in Info.plist.
 
-**Relay.** For each server the app makes a P-256 key (`Shared/PushKeys.swift`, in the
-`com.sharkord.shared` keychain group so the extension can read it), asks the relay for a ticket
-(`Networking/PushRelay.swift`) and registers the ticket and the public key with the server. The
-relay's address is the `SHARKORD_PUSH_RELAY_URL` build setting, read from `SharkordPushRelayURL`
-in Info.plist. A push from the relay holds only ciphertext; the `SharkordNotifications`
-extension tries each server's key, and the one that opens it gives the title, body, thread and
-the `serverId` and `channelId` a tap opens. Signing out drops that server's key. A server admin
-can turn the relay off with **Send Through the Relay** in General settings.
-
-**Direct.** Off by default. The server talks to APNs with the operator's own `.p8` key, so the
-app has to be built and signed under the same team:
-
-```bash
-SHARKORD_PUSH_ENABLED=true
-SHARKORD_PUSH_APNS_KEY_ID=...
-SHARKORD_PUSH_APNS_TEAM_ID=...
-SHARKORD_PUSH_APNS_KEY_PATH=/path/to/AuthKey.p8
-SHARKORD_PUSH_APNS_BUNDLE_ID=com.sharkord.ios
-```
-
-The app registers its device token with every server after joining. Each push carries the
-server's `serverId`, so a tap opens the right server. It is notified for direct messages,
-mentions and replies, the same set the web client notifies for.
+A push from the relay holds only ciphertext. The `SharkordNotifications` extension tries each
+server's key, and the one that opens it gives the title, body, thread and the `serverId`,
+`channelId`, `messageId` and `parentMessageId` a tap opens. A tap that launches the app waits
+in `ServerListStore` until that server has loaded. Signing out drops that server's key.
 
 ## Voice
 

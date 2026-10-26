@@ -7,10 +7,10 @@ import {
   getMockedToken,
   getSessionCaller,
   initTest,
-  login
+  login,
+  testPushKey
 } from '../../__tests__/helpers';
 import { tdb } from '../../__tests__/setup';
-import { config } from '../../config';
 import { getUserByToken } from '../../db/queries/users';
 import { pushDevices, sessions } from '../../db/schema';
 import { getTokenSessionId } from '../../helpers/session-token';
@@ -134,18 +134,11 @@ describe('sessions router', () => {
     const { caller: phone, sessionId: phoneSessionId } =
       await getSessionCaller(1);
 
-    const pushWasEnabled = config.push.enabled;
-
-    config.push.enabled = true;
-
-    try {
-      await phone.notifications.registerDevice({
-        token: DEVICE_TOKEN,
-        sandbox: false
-      });
-    } finally {
-      config.push.enabled = pushWasEnabled;
-    }
+    await phone.notifications.registerDevice({
+      token: DEVICE_TOKEN,
+      relayTicket: 'ticket',
+      encryptionKey: testPushKey.encryptionKey
+    });
 
     const registered = await tdb
       .select({ sessionId: pushDevices.sessionId })

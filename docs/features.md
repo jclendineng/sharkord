@@ -28,15 +28,23 @@ answered.
 
 ## Push notifications
 
-Two ways to send, and a server can do both.
+Every notification goes through the push relay (`apps/push-relay`, a Cloudflare Worker), which
+holds the app's Apple keys and forwards for every server, so no server needs an Apple developer
+account. It is on by default and set in `config.ini`:
 
-**Through the push relay**, which needs no Apple account. The relay (`apps/push-relay`, a
-Cloudflare Worker) holds the app's keys and forwards for every server:
-
-```bash
-SHARKORD_PUSH_RELAY_URL=https://...
+```ini
+[push]
+relayEnabled=true
+; empty is the relay the published app uses
+relayUrl=
 ```
 
+- **Send Push Notifications** (Server Settings, Overview, Push Notifications) is the same switch
+  as `relayEnabled`, and each follows the other. Off, the server stops publishing its relay key,
+  refuses devices and sends nothing, so it sends no push notifications at all. Setting:
+  `pushRelayEnabled`.
+- `relayUrl` can also come from `SHARKORD_PUSH_RELAY_URL`. A fork with its own app build
+  deploys its own relay and points both its servers and its app build at it.
 - The server makes an ed25519 key on first use (`push-relay-key.pem` in the data folder) and
   publishes the public half in `/info` as `pushRelayKey`. Keep the file: a new key makes every
   device register again.
@@ -48,35 +56,19 @@ SHARKORD_PUSH_RELAY_URL=https://...
 - The app's notification service extension decrypts each push with the key it made for that
   server, so the real title and body show. One that will not open shows "New notification".
   Every launch asks for a fresh ticket, which lasts 30 days.
-- The relay address is a build setting of the app (`SHARKORD_PUSH_RELAY_URL` in the Xcode
-  project), not of any server. A fork with its own app build deploys its own relay.
-- **Send Through the Relay** (Server Settings, Overview, Push Notifications) is on by default.
-  An admin who would rather no third party service carried notifications turns it off: the
-  server stops publishing its relay key, refuses relay devices and sends nothing to the relay.
-  Phones then get notifications only through the server's own Apple key, if it has one.
-  Setting: `pushRelayEnabled`.
+- The relay address the app asks for tickets is a build setting of the app
+  (`SHARKORD_PUSH_RELAY_URL` in the Xcode project), not of any server.
 
-**Directly to Apple** with the operator's own key, for someone with their own app build. Off
-until configured:
-
-```bash
-SHARKORD_PUSH_ENABLED=true
-SHARKORD_PUSH_APNS_KEY_ID=...
-SHARKORD_PUSH_APNS_TEAM_ID=...
-SHARKORD_PUSH_APNS_KEY_PATH=/path/to/AuthKey.p8
-SHARKORD_PUSH_APNS_BUNDLE_ID=com.sharkord.ios
-```
-
-A push goes out for direct messages, mentions, replies, and every message in a channel set to
-notify for all. Do not disturb silences every device.
+A push goes out for direct messages, mentions, replies, replies in a thread someone started,
+and every message in a channel set to notify for all. Do not disturb silences every device.
 
 **Show message text** (Server Settings, Overview, Push Notifications) is on by default. Off,
-a notification only says who sent something, never what it says or where, so the text never
-passes through Apple. Setting: `pushShowMessageContent`.
+a notification only says who sent something, never what it says or where. Setting:
+`pushShowMessageContent`.
 
-Code: `apps/server/src/utils/apns.ts`, `apps/server/src/utils/push-relay.ts`,
-`apps/server/src/utils/push-encryption.ts`, `apps/server/src/queues/push-notifications`,
-routes `notifications.registerDevice` and `notifications.unregisterDevice`.
+Code: `apps/server/src/utils/push-relay.ts`, `apps/server/src/utils/push-encryption.ts`,
+`apps/server/src/queues/push-notifications`, routes `notifications.registerDevice` and
+`notifications.unregisterDevice`.
 
 ## Per channel notifications
 

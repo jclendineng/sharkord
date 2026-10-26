@@ -1,9 +1,13 @@
 import { Permission } from '@sharkord/shared';
-import { describe, expect, spyOn, test } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { and, eq } from 'drizzle-orm';
-import { initTest } from '../../__tests__/helpers';
+import {
+  initTest,
+  pushedPayload,
+  registerPushDevice,
+  spyOnPushRelay
+} from '../../__tests__/helpers';
 import { tdb } from '../../__tests__/setup';
-import { config } from '../../config';
 import {
   messages,
   pollAnswers,
@@ -13,7 +17,6 @@ import {
   rolePermissions
 } from '../../db/schema';
 import { drainPushNotificationsQueue } from '../../queues/push-notifications';
-import * as apns from '../../utils/apns';
 
 const createPoll = async (
   userId = 1,
@@ -137,33 +140,14 @@ describe('polls.create', () => {
   });
 
   test('should push the question to the other side of a direct message', async () => {
-    const original = config.push.enabled;
+    await registerPushDevice(4);
 
-    config.push.enabled = true;
+    const spy = spyOnPushRelay();
 
-    const { caller: userB } = await initTest(4);
+    await createPoll(3, { channelId: 3 });
+    await drainPushNotificationsQueue();
 
-    await userB.notifications.registerDevice({
-      token: '4'.padStart(64, 'a'),
-      sandbox: false
-    });
-
-    const spy = spyOn(apns, 'sendApnsNotification').mockResolvedValue({
-      status: 200
-    });
-
-    try {
-      await createPoll(3, { channelId: 3 });
-      await drainPushNotificationsQueue();
-    } finally {
-      config.push.enabled = original;
-    }
-
-    const [[notification]] = spy.mock.calls as unknown as [
-      [apns.TApnsNotification]
-    ];
-
-    expect(notification.payload).toMatchObject({
+    expect(await pushedPayload(spy)).toMatchObject({
       aps: { alert: { body: 'Poll: Pizza or tacos?' } }
     });
 
