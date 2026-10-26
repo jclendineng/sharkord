@@ -170,6 +170,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 #### iOS app
 
 - A native iOS and iPad app, signing in to any server by its address, with push notifications, SSO and server passwords.
+- The native Mac app goes to TestFlight from GitHub Actions, and TestFlight keeps it up to date, so there is no release to download each time.
 - A new layout: server rail, channel list and a floating user bar.
   - On iPad the channel list and the chat sit side by side as two rounded cards in both orientations.
   - A handle slides the chat over the list to full width, and typing slides it over by itself.

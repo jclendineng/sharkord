@@ -1,0 +1,96 @@
+name: Mac TestFlight
+
+on:
+  workflow_dispatch:
+    inputs:
+      notes:
+        description: "What's new, shown to testers"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  # the voice frameworks are too big for git, they live on this release, see apps/ios/Packages/Mediasoup/README.md
+  FRAMEWORKS_RELEASE: mediasoup-0.13.2-mac1
+  MEDIASOUP_SHA256: 3ba43a06e09e898ef64489ecb00f555fa3fb42fceeb9d04313fae92a63602a20
+  WEBRTC_SHA256: edd9026659dcda25a0b11e73d9e630f70b6c0dfffd4fe4e537b6177f5cc791a2
+
+jobs:
+  testflight:
+    runs-on: xcode-27
+    timeout-minutes: 90
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.4
+
+      - name: Download voice frameworks
+        working-directory: apps/ios/Packages/Mediasoup
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "$FRAMEWORKS_RELEASE" -R "$GITHUB_REPOSITORY" -p '*.xcframework.zip'
+          echo "$MEDIASOUP_SHA256  Mediasoup.xcframework.zip" | shasum -a 256 -c
+          echo "$WEBRTC_SHA256  WebRTC.xcframework.zip" | shasum -a 256 -c
+          ditto -x -k Mediasoup.xcframework.zip .
+          ditto -x -k WebRTC.xcframework.zip .
+          rm *.xcframework.zip
+
+      - name: Write App Store Connect key
+        env:
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+          NOTES: ${{ inputs.notes }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/asc"
+          printf '%s' "$ASC_PRIVATE_KEY" > "$RUNNER_TEMP/asc/AuthKey.p8"
+          printf '%s' "$NOTES" > "$RUNNER_TEMP/asc/notes.txt"
+          echo "BUILD_NUMBER=$(date -u +%Y%m%d%H%M)" >> "$GITHUB_ENV"
+
+      - name: Archive and upload
+        working-directory: apps/ios
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          auth=(-allowProvisioningUpdates
+            -authenticationKeyPath "$RUNNER_TEMP/asc/AuthKey.p8"
+            -authenticationKeyID "$ASC_KEY_ID"
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID")
+
+          cat > "$RUNNER_TEMP/export.plist" <<'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+          <key>method</key><string>app-store-connect</string>
+          <key>destination</key><string>upload</string>
+          <key>signingStyle</key><string>automatic</string>
+          <key>teamID</key><string>KNSS87R6RR</string>
+          </dict></plist>
+          EOF
+
+          xcodebuild archive -project Sharkord.xcodeproj -scheme Sharkord \
+            -destination 'generic/platform=macOS' \
+            -archivePath "$RUNNER_TEMP/Sharkord.xcarchive" \
+            DEVELOPMENT_TEAM=KNSS87R6RR CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            "${auth[@]}" -quiet
+
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/Sharkord.xcarchive" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -exportOptionsPlist "$RUNNER_TEMP/export.plist" \
+            "${auth[@]}"
+
+      - name: Release to Public TestFlight
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_PATH: ${{ runner.temp }}/asc/AuthKey.p8
+        run: |
+          notes=()
+          if [ -s "$RUNNER_TEMP/asc/notes.txt" ]; then notes=(--notes "$RUNNER_TEMP/asc/notes.txt"); fi
+          bun apps/ios/scripts/testflight.ts --platform MAC_OS --build "$BUILD_NUMBER" "${notes[@]}"

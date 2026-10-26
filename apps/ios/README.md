@@ -214,3 +214,16 @@ xcodebuild test -project Sharkord.xcodeproj -scheme Sharkord \
 ```
 
 Screenshots of every step are kept in the result bundle.
+
+## TestFlight
+
+The Mac app goes to TestFlight from GitHub Actions: run the **Mac TestFlight** workflow, with
+the tester notes as its input. It archives on the `xcode-27` runner, signs with Apple's cloud
+managed certificates through the App Store Connect key, uploads, and then
+`scripts/testflight.ts` waits for processing, sets the notes, adds the build to the Public group,
+submits it for beta review and expires the older Mac builds. TestFlight and the App Store keep
+the app up to date by themselves, so nobody downloads a release by hand.
+
+The workflow needs three repository secrets from the same key: `ASC_KEY_ID`, `ASC_ISSUER_ID` and
+`ASC_PRIVATE_KEY` (the contents of the `.p8`). The script works for the iOS builds too, run with
+`--platform IOS` after an upload from Xcode.
