@@ -136,16 +136,6 @@ private struct RequestedChannelOpener: ViewModifier {
         if let detailChannelId {
             detailChannelId.wrappedValue = channelId
             path = NavigationPath()
-
-            // the same channel already beside the list is not opened again, so a jump to one
-            // of its messages has to be asked for here
-            let store = session.messages(for: channelId)
-
-            if store.pendingJumpMessageId != nil {
-                Task {
-                    await store.loadIfNeeded()
-                }
-            }
         } else {
             path = NavigationPath([ChatRoute(channelId: channelId)])
         }

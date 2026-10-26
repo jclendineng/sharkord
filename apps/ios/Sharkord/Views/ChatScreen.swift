@@ -312,6 +312,15 @@ struct ChatScreen: View {
             servers.isChatDropdownOpen = false
             store.isVisible = false
         }
+        // a jump asked for while this chat is already open, by a tapped notification or a search
+        // result in it, which the task above only makes when the chat first appears
+        .onChange(of: store.pendingJumpMessageId) { _, messageId in
+            if messageId != nil {
+                Task {
+                    await store.loadIfNeeded()
+                }
+            }
+        }
         // a group left, or a channel deleted, takes its chat with it back to the list
         .onChange(of: channel == nil) { _, isGone in
             if isGone {

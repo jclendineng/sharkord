@@ -44,9 +44,11 @@ struct MessageListView<Header: View>: View {
     var body: some View {
         ScrollViewReader { proxy in
             messageList
+                // a thread asked for opens as soon as the jump lands, rather than after the
+                // highlight its first message gets in the chat under it
                 .task(id: store.focusedMessageId) {
-                    await scrollToFocused(proxy)
                     openPendingThread()
+                    await scrollToFocused(proxy)
                 }
                 .overlay(alignment: .bottomTrailing) {
                     if isAwayFromBottom, !store.hasNewer {
