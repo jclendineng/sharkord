@@ -62,7 +62,7 @@ struct ServerSettingsScreen: View {
     }
 
     private var splitView: some View {
-        NavigationSplitView {
+        SettingsWindow {
             // discord's settings sidebar: plain rows with a soft rounded highlight, no cards or
             // lines between them
             List {
@@ -84,15 +84,6 @@ struct ServerSettingsScreen: View {
             .settingsSidebarStyle()
             // its first rows have no title or search above them, and sat against the sheet's edge
             .safeAreaPadding(.top, 10)
-            .navigationTitle("Server Settings")
-            .inlineNavigationTitle()
-            #if !os(macOS)
-            .toolbar {
-                ActionToolbarItem(placement: .cancellationAction) {
-                    Button("Close", systemImage: "xmark", action: close)
-                }
-            }
-            #endif
         } detail: {
             // a stack of its own per page, so a page's own links push inside it and picking
             // another page starts over
@@ -104,10 +95,6 @@ struct ServerSettingsScreen: View {
             }
             .id(selection)
         }
-        .navigationSplitViewStyle(.balanced)
-        // a pushed page's back button in the bar's neutral colour, not a blurple disc
-        .tint(Theme.header)
-        .background(Theme.deepBackground)
         .onAppear(perform: selectFirstPage)
     }
 

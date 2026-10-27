@@ -181,7 +181,9 @@ private struct MemberColumnRow: View {
         isHovered = hovered
     }
 
+    // the chat's inbox or pins go away for it, which a click on a button never told
     private func showProfile() {
+        servers.chatDropdownDismissals += 1
         isProfilePresented = true
     }
 

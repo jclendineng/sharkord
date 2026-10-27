@@ -382,6 +382,15 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - The Mac app keeps its sign in where the iPhone app does, so it no longer asks for the login keychain password after an update or a reinstall. Anyone already signed in on a Mac signs in once more.
 - The inbox clears. A mention leaves it once its channel is read, and Mark All As Read in the inbox clears every server at once. Mentions used to stay there for good. Needs the updated server.
 - On a Mac, a click in the channel list or the server rail, or a right click anywhere outside it, puts away the inbox, pins, threads or search panel and still opens what it landed on.
+- Tapping a mention in the inbox opens the chat at that message, and an unread channel opens at its first unread message.
+- The new messages divider and the jump to the first unread message land on the right message. Counting back, the app used to count your own messages too, and one sent after the unread ones put both that many messages too late.
+- A message jumped to is lit by a band across the chat with a bar at its edge, centred on its line, instead of a rounded box that sat on the lines around it. A Mac's hover band is centred the same way, and a message stays lit while its right click menu is open.
+- Clicking a person's avatar or name in a message opens their profile.
+- On a Mac, a right click while a menu is open moves the menu to what was clicked, or closes it on an empty spot, and a click on a toolbar button closes it too.
+- On a Mac, opening a profile or the member list puts away the inbox, pins, threads or search panel.
+- The open chat is only marked read while the app is in front, so a Mac left open behind other windows no longer reads messages before your phone sees them.
+- On a Mac, a click anywhere in the chat or the member list also puts away an open panel. The channel bell menu shows its levels properly, the settings windows have a solid background, a sidebar in line with the page, and close with Escape, and the chat's scroll bar clears the card's rounded corner.
+- Mark All As Read sits under the inbox's tabs and only shows when there is something to clear.
 - A reply's quote line sits with its message, with the gap above it, instead of pressed against the message before, and pressing the reply highlights the quote line too.
 - An animated GIF in a message shows its first frame straight away, and after a launch it is there at once instead of leaving a gap while it loads.
 - An empty channel's chat fills the screen, instead of leaving black strips down both sides.

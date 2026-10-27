@@ -227,6 +227,9 @@ enum PointerMenus {
     }
 
     fileprivate static func show(_ id: UUID, at point: CGPoint, content: AnyView, close: @escaping () -> Void) {
+        #if os(macOS)
+        watchClicks()
+        #endif
         opened(id, close: close)
         state.submenu = nil
         state.shown = ShownPointerMenu(id: id, point: point, content: content)
@@ -252,6 +255,31 @@ enum PointerMenus {
             state.submenu = nil
         }
     }
+
+    #if os(macOS)
+    private static var clickMonitor: Any?
+
+    // a click outside the open menu closes it. the backdrop catches most of them, but not one on
+    // the window's toolbar, the inbox and pins buttons among them, which left the menu open
+    private static func watchClicks() {
+        guard clickMonitor == nil else {
+            return
+        }
+
+        clickMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { event in
+            if state.shown != nil, let content = event.window?.contentView {
+                let point = content.convert(event.locationInWindow, from: nil)
+                let isOnSubmenu = state.submenu != nil && state.submenuFrame.contains(point)
+
+                if !state.menuFrame.contains(point), !isOnSubmenu {
+                    closeCurrent()
+                }
+            }
+
+            return event
+        }
+    }
+    #endif
 
     static func closeCurrent() {
         let menu = openMenu
@@ -318,6 +346,11 @@ struct PointerMenuLayer: View {
                 Color.clear
                     .contentShape(.rect)
                     .onTapGesture(perform: PointerMenus.closeCurrent)
+                    #if os(macOS)
+                    .overlay {
+                        BackdropRightClick()
+                    }
+                    #endif
 
                 // escape closes it, as it does a mac menu
                 Button("Close Menu", action: PointerMenus.closeCurrent)
@@ -484,6 +517,39 @@ private struct SecondaryClickView: NSViewRepresentable {
     func updateNSView(_ view: RightClickOnlyView, context: Context) {
         view.action = action
     }
+}
+
+// the open menu's backdrop over the whole window took a right click for itself, so the row
+// under it never heard it and the menu neither moved nor closed. it hands the click on, as the
+// window's own catcher does in the ipad app
+private final class BackdropRightClickView: NSView {
+    override var isFlipped: Bool {
+        true
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        guard let event = NSApp.currentEvent, event.type == .rightMouseDown || event.type == .rightMouseUp else {
+            return nil
+        }
+
+        return super.hitTest(point)
+    }
+
+    override func rightMouseDown(with event: NSEvent) {
+        guard let content = window?.contentView else {
+            return
+        }
+
+        PointerMenus.rightClick(at: content.convert(event.locationInWindow, from: nil), on: nil)
+    }
+}
+
+private struct BackdropRightClick: NSViewRepresentable {
+    func makeNSView(context: Context) -> BackdropRightClickView {
+        BackdropRightClickView()
+    }
+
+    func updateNSView(_ view: BackdropRightClickView, context: Context) {}
 }
 #else
 // the window's own catcher for a right click on nothing that has a menu, found after every row

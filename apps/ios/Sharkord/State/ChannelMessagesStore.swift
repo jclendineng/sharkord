@@ -25,6 +25,8 @@ final class ChannelMessagesStore {
     // a thread to open once the jump has brought its first message into the list, for a tapped
     // notification about a reply in it
     var pendingThreadParentId: Int?
+    // the inbox's unreads open the chat at its first unread message, lit up
+    var pendingJumpToFirstUnread = false
     private(set) var hasLoaded = false
     private(set) var isLoading = false
     var errorMessage: String?
@@ -143,15 +145,26 @@ final class ChannelMessagesStore {
         unreadMarker = UnreadMarker(count: count, anchorMessageId: newest.id)
     }
 
-    // the first unread message, when it is loaded
+    // the first unread message, when it is loaded. the server's count leaves out the user's own
+    // messages, so counting back steps over them: counted as well, one sent after the unread
+    // ones put the divider and the jump that many messages too late
     var firstUnreadMessage: Message? {
         guard let unreadMarker, let anchor = messages.firstIndex(where: { $0.id == unreadMarker.anchorMessageId }) else {
             return nil
         }
 
-        let index = anchor - unreadMarker.count + 1
+        let ownUserId = session.ownUserId
+        var remaining = unreadMarker.count
 
-        return messages.indices.contains(index) ? messages[index] : nil
+        for index in stride(from: anchor, through: 0, by: -1) where messages[index].userId != ownUserId {
+            remaining -= 1
+
+            if remaining == 0 {
+                return messages[index]
+            }
+        }
+
+        return nil
     }
 
     // older pages until the first unread one is in, then the list goes to it

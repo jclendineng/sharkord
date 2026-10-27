@@ -343,7 +343,7 @@ final class ServerListStore {
 
     // a tapped notification or an entry in the unreads inbox
     // with a message, the chat opens at it rather than at the newest
-    func open(channelId: Int, messageId: Int? = nil, threadParentId: Int? = nil, in session: SessionStore) {
+    func open(channelId: Int, messageId: Int? = nil, threadParentId: Int? = nil, atFirstUnread: Bool = false, in session: SessionStore) {
         let store = session.messages(for: channelId)
 
         // a reply in a thread opens the thread, from its first message in the channel
@@ -352,6 +352,8 @@ final class ServerListStore {
             store.pendingThreadParentId = threadParentId
         } else if let messageId {
             store.pendingJumpMessageId = messageId
+        } else if atFirstUnread {
+            store.pendingJumpToFirstUnread = true
         }
 
         searchDropdown = nil

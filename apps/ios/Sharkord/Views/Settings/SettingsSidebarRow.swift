@@ -40,13 +40,41 @@ struct SettingsSidebarRow: View {
         }
         .buttonStyle(.plain)
         .onHover(perform: setHovered)
-        .listRowInsets(EdgeInsets(top: 1, leading: 8, bottom: 1, trailing: 8))
+        .listRowInsets(EdgeInsets(top: 2, leading: 8, bottom: 2, trailing: 8))
         .listRowSeparator(.hidden)
         .listRowBackground(Color.clear)
     }
 
     private func setHovered(_ hovered: Bool) {
         isHovered = hovered
+    }
+}
+
+// a mac settings window: the pages down the side and the page beside them, laid out by hand. a
+// split view in a mac sheet floated its sidebar as an inset card, out of line with the page and
+// taller than it, and the sheet's glass showed the window through wherever the page did not paint
+struct SettingsWindow<Sidebar: View, Detail: View>: View {
+    @ViewBuilder let sidebar: Sidebar
+    @ViewBuilder let detail: Detail
+
+    var body: some View {
+        HStack(spacing: 0) {
+            sidebar
+                .frame(width: 260)
+                .frame(maxHeight: .infinity)
+
+            Theme.divider
+                .frame(width: 1)
+
+            detail
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        // a pushed page's back button in the bar's neutral colour, not a blurple disc
+        .tint(Theme.header)
+        .background(Theme.deepBackground)
+        .presentationBackground(Theme.deepBackground)
+        // escape closes it, as it does every other mac sheet
+        .escapeGoesBack()
     }
 }
 
@@ -60,6 +88,8 @@ struct SettingsSidebarHeader: View {
             .foregroundStyle(Theme.muted)
             // the row's 8 inset and 10 padding, and the icon's own 2 inside its frame
             .padding(.leading, 20)
+            // apart from the section above, whose last row it otherwise sat against
+            .padding(.top, 10)
     }
 }
 

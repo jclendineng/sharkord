@@ -886,6 +886,11 @@ final class SessionStore {
 
     // ios suspends the socket in the background, so coming back is the moment to retry without waiting
     func appDidBecomeActive() {
+        // what arrived in the open chat while the app was behind others is read now
+        for (channelId, store) in messageStores where store.isVisible {
+            Task { await markAsRead(channelId) }
+        }
+
         guard phase == .reconnecting, let address, let token else {
             return
         }
@@ -2452,7 +2457,9 @@ final class SessionStore {
 
             self.unreadCounts[delta.channelId, default: 0] += delta.delta
 
-            if self.messageStores[delta.channelId]?.isVisible == true {
+            // only while the app is in front: a mac left open behind other windows read every
+            // message as it came, and the account's other devices never saw it unread
+            if self.messageStores[delta.channelId]?.isVisible == true, Platform.isAppActive {
                 Task { await self.markAsRead(delta.channelId) }
             }
         }

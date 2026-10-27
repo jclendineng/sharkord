@@ -24,19 +24,12 @@ struct InboxSheet: View {
             // the mac's dropdown names itself, as pins does: a navigation title there would go
             // up into the chat's own bar
             VStack(spacing: 0) {
-                HStack {
-                    Text("Inbox")
-                        .font(.headline)
-                        .foregroundStyle(Theme.header)
-
-                    Spacer()
-
-                    markAllButton
-                        .buttonStyle(.borderless)
-                        .font(.subheadline)
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
+                Text("Inbox")
+                    .font(.headline)
+                    .foregroundStyle(Theme.header)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
 
                 Theme.divider
                     .frame(height: 1)
@@ -49,10 +42,6 @@ struct InboxSheet: View {
                     .navigationTitle("Inbox")
                     .inlineNavigationTitle()
                     .toolbar {
-                        ToolbarItem(placement: .barLeading) {
-                            markAllButton
-                        }
-
                         ActionToolbarItem(placement: .confirmationAction) {
                             Button("Done", action: close)
                         }
@@ -60,11 +49,6 @@ struct InboxSheet: View {
             }
             .presentationBackground(Theme.deepBackground)
         }
-    }
-
-    private var markAllButton: some View {
-        Button("Mark All As Read", action: markAllAsRead)
-            .disabled(isMarkingRead)
     }
 
     private var content: some View {
@@ -81,12 +65,16 @@ struct InboxSheet: View {
 
             switch tab {
             case .mentions:
-                MentionsList(reloads: mentionsReloads, onOpen: open)
+                MentionsList(reloads: mentionsReloads, markAll: markAll, onOpen: openMention)
             case .unreads:
-                UnreadsList(onOpen: open)
+                UnreadsList(markAll: markAll, onOpen: openUnread)
             }
         }
         .background(Theme.deepBackground)
+    }
+
+    private var markAll: MarkAllBar {
+        MarkAllBar(isMarking: isMarkingRead, action: markAllAsRead)
     }
 
     private func markAllAsRead() {
@@ -102,9 +90,15 @@ struct InboxSheet: View {
         }
     }
 
-    private func open(_ channelId: Int, in server: SessionStore) {
+    // at the message, as a notification's tap is, or its thread for a reply inside one
+    private func openMention(_ message: Message, in server: SessionStore) {
         close()
-        servers.open(channelId: channelId, in: server)
+        servers.open(channelId: message.channelId, messageId: message.id, threadParentId: message.parentMessageId, in: server)
+    }
+
+    private func openUnread(_ channelId: Int, in server: SessionStore) {
+        close()
+        servers.open(channelId: channelId, atFirstUnread: true, in: server)
     }
 
     private func close() {
@@ -113,6 +107,25 @@ struct InboxSheet: View {
         } else {
             dismiss()
         }
+    }
+}
+
+// under the tabs, where a list's bulk action goes, and only while the tab has something to clear
+private struct MarkAllBar: View {
+    let isMarking: Bool
+    let action: () -> Void
+
+    var body: some View {
+        HStack {
+            Spacer()
+
+            Button("Mark All As Read", action: action)
+                .buttonStyle(.borderless)
+                .font(.subheadline)
+                .disabled(isMarking)
+        }
+        .padding(.horizontal, 16)
+        .padding(.bottom, 4)
     }
 }
 
@@ -126,7 +139,8 @@ private struct ServerMention: Identifiable {
 private struct MentionsList: View {
     // bumped to load the list again, after the inbox was marked as read
     let reloads: Int
-    let onOpen: (Int, SessionStore) -> Void
+    let markAll: MarkAllBar
+    let onOpen: (Message, SessionStore) -> Void
 
     @Environment(ServerListStore.self) private var servers
 
@@ -135,6 +149,16 @@ private struct MentionsList: View {
     @State private var isLoading = true
 
     var body: some View {
+        VStack(spacing: 0) {
+            if !mentions.isEmpty {
+                markAll
+            }
+
+            list
+        }
+    }
+
+    private var list: some View {
         List {
             if let errorMessage {
                 Text(errorMessage)
@@ -143,9 +167,11 @@ private struct MentionsList: View {
             }
 
             ForEach(mentions) { mention in
-                MentionRow(message: mention.message, onOpen: { onOpen(mention.message.channelId, mention.server) })
+                MentionRow(message: mention.message, onOpen: { onOpen(mention.message, mention.server) })
                     .environment(mention.server)
                     .listRowBackground(Theme.listBackground)
+                    // a divider under the last row reads as a stray line above the empty space
+                    .listRowSeparator(mention.id == mentions.last?.id ? .hidden : .automatic, edges: .bottom)
             }
         }
         .listStyle(.plain)
@@ -243,6 +269,7 @@ private struct MentionRow: View {
 }
 
 private struct UnreadsList: View {
+    let markAll: MarkAllBar
     let onOpen: (Int, SessionStore) -> Void
 
     @Environment(ServerListStore.self) private var servers
@@ -252,6 +279,16 @@ private struct UnreadsList: View {
     }
 
     var body: some View {
+        VStack(spacing: 0) {
+            if hasUnread {
+                markAll
+            }
+
+            list
+        }
+    }
+
+    private var list: some View {
         List {
             ForEach(servers.sessions) { server in
                 if !server.unreadChannels.isEmpty {

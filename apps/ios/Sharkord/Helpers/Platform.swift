@@ -37,6 +37,15 @@ enum Platform {
         !isPad
     }
 
+    // in front and in use. a mac app keeps running behind others, with its chat still on screen
+    static var isAppActive: Bool {
+        #if os(macOS)
+        NSApp.isActive
+        #else
+        UIApplication.shared.applicationState == .active
+        #endif
+    }
+
     static var displayScale: CGFloat {
         #if os(macOS)
         NSScreen.main?.backingScaleFactor ?? 2

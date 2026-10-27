@@ -6,6 +6,8 @@ struct MessageRow: View {
     // the next message right under this one, with only the small gap between them
     var isFollowedClosely = false
     var showsThreadLink = true
+    // its menu is open, which keeps it lit on a mac once the pointer has moved onto the menu
+    var isShowingActions = false
     let onLongPress: () -> Void
     let onDoubleTap: () -> Void
     var onSecondaryClick: (SecondaryClick) -> Void = { _ in }
@@ -13,10 +15,12 @@ struct MessageRow: View {
     var hoverActions: MessageHoverActions?
 
     @Environment(SessionStore.self) private var session
+    @Environment(ServerListStore.self) private var servers
     @Environment(\.isShowingMessageActions) private var isShowingMessageActions
     @Environment(\.openThreadPanel) private var openThreadPanel
 
     @State private var isHovered = false
+    @State private var isProfilePresented = false
     // the finger on the row, lit as it is held so the press has something to show for it
     @State private var isFingerDown = false
 
@@ -60,8 +64,14 @@ struct MessageRow: View {
                 .opacity(isPressed ? 1 : 0)
         }
         .animation(.easeOut(duration: isPressed ? 0.08 : 0.2), value: isPressed)
-        .padding(.top, showsHeader ? 16 : 2)
-        .background(isHovered ? Color.black.opacity(0.08) : .clear)
+        .padding(.top, showsHeader ? MessageRowBand.headerGap : MessageRowBand.lineGap)
+        .background {
+            if isHovered || (isShowingActions && Platform.isMac) {
+                Rectangle()
+                    .fill(Color.black.opacity(0.08))
+                    .rowBand(hasHeader: showsHeader, isFollowedClosely: isFollowedClosely)
+            }
+        }
         // over the message's top right, discord's quick reactions, reply and the menu
         .overlay(alignment: .topTrailing) {
             if isHovered, let hoverActions {
@@ -85,7 +95,12 @@ struct MessageRow: View {
     private var row: some View {
         HStack(alignment: .top, spacing: 12) {
             if showsHeader {
-                AvatarView(user: author, size: 40)
+                Button(action: showProfile) {
+                    AvatarView(user: author, size: 40)
+                }
+                .buttonStyle(.plain)
+                .disabled(author == nil)
+                .modifier(AuthorProfilePresentation(user: author, isPresented: $isProfilePresented))
             } else {
                 Color.clear.frame(width: 40, height: 1)
             }
@@ -175,6 +190,13 @@ struct MessageRow: View {
         openThreadPanel?(message)
     }
 
+    // the popover hangs off the avatar, the name opens the same one. the chat's inbox or pins
+    // go away for it, which a click on a button never told
+    private func showProfile() {
+        servers.chatDropdownDismissals += 1
+        isProfilePresented = true
+    }
+
     private func setHovered(_ hovered: Bool) {
         guard hoverActions != nil, Platform.isMac else {
             return
@@ -190,10 +212,14 @@ struct MessageRow: View {
 
     private var header: some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
-            Text(authorName)
-                .font(.body.weight(.semibold))
-                .foregroundStyle(nameColor)
-                .lineLimit(1)
+            Button(action: showProfile) {
+                Text(authorName)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(nameColor)
+                    .lineLimit(1)
+            }
+            .buttonStyle(.plain)
+            .disabled(author == nil)
 
             if message.pluginId != nil || message.webhookName != nil {
                 Text("APP")
@@ -207,6 +233,85 @@ struct MessageRow: View {
             Text(MessageDate.timestamp(message.createdDate))
                 .font(.caption)
                 .foregroundStyle(Theme.muted)
+        }
+    }
+}
+
+// a band behind a message, the mac's hover and a jump's highlight, centred on its text. a row
+// carries its own room above the text, more over a name than over a follow-up line, and none
+// below, where the next row's begins: drawn over the row as it is, the band sat high
+enum MessageRowBand {
+    static let headerGap: CGFloat = 16
+    static let lineGap: CGFloat = 2
+
+    // as far past the text above as below. right over the next row it only takes half that
+    // row's gap, to stay off its text
+    static func reach(hasHeader: Bool, isFollowedClosely: Bool) -> CGFloat {
+        if isFollowedClosely {
+            return hasHeader ? 2 : 1
+        }
+
+        return hasHeader ? 4 : 2
+    }
+}
+
+extension View {
+    func rowBand(hasHeader: Bool, isFollowedClosely: Bool) -> some View {
+        let gap = hasHeader ? MessageRowBand.headerGap : MessageRowBand.lineGap
+        let reach = MessageRowBand.reach(hasHeader: hasHeader, isFollowedClosely: isFollowedClosely)
+
+        return padding(.top, gap - reach)
+            .padding(.bottom, -reach)
+    }
+}
+
+// the author's profile from their avatar or name: beside the avatar on a mac or an ipad, as the
+// member list's is, a sheet on a phone. an app or a webhook has no profile to show
+private struct AuthorProfilePresentation: ViewModifier {
+    let user: PublicUser?
+    @Binding var isPresented: Bool
+
+    @Environment(SessionStore.self) private var session
+    @Environment(ServerListStore.self) private var servers
+
+    func body(content: Content) -> some View {
+        if let user {
+            if Platform.isPhone {
+                content
+                    .sheet(isPresented: $isPresented) {
+                        profile(user)
+                            .appSheet(addsClose: true)
+                    }
+            } else {
+                content
+                    .popover(isPresented: $isPresented, opensAwayFrom: .leading) {
+                        profile(user)
+                            .frame(width: 340)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .presentationCompactAdaptation(.popover)
+                    }
+            }
+        } else {
+            content
+        }
+    }
+
+    // handed the stores by hand: on a mac a presentation is worked out before it inherits
+    private func profile(_ user: PublicUser) -> some View {
+        MemberProfileSheet(user: user, onMessage: { openDirectMessage(with: user) })
+            .environment(session)
+            .environment(servers)
+    }
+
+    private func openDirectMessage(with user: PublicUser) {
+        isPresented = false
+
+        Task {
+            guard let channelId = try? await session.openDirectMessage(with: user.id) else {
+                return
+            }
+
+            servers.open(channelId: channelId, in: session)
         }
     }
 }

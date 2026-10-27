@@ -9,9 +9,6 @@ struct SettingsSheet: View {
 
     @State private var selection: UserSettingsPage? = .account
     @State private var query = ""
-    // the sidebar's search takes the cursor as the window opens, as system settings' does. a mac
-    // otherwise put it in the first page's password field, bringing up the passwords list unasked
-    @FocusState private var isSearchFocused: Bool
 
     // discord's sidebar search, narrowing the pages by name
     private var sections: [(title: String, pages: [UserSettingsPage])] {
@@ -71,7 +68,7 @@ struct SettingsSheet: View {
     }
 
     private var splitView: some View {
-        NavigationSplitView {
+        SettingsWindow {
             List {
                 ForEach(sections, id: \.title) { section in
                     Section {
@@ -98,18 +95,9 @@ struct SettingsSheet: View {
                 .listSectionSeparator(.hidden)
             }
             .settingsSidebarStyle()
-            .searchable(text: $query, placement: .sidebar, prompt: "Search")
-            .searchFocused($isSearchFocused)
-            .onAppear(perform: focusSearch)
-            .navigationTitle("Settings")
-            .inlineNavigationTitle()
-            #if !os(macOS)
-            .toolbar {
-                ActionToolbarItem(placement: .cancellationAction) {
-                    Button("Close", systemImage: "xmark", action: close)
-                }
-            }
-            #endif
+            // the app's own field rather than the system's, which kept escape for itself. not
+            // focused on opening: a mac put its texted code autofill over the first rows
+            .pageSearchable(text: $query, prompt: "Search")
         } detail: {
             // a stack of its own per page, so a page's own links push inside it and picking
             // another page starts over
@@ -121,14 +109,6 @@ struct SettingsSheet: View {
             }
             .id(selection)
         }
-        .navigationSplitViewStyle(.balanced)
-        // a pushed page's back button in the bar's neutral colour, not a blurple disc
-        .tint(Theme.header)
-        .background(Theme.deepBackground)
-    }
-
-    private func focusSearch() {
-        isSearchFocused = true
     }
 
     private func close() {

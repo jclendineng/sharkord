@@ -66,6 +66,11 @@ final class AppDelegate: NSObject, PlatformApplicationDelegate, UNUserNotificati
         // one window, as messages has, with no tab bar to show in the view menu
         NSWindow.allowsAutomaticWindowTabbing = false
     }
+
+    // a mac app brought back in front from behind another one, its chat read from there
+    func applicationDidBecomeActive(_ notification: Notification) {
+        servers?.appDidBecomeActive()
+    }
     #else
     func application(
         _ application: UIApplication,

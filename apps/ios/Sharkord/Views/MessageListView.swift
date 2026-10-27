@@ -116,6 +116,7 @@ struct MessageListView<Header: View>: View {
                         showsHeader: showsHeader,
                         isFollowedClosely: isFollowedClosely(at: index),
                         showsThreadLink: store.scope == .channel,
+                        isShowingActions: actionsMessage?.id == message.id,
                         onLongPress: { showActions(for: message) },
                         onDoubleTap: { react(to: message) },
                         onSecondaryClick: { click in showActions(for: message, at: click) },
@@ -144,6 +145,9 @@ struct MessageListView<Header: View>: View {
             .padding(.bottom, 28)
         }
         .scrollPosition($scrollPosition)
+        // the bar starts on the card's straight edge, below its rounded corner, which cut the
+        // top of it off
+        .contentMargins(.top, 20, for: .scrollIndicators)
         .defaultScrollAnchor(.bottom)
         .defaultScrollAnchor(.bottom, for: .sizeChanges)
         // a chat opened with its messages already loaded lays them out at the bottom before the
@@ -560,20 +564,17 @@ private struct JumpHighlight: View {
     let hasHeader: Bool
     let isFollowedClosely: Bool
 
-    // a row carries its gap above it and none below, so the glow trims the top and reaches
-    // past the bottom, but only into free space, never over the next message's first line
+    // a band across the whole chat with a bar down its leading edge, square: a rounded box sat
+    // on the lines either side of a follow-up line, which have no gap to give it
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
-
-        shape
-            .fill(Theme.blurple.opacity(0.16 * strength))
-            .overlay {
-                shape.stroke(Theme.blurple.opacity(0.55 * strength), lineWidth: 1.5)
+        Rectangle()
+            .fill(Theme.blurple.opacity(0.14 * strength))
+            .overlay(alignment: .leading) {
+                Rectangle()
+                    .fill(Theme.blurple.opacity(0.9 * strength))
+                    .frame(width: 3)
             }
-            .shadow(color: Theme.blurple.opacity(0.4 * strength), radius: 12)
-            .padding(.horizontal, 6)
-            .padding(.top, hasHeader ? 10 : -2)
-            .padding(.bottom, isFollowedClosely ? -2 : -6)
+            .rowBand(hasHeader: hasHeader, isFollowedClosely: isFollowedClosely)
     }
 }
 

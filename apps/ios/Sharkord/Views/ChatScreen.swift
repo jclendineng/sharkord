@@ -120,14 +120,22 @@ struct ChatScreen: View {
             }
         }
         .animation(.easeOut(duration: 0.12), value: showsMemberList)
+        // a mac click in the chat puts the panel away and still opens what it landed on, a
+        // person's profile or a link, where the catcher below would take the click for itself
+        .simultaneousGesture(
+            TapGesture().onEnded(closeDropdown),
+            isEnabled: dropdown != nil && Platform.isMac
+        )
         // discord's mac pins and search slide down from under the top bar at its right edge,
         // a click anywhere else in the chat puts them away
         .overlay(alignment: .topTrailing) {
             ZStack(alignment: .topTrailing) {
                 if let dropdown {
-                    Color.clear
-                        .contentShape(.rect)
-                        .onTapGesture(perform: closeDropdown)
+                    if !Platform.isMac {
+                        Color.clear
+                            .contentShape(.rect)
+                            .onTapGesture(perform: closeDropdown)
+                    }
 
                     // fades and settles in from its corner, as discord's do; slid down from under
                     // the top bar it looked to come out of the bar itself
@@ -315,6 +323,7 @@ struct ChatScreen: View {
 
             await store.loadIfNeeded()
             store.setUnreadMarker(count: unreadCount)
+            await jumpToFirstUnreadIfAsked()
             await session.markAsRead(channelId)
         }
         .onDisappear {
@@ -327,6 +336,16 @@ struct ChatScreen: View {
             if messageId != nil {
                 Task {
                     await store.loadIfNeeded()
+                }
+            }
+        }
+        // the same for an unread channel picked in the inbox while its chat is already open
+        .onChange(of: store.pendingJumpToFirstUnread) { _, isAsked in
+            if isAsked {
+                Task {
+                    store.setUnreadMarker(count: session.unreadCounts[channelId, default: 0])
+                    await jumpToFirstUnreadIfAsked()
+                    await session.markAsRead(channelId)
                 }
             }
         }
@@ -392,6 +411,9 @@ struct ChatScreen: View {
     // the thread panel stands in the member list's place, so the button brings the list back
     // in its stead rather than doing nothing under it
     private func toggleMemberList() {
+        // the inbox or pins over the list would hide what it just showed
+        closeDropdown()
+
         if threadParent != nil {
             threadParent = nil
             showsMemberList = true
@@ -420,6 +442,23 @@ struct ChatScreen: View {
         searchModel.token = picker
         searchModel.query = ""
         isSearchFocused = true
+    }
+
+    private func jumpToFirstUnreadIfAsked() async {
+        guard store.pendingJumpToFirstUnread else {
+            return
+        }
+
+        store.pendingJumpToFirstUnread = false
+
+        // read on another device by now, the chat stays where it opened rather than going to
+        // the oldest message loaded
+        guard store.unreadMarker != nil else {
+            return
+        }
+
+        await store.jumpToFirstUnread()
+        store.unreadMarker = nil
     }
 
     private func toggleDropdown(_ shown: ChatDropdown) {
@@ -542,12 +581,14 @@ private struct NotificationBell: View {
             Divider()
 
             // toggles rather than an inline picker, which a mac menu drew greyed out with a
-            // stray checkmark row of its own
+            // stray checkmark row of its own. the window's phone switch style has to be undone
+            // here too: a menu cannot draw it, and showed the same greyed rows
             Section("Notifications") {
                 Toggle("All Messages", isOn: isLevel(.all))
                 Toggle("Only @mentions", isOn: isLevel(.mentions))
                 Toggle("Nothing", isOn: isLevel(.none))
             }
+            .toggleStyle(.automatic)
         } label: {
             HeaderIcon(systemImage: isMuted ? "bell.slash.fill" : "bell.fill")
         }
