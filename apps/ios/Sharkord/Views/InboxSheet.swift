@@ -16,18 +16,27 @@ struct InboxSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var tab = Tab.mentions
+    @State private var mentionsReloads = 0
+    @State private var isMarkingRead = false
 
     var body: some View {
         if onClose != nil {
             // the mac's dropdown names itself, as pins does: a navigation title there would go
             // up into the chat's own bar
             VStack(spacing: 0) {
-                Text("Inbox")
-                    .font(.headline)
-                    .foregroundStyle(Theme.header)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
+                HStack {
+                    Text("Inbox")
+                        .font(.headline)
+                        .foregroundStyle(Theme.header)
+
+                    Spacer()
+
+                    markAllButton
+                        .buttonStyle(.borderless)
+                        .font(.subheadline)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
 
                 Theme.divider
                     .frame(height: 1)
@@ -40,6 +49,10 @@ struct InboxSheet: View {
                     .navigationTitle("Inbox")
                     .inlineNavigationTitle()
                     .toolbar {
+                        ToolbarItem(placement: .barLeading) {
+                            markAllButton
+                        }
+
                         ActionToolbarItem(placement: .confirmationAction) {
                             Button("Done", action: close)
                         }
@@ -47,6 +60,11 @@ struct InboxSheet: View {
             }
             .presentationBackground(Theme.deepBackground)
         }
+    }
+
+    private var markAllButton: some View {
+        Button("Mark All As Read", action: markAllAsRead)
+            .disabled(isMarkingRead)
     }
 
     private var content: some View {
@@ -63,12 +81,25 @@ struct InboxSheet: View {
 
             switch tab {
             case .mentions:
-                MentionsList(onOpen: open)
+                MentionsList(reloads: mentionsReloads, onOpen: open)
             case .unreads:
                 UnreadsList(onOpen: open)
             }
         }
         .background(Theme.deepBackground)
+    }
+
+    private func markAllAsRead() {
+        isMarkingRead = true
+
+        Task {
+            for server in servers.sessions where server.phase == .connected {
+                await server.markAllAsRead()
+            }
+
+            isMarkingRead = false
+            mentionsReloads += 1
+        }
     }
 
     private func open(_ channelId: Int, in server: SessionStore) {
@@ -93,6 +124,8 @@ private struct ServerMention: Identifiable {
 }
 
 private struct MentionsList: View {
+    // bumped to load the list again, after the inbox was marked as read
+    let reloads: Int
     let onOpen: (Int, SessionStore) -> Void
 
     @Environment(ServerListStore.self) private var servers
@@ -132,7 +165,7 @@ private struct MentionsList: View {
         .refreshable {
             await load()
         }
-        .task {
+        .task(id: reloads) {
             await load()
         }
     }

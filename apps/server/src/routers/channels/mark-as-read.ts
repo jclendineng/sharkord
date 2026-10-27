@@ -1,5 +1,5 @@
 import { ServerEvents } from '@sharkord/shared';
-import { and, desc, eq, isNull } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { config } from '../../config';
 import { db } from '../../db';
@@ -23,12 +23,13 @@ const markAsReadRoute = rateLimitedProcedure(protectedProcedure, {
 
     const { channelId } = input;
 
+    // thread replies count too, so reading the channel clears the inbox's mentions in its
+    // threads as well. the unread count only looks at the channel's own messages, and ids
+    // only grow, so a marker on a reply still splits those in the right place
     const newestMessage = await db
       .select({ id: messages.id })
       .from(messages)
-      .where(
-        and(eq(messages.channelId, channelId), isNull(messages.parentMessageId))
-      )
+      .where(eq(messages.channelId, channelId))
       .orderBy(desc(messages.id))
       .limit(1)
       .get();

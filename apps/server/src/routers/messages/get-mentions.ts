@@ -3,7 +3,18 @@ import {
   zMessagesCursor,
   type TMessagesCursor
 } from '@sharkord/shared';
-import { and, desc, eq, inArray, isNull, lt, ne, or, sql } from 'drizzle-orm';
+import {
+  and,
+  desc,
+  eq,
+  gt,
+  inArray,
+  isNull,
+  lt,
+  ne,
+  or,
+  sql
+} from 'drizzle-orm';
 import { alias } from 'drizzle-orm/sqlite-core';
 import { z } from 'zod';
 import { config } from '../../config';
@@ -11,14 +22,15 @@ import { db } from '../../db';
 import { getChannelsForUser } from '../../db/queries/channels';
 import { joinMessagesWithRelations } from '../../db/queries/messages';
 import { getUserRoleIds } from '../../db/queries/roles';
-import { messages } from '../../db/schema';
+import { channelReadStates, messages } from '../../db/schema';
 import { protectedProcedure, rateLimitedProcedure } from '../../utils/trpc';
 
 const MENTIONS_LIMIT = 25;
 
 // the caller's inbox: messages that mention them or one of their roles, and replies to their
 // own messages, newest first. the same set push notifications go out for, minus direct
-// messages, which have a list of their own
+// messages, which have a list of their own. a mention the channel has been read past is
+// done with and drops out, the same line the unread count draws
 const getMentionsRoute = rateLimitedProcedure(protectedProcedure, {
   maxRequests: config.rateLimiters.getMessages.maxRequests,
   windowMs: config.rateLimiters.getMessages.windowMs,
@@ -50,9 +62,20 @@ const getMentionsRoute = rateLimitedProcedure(protectedProcedure, {
       .select({ message: messages, repliedToUserId: repliedTo.userId })
       .from(messages)
       .leftJoin(repliedTo, eq(repliedTo.id, messages.replyToMessageId))
+      .leftJoin(
+        channelReadStates,
+        and(
+          eq(channelReadStates.channelId, messages.channelId),
+          eq(channelReadStates.userId, ctx.userId)
+        )
+      )
       .where(
         and(
           inArray(messages.channelId, channelIds),
+          or(
+            isNull(channelReadStates.lastReadMessageId),
+            gt(messages.id, channelReadStates.lastReadMessageId)
+          ),
           or(isNull(messages.userId), ne(messages.userId, ctx.userId)),
           or(
             sql`${messages.content} GLOB ${`*data-user-id="${ctx.userId}"*`}`,

@@ -104,7 +104,10 @@ one.
 
 `messages.getMentions` pages through the messages that mention you, and
 `channels.markAsUnread` marks a channel unread from a given message, like Discord's long
-press option.
+press option. A mention drops out of the inbox once its channel is read past it, thread
+replies included, and comes back if the channel is marked unread before it. The app's inbox
+has Mark All As Read, which reads every channel with an unread message or a listed mention
+on every connected server.
 
 ## Search
 

@@ -706,6 +706,36 @@ describe('channels router', () => {
     expect(afterReadStates[2]).toBe(0);
   });
 
+  test('should count a new message as unread after reading past a thread reply', async () => {
+    const { caller: caller1 } = await initTest(1);
+    const { caller: caller2 } = await initTest(2);
+
+    const parentId = await sendMessage(caller1, {
+      channelId: 2,
+      content: 'Parent',
+      files: []
+    });
+
+    await caller1.messages.send({
+      channelId: 2,
+      content: 'Reply in the thread',
+      files: [],
+      parentMessageId: parentId
+    });
+
+    await caller2.channels.markAsRead({ channelId: 2 });
+
+    expect((await getChannelsReadStatesForUser(2, 2))[2]).toBe(0);
+
+    await caller1.messages.send({
+      channelId: 2,
+      content: 'After the reply',
+      files: []
+    });
+
+    expect((await getChannelsReadStatesForUser(2, 2))[2]).toBe(1);
+  });
+
   test('should not mark a channel as read just by fetching its messages', async () => {
     const { caller: caller1 } = await initTest(1);
     const { caller: caller2 } = await initTest(2);

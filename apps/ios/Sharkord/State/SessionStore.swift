@@ -1801,9 +1801,24 @@ final class SessionStore {
         voice?.setOutputVolume(volume)
     }
 
+    // the inbox's mentions go too. a channel whose only mention is in a thread has no unread
+    // count, so its read state is set straight rather than through markAsRead
     func markAllAsRead() async {
+        guard let client else {
+            return
+        }
+
+        let mentioned = (try? await mentions()) ?? []
+        var channelIds = Set(mentioned.map(\.channelId))
+
         for channel in unreadChannels where !channel.isDm {
-            await markAsRead(channel.id)
+            channelIds.insert(channel.id)
+        }
+
+        for channelId in channelIds {
+            unreadCounts[channelId] = 0
+
+            try? await client.mutation("channels.markAsRead", input: ["channelId": channelId])
         }
     }
 

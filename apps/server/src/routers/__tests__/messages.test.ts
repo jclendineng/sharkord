@@ -2838,6 +2838,76 @@ describe('messages.getMentions', () => {
     expect(mentions).toEqual([]);
   });
 
+  test('should leave out mentions the channel has been read past', async () => {
+    const { caller: owner } = await initTest(1);
+    const { caller: member } = await initTest(2);
+
+    await sendMessage(owner, {
+      channelId: 1,
+      content: mention(2),
+      files: []
+    });
+
+    await member.channels.markAsRead({ channelId: 1 });
+
+    const newer = await sendMessage(owner, {
+      channelId: 1,
+      content: mention(2),
+      files: []
+    });
+
+    const { messages: mentions } = await member.messages.getMentions({});
+
+    expect(mentions.map(({ id }) => id)).toEqual([newer]);
+  });
+
+  test('should list a mention again once its message is marked unread', async () => {
+    const { caller: owner } = await initTest(1);
+    const { caller: member } = await initTest(2);
+
+    const messageId = await sendMessage(owner, {
+      channelId: 1,
+      content: mention(2),
+      files: []
+    });
+
+    await member.channels.markAsRead({ channelId: 1 });
+
+    expect((await member.messages.getMentions({})).messages).toEqual([]);
+
+    await member.channels.markAsUnread({ messageId });
+
+    const { messages: mentions } = await member.messages.getMentions({});
+
+    expect(mentions.map(({ id }) => id)).toEqual([messageId]);
+  });
+
+  test('should leave out a thread reply mention once the channel is read', async () => {
+    const { caller: owner } = await initTest(1);
+    const { caller: member } = await initTest(2);
+
+    const parentId = await sendMessage(owner, {
+      channelId: 1,
+      content: '<p>parent</p>',
+      files: []
+    });
+
+    const replyId = await sendMessage(owner, {
+      channelId: 1,
+      content: mention(2),
+      files: [],
+      parentMessageId: parentId
+    });
+
+    expect(
+      (await member.messages.getMentions({})).messages.map(({ id }) => id)
+    ).toEqual([replyId]);
+
+    await member.channels.markAsRead({ channelId: 1 });
+
+    expect((await member.messages.getMentions({})).messages).toEqual([]);
+  });
+
   test('should page through mentions with the cursor', async () => {
     const { caller: member } = await initTest(2);
 
