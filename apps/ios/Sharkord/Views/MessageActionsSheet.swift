@@ -115,7 +115,8 @@ struct MessageActionsSheet: View {
                         ActionRow(title: "Mark Unread", systemImage: "envelope.badge", action: markUnread)
                     }
 
-                    if session.canPin(in: message.channelId) {
+                    // the server keeps pins to the channel, a reply inside a thread can't have one
+                    if message.parentMessageId == nil, session.canPin(in: message.channelId) {
                         ActionRow(
                             title: message.pinned == true ? "Unpin Message" : "Pin Message",
                             systemImage: message.pinned == true ? "pin.slash" : "pin",

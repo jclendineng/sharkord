@@ -2,6 +2,9 @@ import SwiftUI
 
 struct MessageListView<Header: View>: View {
     let store: ChannelMessagesStore
+    // the day of what the header shows, a thread's starter, so the first reply is only dated
+    // when it came on another day
+    var headerDate: Date? = nil
     @ViewBuilder let header: Header
 
     @Environment(SessionStore.self) private var session
@@ -520,11 +523,19 @@ struct MessageListView<Header: View>: View {
     }
 
     private func startsNewDay(at index: Int) -> Bool {
-        guard index > 0 else {
-            return !store.hasOlder
-        }
-
         let calendar = Calendar.current
+
+        guard index > 0 else {
+            guard !store.hasOlder else {
+                return false
+            }
+
+            guard let headerDate else {
+                return true
+            }
+
+            return !calendar.isDate(store.messages[index].createdDate, inSameDayAs: headerDate)
+        }
 
         return !calendar.isDate(store.messages[index].createdDate, inSameDayAs: store.messages[index - 1].createdDate)
     }
@@ -564,17 +575,11 @@ private struct JumpHighlight: View {
     let hasHeader: Bool
     let isFollowedClosely: Bool
 
-    // a band across the whole chat with a bar down its leading edge, square: a rounded box sat
-    // on the lines either side of a follow-up line, which have no gap to give it
+    // the press's card, under the room the row keeps above its text
     var body: some View {
-        Rectangle()
-            .fill(Theme.blurple.opacity(0.14 * strength))
-            .overlay(alignment: .leading) {
-                Rectangle()
-                    .fill(Theme.blurple.opacity(0.9 * strength))
-                    .frame(width: 3)
-            }
-            .rowBand(hasHeader: hasHeader, isFollowedClosely: isFollowedClosely)
+        MessageCard(hasHeader: hasHeader, isFollowedClosely: isFollowedClosely)
+            .opacity(strength)
+            .padding(.top, hasHeader ? MessageRowBand.headerGap : MessageRowBand.lineGap)
     }
 }
 

@@ -29,6 +29,10 @@ struct MessageRow: View {
         isFingerDown && !isShowingMessageActions
     }
 
+    private var isLit: Bool {
+        isPressed || isHovered || (isShowingActions && Platform.isMac)
+    }
+
     private var author: PublicUser? {
         message.userId.flatMap { session.usersById[$0] }
     }
@@ -52,26 +56,13 @@ struct MessageRow: View {
 
             row
         }
-        // the press: a rounded card a few points past the message, inset from the screen's edges,
-        // rather than a band taking in the gap above a header. between two lines of one stretch it
-        // only reaches into the small gap, past that it covered the edge of the line next to it
+        // the press, and the pointer's hover, light the same card
         .background {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Theme.hover)
-                .padding(.horizontal, 6)
-                .padding(.top, showsHeader ? -6 : -2)
-                .padding(.bottom, isFollowedClosely ? -2 : -6)
-                .opacity(isPressed ? 1 : 0)
+            MessageCard(hasHeader: showsHeader, isFollowedClosely: isFollowedClosely)
+                .opacity(isLit ? 1 : 0)
         }
-        .animation(.easeOut(duration: isPressed ? 0.08 : 0.2), value: isPressed)
+        .animation(.easeOut(duration: isLit ? 0.08 : 0.2), value: isLit)
         .padding(.top, showsHeader ? MessageRowBand.headerGap : MessageRowBand.lineGap)
-        .background {
-            if isHovered || (isShowingActions && Platform.isMac) {
-                Rectangle()
-                    .fill(Color.black.opacity(0.08))
-                    .rowBand(hasHeader: showsHeader, isFollowedClosely: isFollowedClosely)
-            }
-        }
         // over the message's top right, discord's quick reactions, reply and the menu
         .overlay(alignment: .topTrailing) {
             if isHovered, let hoverActions {
@@ -237,31 +228,27 @@ struct MessageRow: View {
     }
 }
 
-// a band behind a message, the mac's hover and a jump's highlight, centred on its text. a row
-// carries its own room above the text, more over a name than over a follow-up line, and none
-// below, where the next row's begins: drawn over the row as it is, the band sat high
+// a row carries its own room above the text, more over a name than over a follow-up line, and
+// none below, where the next row's begins
 enum MessageRowBand {
     static let headerGap: CGFloat = 16
     static let lineGap: CGFloat = 2
-
-    // as far past the text above as below. right over the next row it only takes half that
-    // row's gap, to stay off its text
-    static func reach(hasHeader: Bool, isFollowedClosely: Bool) -> CGFloat {
-        if isFollowedClosely {
-            return hasHeader ? 2 : 1
-        }
-
-        return hasHeader ? 4 : 2
-    }
 }
 
-extension View {
-    func rowBand(hasHeader: Bool, isFollowedClosely: Bool) -> some View {
-        let gap = hasHeader ? MessageRowBand.headerGap : MessageRowBand.lineGap
-        let reach = MessageRowBand.reach(hasHeader: hasHeader, isFollowedClosely: isFollowedClosely)
+// the press, the hover and a jump's highlight: a rounded card a few points past the message,
+// inset from the screen's edges, rather than a band taking in the gap above a header. between two
+// lines of one stretch it only reaches into the small gap, past that it covered the edge of the
+// line next to it. drawn behind the message itself, without the room above it
+struct MessageCard: View {
+    let hasHeader: Bool
+    let isFollowedClosely: Bool
 
-        return padding(.top, gap - reach)
-            .padding(.bottom, -reach)
+    var body: some View {
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .fill(Theme.hover)
+            .padding(.horizontal, 6)
+            .padding(.top, hasHeader ? -6 : -2)
+            .padding(.bottom, isFollowedClosely ? -2 : -6)
     }
 }
 

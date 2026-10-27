@@ -195,6 +195,14 @@ struct ComposerView: View {
                 let editable = ComposerMention.editable(from: message.content ?? "", in: session)
 
                 field = ComposerMention.field(from: HTMLText.markdown(from: editable.html), mentions: editable.mentions)
+                selection = AttributedTextSelection(insertionPoint: field.endIndex)
+                // as with a mention, the field takes the keyboard so the edit can start at once
+                isFieldFocused = true
+            }
+        }
+        .onChange(of: store.replyingTo?.id) { _, id in
+            if id != nil {
+                isFieldFocused = true
             }
         }
         .onChange(of: store.pendingMention) { _, mention in

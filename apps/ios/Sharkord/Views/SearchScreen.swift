@@ -145,10 +145,9 @@ struct SearchScreen: View {
                 resultsList
             }
         }
-        // a tap or a scroll on what is below the search box puts the keyboard away. not on a
-        // mac, which has no keyboard to put away and where the tap ate the clicks on results
+        // a scroll puts the keyboard away. not a tap as well: a tap gesture over the results ate
+        // the taps on them, so a result, a suggestion or a recent search never opened
         .scrollDismissesKeyboard(.immediately)
-        .simultaneousGesture(TapGesture().onEnded(unfocusField), including: Platform.isMac ? .subviews : .all)
         // under the keyboard too, or its rounded top corners show the window's black behind them
         .background(Theme.deepBackground.ignoresSafeArea())
         // handed over by hand: on a mac a sheet's background is worked out before it inherits
@@ -256,12 +255,6 @@ struct SearchScreen: View {
         } else {
             state.focusRequest += 1
         }
-    }
-
-    // through uikit, as the field was focused: focus state alone may not know it has it
-    private func unfocusField() {
-        isFieldFocused = false
-        Platform.dismissKeyboard()
     }
 
     private func focusNavigationBarField() {

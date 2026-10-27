@@ -378,6 +378,12 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 #### iOS app
 
+- Tapping a search result opens it again. A tap gesture over the results used to take the tap, so results, filter suggestions and recent searches did nothing.
+- Reply and Edit put the cursor in the message box, ready to type.
+- A message inside a thread no longer offers Pin Message, which the server refuses for thread replies.
+- A thread's first reply only shows a date line when it came on a different day from the message that started the thread.
+- A message jumped to, and a message under the pointer on a Mac or an iPad, light the same rounded card as holding a message, instead of a pale blue band.
+- The user bar at the bottom of the channel list has a small, light shadow. The wide dark one read as a black box around it.
 - A saved session the server no longer accepts, after a kick, a ban or a password change, signs out instead of trying to reconnect forever.
 - Holding a message in the middle of a run of lines lights only that line, instead of the highlight covering the edge of the line above.
 - A member's new name no longer goes back to the old one when lots of people join at once.

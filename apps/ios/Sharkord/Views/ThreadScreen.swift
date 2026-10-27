@@ -39,7 +39,7 @@ struct ThreadScreen: View {
     }
 
     private var thread: some View {
-        MessageListView(store: store) {
+        MessageListView(store: store, headerDate: parent.createdDate) {
             VStack(alignment: .leading, spacing: 0) {
                 ThreadStarterRow(parent: parent)
 

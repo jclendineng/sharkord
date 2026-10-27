@@ -118,11 +118,12 @@ struct UserBar: View {
         .padding(.horizontal, horizontalPadding)
         .padding(.vertical, verticalPadding)
         // the shadow on the bar's shape alone: on the whole bar it fell under each hover
-        // highlight too, a dark band beneath it
+        // highlight too, a dark band beneath it. kept small and light, a wide dark one read as a
+        // black box around the bar on the panel's dark background
         .background {
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .fill(Color(hex: "#202125"))
-                .shadow(color: .black.opacity(0.4), radius: 20, y: 8)
+                .shadow(color: .black.opacity(0.2), radius: 8, y: 3)
         }
         .overlay {
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
