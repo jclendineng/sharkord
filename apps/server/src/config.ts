@@ -7,6 +7,7 @@ import { applyEnvOverrides } from './helpers/apply-env-overrides';
 import { ensureServerDirs } from './helpers/ensure-server-dirs';
 import { getPrivateIp, getPublicIp } from './helpers/network';
 import { CONFIG_INI_PATH } from './helpers/paths';
+import { raiseRateLimitDefaults } from './helpers/raise-rate-limit-defaults';
 import { deepMerge } from './utils/deep-merge';
 import { IS_DEVELOPMENT, IS_TEST } from './utils/env';
 
@@ -101,6 +102,7 @@ const zConfig = z.object({
   }),
   rateLimiters: z.object({
     sendAndEditMessage: zRateLimiter,
+    deleteMessage: zRateLimiter,
     joinVoiceChannel: zRateLimiter,
     moveMembers: zRateLimiter,
     login: zRateLimiter,
@@ -174,7 +176,12 @@ const defaultConfig: TConfig = {
   },
   rateLimiters: {
     sendAndEditMessage: {
-      maxRequests: 15,
+      maxRequests: 60,
+      windowMs: 60_000
+    },
+    // its own budget: clearing out messages one by one used up the one for sending
+    deleteMessage: {
+      maxRequests: 120,
       windowMs: 60_000
     },
     joinVoiceChannel: {
@@ -200,11 +207,11 @@ const defaultConfig: TConfig = {
       windowMs: 60_000
     },
     upload: {
-      maxRequests: 30,
+      maxRequests: 60,
       windowMs: 60_000
     },
     search: {
-      maxRequests: 15,
+      maxRequests: 30,
       windowMs: 60_000
     },
     signalTyping: {
@@ -293,7 +300,7 @@ const defaultConfig: TConfig = {
     },
     // pinning, ending a poll and deleting an attachment, each limited on its own
     messageAction: {
-      maxRequests: 60,
+      maxRequests: 120,
       windowMs: 60_000
     },
     pluginRoute: {
@@ -329,7 +336,7 @@ if (!configExists) {
       encoding: 'utf-8'
     });
 
-    const existingConfig = parse(existingConfigText) as Partial<TConfig>;
+    const existingConfig = raiseRateLimitDefaults(parse(existingConfigText));
     const mergedConfig = deepMerge(config, existingConfig);
 
     config = zConfig.parse(mergedConfig);

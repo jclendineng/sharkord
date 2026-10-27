@@ -46,6 +46,32 @@ describe('spam prone routes', () => {
     );
   });
 
+  test('should rate limit message deletes on a budget of their own', async () => {
+    const { caller } = await initTest();
+    const { deleteMessage } = config.rateLimiters;
+
+    for (let i = 0; i < deleteMessage.maxRequests; i++) {
+      await caller.messages
+        .delete({ messageId: MISSING_ID })
+        .catch((error: Error) => {
+          expect(error.message).not.toContain('Too many requests');
+        });
+    }
+
+    await expect(
+      caller.messages.delete({ messageId: MISSING_ID })
+    ).rejects.toThrow('Too many requests. Please try again shortly.');
+
+    // sending is counted apart, so clearing out messages leaves it free
+    const messageId = await caller.messages.send({
+      channelId: 1,
+      content: '<p>still sending</p>',
+      files: []
+    });
+
+    expect(messageId).toBeGreaterThan(0);
+  });
+
   test('should rate limit plugin toggles', async () => {
     await expectRateLimited(pluginManage.maxRequests, (caller) =>
       caller.plugins.toggle({ pluginId: 'missing-plugin', enabled: true })

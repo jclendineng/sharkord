@@ -19,6 +19,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   - `0076_push_relay_setting` adds the setting that turns push off, on for every server.
   - `0077_push_relay_only` deletes the devices registered straight with Apple and drops their `sandbox` column. Those devices get notifications again once the app is updated and opened.
   - `config.ini` loses `[push] enabled` and the `apns` keys at the first start, and gains `relayEnabled`. `SHARKORD_PUSH_ENABLED` and the `SHARKORD_PUSH_APNS_*` variables no longer do anything.
+  - `config.ini` rate limits still at their old defaults move up to the new ones at the first start: sending and editing 15 to 60 a minute, message actions 60 to 120, uploads 30 to 60 and search 15 to 30. A limit changed by hand is kept. `[rateLimiters.deleteMessage]` is new, at 120 a minute.
   - `0074_grant_moderation_permissions` gives Kick Members, Ban Members and Assign Roles to every role that had Manage Users, so nobody loses what they could do. Manage Users is now called Manage Accounts and covers deleting accounts and password reset links.
   - `0073_invite_uses` adds the table of who signed up with which invite, and marks deleted invites instead of removing them. Sign ups from before it have only the count.
   - `0072_role_positions` gives roles an order, starting from the order they were made in.
@@ -305,6 +306,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 #### Server and web client
 
+- Deleting messages has a rate limit of its own, so clearing out messages no longer stops you sending. The limits for sending and editing, message actions, uploads and search are higher.
 - A saved sign in that is no longer good, after a kick, a ban or a password change, opens the connect screen again. It used to show connection lost, since the server's refusal reached the tab as a dropped connection.
 - A chat that lost its connection catches up when it is back. Messages sent while it was away used to stay missing until the channel was opened again.
 - A second dropped connection no longer signs you out. Reconnecting and the automatic sign in both joined at once, and the one that lost turned off login automatically and forgot the session.

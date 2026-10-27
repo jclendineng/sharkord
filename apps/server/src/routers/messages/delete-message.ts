@@ -8,8 +8,8 @@ import {
 import { protectedProcedure, rateLimitedProcedure } from '../../utils/trpc';
 
 const deleteMessageRoute = rateLimitedProcedure(protectedProcedure, {
-  maxRequests: config.rateLimiters.sendAndEditMessage.maxRequests,
-  windowMs: config.rateLimiters.sendAndEditMessage.windowMs,
+  maxRequests: config.rateLimiters.deleteMessage.maxRequests,
+  windowMs: config.rateLimiters.deleteMessage.windowMs,
   logLabel: 'deleteMessage'
 })
   .input(z.object({ messageId: z.number() }))
