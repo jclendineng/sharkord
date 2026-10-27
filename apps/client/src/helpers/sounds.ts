@@ -232,53 +232,45 @@ const sfxOwnUserLeftVoiceChannel = () => {
   osc2.stop(now() + 0.3);
 };
 
-// MUTED_MIC — extremely bland low click
-const sfxOwnUserMutedMic = () => {
-  const osc = createOsc('sine', 350);
-  const gain = createGain(0.05);
+// two notes a fourth apart, each faded in over 12 ms with a faint octave above. a tone that
+// started at full volume came out as a hard tick. the ios and mac apps play the same
+const sfxTwoNotes = (first: number, second: number) => {
+  const notes = [
+    { freq: first, start: 0, end: 0.16 },
+    { freq: second, start: 0.07, end: 0.26 }
+  ];
 
-  gain.gain.exponentialRampToValueAtTime(0.0001, now() + 0.06);
+  notes.forEach(({ freq, start, end }) => {
+    const layers = [
+      { type: 'sine' as const, freq, gain: 0.12 },
+      { type: 'triangle' as const, freq: freq * 2, gain: 0.02 }
+    ];
 
-  osc.connect(gain).connect(audioCtx.destination);
-  osc.start();
-  osc.stop(now() + 0.06);
+    layers.forEach((layer) => {
+      const startAt = now() + start;
+      const endAt = now() + end;
+      const osc = createOsc(layer.type, layer.freq);
+      const gain = createGain(0);
+
+      gain.gain.setValueAtTime(0, startAt);
+      gain.gain.linearRampToValueAtTime(
+        layer.gain * SOUNDS_VOLUME,
+        startAt + 0.012
+      );
+      gain.gain.exponentialRampToValueAtTime(0.0001, endAt);
+
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(startAt);
+      osc.stop(endAt);
+    });
+  });
 };
 
-// UNMUTED_MIC — extremely bland slightly higher click
-const sfxOwnUserUnmutedMic = () => {
-  const osc = createOsc('sine', 500);
-  const gain = createGain(0.05);
+// falling to mute, deafening sounds the same
+const sfxOwnUserMutedMic = () => sfxTwoNotes(784, 587);
 
-  gain.gain.exponentialRampToValueAtTime(0.0001, now() + 0.06);
-
-  osc.connect(gain).connect(audioCtx.destination);
-  osc.start();
-  osc.stop(now() + 0.06);
-};
-
-// MUTED_SOUND — bland mid-low tone
-const sfxOwnUserMutedSound = () => {
-  const osc = createOsc('sine', 450);
-  const gain = createGain(0.05);
-
-  gain.gain.exponentialRampToValueAtTime(0.0001, now() + 0.06);
-
-  osc.connect(gain).connect(audioCtx.destination);
-  osc.start();
-  osc.stop(now() + 0.06);
-};
-
-// UNMUTED_SOUND — bland mid-high tone
-const sfxOwnUserUnmutedSound = () => {
-  const osc = createOsc('sine', 650);
-  const gain = createGain(0.05);
-
-  gain.gain.exponentialRampToValueAtTime(0.0001, now() + 0.06);
-
-  osc.connect(gain).connect(audioCtx.destination);
-  osc.start();
-  osc.stop(now() + 0.06);
-};
+// rising to unmute, undeafening sounds the same
+const sfxOwnUserUnmutedMic = () => sfxTwoNotes(587, 784);
 
 // STARTED_WEBCAM — subtle layered activation
 const sfxOwnUserStartedWebcam = () => {
@@ -501,9 +493,9 @@ const playSound = async (type: SoundType) => {
         return sfxOwnUserUnmutedMic();
 
       case SoundType.OWN_USER_MUTED_SOUND:
-        return sfxOwnUserMutedSound();
+        return sfxOwnUserMutedMic();
       case SoundType.OWN_USER_UNMUTED_SOUND:
-        return sfxOwnUserUnmutedSound();
+        return sfxOwnUserUnmutedMic();
 
       case SoundType.OWN_USER_STARTED_WEBCAM:
         return sfxOwnUserStartedWebcam();
