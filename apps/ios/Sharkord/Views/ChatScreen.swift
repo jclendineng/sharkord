@@ -548,6 +548,11 @@ private struct NotificationBell: View {
     let channelId: Int
 
     @Environment(SessionStore.self) private var session
+    @Environment(ServerListStore.self) private var servers
+
+    #if os(macOS)
+    @State private var clickWatch = BellClickWatch()
+    #endif
 
     private var isMuted: Bool {
         session.isMuted(channelId)
@@ -597,7 +602,26 @@ private struct NotificationBell: View {
         .menuIndicator(.hidden)
         .accessibilityLabel("Notification Settings")
         .help("Notification Settings")
+        #if os(macOS)
+        .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }) { frame in
+            clickWatch.frame = frame
+        }
+        .onAppear(perform: watchClicks)
+        .onDisappear(perform: clickWatch.stop)
+        #endif
     }
+
+    #if os(macOS)
+    private func watchClicks() {
+        let servers = servers
+
+        clickWatch.start {
+            if servers.isChatDropdownOpen {
+                servers.chatDropdownDismissals += 1
+            }
+        }
+    }
+    #endif
 
     private func setLevel(_ newLevel: ChannelNotificationLevel) {
         Task {
@@ -615,6 +639,43 @@ private struct NotificationBell: View {
         setLevel(.mentions)
     }
 }
+
+#if os(macOS)
+// a mac menu opens on the mouse going down and tracks the pointer itself, so no swiftui gesture
+// on the bell hears the click. this does, and puts the chat's open panel away as any other click
+// outside it would
+private final class BellClickWatch {
+    var frame = CGRect.zero
+
+    private var monitor: Any?
+
+    func start(onClick: @escaping () -> Void) {
+        guard monitor == nil else {
+            return
+        }
+
+        monitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { [weak self] event in
+            if let self, let content = event.window?.contentView {
+                let point = content.convert(event.locationInWindow, from: nil)
+
+                if frame.contains(point) {
+                    onClick()
+                }
+            }
+
+            return event
+        }
+    }
+
+    func stop() {
+        if let monitor {
+            NSEvent.removeMonitor(monitor)
+        }
+
+        monitor = nil
+    }
+}
+#endif
 
 // an icon in the mac's header row, the same size as the search filter beside it
 private struct HeaderIcon: View {

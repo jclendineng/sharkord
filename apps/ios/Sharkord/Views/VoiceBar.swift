@@ -64,7 +64,12 @@ struct VoiceBar: View {
         .matchedTransitionSource(id: "call", in: zoom) { source in
             source.clipShape(.rect(cornerRadius: 20))
         }
-        #if os(iOS)
+        #if os(macOS)
+        .background {
+            PictureInPictureSource(track: pictureInPictureTrack)
+                .clipShape(.rect(cornerRadius: 20))
+        }
+        #else
         .background {
             if !Platform.isMac {
                 PictureInPictureSource(track: pictureInPictureTrack)

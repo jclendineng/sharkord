@@ -1052,12 +1052,11 @@ final class SessionStore {
                 speakerByDefault: settings.speakerByDefault,
                 outputVolume: settings.outputVolume
             )
-            #if os(macOS)
-            let needsMixer = false
-            #else
-            let needsMixer = settings.shareAppAudio || settings.hearYourselfInCalls
-            #endif
-            let mixer = needsMixer ? MixingAudioDevice(options: audioOptions) : nil
+            // a mac always needs it, it is what records the mic picked in voice settings
+            let needsMixer = Platform.isMac || settings.shareAppAudio || settings.hearYourselfInCalls
+            let mixer = needsMixer
+                ? MixingAudioDevice(options: audioOptions, sharesAppAudio: settings.shareAppAudio, inputDeviceId: settings.inputDeviceId)
+                : nil
 
             mixer?.isMonitoring = settings.hearYourselfInCalls
             mixingDevice = mixer
@@ -1082,6 +1081,9 @@ final class SessionStore {
             )
 
             voice = connection
+            #if os(macOS)
+            connection.useCamera(settings.cameraDeviceId)
+            #endif
             watchSpeaking()
 
             let routerRtpCapabilities = String(
@@ -1210,7 +1212,7 @@ final class SessionStore {
         let quality = AppSettings.shared.streamQuality
         var onAudio: ScreenCapture.AudioHandler?
 
-        if let mixer = mixingDevice {
+        if let mixer = mixingDevice, mixer.sharesAppAudio {
             onAudio = { samples in
                 mixer.writeGameAudio(samples)
             }
@@ -1248,9 +1250,39 @@ final class SessionStore {
         await updateVoiceState(["sharingScreen": false])
     }
 
+    // a mac has no front or back camera, so the button moves on to its next one and keeps it
     func flipCamera() {
+        #if os(macOS)
+        let settings = AppSettings.shared
+        let ids = VoiceConnection.cameras.map(\.uniqueID)
+        let index = ids.firstIndex { $0 == settings.cameraDeviceId } ?? 0
+
+        guard ids.count > 1 else {
+            return
+        }
+
+        settings.cameraDeviceId = ids[(index + 1) % ids.count]
+        voice?.useCamera(settings.cameraDeviceId)
+        #else
         voice?.flipCamera()
+        #endif
     }
+
+    #if os(macOS)
+    func useCamera(_ uniqueID: String?) {
+        voice?.useCamera(uniqueID)
+    }
+
+    // a phone filming as the mac's camera goes when it is disconnected or walked off with. the
+    // call's camera turns off with it, else everyone is left looking at its last frame
+    func cameraDisconnected(_ uniqueID: String) async {
+        guard cameraEnabled, let voice, await voice.isFilming(with: uniqueID) else {
+            return
+        }
+
+        await toggleCamera()
+    }
+    #endif
 
     func cameraEffects() async -> VoiceConnection.CameraEffects? {
         await voice?.cameraEffects()
@@ -2122,6 +2154,12 @@ final class SessionStore {
     func setHearsYourself(_ hears: Bool) {
         mixingDevice?.isMonitoring = hears
     }
+
+    #if os(macOS)
+    func setInputDevice(_ uid: String?) {
+        mixingDevice?.setInputDevice(uid)
+    }
+    #endif
 
     private func voiceConnectionFailed() {
         guard voice != nil else {

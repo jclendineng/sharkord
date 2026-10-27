@@ -93,13 +93,168 @@ struct PictureInPictureSource: UIViewRepresentable {
     }
 }
 
+#else
+// the call in picture in picture while the window is minimized or the app hidden, a mac's way of
+// leaving it. a mac starts it only when asked, nothing there starts it automatically
+struct PictureInPictureSource: NSViewRepresentable {
+    let track: VideoTrackBox?
+
+    func makeNSView(context: Context) -> SampleBufferVideoView {
+        let view = SampleBufferVideoView()
+
+        context.coordinator.attach(to: view)
+
+        return view
+    }
+
+    func updateNSView(_ view: SampleBufferVideoView, context: Context) {
+        context.coordinator.show(track?.track)
+    }
+
+    static func dismantleNSView(_ view: SampleBufferVideoView, coordinator: Coordinator) {
+        coordinator.stop()
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    final class Coordinator: NSObject, AVPictureInPictureSampleBufferPlaybackDelegate {
+        private weak var videoView: SampleBufferVideoView?
+        private var controller: AVPictureInPictureController?
+        private var track: RTCVideoTrack?
+        private var observers: [NSObjectProtocol] = []
+
+        func attach(to view: SampleBufferVideoView) {
+            guard AVPictureInPictureController.isPictureInPictureSupported() else {
+                return
+            }
+
+            let source = AVPictureInPictureController.ContentSource(
+                sampleBufferDisplayLayer: view.renderer.displayLayer,
+                playbackDelegate: self
+            )
+            let controller = AVPictureInPictureController(contentSource: source)
+
+            controller.requiresLinearPlayback = true
+            videoView = view
+            self.controller = controller
+
+            let center = NotificationCenter.default
+            let leaving: [Notification.Name] = [NSWindow.willMiniaturizeNotification, NSApplication.willHideNotification]
+            let returning: [Notification.Name] = [NSWindow.didDeminiaturizeNotification, NSApplication.didUnhideNotification]
+
+            for name in leaving {
+                observers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] notification in
+                    // the window itself is not sendable, its identity is enough
+                    let windowId = (notification.object as? NSWindow).map(ObjectIdentifier.init)
+
+                    MainActor.assumeIsolated {
+                        self?.leave(windowId: windowId)
+                    }
+                })
+            }
+
+            for name in returning {
+                observers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                    MainActor.assumeIsolated {
+                        self?.controller?.stopPictureInPicture()
+                    }
+                })
+            }
+        }
+
+        func show(_ newTrack: RTCVideoTrack?) {
+            guard newTrack !== track, let videoView else {
+                return
+            }
+
+            if let track {
+                track.remove(videoView.renderer)
+            }
+
+            track = newTrack
+
+            if let newTrack {
+                newTrack.add(videoView.renderer)
+            } else {
+                controller?.stopPictureInPicture()
+            }
+        }
+
+        func stop() {
+            if let track, let videoView {
+                track.remove(videoView.renderer)
+            }
+
+            for observer in observers {
+                NotificationCenter.default.removeObserver(observer)
+            }
+
+            observers = []
+            track = nil
+            controller?.stopPictureInPicture()
+            controller = nil
+        }
+
+        // only the window this call is in, a settings window minimized leaves it be
+        private func leave(windowId: ObjectIdentifier?) {
+            if let windowId, windowId != videoView?.window.map(ObjectIdentifier.init) {
+                return
+            }
+
+            guard track != nil, let controller, controller.isPictureInPicturePossible else {
+                return
+            }
+
+            controller.startPictureInPicture()
+        }
+
+        // a call is live, there is no timeline to pause or skip through
+        func pictureInPictureController(_ controller: AVPictureInPictureController, setPlaying playing: Bool) {}
+
+        func pictureInPictureControllerTimeRangeForPlayback(_ controller: AVPictureInPictureController) -> CMTimeRange {
+            CMTimeRange(start: .negativeInfinity, duration: .positiveInfinity)
+        }
+
+        func pictureInPictureControllerIsPlaybackPaused(_ controller: AVPictureInPictureController) -> Bool {
+            false
+        }
+
+        func pictureInPictureController(_ controller: AVPictureInPictureController, didTransitionToRenderSize newRenderSize: CMVideoDimensions) {}
+
+        func pictureInPictureController(
+            _ controller: AVPictureInPictureController,
+            skipByInterval skipInterval: CMTime,
+            completion completionHandler: @escaping () -> Void
+        ) {
+            completionHandler()
+        }
+    }
+}
+#endif
+
 // a sample buffer layer turned by the frame's rotation, the only kind of view picture in
-// picture draws from a call: webrtc's metal view stays blank in its window
-final class SampleBufferVideoView: UIView {
+// picture draws from a call: webrtc's metal view stays blank in its window. a mac draws every
+// call video with it too, webrtc's mac view only stretches the frame across its bounds
+final class SampleBufferVideoView: PlatformView {
     let renderer = SampleBufferRenderer()
 
     // the picture's shape once turned upright, which the window takes
     var onAspectChange: ((CGSize) -> Void)?
+
+    var isMirrored = false {
+        didSet {
+            if isMirrored != oldValue {
+                setNeedsLayout()
+            }
+        }
+    }
+
+    var videoGravity: AVLayerVideoGravity {
+        get { renderer.displayLayer.videoGravity }
+        set { renderer.displayLayer.videoGravity = newValue }
+    }
 
     private var rotation = RTCVideoRotation._0
     private var frameSize = CGSize.zero
@@ -107,8 +262,15 @@ final class SampleBufferVideoView: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
 
+        #if os(iOS)
         backgroundColor = .black
         layer.addSublayer(renderer.displayLayer)
+        #else
+        wantsLayer = true
+        layer?.backgroundColor = NSColor.black.cgColor
+        layer?.masksToBounds = true
+        layer?.addSublayer(renderer.displayLayer)
+        #endif
         renderer.onShapeChange = { [weak self] size, rotation in
             self?.apply(size: size, rotation: rotation)
         }
@@ -118,11 +280,32 @@ final class SampleBufferVideoView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
+    #if os(iOS)
     override func layoutSubviews() {
         super.layoutSubviews()
+        placeDisplayLayer()
+    }
+    #else
+    override func layout() {
+        super.layout()
+        placeDisplayLayer()
+    }
 
+    private func setNeedsLayout() {
+        needsLayout = true
+    }
+    #endif
+
+    private func placeDisplayLayer() {
         let isSideways = rotation == ._90 || rotation == ._270
         let displayLayer = renderer.displayLayer
+        // a mac's layers have y going up, so a turn the same way round on screen is the other sign
+        #if os(iOS)
+        let angle = CGFloat(rotation.rawValue) * .pi / 180
+        #else
+        let angle = -CGFloat(rotation.rawValue) * .pi / 180
+        #endif
+        let turn = CGAffineTransform(rotationAngle: angle)
 
         CATransaction.begin()
         CATransaction.setDisableActions(true)
@@ -131,7 +314,7 @@ final class SampleBufferVideoView: UIView {
             size: isSideways ? CGSize(width: bounds.height, height: bounds.width) : bounds.size
         )
         displayLayer.position = CGPoint(x: bounds.midX, y: bounds.midY)
-        displayLayer.setAffineTransform(CGAffineTransform(rotationAngle: CGFloat(rotation.rawValue) * .pi / 180))
+        displayLayer.setAffineTransform(isMirrored ? turn.concatenating(CGAffineTransform(scaleX: -1, y: 1)) : turn)
         CATransaction.commit()
     }
 
@@ -317,4 +500,3 @@ nonisolated final class SampleBufferRenderer: NSObject, RTCVideoRenderer, @unche
         return sample
     }
 }
-#endif

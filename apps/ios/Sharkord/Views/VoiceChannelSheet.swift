@@ -411,18 +411,16 @@ struct VoiceSheetSettings: View {
                     isOn: $settings.noiseSuppression
                 )
 
-                if MixingAudioDevice.isSupported {
-                    CardDivider()
+                CardDivider()
 
-                    SettingToggle(
-                        title: "Hear Yourself",
-                        subtitle: "Plays your mic back to you, use headphones",
-                        systemImage: "ear",
-                        isOn: $settings.hearYourselfInCalls
-                    )
-                    .onChange(of: settings.hearYourselfInCalls) { _, hears in
-                        session.setHearsYourself(hears)
-                    }
+                SettingToggle(
+                    title: "Hear Yourself",
+                    subtitle: "Plays your mic back to you, use headphones",
+                    systemImage: "ear",
+                    isOn: $settings.hearYourselfInCalls
+                )
+                .onChange(of: settings.hearYourselfInCalls) { _, hears in
+                    session.setHearsYourself(hears)
                 }
 
                 CardDivider()

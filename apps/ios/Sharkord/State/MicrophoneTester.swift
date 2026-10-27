@@ -43,11 +43,16 @@ final class MicrophoneTester {
 
             let input = engine.inputNode
 
-            // before the format is read, which voice processing changes
+            // before the format is read, which voice processing changes. a mac call keeps
+            // webrtc's echo canceller instead, see MixingAudioDevice, and takes the picked mic
+            #if os(iOS)
             if settings.echoCancellation {
                 try input.setVoiceProcessingEnabled(true)
                 input.isVoiceProcessingAGCEnabled = settings.autoGainControl
             }
+            #else
+            AudioInputPreference.apply(to: engine, inputDeviceId: settings.inputDeviceId)
+            #endif
 
             let format = input.outputFormat(forBus: 0)
 

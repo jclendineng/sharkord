@@ -13,9 +13,9 @@ permissions:
 
 env:
   # the voice frameworks are too big for git, they live on this release, see apps/ios/Packages/Mediasoup/README.md
-  FRAMEWORKS_RELEASE: mediasoup-0.13.2-mac1
+  FRAMEWORKS_RELEASE: mediasoup-0.13.2-mac2
   MEDIASOUP_SHA256: 3ba43a06e09e898ef64489ecb00f555fa3fb42fceeb9d04313fae92a63602a20
-  WEBRTC_SHA256: edd9026659dcda25a0b11e73d9e630f70b6c0dfffd4fe4e537b6177f5cc791a2
+  WEBRTC_SHA256: 4fcb100582c6b225a94082a219ca3d7e19bdc78bb1ded5d2f52c94b5e4f84476
 
 jobs:
   testflight:

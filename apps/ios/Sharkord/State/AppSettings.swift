@@ -33,6 +33,7 @@ final class AppSettings {
         static let soundboardVolume = "settings.soundboardVolume"
         static let doubleTapReaction = "settings.doubleTapReaction"
         static let inputDeviceId = "settings.inputDeviceId"
+        static let cameraDeviceId = "settings.cameraDeviceId"
         static let pushToTalk = "settings.pushToTalk"
         static let pushToTalkKey = "settings.pushToTalkKey"
         static let inputGain = "settings.inputGain"
@@ -98,6 +99,11 @@ final class AppSettings {
         didSet { defaults.set(inputDeviceId, forKey: Key.inputDeviceId) }
     }
 
+    // the mac camera picked in voice settings by its unique id, nil for the first one there
+    var cameraDeviceId: String? {
+        didSet { defaults.set(cameraDeviceId, forKey: Key.cameraDeviceId) }
+    }
+
     // the mic stays closed in a call until a key is held, see PushToTalk
     var pushToTalk: Bool {
         didSet { defaults.set(pushToTalk, forKey: Key.pushToTalk) }
@@ -135,6 +141,7 @@ final class AppSettings {
         soundboardVolume = defaults.double(forKey: Key.soundboardVolume)
         doubleTapReaction = defaults.string(forKey: Key.doubleTapReaction) ?? "heart"
         inputDeviceId = defaults.string(forKey: Key.inputDeviceId)
+        cameraDeviceId = defaults.string(forKey: Key.cameraDeviceId)
         pushToTalk = defaults.bool(forKey: Key.pushToTalk)
         pushToTalkKey = defaults.string(forKey: Key.pushToTalkKey).flatMap(PushToTalkKey.init(rawValue:)) ?? .rightOption
         inputGain = defaults.double(forKey: Key.inputGain)

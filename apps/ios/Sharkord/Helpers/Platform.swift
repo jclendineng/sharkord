@@ -4,12 +4,14 @@ import AppKit
 
 typealias PlatformImage = NSImage
 typealias PlatformColor = NSColor
+typealias PlatformView = NSView
 typealias PlatformTextContentType = NSTextContentType
 #else
 import UIKit
 
 typealias PlatformImage = UIImage
 typealias PlatformColor = UIColor
+typealias PlatformView = UIView
 typealias PlatformTextContentType = UITextContentType
 #endif
 
@@ -83,25 +85,38 @@ enum Platform {
     }
 }
 
-// a mac has no taptic engine to tap
+// a mac taps through a force touch trackpad, the only part of it that can, and only while a
+// finger is on it. it has one kind of tap, so all three are the same there
 enum Haptics {
     static func light() {
         #if os(iOS)
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        #else
+        tapTrackpad()
         #endif
     }
 
     static func medium() {
         #if os(iOS)
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        #else
+        tapTrackpad()
         #endif
     }
 
     static func success() {
         #if os(iOS)
         UINotificationFeedbackGenerator().notificationOccurred(.success)
+        #else
+        tapTrackpad()
         #endif
     }
+
+    #if os(macOS)
+    private static func tapTrackpad() {
+        NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .now)
+    }
+    #endif
 }
 
 extension Image {

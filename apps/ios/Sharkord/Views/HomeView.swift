@@ -1,3 +1,4 @@
+import AVFoundation
 import GameController
 import SwiftUI
 
@@ -82,6 +83,9 @@ struct HomeView: View {
         .onReceive(NotificationCenter.default.publisher(for: .GCKeyboardDidDisconnect)) { _ in
             hasHardwareKeyboard = GCKeyboard.coalesced != nil
         }
+        #if os(macOS)
+        .onReceive(NotificationCenter.default.publisher(for: AVCaptureDevice.wasDisconnectedNotification), perform: cameraDisconnected)
+        #endif
         .onGeometryChange(for: Bool.self, of: { Self.isSplit($0.size) }, action: setSplit)
         .onGeometryChange(for: Bool.self, of: { $0.size.height > $0.size.width }) { portrait in
             isPortrait = portrait
@@ -540,6 +544,20 @@ struct HomeView: View {
                 }
             }
     }
+
+    #if os(macOS)
+    private func cameraDisconnected(_ notification: Notification) {
+        guard let device = notification.object as? AVCaptureDevice, let voiceSession = servers.voiceSession else {
+            return
+        }
+
+        let uniqueID = device.uniqueID
+
+        Task {
+            await voiceSession.cameraDisconnected(uniqueID)
+        }
+    }
+    #endif
 
     private func setSplit(_ split: Bool) {
         guard split != isSplit else {

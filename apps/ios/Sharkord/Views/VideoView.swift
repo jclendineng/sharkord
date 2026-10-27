@@ -1,36 +1,46 @@
+import AVFoundation
 import SwiftUI
 import WebRTC
 
 // a webrtc track on screen. the renderer is attached and detached by hand, a track left
 // attached to a dismantled view keeps decoding frames for nothing
 #if os(macOS)
+// a mac draws through a sample buffer layer, which fits, fills and mirrors, see SampleBufferVideoView
 struct VideoView: NSViewRepresentable {
     let track: VideoTrackBox
     var contentMode: ContentMode = .fill
     var isMirrored = false
 
-    // webrtc's mac view draws the frame across its whole bounds, fit and fill are not done yet
-    func makeNSView(context: Context) -> RTCMTLNSVideoView {
-        let view = RTCMTLNSVideoView()
+    private var videoGravity: AVLayerVideoGravity {
+        contentMode == .fit ? .resizeAspect : .resizeAspectFill
+    }
 
-        track.track.add(view)
+    func makeNSView(context: Context) -> SampleBufferVideoView {
+        let view = SampleBufferVideoView()
+
+        view.videoGravity = videoGravity
+        view.isMirrored = isMirrored
+        track.track.add(view.renderer)
         context.coordinator.track = track.track
 
         return view
     }
 
-    func updateNSView(_ view: RTCMTLNSVideoView, context: Context) {
+    func updateNSView(_ view: SampleBufferVideoView, context: Context) {
+        view.videoGravity = videoGravity
+        view.isMirrored = isMirrored
+
         guard context.coordinator.track !== track.track else {
             return
         }
 
-        context.coordinator.track?.remove(view)
-        track.track.add(view)
+        context.coordinator.track?.remove(view.renderer)
+        track.track.add(view.renderer)
         context.coordinator.track = track.track
     }
 
-    static func dismantleNSView(_ view: RTCMTLNSVideoView, coordinator: Coordinator) {
-        coordinator.track?.remove(view)
+    static func dismantleNSView(_ view: SampleBufferVideoView, coordinator: Coordinator) {
+        coordinator.track?.remove(view.renderer)
         coordinator.track = nil
     }
 

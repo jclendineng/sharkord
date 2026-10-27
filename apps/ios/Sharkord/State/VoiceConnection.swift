@@ -55,6 +55,8 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
     private var cameraTrack: RTCVideoTrack?
     private var cameraProducer: Producer?
     private var cameraPosition = AVCaptureDevice.Position.front
+    // a mac's cameras have no front or back, the one picked in voice settings is used instead
+    private var cameraDeviceId: String?
     // the camera filming now, which the reactions are played on
     private var cameraDevice: AVCaptureDevice?
     private var screenProducer: Producer?
@@ -93,12 +95,6 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
         self.onVideo = onVideo
         // the factories are passed either way: the plain init knows only h264 baseline, so the
         // phone could not take vp8, vp9 or av1 from a browser
-        #if os(macOS)
-        self.factory = RTCPeerConnectionFactory(
-            encoderFactory: RTCDefaultVideoEncoderFactory(),
-            decoderFactory: RTCDefaultVideoDecoderFactory()
-        )
-        #else
         self.factory = mixingDevice.map { mixer in
             RTCPeerConnectionFactory(
                 encoderFactory: RTCDefaultVideoEncoderFactory(),
@@ -109,7 +105,6 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
             encoderFactory: RTCDefaultVideoEncoderFactory(),
             decoderFactory: RTCDefaultVideoDecoderFactory()
         )
-        #endif
         self.device = Device(pcFactory: factory)
         // only ios takes the hardware encoder away in the background
         #if os(iOS)
@@ -291,7 +286,7 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
 
             self.cameraPosition = self.cameraPosition == .front ? .back : .front
 
-            if let device = Self.captureDevice(self.cameraPosition) {
+            if let device = self.captureDevice() {
                 self.cameraRotation?.follow(device.position)
                 Self.startCapture(camera, device: device)
                 self.cameraDevice = device
@@ -299,11 +294,36 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
         }
     }
 
+    // whether the call is filming with this camera, to tell when the one that just went away was
+    func isFilming(with uniqueID: String) async -> Bool {
+        await onQueueValue {
+            self.cameraDevice?.uniqueID == uniqueID
+        }
+    }
+
+    // the camera to film with, switched to at once when it is already on
+    func useCamera(_ uniqueID: String?) {
+        queue.async {
+            self.cameraDeviceId = uniqueID
+
+            guard let camera = self.camera, let device = self.captureDevice(), device != self.cameraDevice else {
+                return
+            }
+
+            Self.startCapture(camera, device: device)
+            self.cameraDevice = device
+        }
+    }
+
     func setMicMuted(_ muted: Bool) {
-        // with game audio in the same track, only the voice may go quiet
+        // with game audio in the same track, only the voice may go quiet. the mixer is told
+        // either way, so hearing yourself stops with the mic
         if let mixingDevice {
             mixingDevice.isMicMuted = muted
-            return
+
+            if mixingDevice.sharesAppAudio {
+                return
+            }
         }
 
         queue.async {
@@ -406,7 +426,7 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
 
         // game audio rides in this track when mixing, and webrtc's noise suppression and gain
         // control treat music as noise to remove. ios's voice processing still cleans the mic
-        let isMixing = mixingDevice != nil
+        let isMixing = mixingDevice?.sharesAppAudio == true
         let constraints = RTCMediaConstraints(
             mandatoryConstraints: nil,
             optionalConstraints: [
@@ -597,7 +617,7 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
             return
         }
 
-        guard let device = Self.captureDevice(cameraPosition) else {
+        guard let device = captureDevice() else {
             throw VoiceError(message: "No camera is available.")
         }
 
@@ -640,9 +660,26 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
         }
     }
 
-    private static func captureDevice(_ position: AVCaptureDevice.Position) -> AVCaptureDevice? {
-        RTCCameraVideoCapturer.captureDevices().first { $0.position == position }
-            ?? RTCCameraVideoCapturer.captureDevices().first
+    // every camera a call can film with, which voice settings lists on a mac. webrtc's own list
+    // is built in cameras only, which a mac mini or a studio has none of: a phone held up as a
+    // continuity camera or a usb one is what they film with
+    static var cameras: [AVCaptureDevice] {
+        #if os(macOS)
+        AVCaptureDevice.DiscoverySession(
+            deviceTypes: [.builtInWideAngleCamera, .continuityCamera, .external],
+            mediaType: .video,
+            position: .unspecified
+        ).devices
+        #else
+        RTCCameraVideoCapturer.captureDevices()
+        #endif
+    }
+
+    private func captureDevice() -> AVCaptureDevice? {
+        let devices = Self.cameras
+        let picked = devices.first { $0.uniqueID == cameraDeviceId }
+
+        return picked ?? devices.first { $0.position == cameraPosition } ?? devices.first
     }
 
     // 1080p at 30fps where the camera has it, the size a call gets on a mac or a full screen.

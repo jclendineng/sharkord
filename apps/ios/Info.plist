@@ -32,6 +32,8 @@
 	<true/>
 	<key>NSCameraStudioLightEnabled</key>
 	<true/>
+	<key>NSCameraUseContinuityCameraDeviceType</key>
+	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Sharkord uses the camera so you can share video in voice channels and scan a sign in QR code.</string>
 	<key>NSLocalNetworkUsageDescription</key>

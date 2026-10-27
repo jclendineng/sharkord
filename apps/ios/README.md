@@ -95,6 +95,16 @@ shows the system picker, and once the screen is picked the app captures it itsel
 app audio on, the stream also captures the other apps' sound, converted to 48khz mono for
 `MixingAudioDevice`. There is no broadcast extension any more.
 
+A native Mac call always uses `MixingAudioDevice`, since WebRTC's own Mac device only records the
+system's default mic. There it has no audio session: the engine is pointed at the mic picked in
+Voice & Video (`AudioInputPreference.apply(to:inputDeviceId:)`) and built again on
+`AVAudioEngineConfigurationChange`, when a mic comes or goes. Echo cancellation stays WebRTC's
+own, since voice processing on a Mac turns every other app's sound down. The Mac WebRTC framework
+exports `RTCAudioDevice.h` for it (`patch-mac-framework.py`, release `mediasoup-0.13.2-mac2`).
+Mac video is drawn through `SampleBufferVideoView`, the layer picture in picture uses, which fits,
+fills and mirrors where WebRTC's Mac view only stretched. Picture in picture starts when the window
+is minimized or the app hidden, since a Mac never starts it by itself.
+
 The share keeps running with the app in the background only because `Info.plist` lists the
 `screen-capture` background mode beside `audio`. Without it iOS stops the stream the moment the
 app leaves the screen (`SCStreamErrorMissingBackgroundMode`).

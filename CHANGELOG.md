@@ -172,6 +172,13 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 - A native iOS and iPad app, signing in to any server by its address, with push notifications, SSO and server passwords.
 - The native Mac app goes to TestFlight from GitHub Actions, and TestFlight keeps it up to date, so there is no release to download each time.
+- The native Mac app has everything the iPhone app has in a call.
+  - Voice & Video picks the mic and the camera, and a change during a call switches straight away. Input Volume shows for a mic that lets it be set.
+  - Hear Yourself in Calls and Share App Audio, which sends the sound of what you share with your voice.
+  - Video fits or fills its tile and your own camera is mirrored, as on the phone.
+  - The call goes into picture in picture when the window is minimized or the app hidden.
+  - The camera button on your own tile moves to the Mac's next camera.
+  - An iPhone held up as the Mac's camera and USB cameras are listed, and the camera turns off when its phone disconnects.
 - A new layout: server rail, channel list and a floating user bar.
   - On iPad the channel list and the chat sit side by side as two rounded cards in both orientations.
   - A handle slides the chat over the list to full width, and typing slides it over by itself.
@@ -392,6 +399,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - On a Mac, opening a profile or the member list puts away the inbox, pins, threads or search panel.
 - The open chat is only marked read while the app is in front, so a Mac left open behind other windows no longer reads messages before your phone sees them.
 - On a Mac, a click anywhere in the chat or the member list also puts away an open panel. The channel bell menu shows its levels properly, the settings windows have a solid background, a sidebar in line with the page, and close with Escape, and the chat's scroll bar clears the card's rounded corner.
+- On a Mac, opening the channel bell menu puts away an open panel, list rows light up under the pointer in the native app, the settings windows have a faint edge against the chat, and a force touch trackpad taps where the phone would.
 - Mark All As Read sits under the inbox's tabs and only shows when there is something to clear.
 - A reply's quote line sits with its message, with the gap above it, instead of pressed against the message before, and pressing the reply highlights the quote line too.
 - An animated GIF in a message shows its first frame straight away, and after a launch it is there at once instead of leaving a gap while it loads.

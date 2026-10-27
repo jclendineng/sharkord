@@ -72,6 +72,14 @@ struct SettingsWindow<Sidebar: View, Detail: View>: View {
         // a pushed page's back button in the bar's neutral colour, not a blurple disc
         .tint(Theme.header)
         .background(Theme.deepBackground)
+        // the sheet is as dark as the chat behind it, which hid its edge
+        .overlay {
+            ConcentricRectangle()
+                // half the line falls outside the sheet, the inner half shows
+                .stroke(.white.opacity(0.12), lineWidth: 2)
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
+        }
         .presentationBackground(Theme.deepBackground)
         // escape closes it, as it does every other mac sheet
         .escapeGoesBack()

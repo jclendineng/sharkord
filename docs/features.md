@@ -185,7 +185,9 @@ lowest layer that fills the tallest tile (up to 270 lines the low one, up to 540
 that auto). A screen share always asks for its sharpest. Leaving the app with someone else's video
 in the call opens picture in picture (a screen share first, then whoever else is talking, then
 anyone's camera), started from the voice bar, drawn through a sample buffer layer since WebRTC's Metal view
-stays blank there. The call headers show signal bars from the connection's round trip and the
+stays blank there. The native Mac app starts it when the window is minimized or the app is hidden,
+and has the rest of the call too: picking the mic and camera, hearing yourself, app audio,
+fit and fill, and a mirrored own camera. The call headers show signal bars from the connection's round trip and the
 packets lost in the last two seconds, with the numbers on a tap. The call sheet opens the
 system's Mic Mode panel and the app's own Video Effects sheet: the camera's preview, a grid of
 reactions played with `performEffect(for:)`, Center Stage switched in the cooperative control

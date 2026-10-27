@@ -2,32 +2,13 @@ import AVFoundation
 import os
 import WebRTC
 
-#if os(macOS)
-// a mac call uses webrtc's own audio device, which records the mic and plays the call itself.
-// sharing app audio and hearing yourself are not built for the mac yet, so this is never made
-// there and the call never asks for it
-nonisolated final class MixingAudioDevice: @unchecked Sendable {
-    // what offers hearing yourself in a call and sharing app audio, which both need this device
-    static let isSupported = false
-
-    var isMicMuted = false
-    var isMonitoring = false
-
-    init(options: VoiceConnection.AudioOptions) {}
-
-    func writeGameAudio(_ samples: UnsafeBufferPointer<Float>) {}
-
-    func clearGameAudio() {}
-}
-#else
 // webrtc's own ios audio device only ever records the microphone. this one stands in for it
 // when a screen share should carry the game's sound: it records the mic and plays the call
 // through AVAudioEngine like the built in one does, and mixes in the game audio ScreenCapture
-// hands over. it also plays the mic back for hearing yourself. only used when "share app audio"
-// or "hear yourself in calls" is on, every other call keeps webrtc's device
+// hands over. it also plays the mic back for hearing yourself. on ios it is only used when "share
+// app audio" or "hear yourself in calls" is on, every other call keeps webrtc's device. a mac
+// call always uses it, since webrtc's mac device only ever takes the system's default mic
 nonisolated final class MixingAudioDevice: NSObject, RTCAudioDevice, @unchecked Sendable {
-    // what offers hearing yourself in a call and sharing app audio, which both need this device
-    static let isSupported = true
     // what ScreenCapture hands over
     static let gameSampleRate = 48_000.0
     // enough for the largest buffer core audio hands a callback
@@ -39,6 +20,13 @@ nonisolated final class MixingAudioDevice: NSObject, RTCAudioDevice, @unchecked 
 
     private let engine = AVAudioEngine()
     private let options: VoiceConnection.AudioOptions
+    // whether the screen share's sound goes into the call, see AppSettings.shareAppAudio
+    let sharesAppAudio: Bool
+    #if os(macOS)
+    // core audio's uid of the mic to record, nil for the system's default
+    private var inputDeviceId: String?
+    private var configurationObserver: NSObjectProtocol?
+    #endif
     private var delegate: RTCAudioDeviceDelegate?
     private var sourceNode: AVAudioSourceNode?
     private var sinkNode: AVAudioSinkNode?
@@ -66,11 +54,21 @@ nonisolated final class MixingAudioDevice: NSObject, RTCAudioDevice, @unchecked 
         var isMonitoring = false
     }
 
-    init(options: VoiceConnection.AudioOptions) {
+    init(options: VoiceConnection.AudioOptions, sharesAppAudio: Bool, inputDeviceId: String?) {
         self.options = options
+        self.sharesAppAudio = sharesAppAudio
+        #if os(macOS)
+        self.inputDeviceId = inputDeviceId
+        #endif
     }
 
     deinit {
+        #if os(macOS)
+        if let configurationObserver {
+            NotificationCenter.default.removeObserver(configurationObserver)
+        }
+        #endif
+
         recordScratch.deallocate()
         playoutScratch.deallocate()
         gameScratch.deallocate()
@@ -148,16 +146,39 @@ nonisolated final class MixingAudioDevice: NSObject, RTCAudioDevice, @unchecked 
         gameAudio.clear()
     }
 
+    #if os(macOS)
+    // a mic picked in voice settings during the call, taken on webrtc's audio thread like the
+    // engine's other changes
+    func setInputDevice(_ uid: String?) {
+        delegate?.dispatchAsync { [weak self] in
+            guard let self else {
+                return
+            }
+
+            inputDeviceId = uid
+            rebuildEngine()
+        }
+    }
+    #endif
+
     // MARK: RTCAudioDevice
 
     var deviceInputSampleRate: Double { inputRate }
-    var inputIOBufferDuration: TimeInterval { AVAudioSession.sharedInstance().ioBufferDuration }
     var inputNumberOfChannels: Int { 1 }
-    var inputLatency: TimeInterval { AVAudioSession.sharedInstance().inputLatency }
     var deviceOutputSampleRate: Double { outputRate }
-    var outputIOBufferDuration: TimeInterval { AVAudioSession.sharedInstance().ioBufferDuration }
     var outputNumberOfChannels: Int { 1 }
+    #if os(iOS)
+    var inputIOBufferDuration: TimeInterval { AVAudioSession.sharedInstance().ioBufferDuration }
+    var inputLatency: TimeInterval { AVAudioSession.sharedInstance().inputLatency }
+    var outputIOBufferDuration: TimeInterval { AVAudioSession.sharedInstance().ioBufferDuration }
     var outputLatency: TimeInterval { AVAudioSession.sharedInstance().outputLatency }
+    #else
+    // a mac has no session to ask, an engine's buffer there is 512 frames, about 10 ms
+    var inputIOBufferDuration: TimeInterval { 0.01 }
+    var inputLatency: TimeInterval { engine.inputNode.presentationLatency }
+    var outputIOBufferDuration: TimeInterval { 0.01 }
+    var outputLatency: TimeInterval { engine.outputNode.presentationLatency }
+    #endif
     var isInitialized: Bool { flags.withLock { $0.isInitialized } }
     var isPlayoutInitialized: Bool { flags.withLock { $0.isPlayoutInitialized } }
     var isPlaying: Bool { flags.withLock { $0.isPlaying } }
@@ -168,6 +189,7 @@ nonisolated final class MixingAudioDevice: NSObject, RTCAudioDevice, @unchecked 
         self.delegate = delegate
 
         do {
+            #if os(iOS)
             let session = AVAudioSession.sharedInstance()
 
             try session.setCategory(
@@ -179,6 +201,9 @@ nonisolated final class MixingAudioDevice: NSObject, RTCAudioDevice, @unchecked 
             try session.setPreferredIOBufferDuration(0.01)
             try session.setActive(true)
             Self.preferHeadset(session)
+            #else
+            observeConfigurationChanges()
+            #endif
             try setUpEngine()
         } catch {
             print("[voice] mixing audio device could not start: \(error)")
@@ -194,6 +219,13 @@ nonisolated final class MixingAudioDevice: NSObject, RTCAudioDevice, @unchecked 
     }
 
     func terminateDevice() -> Bool {
+        #if os(macOS)
+        if let configurationObserver {
+            NotificationCenter.default.removeObserver(configurationObserver)
+            self.configurationObserver = nil
+        }
+        #endif
+
         engine.stop()
         flags.withLock { $0 = Flags() }
         gameAudio.clear()
@@ -253,6 +285,7 @@ nonisolated final class MixingAudioDevice: NSObject, RTCAudioDevice, @unchecked 
         return true
     }
 
+    #if os(iOS)
     // airpods or any other headset, when one is there. the session comes up before a bluetooth
     // headset's call link does, and default to speaker then keeps the call on the speaker with
     // the headset in. asking for its mic moves the sound there with it. a pick in the output
@@ -266,6 +299,54 @@ nonisolated final class MixingAudioDevice: NSObject, RTCAudioDevice, @unchecked 
 
         try? session.setPreferredInput(headset)
     }
+    #else
+    // a mic plugged in or out, or the default one changing, stops the engine, and the new device
+    // can have another rate. it is built again for it on webrtc's audio thread, which is where
+    // the rates it was told about have to change
+    private func observeConfigurationChanges() {
+        configurationObserver = NotificationCenter.default.addObserver(
+            forName: .AVAudioEngineConfigurationChange,
+            object: engine,
+            queue: nil
+        ) { [weak self] _ in
+            self?.delegate?.dispatchAsync {
+                self?.rebuildEngine()
+            }
+        }
+    }
+
+    private func rebuildEngine() {
+        engine.stop()
+
+        if let sinkNode {
+            engine.detach(sinkNode)
+        }
+
+        if let sourceNode {
+            engine.detach(sourceNode)
+        }
+
+        sinkNode = nil
+        sourceNode = nil
+        gameConverter = nil
+
+        do {
+            try setUpEngine()
+        } catch {
+            print("[voice] mixing audio device could not follow the new mic: \(error)")
+            return
+        }
+
+        delegate?.notifyAudioInputParametersChange()
+        delegate?.notifyAudioOutputParametersChange()
+
+        let isRunning = flags.withLock { $0.isPlaying || $0.isRecording }
+
+        if isRunning {
+            _ = startEngine()
+        }
+    }
+    #endif
 
     // MARK: engine
 
@@ -273,10 +354,16 @@ nonisolated final class MixingAudioDevice: NSObject, RTCAudioDevice, @unchecked 
         let input = engine.inputNode
 
         // the system's echo cancellation, which the built in device gets from its voice
-        // processing unit. it has to be on before the formats are read
+        // processing unit. it has to be on before the formats are read. a mac keeps webrtc's own
+        // echo canceller, as its built in device did: voice processing there turns down every
+        // other app's sound, a game's among them, and records only the default mic
+        #if os(iOS)
         if options.echoCancellation {
             try input.setVoiceProcessingEnabled(true)
         }
+        #else
+        AudioInputPreference.apply(to: engine, inputDeviceId: inputDeviceId)
+        #endif
 
         let inputFormat = input.outputFormat(forBus: 0)
         let outputFormat = engine.outputNode.inputFormat(forBus: 0)
@@ -497,4 +584,3 @@ nonisolated final class GameAudioRing: @unchecked Sendable {
         state.withLock { $0 = (0, 0) }
     }
 }
-#endif

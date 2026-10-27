@@ -10,8 +10,11 @@ struct VoiceVideoSettingsScreen: View {
     @State private var hearYourself = false
     @State private var isCameraPreviewOn = false
     @State private var cameraPosition = AVCaptureDevice.Position.front
+    @State private var cameras: [AVCaptureDevice] = []
     #if os(iOS)
     @State private var inputs: [AVAudioSessionPortDescription] = []
+    #else
+    @State private var inputs: [AudioInputPreference.Input] = []
     #endif
     // whether the input device lets its gain be set, most built in and usb mics on a mac do not
     @State private var canSetInputGain = false
@@ -51,16 +54,17 @@ struct VoiceVideoSettingsScreen: View {
             // app, and many have no mic either, a headset's is used once one is plugged in
             if isOnMac {
                 Section {
-                    // the native mac app's calls use webrtc's own input, which this does not pick yet
-                    #if os(iOS)
                     Picker("Input Device", selection: $settings.inputDeviceId) {
                         Text("Automatic").tag(String?.none)
 
                         ForEach(inputs, id: \.uid) { input in
+                            #if os(iOS)
                             Text(input.portName).tag(Optional(input.uid))
+                            #else
+                            Text(input.name).tag(Optional(input.uid))
+                            #endif
                         }
                     }
-                    #endif
 
                     HStack {
                         Text("Output Device")
@@ -78,11 +82,8 @@ struct VoiceVideoSettingsScreen: View {
                 } header: {
                     SectionTitle("Devices")
                 } footer: {
-                    // about the input picker above, which the native mac app leaves out
-                    #if os(iOS)
                     Text("Automatic uses a headset's mic whenever one is plugged in.")
                         .wrappingFooter()
-                    #endif
                 }
             }
 
@@ -188,15 +189,13 @@ struct VoiceVideoSettingsScreen: View {
                     isOn: $settings.autoGainControl
                 )
 
-                if MixingAudioDevice.isSupported {
-                    DetailToggle(
-                        title: "Hear Yourself in Calls",
-                        subtitle: hearYourselfFooter,
-                        isOn: $settings.hearYourselfInCalls
-                    )
-                    .onChange(of: settings.hearYourselfInCalls) { _, hears in
-                        servers.voiceSession?.setHearsYourself(hears)
-                    }
+                DetailToggle(
+                    title: "Hear Yourself in Calls",
+                    subtitle: hearYourselfFooter,
+                    isOn: $settings.hearYourselfInCalls
+                )
+                .onChange(of: settings.hearYourselfInCalls) { _, hears in
+                    servers.voiceSession?.setHearsYourself(hears)
                 }
             } header: {
                 SectionTitle("Voice Processing")
@@ -211,25 +210,41 @@ struct VoiceVideoSettingsScreen: View {
                     Text("High (1080p)").tag(AppSettings.StreamQuality.high)
                 }
 
-                if MixingAudioDevice.isSupported {
-                    DetailToggle(
-                        title: "Share App Audio",
-                        subtitle: "Beta. Sends the sound of what you share, like a game, mixed into your voice. Takes effect the next time you join.",
-                        isOn: $settings.shareAppAudio
-                    )
-                }
+                DetailToggle(
+                    title: "Share App Audio",
+                    subtitle: "Beta. Sends the sound of what you share, like a game, mixed into your voice. Takes effect the next time you join.",
+                    isOn: $settings.shareAppAudio
+                )
             } header: {
                 SectionTitle("Screen Share")
             }
 
             Section {
+                #if os(macOS)
+                Picker("Camera", selection: $settings.cameraDeviceId) {
+                    Text("Automatic").tag(String?.none)
+
+                    ForEach(cameras, id: \.uniqueID) { camera in
+                        Text(camera.localizedName).tag(Optional(camera.uniqueID))
+                    }
+                }
+                #endif
+
                 if isCameraPreviewOn {
-                    CameraPreview(position: cameraPosition)
+                    #if os(macOS)
+                    // a mac camera films landscape
+                    CameraPreview(position: cameraPosition, deviceId: settings.cameraDeviceId)
+                        .aspectRatio(16 / 9, contentMode: .fit)
+                        .clipShape(.rect(cornerRadius: 12))
+                        .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
+                    #else
+                    CameraPreview(position: cameraPosition, deviceId: nil)
                         .aspectRatio(3 / 4, contentMode: .fit)
                         .clipShape(.rect(cornerRadius: 12))
                         .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
 
                     Button("Flip Camera", action: flipCamera)
+                    #endif
                 }
 
                 Button(isCameraPreviewOn ? "Stop Video Preview" : "Test Video", action: toggleCameraPreview)
@@ -253,9 +268,22 @@ struct VoiceVideoSettingsScreen: View {
         .onChange(of: settings.streamQuality) { _, quality in
             servers.voiceSession?.setStreamQuality(quality)
         }
-        .onChange(of: settings.inputDeviceId) {
+        .onChange(of: settings.inputDeviceId) { _, inputDeviceId in
             AudioInputPreference.apply()
+            #if os(macOS)
+            servers.voiceSession?.setInputDevice(inputDeviceId)
+            canSetInputGain = AudioInputPreference.canSetInputGain
+            #endif
         }
+        #if os(macOS)
+        .onChange(of: settings.cameraDeviceId) { _, cameraDeviceId in
+            servers.voiceSession?.useCamera(cameraDeviceId)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: AVCaptureDevice.wasConnectedNotification)) { _ in
+            cameras = VoiceConnection.cameras
+        }
+        .onReceive(NotificationCenter.default.publisher(for: AVCaptureDevice.wasDisconnectedNotification), perform: cameraDisconnected)
+        #endif
         .onChange(of: settings.inputGain) {
             AudioInputPreference.apply()
         }
@@ -266,9 +294,14 @@ struct VoiceVideoSettingsScreen: View {
         .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.routeChangeNotification)) { _ in
             loadInputs()
         }
+        #else
+        .onReceive(NotificationCenter.default.publisher(for: AudioInputPreference.inputsDidChange)) { _ in
+            loadInputs()
+        }
         #endif
         .task {
             loadInputs()
+            cameras = VoiceConnection.cameras
         }
         .task {
             while !Task.isCancelled {
@@ -299,6 +332,9 @@ struct VoiceVideoSettingsScreen: View {
 
         inputs = session.availableInputs ?? []
         canSetInputGain = session.isInputGainSettable
+        #else
+        inputs = AudioInputPreference.inputs()
+        canSetInputGain = AudioInputPreference.canSetInputGain
         #endif
     }
 
@@ -323,6 +359,24 @@ struct VoiceVideoSettingsScreen: View {
             isCameraPreviewOn = await AVCaptureDevice.requestAccess(for: .video)
         }
     }
+
+    #if os(macOS)
+    // the preview stops with its camera rather than holding the last frame. automatic's pick is
+    // not known here, so any camera leaving stops it
+    private func cameraDisconnected(_ notification: Notification) {
+        cameras = VoiceConnection.cameras
+
+        guard let device = notification.object as? AVCaptureDevice else {
+            return
+        }
+
+        let pickedId = settings.cameraDeviceId
+
+        if pickedId == nil || pickedId == device.uniqueID {
+            isCameraPreviewOn = false
+        }
+    }
+    #endif
 
     private func flipCamera() {
         cameraPosition = cameraPosition == .front ? .back : .front
@@ -504,6 +558,8 @@ private typealias PreviewRepresentable = UIViewRepresentable
 
 private struct CameraPreview: PreviewRepresentable {
     let position: AVCaptureDevice.Position
+    // a mac's pick from voice settings, which has no front or back
+    let deviceId: String?
 
     #if os(macOS)
     func makeNSView(context: Context) -> PreviewView {
@@ -511,7 +567,7 @@ private struct CameraPreview: PreviewRepresentable {
     }
 
     func updateNSView(_ view: PreviewView, context: Context) {
-        context.coordinator.start(position)
+        context.coordinator.start(position, deviceId: deviceId)
     }
 
     static func dismantleNSView(_ view: PreviewView, coordinator: Coordinator) {
@@ -523,7 +579,7 @@ private struct CameraPreview: PreviewRepresentable {
     }
 
     func updateUIView(_ view: PreviewView, context: Context) {
-        context.coordinator.start(position)
+        context.coordinator.start(position, deviceId: deviceId)
     }
 
     static func dismantleUIView(_ view: PreviewView, coordinator: Coordinator) {
@@ -536,7 +592,7 @@ private struct CameraPreview: PreviewRepresentable {
 
         view.previewLayer.videoGravity = .resizeAspectFill
         view.previewLayer.session = context.coordinator.session
-        context.coordinator.start(position)
+        context.coordinator.start(position, deviceId: deviceId)
 
         return view
     }
@@ -548,14 +604,16 @@ private struct CameraPreview: PreviewRepresentable {
     final class Coordinator {
         let session = AVCaptureSession()
         private var position: AVCaptureDevice.Position?
+        private var deviceId: String?
         private let queue = DispatchQueue(label: "com.sharkord.camera-preview")
 
-        func start(_ newPosition: AVCaptureDevice.Position) {
-            guard newPosition != position else {
+        func start(_ newPosition: AVCaptureDevice.Position, deviceId newDeviceId: String?) {
+            guard newPosition != position || newDeviceId != deviceId else {
                 return
             }
 
             position = newPosition
+            deviceId = newDeviceId
 
             let session = session
 
@@ -563,9 +621,10 @@ private struct CameraPreview: PreviewRepresentable {
                 session.beginConfiguration()
                 session.inputs.forEach { session.removeInput($0) }
 
-                // a mac's camera has no front or back, any camera there will do
+                // the camera a call would film with, the picked one first on a mac
                 if
-                    let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: newPosition)
+                    let device = newDeviceId.flatMap(AVCaptureDevice.init(uniqueID:))
+                        ?? AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: newPosition)
                         ?? AVCaptureDevice.default(for: .video),
                     let input = try? AVCaptureDeviceInput(device: device),
                     session.canAddInput(input)

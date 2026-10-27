@@ -174,18 +174,174 @@ extension View {
 
     // a list styled some other way still lights the row under a mac pointer
     func listHoverHighlight() -> some View {
-        #if os(macOS)
-        // appkit draws a mac list, the uikit probe below has nothing to find there
-        self
-        #else
         background {
             if Platform.isMac {
                 ListHoverHighlighter()
             }
         }
-        #endif
     }
 }
+
+#if os(macOS)
+// the same on the native mac, where appkit draws a list as a table view. a row's background there
+// is drawn by swiftui inside the row, out of reach, so a translucent rounded fill is laid over
+// the hovered row instead, the way a mac sidebar lights one
+private struct ListHoverHighlighter: NSViewRepresentable {
+    func makeNSView(context: Context) -> ListHoverProbe {
+        ListHoverProbe()
+    }
+
+    func updateNSView(_ nsView: ListHoverProbe, context: Context) {}
+}
+
+final class ListHoverProbe: NSView {
+    private weak var tableView: NSTableView?
+    private let fill = HoverFill()
+    private var trackingArea: NSTrackingArea?
+    private var scrollObserver: NSObjectProtocol?
+
+    isolated deinit {
+        if let scrollObserver {
+            NotificationCenter.default.removeObserver(scrollObserver)
+        }
+
+        fill.removeFromSuperview()
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+
+        guard window != nil else {
+            return
+        }
+
+        // the list is laid out a moment after its background, so it is looked for then
+        DispatchQueue.main.async { [weak self] in
+            self?.attach()
+        }
+    }
+
+    private func attach() {
+        guard tableView == nil, let table = findTableView() else {
+            return
+        }
+
+        tableView = table
+        fill.isHidden = true
+        table.addSubview(fill, positioned: .above, relativeTo: nil)
+
+        let area = NSTrackingArea(
+            rect: .zero,
+            options: [.mouseMoved, .mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect],
+            owner: self,
+            userInfo: nil
+        )
+
+        table.addTrackingArea(area)
+        trackingArea = area
+
+        // a scroll moves the rows under a pointer that stays still
+        if let clipView = table.enclosingScrollView?.contentView {
+            clipView.postsBoundsChangedNotifications = true
+            scrollObserver = NotificationCenter.default.addObserver(
+                forName: NSView.boundsDidChangeNotification,
+                object: clipView,
+                queue: .main
+            ) { [weak self] _ in
+                MainActor.assumeIsolated {
+                    self?.update()
+                }
+            }
+        }
+    }
+
+    // the background sits beside the list rather than in it, so the nearest table view under a
+    // shared ancestor that covers this probe is the list
+    private func findTableView() -> NSTableView? {
+        var ancestor = superview
+
+        while let current = ancestor {
+            if let table = Self.firstTableView(in: current, covering: convert(bounds, to: current)) {
+                return table
+            }
+
+            ancestor = current.superview
+        }
+
+        return nil
+    }
+
+    private static func firstTableView(in view: NSView, covering frame: NSRect) -> NSTableView? {
+        if let table = view as? NSTableView, let scrollView = table.enclosingScrollView, scrollView.convert(scrollView.bounds, to: view).intersects(frame) {
+            return table
+        }
+
+        for subview in view.subviews {
+            if let table = firstTableView(in: subview, covering: subview.convert(frame, from: view)) {
+                return table
+            }
+        }
+
+        return nil
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        update()
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        update()
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        fill.isHidden = true
+    }
+
+    private func update() {
+        guard let table = tableView, let window = table.window else {
+            return
+        }
+
+        let point = table.convert(window.mouseLocationOutsideOfEventStream, from: nil)
+        let row = table.row(at: point)
+
+        guard
+            row >= 0,
+            table.visibleRect.contains(point),
+            let rowView = table.rowView(atRow: row, makeIfNecessary: false),
+            !rowView.isGroupRowStyle
+        else {
+            fill.isHidden = true
+            return
+        }
+
+        // the row's content, which an inset list draws narrower than the row itself
+        let content = rowView.subviews.first.map { rowView.convert($0.frame, to: table) } ?? table.rect(ofRow: row)
+
+        fill.frame = content
+        fill.isHidden = false
+    }
+}
+
+// never takes a click, it only tints what is under it
+private final class HoverFill: NSView {
+    override init(frame: NSRect) {
+        super.init(frame: frame)
+
+        wantsLayer = true
+        layer?.backgroundColor = NSColor.white.withAlphaComponent(0.06).cgColor
+        layer?.cornerRadius = 6
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        nil
+    }
+}
+#endif
 
 #if os(iOS)
 // a mac pointer over a settings row lights it the way channels and messages do. a list's rows are
