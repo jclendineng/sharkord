@@ -40,8 +40,23 @@ struct MessageListView<Header: View>: View {
     // half of a double tap
     @State private var keyboardDismissal: Task<Void, Never>?
 
+    // a chat's first frame lays out only its newest messages, the rest once it has slid in.
+    // all fifty inside the push made opening a channel hang for over a third of a second. the
+    // list holds to the bottom, so the rows coming in above move nothing on screen
+    @State private var showsAllMessages = false
+    private static var firstFrameMessages: Int { 20 }
+
     private var firstUnreadId: Int? {
         store.firstUnreadMessage?.id
+    }
+
+    // a jump to a message needs its row there from the start
+    private var firstShownIndex: Int {
+        guard !showsAllMessages, store.focusedMessageId == nil else {
+            return 0
+        }
+
+        return max(store.messages.count - Self.firstFrameMessages, 0)
     }
 
     var body: some View {
@@ -61,6 +76,10 @@ struct MessageListView<Header: View>: View {
                     }
                 }
                 .animation(.snappy(duration: 0.2), value: isAwayFromBottom)
+        }
+        .task {
+            try? await Task.sleep(for: .milliseconds(450))
+            showsAllMessages = true
         }
         .overlay(alignment: .top) {
             if let unreadMarker = store.unreadMarker {
@@ -95,15 +114,17 @@ struct MessageListView<Header: View>: View {
             // height of the rest, and with pictures and previews its guesses were hundreds of points
             // out, the list jumping as it corrected them mid scroll. a page is fifty messages
             VStack(alignment: .leading, spacing: 0) {
-                if store.hasOlder {
-                    ProgressView()
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                } else if store.hasLoaded {
-                    header
+                if firstShownIndex == 0 {
+                    if store.hasOlder {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                    } else if store.hasLoaded {
+                        header
+                    }
                 }
 
-                ForEach(Array(store.messages.enumerated()), id: \.element.id) { index, message in
+                ForEach(Array(store.messages.enumerated()).dropFirst(firstShownIndex), id: \.element.id) { index, message in
                     if startsNewDay(at: index) {
                         DaySeparator(date: message.createdDate)
                     }
@@ -301,7 +322,12 @@ struct MessageListView<Header: View>: View {
         return .handled
     }
 
+    // with only the newest rows laid out the top is in view, which isn't a scroll to it
     private func loadOlder() {
+        guard firstShownIndex == 0 else {
+            return
+        }
+
         Task {
             await store.loadOlder()
         }

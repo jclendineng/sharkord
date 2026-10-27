@@ -387,6 +387,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - A message inside a thread no longer offers Pin Message, which the server refuses for thread replies.
 - A thread's first reply only shows a date line when it came on a different day from the message that started the thread.
 - A message jumped to, and a message under the pointer on a Mac or an iPad, light the same rounded card as holding a message, instead of a pale blue band.
+- Opening a text channel hangs less: a chat lays out its newest 20 messages as it slides in and the older ones once it is in, about 100 ms less on an iPhone SE.
 - A voice channel's sheet no longer hangs the first time it opens. Its settings, hidden until the sheet is pulled up, are built once it has slid in instead of during the slide.
 - Joining a call no longer stutters as the call sheet grows. The app answered the call's audio starting by asking the system about the microphones on the main thread, which waited about a third of a second while the call set its audio up.
 - The user bar at the bottom of the channel list has a small, light shadow. The wide dark one read as a black box around it.
