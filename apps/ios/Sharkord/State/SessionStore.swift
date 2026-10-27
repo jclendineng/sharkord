@@ -1593,7 +1593,6 @@ final class SessionStore {
         // trip after the next, the direct messages and friends no longer waiting at the back
         async let info = fetchServerInfo()
         async let directMessages: Void = loadDirectMessages()
-        async let push: Void = enablePushIfAvailable()
         async let renewedToken: Void = refreshToken()
         async let personalSettings: Void = loadPersonalSettings()
         async let friends: Void = loadFriends()
@@ -1607,6 +1606,11 @@ final class SessionStore {
         if let freshInfo = await info {
             serverInfo = freshInfo
         }
+
+        // push waits for the info, on a first sign in there is no snapshot to say whether the
+        // server offers it and asking early gave up for the whole session
+        async let push: Void = enablePushIfAvailable()
+
         _ = await (directMessages, push, renewedToken, personalSettings, friends)
 
         for store in missedStores {

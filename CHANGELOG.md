@@ -378,6 +378,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - Tapping a notification opens what it is about, even when it starts the app: a direct message opens that conversation, a mention or a reply jumps to the message, a reply in a thread opens the thread, and a new login opens Devices. It used to land on the home screen.
 - On a Mac, and an iPad with a keyboard, Return sends a message and Shift Return starts a new line.
 - A chat opened while the app is still connecting, such as from a tapped notification, loads its messages once instead of again a moment later.
+- The first sign in on a new device asks for notifications straight away. It used to ask before the server info had loaded, give up, and only ask after a later launch.
+- The Mac app keeps its sign in where the iPhone app does, so it no longer asks for the login keychain password after an update or a reinstall. Anyone already signed in on a Mac signs in once more.
 - A reply's quote line sits with its message, with the gap above it, instead of pressed against the message before, and pressing the reply highlights the quote line too.
 - An animated GIF in a message shows its first frame straight away, and after a launch it is there at once instead of leaving a gap while it loads.
 - An empty channel's chat fills the screen, instead of leaving black strips down both sides.

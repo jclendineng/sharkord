@@ -111,11 +111,14 @@ enum CredentialStore {
         SecItemDelete(baseQuery(address) as CFDictionary)
     }
 
+    // the data protection keychain on a mac too, the file based login keychain asks for its
+    // password whenever the app's signature changes
     private static func baseQuery(_ address: ServerAddress) -> [String: Any] {
         [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: tokenService,
-            kSecAttrAccount as String: address.baseURL.absoluteString
+            kSecAttrAccount as String: address.baseURL.absoluteString,
+            kSecUseDataProtectionKeychain as String: true
         ]
     }
 }
