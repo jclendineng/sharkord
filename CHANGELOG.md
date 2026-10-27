@@ -381,6 +381,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - The first sign in on a new device asks for notifications straight away. It used to ask before the server info had loaded, give up, and only ask after a later launch.
 - The Mac app keeps its sign in where the iPhone app does, so it no longer asks for the login keychain password after an update or a reinstall. Anyone already signed in on a Mac signs in once more.
 - The inbox clears. A mention leaves it once its channel is read, and Mark All As Read in the inbox clears every server at once. Mentions used to stay there for good. Needs the updated server.
+- On a Mac, a click in the channel list or the server rail, or a right click anywhere outside it, puts away the inbox, pins, threads or search panel and still opens what it landed on.
 - A reply's quote line sits with its message, with the gap above it, instead of pressed against the message before, and pressing the reply highlights the quote line too.
 - An animated GIF in a message shows its first frame straight away, and after a launch it is there at once instead of leaving a gap while it loads.
 - An empty channel's chat fills the screen, instead of leaving black strips down both sides.

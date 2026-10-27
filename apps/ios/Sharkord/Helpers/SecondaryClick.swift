@@ -191,6 +191,10 @@ final class PointerMenuState {
     // them be
     var menuFrame = CGRect.zero
     var submenuFrame = CGRect.zero
+    // a right click outside the menus, in the window, for a panel that a click elsewhere puts
+    // away, the chat's inbox and pins among them
+    fileprivate(set) var rightClicks = 0
+    fileprivate(set) var rightClickPoint = CGPoint.zero
 }
 
 // discord's right click works over and over: one on something with a menu moves the open menu
@@ -267,6 +271,9 @@ enum PointerMenus {
         if isOnMenu {
             return
         }
+
+        state.rightClickPoint = point
+        state.rightClicks += 1
 
         let target = row ?? views.allObjects.last { view in
             view.window != nil && view.contains(windowPoint: point)

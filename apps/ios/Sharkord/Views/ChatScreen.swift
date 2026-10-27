@@ -11,6 +11,7 @@ struct ChatScreen: View {
     @Environment(\.expandChat) private var expandChat
 
     @State private var dropdown: ChatDropdown?
+    @State private var dropdownFrame = CGRect.zero
     // the mac's search box lives in the top bar and types into the dropdown's search
     @State private var searchModel = SearchQueryModel()
     @FocusState private var isSearchFocused: Bool
@@ -131,6 +132,9 @@ struct ChatScreen: View {
                     // fades and settles in from its corner, as discord's do; slid down from under
                     // the top bar it looked to come out of the bar itself
                     ChatDropdownPanel(dropdown: dropdown, channelId: channelId, searchModel: searchModel, onClose: closeDropdown, onOpenThread: openThreadFromList)
+                        .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }) { frame in
+                            dropdownFrame = frame
+                        }
                         .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .topTrailing)))
 
                     // escape puts it away, as it does the server's search card
@@ -146,6 +150,11 @@ struct ChatScreen: View {
         }
         .onChange(of: servers.chatDropdownDismissals) {
             closeDropdown()
+        }
+        // a right click elsewhere in the window puts it away as a click does, and opens its own
+        // menu as well
+        .onChange(of: PointerMenuState.shared.rightClicks) {
+            closeDropdownOnRightClick()
         }
         .onChange(of: session.requestedChannelId) { _, requestedChannelId in
             if requestedChannelId != nil {
@@ -420,6 +429,14 @@ struct ChatScreen: View {
     private func closeDropdown() {
         dropdown = nil
         isSearchFocused = false
+    }
+
+    private func closeDropdownOnRightClick() {
+        let point = PointerMenuState.shared.rightClickPoint
+
+        if dropdown != nil, !dropdownFrame.contains(point) {
+            closeDropdown()
+        }
     }
 
     // before another screen goes over the chat: swiftui gives a field its focus back when the

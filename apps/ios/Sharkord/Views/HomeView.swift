@@ -238,6 +238,12 @@ struct HomeView: View {
                             .onTapGesture(perform: dismissChatDropdown)
                     }
                 }
+                // a mac click in the list puts the panel away and still picks what it landed on,
+                // where the ipad's catcher above would take the click for itself
+                .simultaneousGesture(
+                    TapGesture().onEnded(dismissChatDropdown),
+                    isEnabled: servers.isChatDropdownOpen && Platform.isMac
+                )
                 .background(Theme.railBackground.ignoresSafeArea())
 
                 // a card of its own beside the list's, rounded all round with the rail showing
