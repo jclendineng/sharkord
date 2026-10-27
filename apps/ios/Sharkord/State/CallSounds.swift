@@ -1,7 +1,7 @@
 import AVFoundation
 
-// the web client's sounds for joining and leaving a call and for your own mic, deafen, camera
-// and share, its own recipes rendered to files, played out of whatever the call plays through.
+// the web client's sounds for joining and leaving a call, for your own mic, deafen, camera and
+// share, and for someone else joining, leaving or sharing, its own recipes rendered to files, played out of whatever the call plays through.
 // off the main thread: a player starting can wait on the audio hardware, which stalled the call
 // sheet's slide
 nonisolated final class CallSounds: @unchecked Sendable {
@@ -15,6 +15,11 @@ nonisolated final class CallSounds: @unchecked Sendable {
         case cameraOff = "call-camera-off"
         case shareOn = "call-share-on"
         case shareOff = "call-share-off"
+        // someone else in the call
+        case otherJoin = "call-other-join"
+        case otherLeave = "call-other-leave"
+        case otherShareOn = "call-other-share-on"
+        case otherShareOff = "call-other-share-off"
     }
 
     private let queue = DispatchQueue(label: "call-sounds")

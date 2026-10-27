@@ -527,7 +527,7 @@ final class ServerListStore {
 
     private func leaveVoice(except session: SessionStore) async {
         for other in sessions where other !== session {
-            await other.leaveVoice()
+            await other.leaveVoice(playsSound: false)
         }
     }
 

@@ -95,7 +95,12 @@ octave above. Deafening plays the same two sounds. The call setting up or tearin
 cuts off a sound already playing, so the join sound waits for the call's audio to run (WebRTC's
 `audioSessionDidStartPlayOrRecord`, or the mixing device's engine starting), two seconds at most,
 and a leave by hand sounds at the tap, while the sheet slides away and before the call stops.
-A call ended by another device, a moderator or a dropped connection sounds as it stops. The
+A call ended by another device, a moderator or a dropped connection sounds as it stops, and
+`stopVoice` closes that connection 350 ms later so the sound plays out. A move to another call
+(a new channel, a moderator's move, a join on another server) leaves without a sound
+(`leaveVoice(playsSound: false)`) and closes at once, since two calls' audio can't share the
+hardware. Someone else joining, leaving or starting or stopping a share in your call plays the
+web's remote sounds (`playSoundForOthers`, read against the state before the event is stored). The
 players run on a queue of their own: starting one can wait on the audio hardware, which stalled
 the sheet's animation on the main thread.
 

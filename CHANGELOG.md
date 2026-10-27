@@ -174,6 +174,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - A native iOS and iPad app, signing in to any server by its address, with push notifications, SSO and server passwords.
 - The native Mac app goes to TestFlight from GitHub Actions, and TestFlight keeps it up to date, so there is no release to download each time.
 - Joining and leaving a call play a short chime, and muting, deafening, the camera and screen sharing each play a click, the same sounds the web client plays.
+- Someone else joining or leaving your call, or starting or stopping a screen share, plays the web client's softer sounds for them.
+- The leave chime plays in full when a call ends without you hanging up, from another device, a moderator or a lost connection. Moving to another call plays only its join chime.
 - The native Mac app has everything the iPhone app has in a call.
   - Voice & Video picks the mic and the camera, and a change during a call switches straight away. Input Volume shows for a mic that lets it be set.
   - Hear Yourself in Calls and Share App Audio, which sends the sound of what you share with your voice.

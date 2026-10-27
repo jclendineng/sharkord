@@ -1016,7 +1016,7 @@ final class SessionStore {
         await onWillJoinVoice?(self)
 
         if currentVoiceChannelId != nil {
-            await leaveVoice()
+            await leaveVoice(playsSound: false)
         }
 
         isJoiningVoice = true
@@ -1169,9 +1169,15 @@ final class SessionStore {
         }
     }
 
-    func leaveVoice() async {
+    // without the sound for a move to another call, which plays its join sound straight after,
+    // and whose audio can't share the hardware with this one while the sound plays out
+    func leaveVoice(playsSound: Bool = true) async {
         guard currentVoiceChannelId != nil else {
             return
+        }
+
+        if !playsSound {
+            isInCall = false
         }
 
         stopVoice()
@@ -2004,6 +2010,8 @@ final class SessionStore {
 
         // here rather than in leaveVoice, so a call ended by another device, a moderator or a
         // dropped connection sounds the same as one left by hand
+        let playsLeaveSound = isInCall
+
         if isInCall {
             isInCall = false
             callSounds.play(.leave)
@@ -2026,7 +2034,18 @@ final class SessionStore {
         }
 
         producerSubscriptions = nil
-        voice?.close()
+
+        // closing the call takes its audio down, which cut the leave sound short, so the call is
+        // closed once the sound is over. its state goes now, as it would have
+        if playsLeaveSound, let voice {
+            Task {
+                try? await Task.sleep(for: .milliseconds(350))
+                voice.close()
+            }
+        } else {
+            voice?.close()
+        }
+
         voice = nil
         speakingTask?.cancel()
         speakingTask = nil
@@ -2273,6 +2292,27 @@ final class SessionStore {
         }
     }
 
+    // someone else in your call joining, leaving, or starting or stopping a share, as the web
+    // client sounds them. read before the change is stored, against what was there
+    private func playSoundForOthers(_ userId: Int, in channelId: Int, state: VoiceUserState?) {
+        guard isInCall, userId != ownUserId, channelId == currentVoiceChannelId else {
+            return
+        }
+
+        let previous = voiceUsers[channelId]?[userId]
+
+        switch (previous, state) {
+        case (nil, .some):
+            callSounds.play(.otherJoin)
+        case (.some, nil):
+            callSounds.play(.otherLeave)
+        case let (.some(old), .some(new)) where old.sharingScreen != new.sharingScreen:
+            callSounds.play(new.sharingScreen ? .otherShareOn : .otherShareOff)
+        default:
+            break
+        }
+    }
+
     private func setVoiceUser(_ userId: Int, in channelId: Int, state: VoiceUserState?) {
         var users = voiceUsers[channelId] ?? [:]
 
@@ -2472,11 +2512,13 @@ final class SessionStore {
         }
 
         client.subscribe("voice.onJoin") { [weak self] (event: VoiceJoinEvent) in
+            self?.playSoundForOthers(event.userId, in: event.channelId, state: event.state)
             self?.setVoiceUser(event.userId, in: event.channelId, state: event.state)
         }
 
         client.subscribe("voice.onUpdateState") { [weak self] (event: VoiceJoinEvent) in
             self?.followServerStreamChanges(event)
+            self?.playSoundForOthers(event.userId, in: event.channelId, state: event.state)
             self?.setVoiceUser(event.userId, in: event.channelId, state: event.state)
         }
 
@@ -2485,6 +2527,7 @@ final class SessionStore {
                 return
             }
 
+            self.playSoundForOthers(event.userId, in: event.channelId, state: nil)
             self.setVoiceUser(event.userId, in: event.channelId, state: nil)
 
             if event.userId != self.ownUserId, event.channelId == self.currentVoiceChannelId {
@@ -2536,7 +2579,7 @@ final class SessionStore {
             }
 
             Task {
-                await self.leaveVoice()
+                await self.leaveVoice(playsSound: false)
                 await self.joinVoice(event.channelId)
             }
         }
