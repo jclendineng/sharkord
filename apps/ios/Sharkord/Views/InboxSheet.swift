@@ -156,9 +156,9 @@ private struct MentionsList: View {
                 ProgressView()
             } else if mentions.isEmpty && errorMessage == nil {
                 ContentUnavailableView(
-                    "No mentions yet",
+                    "No new mentions",
                     systemImage: "at",
-                    description: Text("Messages that mention you or reply to you show up here.")
+                    description: Text("Mentions and replies to you that you haven't read show up here.")
                 )
             }
         }
