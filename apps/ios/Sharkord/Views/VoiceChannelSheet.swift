@@ -16,6 +16,10 @@ struct VoiceChannelSheet: View {
     // was still up
     @State private var opensCall = false
     @State private var detent = GrowingSheet.resting
+    // the phone's settings are hidden under the join box until the sheet is pulled up. built
+    // with the rest, they made the sheet's first open hang for a quarter of a second as it slid
+    // in, so they come once it is in, or as soon as it is pulled up before that
+    @State private var buildsSettings = false
 
     private var participants: [(user: PublicUser?, state: VoiceUserState)] {
         session.voiceParticipants(in: channel.id)
@@ -105,11 +109,17 @@ struct VoiceChannelSheet: View {
                 JoinBar(isConnectedHere: isConnectedHere, onJoin: join, onOpen: openRoom, showsGrip: true, boxOpacity: 1 - progress)
 
                 ScrollView {
-                    VoiceSheetSettings(onOpenSettings: showSettings)
+                    if buildsSettings || progress > 0 {
+                        VoiceSheetSettings(onOpenSettings: showSettings)
+                    }
                 }
                 .scrollBounceBehavior(.basedOnSize)
                 .opacity(progress)
             }
+        }
+        .task {
+            try? await Task.sleep(for: .milliseconds(500))
+            buildsSettings = true
         }
     }
 

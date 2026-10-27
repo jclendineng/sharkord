@@ -78,6 +78,11 @@ knows only H264 baseline, which left the phone unable to take a browser's VP8 or
 sends H264 baseline on purpose (`baselineH264`), the hardware encodes it and every browser
 decodes it, where mediasoup's own pick would be the server's first codec, VP9, in software.
 
+On a phone the voice channel sheet's settings sit hidden under the join box until it is pulled
+up, and are only built half a second after it opens, or at the first pull (`buildsSettings`).
+Built with the rest, they made the first open a 253 ms hang on an iPhone SE in a Release build
+(Time Profiler), all of it SwiftUI making the view graph inside the presentation's animation.
+
 On a phone, joining or Open Call grows the voice sheet itself into the call, as Discord's does,
 rather than covering it with a second screen. A sheet height picked through SwiftUI is jumped to,
 so the call's detent is added first and then selected through the sheet's own
