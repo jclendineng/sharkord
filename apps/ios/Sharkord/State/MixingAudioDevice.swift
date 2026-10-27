@@ -43,6 +43,7 @@ nonisolated final class MixingAudioDevice: NSObject, RTCAudioDevice, @unchecked 
     private let playoutScratch = UnsafeMutablePointer<Int16>.allocate(capacity: MixingAudioDevice.maxFrames)
     private let gameScratch = UnsafeMutablePointer<Float>.allocate(capacity: MixingAudioDevice.maxFrames)
     private let flags = OSAllocatedUnfairLock(initialState: Flags())
+    private let onStart = OSAllocatedUnfairLock<(@Sendable () -> Void)?>(initialState: nil)
 
     private struct Flags {
         var isInitialized = false
@@ -402,6 +403,23 @@ nonisolated final class MixingAudioDevice: NSObject, RTCAudioDevice, @unchecked 
         engine.prepare()
     }
 
+    // the engine running, for the join chime to wait for: a sound started before it was cut off
+    // as the engine took the audio over
+    func whenRunning(_ action: @escaping @Sendable () -> Void) {
+        let runsNow = onStart.withLock { pending in
+            if engine.isRunning {
+                return true
+            }
+
+            pending = action
+            return false
+        }
+
+        if runsNow {
+            action()
+        }
+    }
+
     private func startEngine() -> Bool {
         guard !engine.isRunning else {
             return true
@@ -409,6 +427,16 @@ nonisolated final class MixingAudioDevice: NSObject, RTCAudioDevice, @unchecked 
 
         do {
             try engine.start()
+
+            let action = onStart.withLock { pending in
+                defer {
+                    pending = nil
+                }
+
+                return pending
+            }
+
+            action?()
             return true
         } catch {
             print("[voice] mixing audio engine failed to start: \(error)")

@@ -172,6 +172,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 - A native iOS and iPad app, signing in to any server by its address, with push notifications, SSO and server passwords.
 - The native Mac app goes to TestFlight from GitHub Actions, and TestFlight keeps it up to date, so there is no release to download each time.
+- Joining and leaving a call play a short chime, and muting, deafening, the camera and screen sharing each play a click, the same sounds the web client plays.
 - The native Mac app has everything the iPhone app has in a call.
   - Voice & Video picks the mic and the camera, and a change during a call switches straight away. Input Volume shows for a mic that lets it be set.
   - Hear Yourself in Calls and Share App Audio, which sends the sound of what you share with your voice.
@@ -383,6 +384,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - A message inside a thread no longer offers Pin Message, which the server refuses for thread replies.
 - A thread's first reply only shows a date line when it came on a different day from the message that started the thread.
 - A message jumped to, and a message under the pointer on a Mac or an iPad, light the same rounded card as holding a message, instead of a pale blue band.
+- Joining a call no longer stutters as the call sheet grows. The app answered the call's audio starting by asking the system about the microphones on the main thread, which waited about a third of a second while the call set its audio up.
 - The user bar at the bottom of the channel list has a small, light shadow. The wide dark one read as a black box around it.
 - A saved session the server no longer accepts, after a kick, a ban or a password change, signs out instead of trying to reconnect forever.
 - Holding a message in the middle of a run of lines lights only that line, instead of the highlight covering the edge of the line above.

@@ -148,6 +148,19 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
         }
     }
 
+    // the call's own audio running. a sound started before it was cut off as the call set the
+    // speaker up, see CallSounds
+    func whenAudioRuns(_ action: @escaping @Sendable () -> Void) {
+        if let mixingDevice {
+            mixingDevice.whenRunning(action)
+            return
+        }
+
+        #if os(iOS)
+        AudioStartWatcher.watch(action)
+        #endif
+    }
+
     func consume(_ key: VoiceStreamKey) async {
         let input = await onQueueValue { self.rtpCapabilities }
 
@@ -859,6 +872,33 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
     }
     #endif
 }
+
+#if os(iOS)
+// webrtc's own audio has no handle to ask, only its session says when playing or recording
+// starts. the session holds its delegates weakly, so each watcher keeps itself until it fires
+nonisolated private final class AudioStartWatcher: NSObject, RTCAudioSessionDelegate, @unchecked Sendable {
+    private static let watchers = OSAllocatedUnfairLock<[AudioStartWatcher]>(initialState: [])
+
+    private let action: @Sendable () -> Void
+
+    private init(_ action: @escaping @Sendable () -> Void) {
+        self.action = action
+    }
+
+    static func watch(_ action: @escaping @Sendable () -> Void) {
+        let watcher = AudioStartWatcher(action)
+
+        watchers.withLock { $0.append(watcher) }
+        RTCAudioSession.sharedInstance().add(watcher)
+    }
+
+    func audioSessionDidStartPlayOrRecord(_ session: RTCAudioSession) {
+        session.remove(self)
+        Self.watchers.withLock { $0.removeAll { $0 === self } }
+        action()
+    }
+}
+#endif
 
 // answers the transports' signaling callbacks, which arrive on webrtc's own threads
 nonisolated private final class TransportSignaler: SendTransportDelegate, ReceiveTransportDelegate, @unchecked Sendable {

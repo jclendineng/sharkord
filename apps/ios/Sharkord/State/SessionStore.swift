@@ -132,6 +132,11 @@ final class SessionStore {
     private var voice: VoiceConnection?
     private var producerSubscriptions: (client: TRPCClient, ids: [Int])?
     @ObservationIgnored private let soundboardPlayer = SoundboardPlayer()
+    @ObservationIgnored private let callSounds = CallSounds()
+    // the leave sound only follows a call that was really joined, not a join that failed
+    @ObservationIgnored private var isInCall = false
+    // the call still waiting for its join sound, see playJoinSound
+    @ObservationIgnored private var joinSoundConnection: VoiceConnection?
     private var screenCapture: ScreenCapture?
     // present when the call was joined with app audio on, see AppSettings.shareAppAudio
     private var mixingDevice: MixingAudioDevice?
@@ -1034,7 +1039,7 @@ final class SessionStore {
                 "state": ["micMuted": micMuted, "soundMuted": soundMuted]
             ])
             let joined = try await client.rawMutation("voice.join", json: input)
-
+    
             guard
                 let object = try JSONSerialization.jsonObject(with: joined) as? [String: Any],
                 let capabilities = object["routerRtpCapabilities"]
@@ -1061,7 +1066,7 @@ final class SessionStore {
             mixer?.isMonitoring = settings.hearYourselfInCalls
             mixingDevice = mixer
 
-            let connection = VoiceConnection(
+                let connection = VoiceConnection(
                 audioOptions: audioOptions,
                 mixingDevice: mixer,
                 signal: { [weak client] path, json in
@@ -1080,7 +1085,7 @@ final class SessionStore {
                 }
             )
 
-            voice = connection
+                voice = connection
             #if os(macOS)
             connection.useCamera(settings.cameraDeviceId)
             #endif
@@ -1099,11 +1104,13 @@ final class SessionStore {
                 canSpeak: canSpeak
             )
 
+            isInCall = true
+                playJoinSound(on: connection)
             subscribeToProducers(client)
 
             // the only voice procedure that is a query, so it cannot go through the signal
             let producers: RemoteProducers = try await client.query("voice.getProducers")
-
+    
             for key in producers.keys where wantsStream(key) {
                 await connection.consume(key)
             }
@@ -1118,8 +1125,48 @@ final class SessionStore {
     func leaveVoiceAfterClosing() async {
         isLeavingVoice = true
 
+        // at the tap, while the call's audio still runs: played as it was torn down, the chime
+        // was cut off. it is over before the sheet is
+        if isInCall {
+            isInCall = false
+            callSounds.play(.leave)
+        }
+
         try? await Task.sleep(for: .milliseconds(400))
         await leaveVoice()
+    }
+
+    // once the call's own audio runs, or after a while for a call that has none, alone with no
+    // microphone. a join left before then has no chime
+    private func playJoinSound(on connection: VoiceConnection) {
+        joinSoundConnection = connection
+
+        let play: @Sendable () -> Void = { [weak self] in
+            Task { @MainActor in
+                guard let self, self.joinSoundConnection === connection else {
+                    return
+                }
+
+                self.joinSoundConnection = nil
+
+                #if os(iOS)
+                await AudioInputPreference.settled()
+                #endif
+
+                guard self.voice === connection else {
+                    return
+                }
+
+                self.callSounds.play(.join)
+            }
+        }
+
+        connection.whenAudioRuns(play)
+
+        Task {
+            try? await Task.sleep(for: .seconds(2))
+            play()
+        }
     }
 
     func leaveVoice() async {
@@ -1134,6 +1181,7 @@ final class SessionStore {
 
     func toggleMicMuted() async {
         micMuted.toggle()
+        callSounds.play(micMuted ? .mute : .unmute)
         voice?.setMicMuted(micMuted || AppSettings.shared.pushToTalk)
 
         await updateVoiceState(["micMuted": micMuted])
@@ -1146,6 +1194,7 @@ final class SessionStore {
 
         if cameraEnabled {
             cameraEnabled = false
+            callSounds.play(.cameraOff)
             await voice.stopCamera(ownUserId: ownUserId)
             await updateVoiceState(["webcamEnabled": false])
             return
@@ -1159,6 +1208,7 @@ final class SessionStore {
         do {
             try await voice.startCamera(ownUserId: ownUserId)
             cameraEnabled = true
+            callSounds.play(.cameraOn)
             await updateVoiceState(["webcamEnabled": true])
         } catch {
             showError(error)
@@ -1229,6 +1279,7 @@ final class SessionStore {
             )
 
             isSharingScreen = true
+            callSounds.play(.shareOn)
             await updateVoiceState(["sharingScreen": true])
         } catch {
             showError(error)
@@ -1246,6 +1297,7 @@ final class SessionStore {
         }
 
         isSharingScreen = false
+        callSounds.play(.shareOff)
         await voice.stopScreenShare()
         await updateVoiceState(["sharingScreen": false])
     }
@@ -1309,6 +1361,7 @@ final class SessionStore {
 
     func toggleSoundMuted() async {
         soundMuted.toggle()
+        callSounds.play(soundMuted ? .mute : .unmute)
         voice?.setSoundMuted(soundMuted)
 
         await updateVoiceState(["soundMuted": soundMuted])
@@ -1948,6 +2001,15 @@ final class SessionStore {
 
     private func stopVoice() {
         isLeavingVoice = false
+
+        // here rather than in leaveVoice, so a call ended by another device, a moderator or a
+        // dropped connection sounds the same as one left by hand
+        if isInCall {
+            isInCall = false
+            callSounds.play(.leave)
+        }
+
+        joinSoundConnection = nil
 
         if let screenCapture {
             Task {

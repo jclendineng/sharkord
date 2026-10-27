@@ -9,8 +9,12 @@ import CoreAudio
 // nothing here can reach it
 enum AudioInputPreference {
     #if os(iOS)
-    private static let headsets: Set<AVAudioSession.Port> = [.bluetoothHFP, .headsetMic, .usbAudio]
+    nonisolated private static let headsets: Set<AVAudioSession.Port> = [.bluetoothHFP, .headsetMic, .usbAudio]
     private static var observer: NSObjectProtocol?
+    // a call's audio starting is a route change, and while it starts every session call waits on
+    // the system's audio server: answered on the main thread, it froze the call sheet's rise for
+    // a third of a second
+    nonisolated private static let queue = DispatchQueue(label: "audio-input-preference")
     #else
     // a mac's mic as voice settings lists it, by core audio's uid, which survives a replug
     nonisolated struct Input: Hashable {
@@ -32,7 +36,12 @@ enum AudioInputPreference {
 
         observer = NotificationCenter.default.addObserver(forName: AVAudioSession.routeChangeNotification, object: nil, queue: .main) { _ in
             MainActor.assumeIsolated {
-                apply()
+                let gain = Float(AppSettings.shared.inputGain)
+                let pickedId = AppSettings.shared.inputDeviceId
+
+                queue.async {
+                    apply(gain: gain, pickedId: pickedId)
+                }
             }
         }
         #else
@@ -57,6 +66,34 @@ enum AudioInputPreference {
 
     static func apply() {
         #if os(iOS)
+        apply(gain: Float(AppSettings.shared.inputGain), pickedId: AppSettings.shared.inputDeviceId)
+        #else
+        // the picked mic's own volume, the one the system's sound settings move too
+        guard let device = currentDevice(), var address = gainAddress(of: device) else {
+            return
+        }
+
+        var gain = Float32(AppSettings.shared.inputGain)
+
+        AudioObjectSetPropertyData(device, &address, 0, nil, UInt32(MemoryLayout<Float32>.size), &gain)
+        #endif
+    }
+
+    #if os(iOS)
+    // the route changes a call's audio starting sets off, and the input picked after them, done.
+    // a sound started before then was swallowed as the route moved under it
+    static func settled() async {
+        // the start's own route change reaches the queue a moment after the audio runs
+        try? await Task.sleep(for: .milliseconds(150))
+
+        await withCheckedContinuation { continuation in
+            queue.async {
+                continuation.resume()
+            }
+        }
+    }
+
+    nonisolated private static func apply(gain: Float, pickedId: String?) {
         let session = AVAudioSession.sharedInstance()
 
         guard session.category == .playAndRecord, let inputs = session.availableInputs else {
@@ -65,10 +102,9 @@ enum AudioInputPreference {
 
         // a device that takes a gain gets the one picked in voice settings
         if session.isInputGainSettable {
-            try? session.setInputGain(Float(AppSettings.shared.inputGain))
+            try? session.setInputGain(gain)
         }
 
-        let pickedId = AppSettings.shared.inputDeviceId
         let picked = inputs.first { $0.uid == pickedId }
 
         guard let target = picked ?? inputs.first(where: { headsets.contains($0.portType) }) else {
@@ -81,17 +117,8 @@ enum AudioInputPreference {
         if current?.uid != target.uid {
             try? session.setPreferredInput(target)
         }
-        #else
-        // the picked mic's own volume, the one the system's sound settings move too
-        guard let device = currentDevice(), var address = gainAddress(of: device) else {
-            return
-        }
-
-        var gain = Float32(AppSettings.shared.inputGain)
-
-        AudioObjectSetPropertyData(device, &address, 0, nil, UInt32(MemoryLayout<Float32>.size), &gain)
-        #endif
     }
+    #endif
 
     #if os(macOS)
     // every device with an input, in the order core audio lists them

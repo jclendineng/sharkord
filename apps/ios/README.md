@@ -86,6 +86,25 @@ so the call's detent is added first and then selected through the sheet's own
 over the join box. The rise starts at the tap and the join runs under it; a failed join drops
 the sheet back. A Mac and an iPad keep the full screen call.
 
+Joining and leaving a call play the web client's join and leave chords, and your own mute,
+deafen, camera and screen share its clicks (`State/CallSounds.swift`). They are its own recipes
+from `apps/client/src/helpers/sounds.ts`, rendered once to `Resources/call-*.caf`, apart from mute:
+the web's 60 ms blips started at full volume and came out as a hard tick, so the app's are two
+notes a fourth apart, rising to unmute and falling to mute, each faded in over 12 ms, with a faint
+octave above. Deafening plays the same two sounds. The call setting up or tearing down its audio
+cuts off a sound already playing, so the join sound waits for the call's audio to run (WebRTC's
+`audioSessionDidStartPlayOrRecord`, or the mixing device's engine starting), two seconds at most,
+and a leave by hand sounds at the tap, while the sheet slides away and before the call stops.
+A call ended by another device, a moderator or a dropped connection sounds as it stops. The
+players run on a queue of their own: starting one can wait on the audio hardware, which stalled
+the sheet's animation on the main thread.
+
+The same goes for anything that asks `AVAudioSession` during a join. The call's audio starting
+is a route change, and `AudioInputPreference` answers route changes on a queue of its own: on the
+main thread its `availableInputs` and `setPreferredInput` calls took over 400 ms while the call
+set its audio up, and froze the sheet's rise. The join sound waits for that queue as well
+(`AudioInputPreference.settled()`): played while the route still moved, it was swallowed.
+
 ## Screen sharing
 
 `ScreenCapture` uses ScreenCaptureKit, which iOS 27 brought to the phone. The share button

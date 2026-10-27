@@ -196,7 +196,8 @@ opens the system panel to change them). Hand gestures play reactions too, since 
 the 1080p format supporting the most of reactions, Portrait and Studio Light. In dim light the
 camera may lower its frame rate to 24 so each exposure runs longer, with low light boost where
 the phone has it. A gear in the call header opens the call's settings: tiles for Deafen, Output
-and incoming video, then audio and video cards. Leaving a call lets its sheet slide away before the
+and incoming video, then audio and video cards. Joining and leaving a call play the web client's
+join and leave chimes, and muting, deafening, the camera and screen sharing its clicks. Leaving a call lets its sheet slide away before the
 call is torn down. A lowered call is the voice bar above the user bar on every device, and the
 call zooms out of the bar and back into it, joining from a voice channel's sheet included. Each person under a voice
 channel is a row of its own: a tap opens their profile, a long press the member menu, which in a
