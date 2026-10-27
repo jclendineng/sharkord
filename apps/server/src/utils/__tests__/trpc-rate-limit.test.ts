@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test';
 import { initTest } from '../../__tests__/helpers';
+import { config } from '../../config';
 
 describe('trpc rate limiting', () => {
-  // sendMessage rather than anything voice: its limiter is the smallest at 15, and nothing on
-  // this path needs mediasoup
-  const SEND_MESSAGE_LIMIT = 15;
+  // sendMessage rather than anything voice: nothing on this path needs mediasoup
+  const SEND_MESSAGE_LIMIT = config.rateLimiters.sendAndEditMessage.maxRequests;
 
   const send = () => ({ channelId: 999999, content: 'spam' });
 

@@ -1746,8 +1746,9 @@ describe('messages router', () => {
 
   test('should rate limit excessive send message attempts', async () => {
     const { caller } = await initTest(1);
+    const { maxRequests } = config.rateLimiters.sendAndEditMessage;
 
-    for (let i = 0; i < 15; i++) {
+    for (let i = 0; i < maxRequests; i++) {
       await caller.messages.send({
         channelId: 1,
         content: `Message ${i}`,
@@ -1773,7 +1774,9 @@ describe('messages router', () => {
       files: []
     });
 
-    for (let i = 0; i < 15; i++) {
+    const { maxRequests } = config.rateLimiters.sendAndEditMessage;
+
+    for (let i = 0; i < maxRequests; i++) {
       await caller.messages.edit({
         messageId,
         content: `Edit ${i}`
