@@ -10,6 +10,8 @@ struct VideoView: NSViewRepresentable {
     let track: VideoTrackBox
     var contentMode: ContentMode = .fill
     var isMirrored = false
+    // the picture's size once turned upright, as it arrives and whenever it changes
+    var onVideoSize: ((CGSize) -> Void)?
 
     private var videoGravity: AVLayerVideoGravity {
         contentMode == .fit ? .resizeAspect : .resizeAspectFill
@@ -20,6 +22,7 @@ struct VideoView: NSViewRepresentable {
 
         view.videoGravity = videoGravity
         view.isMirrored = isMirrored
+        view.onAspectChange = onVideoSize
         track.track.add(view.renderer)
         context.coordinator.track = track.track
 
@@ -29,6 +32,7 @@ struct VideoView: NSViewRepresentable {
     func updateNSView(_ view: SampleBufferVideoView, context: Context) {
         view.videoGravity = videoGravity
         view.isMirrored = isMirrored
+        view.onAspectChange = onVideoSize
 
         guard context.coordinator.track !== track.track else {
             return
@@ -57,6 +61,8 @@ struct VideoView: UIViewRepresentable {
     let track: VideoTrackBox
     var contentMode: ContentMode = .fill
     var isMirrored = false
+    // the picture's size once turned upright, as it arrives and whenever it changes
+    var onVideoSize: ((CGSize) -> Void)?
 
     private var videoContentMode: UIView.ContentMode {
         contentMode == .fit ? .scaleAspectFit : .scaleAspectFill
@@ -67,6 +73,8 @@ struct VideoView: UIViewRepresentable {
 
         view.videoContentMode = videoContentMode
         view.transform = isMirrored ? CGAffineTransform(scaleX: -1, y: 1) : .identity
+        view.delegate = context.coordinator
+        context.coordinator.onVideoSize = onVideoSize
         track.track.add(view)
         context.coordinator.track = track.track
 
@@ -76,6 +84,7 @@ struct VideoView: UIViewRepresentable {
     func updateUIView(_ view: RTCMTLVideoView, context: Context) {
         view.videoContentMode = videoContentMode
         view.transform = isMirrored ? CGAffineTransform(scaleX: -1, y: 1) : .identity
+        context.coordinator.onVideoSize = onVideoSize
 
         guard context.coordinator.track !== track.track else {
             return
@@ -95,8 +104,14 @@ struct VideoView: UIViewRepresentable {
         Coordinator()
     }
 
-    final class Coordinator {
+    // the view tells its delegate the frame's size, already turned by the frame's rotation
+    final class Coordinator: NSObject, RTCVideoViewDelegate {
         var track: RTCVideoTrack?
+        var onVideoSize: ((CGSize) -> Void)?
+
+        func videoView(_ videoView: any RTCVideoRenderer, didChangeVideoSize size: CGSize) {
+            onVideoSize?(size)
+        }
     }
 }
 #endif

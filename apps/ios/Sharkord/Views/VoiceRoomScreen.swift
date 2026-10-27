@@ -431,10 +431,13 @@ private struct ScreenShareTile: View {
 
     @Environment(SessionStore.self) private var session
 
+    // the share's own shape, a portrait ipad's or phone's too, 16:9 until its first frame
+    @State private var aspectRatio: CGFloat = 16 / 9
+
     var body: some View {
-        VideoView(track: track, contentMode: .fit)
+        VideoView(track: track, contentMode: .fit, onVideoSize: takeShape)
             .reportsVideoSize(of: VoiceStreamKey(kind: .screen, remoteId: userId))
-            .aspectRatio(fills ? nil : 16 / 9, contentMode: .fit)
+            .aspectRatio(fills ? nil : aspectRatio, contentMode: .fit)
             .background(Color.black)
             .clipShape(.rect(cornerRadius: 14))
             .overlay(alignment: .bottomLeading) {
@@ -446,6 +449,14 @@ private struct ScreenShareTile: View {
                     .background(.black.opacity(0.55), in: .capsule)
                     .padding(8)
             }
+    }
+
+    private func takeShape(_ size: CGSize) {
+        guard size.width > 0, size.height > 0 else {
+            return
+        }
+
+        aspectRatio = size.width / size.height
     }
 }
 

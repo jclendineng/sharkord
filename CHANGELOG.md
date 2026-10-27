@@ -382,6 +382,9 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 #### iOS app
 
+- An iPad's screen share shows upright on the other side whichever way the iPad is held, portrait, upside down or either landscape. It used to arrive sideways, or shrunk between black bars.
+- A screen share takes its own shape on screen, so a portrait phone or iPad share is no longer boxed into a wide tile.
+- Joining a call on an iPad or a Mac opens the call about half a second sooner: the voice channel's sheet slides away as Join is tapped instead of after the join.
 - Tapping a search result opens it again. A tap gesture over the results used to take the tap, so results, filter suggestions and recent searches did nothing.
 - Reply and Edit put the cursor in the message box, ready to type.
 - A message inside a thread no longer offers Pin Message, which the server refuses for thread replies.

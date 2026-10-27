@@ -124,6 +124,20 @@ shows the system picker, and once the screen is picked the app captures it itsel
 app audio on, the stream also captures the other apps' sound, converted to 48khz mono for
 `MixingAudioDevice`. There is no broadcast extension any more.
 
+An iPad is different, measured on an iPad mini (A17 Pro): its frames carry no
+`SCStreamFrameInfo.videoOrientation`, nor anything else that changes as it turns, and its screen
+is always captured as it lies, landscape however it is held. A portrait sized capture drew it on
+its side, shrunk between black bars, and iOS can neither resize a running `SCStream` nor start a
+second one on the same pick (the picker then reports a failure). So on an iPad the capture is
+sized wide from the start, and a frame whose picture (`SCStreamFrameInfo.contentRect`) is wide is
+turned by the way the iPad is held. That comes from the accelerometer (`CMMotionManager`, no
+permission needed): a share is mostly of other apps, and in the background the app hears nothing
+of the interface turning, its scene's `interfaceOrientation` stays where it was. Flat on a table
+the last way stands, and with rotation lock on the viewer sees the screen as its holder does.
+
+A screen share's tile on the receiving side takes the share's own shape from the frame size the
+video view reports (`VideoView(onVideoSize:)`), so a portrait share is no longer boxed into 16:9.
+
 A native Mac call always uses `MixingAudioDevice`, since WebRTC's own Mac device only records the
 system's default mic. There it has no audio session: the engine is pointed at the mic picked in
 Voice & Video (`AudioInputPreference.apply(to:inputDeviceId:)`) and built again on

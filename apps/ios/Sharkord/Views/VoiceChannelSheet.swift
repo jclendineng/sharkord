@@ -173,13 +173,26 @@ struct VoiceChannelSheet: View {
         }
     }
 
-    // the join button spins until the call is up, then the sheet goes and the bar opens the call
+    // the join button spins until the call is up, then the sheet goes and the bar opens the call.
+    // an ipad's or a mac's sheet goes at the tap instead: its half second slide away, run after
+    // the join, kept the call from opening for over a second. the call opens once both are done
     private func join() {
+        let leavesAtTap = !growsIntoSettings
+
+        if leavesAtTap {
+            openRoom()
+        }
+
         Task {
             await session.joinVoice(channel.id)
 
             if session.currentVoiceChannelId == channel.id {
-                openRoom()
+                if !leavesAtTap {
+                    openRoom()
+                }
+            } else if leavesAtTap {
+                // the join failed after the sheet had gone, so the call isn't left waiting to open
+                servers.isCallPresented = false
             }
         }
     }
@@ -189,8 +202,9 @@ struct VoiceChannelSheet: View {
         dismiss()
     }
 
+    // a join that failed before the sheet was gone opens nothing
     private func openCallIfAsked() {
-        if opensCall {
+        if opensCall, session.isJoiningVoice || session.currentVoiceChannelId == channel.id {
             servers.isCallPresented = true
         }
     }

@@ -1,6 +1,10 @@
 import AVFoundation
 import os
 import WebRTC
+#if os(iOS)
+import CoreMotion
+import UIKit
+#endif
 #if canImport(ScreenCaptureKit)
 import ScreenCaptureKit
 
@@ -16,6 +20,10 @@ nonisolated final class ScreenCapture: NSObject, @unchecked Sendable {
     private let onStopped: @Sendable () -> Void
     private let onFailed: @Sendable (Error) -> Void
     private let queue = DispatchQueue(label: "com.sharkord.screen-capture")
+    #if os(iOS)
+    private let motion = CMMotionManager()
+    private let motionQueue = OperationQueue()
+    #endif
     // SCStream is not marked sendable, but every touch of it is under this lock
     private let state = OSAllocatedUnfairLock(uncheckedState: State())
     // the game's audio format can change mid share, the converter follows it. only touched on
@@ -31,6 +39,10 @@ nonisolated final class ScreenCapture: NSObject, @unchecked Sendable {
         var onAudio: AudioHandler?
         var framesPerSecond = 30.0
         var lastFrameTime: CFTimeInterval = 0
+        #if os(iOS)
+        // which way the ipad is held, for frames that don't say which way is up, see rotation(of:)
+        var heldOrientation = UIDeviceOrientation.portrait
+        #endif
     }
 
     init(
@@ -85,8 +97,21 @@ nonisolated final class ScreenCapture: NSObject, @unchecked Sendable {
         )
         let scale = min(1, CGFloat(maxDimension) / max(pixelSize.width, pixelSize.height, 1))
 
-        configuration.width = Int(pixelSize.width * scale)
-        configuration.height = Int(pixelSize.height * scale)
+        var width = Int(pixelSize.width * scale)
+        var height = Int(pixelSize.height * scale)
+
+        // an ipad's screen is captured as it lies, landscape however the ipad is held, and a
+        // capture sized for portrait drew it on its side, shrunk between black bars. ios can't
+        // resize a running capture, nor start a second one on the same pick, so it is sized wide
+        // from the start and rotation(of:) turns it upright
+        let isPad = await MainActor.run { Platform.isPad }
+
+        if isPad, height > width {
+            swap(&width, &height)
+        }
+
+        configuration.width = width
+        configuration.height = height
         configuration.capturesAudio = onAudio != nil
         configuration.sampleRate = Int(Self.gameFormat.sampleRate)
         configuration.channelCount = 1
@@ -108,8 +133,46 @@ nonisolated final class ScreenCapture: NSObject, @unchecked Sendable {
             state.lastFrameTime = 0
         }
 
+        #if os(iOS)
+        followHeldOrientation()
+        #endif
+
         try await stream.startCapture()
     }
+
+    #if os(iOS)
+    // where the picture sits in the frame, which is all of it unless it was fitted in
+    private static func pictureRect(of sampleBuffer: CMSampleBuffer) -> CGRect? {
+        guard
+            let attachments = CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, createIfNecessary: false) as? [[SCStreamFrameInfo: Any]],
+            let value = attachments.first?[.contentRect] as? NSDictionary
+        else {
+            return nil
+        }
+
+        return CGRect(dictionaryRepresentation: value)
+    }
+
+    // a share is mostly of other apps, and in the background the app hears nothing of the
+    // interface turning, so gravity says which way the ipad is held, the screen as its holder sees
+    // it. flat on a table it says nothing and the last way stands
+    private func followHeldOrientation() {
+        motion.accelerometerUpdateInterval = 0.25
+        motion.startAccelerometerUpdates(to: motionQueue) { [weak self] data, _ in
+            guard let self, let gravity = data?.acceleration, max(abs(gravity.x), abs(gravity.y)) > 0.6 else {
+                return
+            }
+
+            let held: UIDeviceOrientation = if abs(gravity.x) > abs(gravity.y) {
+                gravity.x < 0 ? .landscapeLeft : .landscapeRight
+            } else {
+                gravity.y < 0 ? .portrait : .portraitUpsideDown
+            }
+
+            self.state.withLockUnchecked { $0.heldOrientation = held }
+        }
+    }
+    #endif
 
     func stop() async {
         let stream = state.withLockUnchecked { state in
@@ -123,6 +186,10 @@ nonisolated final class ScreenCapture: NSObject, @unchecked Sendable {
         }
 
         try? await stream?.stopCapture()
+
+        #if os(iOS)
+        motion.stopAccelerometerUpdates()
+        #endif
 
         await MainActor.run {
             SCContentSharingPicker.shared.remove(self)
@@ -150,7 +217,7 @@ nonisolated final class ScreenCapture: NSObject, @unchecked Sendable {
             return state.sink
         }
 
-        sink?.push(pixelBuffer, rotation: Self.rotation(of: sampleBuffer))
+        sink?.push(pixelBuffer, rotation: rotation(of: sampleBuffer, pixelBuffer))
     }
 
     private func processAudio(_ sampleBuffer: CMSampleBuffer) {
@@ -244,14 +311,46 @@ nonisolated final class ScreenCapture: NSObject, @unchecked Sendable {
     }
 
     // the frame arrives as the screen lies and says separately which way is up, webrtc turns it
-    // on the far side rather than every frame being rotated here
-    private static func rotation(of sampleBuffer: CMSampleBuffer) -> RTCVideoRotation {
+    // on the far side rather than every frame being rotated here. an ipad's frames say nothing
+    // and are always the screen's landscape, held upright or not, so they are turned by the
+    // interface's orientation instead, which a rotation lock holds as it holds the screen
+    private func rotation(of sampleBuffer: CMSampleBuffer, _ pixelBuffer: CVPixelBuffer) -> RTCVideoRotation {
+        if let tagged = Self.taggedRotation(of: sampleBuffer) {
+            return tagged
+        }
+
+        #if os(iOS)
+        // the picture rather than the frame, so a screen that was captured upright is left alone
+        let frame = CGRect(x: 0, y: 0, width: CVPixelBufferGetWidth(pixelBuffer), height: CVPixelBufferGetHeight(pixelBuffer))
+        let picture = Self.pictureRect(of: sampleBuffer) ?? frame
+
+        guard picture.width > picture.height else {
+            return ._0
+        }
+
+        // the device's landscape left is the interface's landscape right
+        switch state.withLockUnchecked({ $0.heldOrientation }) {
+        case .portrait:
+            return ._90
+        case .portraitUpsideDown:
+            return ._270
+        case .landscapeRight:
+            return ._180
+        default:
+            return ._0
+        }
+        #else
+        return ._0
+        #endif
+    }
+
+    private static func taggedRotation(of sampleBuffer: CMSampleBuffer) -> RTCVideoRotation? {
         guard
             let attachments = CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, createIfNecessary: false) as? [[SCStreamFrameInfo: Any]],
             let rawOrientation = attachments.first?[.videoOrientation] as? UInt32,
             let orientation = CGImagePropertyOrientation(rawValue: rawOrientation)
         else {
-            return ._0
+            return nil
         }
 
         switch orientation {
