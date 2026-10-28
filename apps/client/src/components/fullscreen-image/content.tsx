@@ -173,8 +173,18 @@ const FullScreenImage = memo(
                 }
               />
               <div className="flex gap-2 absolute top-2 right-2 z-50">
-                <IconButton icon={Link} variant="ghost" onClick={onCopyLink} />
-                <IconButton onClick={onCloseClick} icon={X} variant="ghost" />
+                <IconButton
+                  icon={Link}
+                  variant="ghost"
+                  aria-label={t('copyImageLink')}
+                  onClick={onCopyLink}
+                />
+                <IconButton
+                  onClick={onCloseClick}
+                  icon={X}
+                  variant="ghost"
+                  aria-label={t('close')}
+                />
               </div>
             </div>
           </>,

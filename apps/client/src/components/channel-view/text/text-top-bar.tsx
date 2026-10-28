@@ -120,6 +120,7 @@ const TextTopbar = memo(
               <Tooltip content={t('channelMutedTooltip')}>
                 <IconButton
                   icon={BellOff}
+                  aria-label={t('channelMutedTooltip')}
                   size="sm"
                   variant="ghost"
                   onClick={onUnmuteClick}
@@ -141,6 +142,7 @@ const TextTopbar = memo(
               <IconButton
                 onClick={onClose}
                 icon={X}
+                aria-label={t('close')}
                 variant="ghost"
                 size="sm"
               />

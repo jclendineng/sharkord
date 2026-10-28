@@ -76,6 +76,7 @@ const EmojiList = memo(
       <Tooltip content={t('uploadEmojiBtn')}>
         <IconButton
           icon={Plus}
+          aria-label={t('uploadEmojiBtn')}
           size="sm"
           variant="ghost"
           onClick={uploadEmoji}

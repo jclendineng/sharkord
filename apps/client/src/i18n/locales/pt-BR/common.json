@@ -103,13 +103,13 @@
   "noCustomEmojis": "Nenhum emoji personalizado disponível",
   "serverAdminsCanUpload": "Os administradores do servidor podem enviar emojis personalizados nas configurações",
   "serverEmojis": "Emojis do servidor ({{count}})",
-  "searchAllEmojis": "Pesquisar todos os emojis...",
+  "searchAllEmojis": "Pesquisar todos os emojis…",
   "emojiTab": "Emoji",
   "customTab": "Personalizados",
   "searchResults": "Resultados da busca ({{count}})",
   "wasReactedBy": "foi reagida por {{reacters}}.",
   "andMore": "e mais {{count}}",
-  "typeAMessage": "Digite uma mensagem...",
+  "typeAMessage": "Digite uma mensagem…",
   "messageChannel": "Mensagem \"{{name}}\"",
   "toggleParticipants": "Mostrar/ocultar participantes",
   "sendVoiceReaction": "Enviar uma reação",
@@ -183,5 +183,6 @@
   "commandArgYes": "Sim",
   "commandArgNo": "Não",
   "commandArgMissing": "/{{commandName}} precisa de um valor para {{argName}}.",
-  "mutedByModerator": "Você foi silenciado por um moderador."
+  "mutedByModerator": "Você foi silenciado por um moderador.",
+  "copyImageLink": "Copiar link da imagem"
 }

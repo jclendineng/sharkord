@@ -92,7 +92,7 @@ const ThreadContent = memo(
                 ref={containerRef}
                 onScroll={onScroll}
                 onLoadCapture={onAsyncContentLoaded}
-                className="flex-1 overflow-y-auto overflow-x-hidden p-2 animate-in fade-in duration-500"
+                className="flex-1 overflow-y-auto overflow-x-hidden p-2 animate-in fade-in duration-150"
               >
                 {messages.length === 0 && !fetching ? (
                   <div className="flex flex-col items-center justify-center h-full text-muted-foreground text-sm">

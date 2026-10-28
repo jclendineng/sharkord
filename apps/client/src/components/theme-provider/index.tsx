@@ -7,6 +7,13 @@ import { createContext, useEffect, useState } from 'react';
 
 type Theme = 'dark' | 'light' | 'system';
 
+// safari's bars take theme-color, so they match the page's background in the theme picked here
+// rather than the system's. the same two colors are --background in index.css
+const THEME_COLORS = {
+  light: '#ffffff',
+  dark: '#0a0a0a'
+};
+
 type ThemeProviderProps = {
   children: React.ReactNode;
   defaultTheme?: Theme;
@@ -40,17 +47,25 @@ function ThemeProvider({
 
     root.classList.remove('light', 'dark');
 
+    let resolvedTheme: 'dark' | 'light';
+
     if (theme === 'system') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)')
-        .matches
+      resolvedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches
         ? 'dark'
         : 'light';
-
-      root.classList.add(systemTheme);
-      return;
+    } else {
+      resolvedTheme = theme;
     }
 
-    root.classList.add(theme);
+    root.classList.add(resolvedTheme);
+
+    const themeColorMetas = document.querySelectorAll(
+      'meta[name="theme-color"]'
+    );
+
+    themeColorMetas.forEach((meta) => {
+      meta.setAttribute('content', THEME_COLORS[resolvedTheme]);
+    });
   }, [theme]);
 
   const value = {

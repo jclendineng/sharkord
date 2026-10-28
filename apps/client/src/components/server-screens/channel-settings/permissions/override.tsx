@@ -150,6 +150,7 @@ const Override = memo(
             <Tooltip content={t('deleteOverrideTooltip')}>
               <IconButton
                 icon={Trash2}
+                aria-label={t('deleteOverrideTooltip')}
                 size="sm"
                 variant="destructive"
                 onClick={onDeleteOverride}
@@ -158,6 +159,7 @@ const Override = memo(
             <Tooltip content={t('closeEditorTooltip')}>
               <IconButton
                 icon={X}
+                aria-label={t('closeEditorTooltip')}
                 size="sm"
                 variant="ghost"
                 onClick={onClose}

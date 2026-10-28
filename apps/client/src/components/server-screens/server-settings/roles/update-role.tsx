@@ -148,6 +148,7 @@ const UpdateRole = memo(
             <Tooltip content={t('setAsDefaultRoleTooltip')}>
               <IconButton
                 icon={Star}
+                aria-label={t('setAsDefaultRoleTooltip')}
                 size="sm"
                 variant="ghost"
                 disabled={selectedRole.isDefault}
@@ -157,6 +158,7 @@ const UpdateRole = memo(
             <Tooltip content={t('deleteRoleTooltip')}>
               <IconButton
                 icon={Trash2}
+                aria-label={t('deleteRoleTooltip')}
                 size="sm"
                 variant="destructive"
                 disabled={selectedRole.isPersistent || selectedRole.isDefault}
@@ -166,6 +168,7 @@ const UpdateRole = memo(
             <Tooltip content={t('closeEditorTooltip')}>
               <IconButton
                 icon={X}
+                aria-label={t('closeEditorTooltip')}
                 size="sm"
                 variant="ghost"
                 onClick={onClose}

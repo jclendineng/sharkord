@@ -32,6 +32,7 @@ struct SetStatusSheet: View {
                     Text("Status Message")
                 } footer: {
                     Text("\(message.count)/\(Self.messageLimit)")
+                        .monospacedDigit()
                         .foregroundStyle(message.count > Self.messageLimit ? Theme.red : Theme.muted)
                         .wrappingFooter()
                 }

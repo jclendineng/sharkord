@@ -70,7 +70,7 @@ const SoundboardButton = memo(() => {
           <Button
             variant="ghost"
             size="icon"
-            className="rounded size-8 transition-all duration-200 hover:bg-muted/60"
+            className="rounded size-8 transition-colors hover:bg-muted/60"
             aria-label={t('soundboard')}
           >
             <AudioLines className="size-4" />

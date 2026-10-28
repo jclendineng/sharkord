@@ -72,7 +72,7 @@ struct MessageListView<Header: View>: View {
                     if isAwayFromBottom, !store.hasNewer {
                         JumpToBottomButton(action: scrollToBottom)
                         .padding(12)
-                        .transition(.scale(scale: 0.6).combined(with: .opacity))
+                        .popTransition()
                     }
                 }
                 .animation(.snappy(duration: 0.2), value: isAwayFromBottom)
@@ -89,7 +89,7 @@ struct MessageListView<Header: View>: View {
                     onJump: jumpToFirstUnread,
                     onClose: dismissUnreadMarker
                 )
-                .transition(.move(edge: .top).combined(with: .opacity))
+                .slideTransition(from: .top)
             }
         }
         .animation(.snappy(duration: 0.25), value: store.unreadMarker)
@@ -98,7 +98,7 @@ struct MessageListView<Header: View>: View {
             if store.hasNewer {
                 JumpToPresentBar(action: returnToPresent)
                     .padding(.bottom, 8)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .slideTransition(from: .bottom)
             }
         }
         .animation(.snappy(duration: 0.25), value: store.hasNewer)

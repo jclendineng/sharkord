@@ -46,7 +46,7 @@ const VoiceButtons = memo(({ currentVoiceChannelId }: TVoiceButtonsProps) => {
         variant="ghost"
         size="sm"
         onClick={handleToggleVoiceChat}
-        className="h-7 px-2 transition-all duration-200 ease-in-out"
+        className="h-7 px-2"
       >
         <Tooltip
           content={isVoiceChatOpen ? t('closeVoiceChat') : t('openVoiceChat')}
@@ -54,10 +54,7 @@ const VoiceButtons = memo(({ currentVoiceChannelId }: TVoiceButtonsProps) => {
         >
           <div className="relative flex items-center justify-center">
             <MessageSquare
-              className={cn(
-                'w-4 h-4 transition-all duration-200 ease-in-out',
-                isVoiceChatOpen && 'fill-current'
-              )}
+              className={cn('w-4 h-4', isVoiceChatOpen && 'fill-current')}
             />
             <UnreadCount
               count={currentVoiceChannelUnreadCount}

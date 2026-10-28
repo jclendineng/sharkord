@@ -62,7 +62,7 @@ struct VoiceRoomScreen: View {
 
             if isReactionBarShown {
                 ReactionBar()
-                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .slideTransition(from: .top)
             }
 
             if let shownFocus {
@@ -88,7 +88,7 @@ struct VoiceRoomScreen: View {
         .overlay(alignment: .top) {
             if let toastMessage = session.toastMessage {
                 ErrorToast(message: toastMessage)
-                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .slideTransition(from: .top)
             }
         }
         .animation(.snappy, value: session.toastMessage)
@@ -596,6 +596,7 @@ private struct FloatingReactions: View {
 private struct FloatingReaction: View {
     let reaction: VoiceReaction
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var hasRisen = false
 
     // spreads reactions sent together across the tile
@@ -603,11 +604,16 @@ private struct FloatingReaction: View {
         CGFloat((reaction.id * 37) % 60) - 30
     }
 
+    // with reduce motion on it fades where it lands rather than floating up the tile
+    private var riseHeight: CGFloat {
+        reduceMotion ? -20 : -150
+    }
+
     var body: some View {
         EmojiView(value: reaction.emoji, size: 34)
-            .offset(x: drift, y: hasRisen ? -150 : -20)
+            .offset(x: drift, y: hasRisen ? riseHeight : -20)
             .opacity(hasRisen ? 0 : 1)
-            .scaleEffect(hasRisen ? 1.15 : 0.8)
+            .scaleEffect(hasRisen && !reduceMotion ? 1.15 : 0.8)
             .onAppear {
                 withAnimation(.easeOut(duration: 2.5)) {
                     hasRisen = true

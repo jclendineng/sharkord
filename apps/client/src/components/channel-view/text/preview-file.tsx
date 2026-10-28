@@ -30,7 +30,7 @@ type TUploadProgressBarProps = {
 const UploadProgressBar = memo(({ progress }: TUploadProgressBarProps) => (
   <div className="absolute bottom-0 left-0 right-0 h-1 bg-muted">
     <div
-      className="h-full bg-primary transition-all duration-200"
+      className="h-full bg-primary transition-[width] duration-200 ease-out"
       style={{ width: `${progress}%` }}
     />
   </div>
@@ -70,7 +70,7 @@ const PreviewFile = memo(({ item, onRemove }: TPreviewFileProps) => {
   const Icon = categoryIconMap[category] || File;
 
   return (
-    <div className="group relative flex w-48 flex-col overflow-hidden rounded-lg border border-border bg-background transition-all duration-200 hover:border-primary/50 hover:shadow-md">
+    <div className="group relative flex w-48 flex-col overflow-hidden rounded-lg border border-border bg-background transition-[border-color,box-shadow] duration-150 hover:border-primary/50 hover:shadow-md">
       <div className="relative h-32">
         {hasPreview ? (
           <>
@@ -90,7 +90,7 @@ const PreviewFile = memo(({ item, onRemove }: TPreviewFileProps) => {
             )}
             {isUploading && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                <span className="text-sm font-medium text-white">
+                <span className="text-sm font-medium tabular-nums text-white">
                   {progress}%
                 </span>
               </div>
@@ -105,7 +105,7 @@ const PreviewFile = memo(({ item, onRemove }: TPreviewFileProps) => {
           >
             <Icon className="h-10 w-10 text-muted-foreground" />
             {isUploading && (
-              <span className="text-xs font-medium text-muted-foreground">
+              <span className="text-xs font-medium tabular-nums text-muted-foreground">
                 {progress}%
               </span>
             )}

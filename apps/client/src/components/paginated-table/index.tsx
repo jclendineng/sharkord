@@ -20,7 +20,7 @@ const PaginatedTableComponent = <T,>({
   headerColumns,
   gridCols,
   itemsPerPage = 10,
-  searchPlaceholder = 'Search...',
+  searchPlaceholder = 'Search…',
   emptyMessage = 'No items found.'
 }: TPaginatedTableProps<T>) => {
   const [currentPage, setCurrentPage] = useState(1);

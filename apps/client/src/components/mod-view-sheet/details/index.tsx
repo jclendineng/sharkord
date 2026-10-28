@@ -36,6 +36,7 @@ type TRowProps = {
 
 const Row = memo(
   ({ icon, label, value, details, hidden = false }: TRowProps) => {
+    const { t } = useTranslation('settings');
     const [visible, setVisible] = useState(!hidden);
 
     let valContent = (
@@ -59,8 +60,9 @@ const Row = memo(
           <IconButton
             role="button"
             onClick={() => setVisible(!visible)}
-            className="text-muted-foreground inline-flex h-6 w-6 items-center justify-center rounded bg-transparent hover:bg-accent hover:text-foreground cursor-pointer transition-colors focus:outline-none"
+            className="text-muted-foreground inline-flex h-6 w-6 items-center justify-center rounded bg-transparent hover:bg-accent hover:text-foreground cursor-pointer transition-colors"
             icon={visible ? EyeClosed : Eye}
+            aria-label={visible ? t('hideValue') : t('showValue')}
           />
         )}
       </div>

@@ -60,7 +60,7 @@ const FileCard = ({
 
   return (
     <a
-      className="flex max-w-sm items-center gap-3 rounded-lg border border-border bg-background p-2 select-none transition-all duration-200 hover:border-primary/50 hover:bg-accent hover:shadow-md"
+      className="flex max-w-sm items-center gap-3 rounded-lg border border-border bg-background p-2 select-none transition-[border-color,background-color,box-shadow] duration-150 hover:border-primary/50 hover:bg-accent hover:shadow-md"
       href={href}
       target="_blank"
       rel="noopener noreferrer"

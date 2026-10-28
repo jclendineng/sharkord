@@ -316,6 +316,7 @@ struct ChannelEditor: View {
                     Text("Topic")
                 } footer: {
                     Text("\(topic.count)/\(Self.topicLimit)")
+                        .monospacedDigit()
                         .wrappingFooter()
                 }
             }

@@ -170,7 +170,7 @@ private struct RailItem<Content: View>: View {
                 .overlay(alignment: .bottomTrailing) {
                     if badge > 0 {
                         Text(badge > 99 ? "99+" : "\(badge)")
-                            .font(.caption2.weight(.bold))
+                            .font(.caption2.weight(.bold).monospacedDigit())
                             .foregroundStyle(.white)
                             .padding(.horizontal, 5)
                             .frame(minWidth: 18, minHeight: 18)
@@ -240,6 +240,6 @@ private struct HistoryButtonStyle: ButtonStyle {
             .frame(width: 28, height: 24)
             .opacity(isEnabled ? 1 : 0.35)
             .hoverHighlight(cornerRadius: 6)
-            .scaleEffect(configuration.isPressed ? 0.9 : 1)
+            .scaleEffect(configuration.isPressed ? 0.96 : 1)
     }
 }

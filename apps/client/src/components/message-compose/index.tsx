@@ -320,7 +320,7 @@ const MessageCompose = memo(
     return (
       <div
         ref={containerRef}
-        className="compose-container relative shrink-0 min-h-14 flex flex-col pb-[env(safe-area-inset-bottom)] bg-white/[0.03]"
+        className="compose-container relative shrink-0 min-h-14 flex flex-col bg-white/[0.03]"
       >
         <UsersTypingIndicator typingUsers={typingUsers} />
 

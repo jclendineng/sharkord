@@ -105,6 +105,7 @@ struct EditProfileSheet: View {
                     Text("About Me")
                 } footer: {
                     Text("\(bio.count)/\(Self.bioLimit)")
+                        .monospacedDigit()
                         .foregroundStyle(bio.count > Self.bioLimit ? Theme.red : Theme.muted)
                         .wrappingFooter()
                 }

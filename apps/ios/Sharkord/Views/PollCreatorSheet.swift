@@ -58,6 +58,7 @@ struct PollCreatorSheet: View {
                     Text("Question")
                 } footer: {
                     Text("\(question.count)/\(Self.questionLimit)")
+                        .monospacedDigit()
                         .wrappingFooter()
                 }
 

@@ -114,7 +114,7 @@ struct HomeView: View {
         .overlay(alignment: .top) {
             if let toastMessage = session.toastMessage {
                 ErrorToast(message: toastMessage)
-                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .slideTransition(from: .top)
             }
         }
         .animation(.snappy, value: session.toastMessage)

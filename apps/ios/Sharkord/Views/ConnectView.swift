@@ -59,27 +59,27 @@ struct ConnectView: View {
                 AuthCard(onBack: back) {
                     serverCard(intent: intent)
                 }
-                .transition(.move(edge: .trailing).combined(with: .opacity))
+                .slideTransition(from: .trailing)
             case .login:
                 AuthCard(onBack: back) {
                     loginCard
                 }
-                .transition(.move(edge: .trailing).combined(with: .opacity))
+                .slideTransition(from: .trailing)
             case .register:
                 AuthCard(onBack: back) {
                     registerCard
                 }
-                .transition(.move(edge: .trailing).combined(with: .opacity))
+                .slideTransition(from: .trailing)
             case .link(let login):
                 AuthCard(onBack: back) {
                     linkCard(login)
                 }
-                .transition(.move(edge: .trailing).combined(with: .opacity))
+                .slideTransition(from: .trailing)
             case .requestCode:
                 AuthCard(onBack: back) {
                     requestCodeCard
                 }
-                .transition(.move(edge: .trailing).combined(with: .opacity))
+                .slideTransition(from: .trailing)
             }
         }
         .animation(.snappy(duration: 0.3), value: step)

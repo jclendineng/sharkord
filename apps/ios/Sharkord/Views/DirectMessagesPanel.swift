@@ -336,7 +336,7 @@ private struct ConversationRow: View {
 
             if unreadCount > 0 {
                 Text("\(unreadCount)")
-                    .font(.caption.weight(.bold))
+                    .font(.caption.weight(.bold).monospacedDigit())
                     .foregroundStyle(.white)
                     .padding(.horizontal, 7)
                     .padding(.vertical, 2)

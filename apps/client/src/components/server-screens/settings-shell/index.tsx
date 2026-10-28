@@ -109,6 +109,7 @@ const SettingsShell = memo(
               icon={Menu}
               variant="ghost"
               className="md:hidden"
+              aria-label={t('openMenu')}
               onClick={toggleDrawer}
             />
           </div>
@@ -127,7 +128,7 @@ const SettingsShell = memo(
               selectedId={selectedEntry?.id ?? ''}
               onSelect={handleSelect}
               className={cn(
-                'absolute inset-y-0 left-0 z-40 transition-transform duration-300 ease-in-out md:relative md:z-0 md:translate-x-0',
+                'absolute inset-y-0 left-0 z-40 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none md:relative md:z-0 md:translate-x-0',
                 isDrawerOpen ? 'translate-x-0' : '-translate-x-full'
               )}
             />

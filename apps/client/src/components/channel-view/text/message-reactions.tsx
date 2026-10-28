@@ -85,7 +85,7 @@ const Reaction = memo(
           )}
         >
           <Emoji emoji={emoji} file={file} />
-          <span className="font-medium">{count}</span>
+          <span className="font-medium tabular-nums">{count}</span>
         </Button>
       </Tooltip>
     );

@@ -129,7 +129,7 @@ const VoiceGrid = memo(
                 <button
                   className={cn(
                     'inline-flex items-center justify-center rounded px-3 py-2 gap-1',
-                    'pointer-events-auto shadow-xl transition-all',
+                    'pointer-events-auto shadow-xl transition-colors',
                     'bg-black/70 hover:bg-black/80',
                     'hidden group-hover/voice-stage:inline-flex'
                   )}
@@ -139,7 +139,7 @@ const VoiceGrid = memo(
                   <Users className="size-3" />
                   <ChevronDown
                     className={cn(
-                      'size-3 transition-transform duration-300 ease-in-out -mr-0.5',
+                      'size-3 transition-transform duration-200 ease-out -mr-0.5',
                       hideParticipants && 'rotate-180'
                     )}
                   />
@@ -151,7 +151,7 @@ const VoiceGrid = memo(
             <div
               className={cn(
                 'flex shrink-0 justify-center-safe gap-2 p-3 overflow-x-auto',
-                'transition-all duration-300 ease-in-out',
+                'transition-[max-height,padding,margin,opacity] duration-200 ease-out motion-reduce:transition-opacity',
                 hideParticipants
                   ? 'max-h-0 p-0 mt-0 opacity-0'
                   : 'max-h-full p-3 -mt-3 opacity-100'

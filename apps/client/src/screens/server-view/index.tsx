@@ -162,7 +162,7 @@ const ServerView = memo(() => {
 
           <LeftSidebar
             className={cn(
-              'md:relative md:flex fixed inset-0 left-0 h-full z-40 md:z-0 transition-transform duration-300 ease-in-out',
+              'md:relative md:flex fixed inset-0 left-0 h-full z-40 md:z-0 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none',
               isMobileMenuOpen
                 ? 'translate-x-0'
                 : '-translate-x-full md:translate-x-0'

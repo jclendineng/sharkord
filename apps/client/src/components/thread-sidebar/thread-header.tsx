@@ -16,6 +16,7 @@ const ThreadHeader = memo(() => {
       <IconButton
         onClick={closeThreadSidebar}
         icon={X}
+        aria-label={t('close')}
         variant="ghost"
         size="sm"
         className="rounded-md hover:bg-accent transition-colors"

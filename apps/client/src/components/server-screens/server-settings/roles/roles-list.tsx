@@ -185,6 +185,7 @@ const RolesList = memo(
           <Tooltip content={t('addRoleTooltip')}>
             <IconButton
               icon={Plus}
+              aria-label={t('addRoleTooltip')}
               size="sm"
               variant="ghost"
               onClick={onAddRole}

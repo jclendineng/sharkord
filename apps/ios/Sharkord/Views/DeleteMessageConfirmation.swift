@@ -7,6 +7,7 @@ struct DeleteMessageConfirmation: View {
 
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     // a long message is cut off here and fades out, a short one takes only its own height
     private static let previewLimit: CGFloat = 140
@@ -109,14 +110,14 @@ struct DeleteMessageConfirmation: View {
                 RoundedRectangle(cornerRadius: 24).stroke(Theme.divider, lineWidth: 1)
             }
             .padding(.horizontal, 20)
-            .scaleEffect(isShown ? 1 : 0.92)
+            .scaleEffect(isShown || reduceMotion ? 1 : 0.92)
             .opacity(isShown ? 1 : 0)
         }
         .onAppear(perform: show)
     }
 
     private func show() {
-        withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) {
+        withAnimation(.spring(response: 0.25, dampingFraction: 1)) {
             isShown = true
         }
     }

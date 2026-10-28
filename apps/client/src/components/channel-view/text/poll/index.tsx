@@ -78,7 +78,7 @@ const PollAnswerRow = memo(
           <span className="font-medium">{answer.text}</span>
         </span>
         {showsResults && (
-          <span className="relative flex items-center gap-1 text-xs font-semibold">
+          <span className="relative flex items-center gap-1 text-xs font-semibold tabular-nums">
             {isWinner && <Crown className="h-3 w-3 text-yellow-500" />}
             {answer.userIds.length} · {percent}%
           </span>

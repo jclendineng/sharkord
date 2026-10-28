@@ -56,7 +56,7 @@ const ReconnectingOverlay = memo(() => {
           role="presentation"
         >
           <div
-            className="h-full bg-yellow-500 transition-all duration-500"
+            className="h-full bg-yellow-500 transition-[width] duration-500 ease-out"
             style={{
               width: `${(reconnect.attempt / reconnect.maxAttempts) * 100}%`
             }}

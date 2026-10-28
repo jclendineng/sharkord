@@ -143,7 +143,7 @@ struct ChatScreen: View {
                         .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }) { frame in
                             dropdownFrame = frame
                         }
-                        .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .topTrailing)))
+                        .popTransition(scale: 0.96, anchor: .topTrailing)
 
                     // escape puts it away, as it does the server's search card
                     Button("Close", action: closeDropdown)

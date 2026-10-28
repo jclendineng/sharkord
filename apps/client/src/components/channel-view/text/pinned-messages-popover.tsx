@@ -30,12 +30,20 @@ type TScrollToMessageButtonProps = {
 
 const ScrollToMessageButton = memo(
   ({ messageId, onScrollToMessage }: TScrollToMessageButtonProps) => {
+    const { t } = useTranslation('dialogs');
     const handleClick = useCallback(
       () => onScrollToMessage(messageId),
       [onScrollToMessage, messageId]
     );
 
-    return <IconButton icon={ArrowRight} size="xs" onClick={handleClick} />;
+    return (
+      <IconButton
+        icon={ArrowRight}
+        size="xs"
+        aria-label={t('jumpToMessage')}
+        onClick={handleClick}
+      />
+    );
   }
 );
 
@@ -156,6 +164,7 @@ const PinnedMessagesPopover = memo(
         <PopoverTrigger asChild>
           <IconButton
             icon={Pin}
+            aria-label={t('pinnedMessagesTitle')}
             size="sm"
             variant="ghost"
             onClick={togglePinnedMessages}

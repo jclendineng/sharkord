@@ -103,7 +103,7 @@
   "noCustomEmojis": "No hay emojis personalizados disponibles",
   "serverAdminsCanUpload": "Los administradores del servidor pueden subir emojis personalizados en la configuración del servidor",
   "serverEmojis": "Emojis del servidor ({{count}})",
-  "searchAllEmojis": "Buscar todos los emojis...",
+  "searchAllEmojis": "Buscar todos los emojis…",
   "emojiTab": "Emoji",
   "customTab": "Personalizado",
   "searchResults": "Resultados de búsqueda ({{count}})",
@@ -181,5 +181,6 @@
   "commandArgYes": "Sí",
   "commandArgNo": "No",
   "commandArgMissing": "/{{commandName}} necesita un valor para {{argName}}.",
-  "mutedByModerator": "Un moderador te ha silenciado."
+  "mutedByModerator": "Un moderador te ha silenciado.",
+  "copyImageLink": "Copiar enlace de la imagen"
 }

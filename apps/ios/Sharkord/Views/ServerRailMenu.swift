@@ -9,6 +9,7 @@ struct ServerRailMenu: View {
 
     @Environment(ServerListStore.self) private var servers
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var height: CGFloat = 0
     @State private var isShown = false
     @State private var menuId = UUID()
@@ -32,7 +33,7 @@ struct ServerRailMenu: View {
                     .hidden()
 
                 card
-                    .scaleEffect(isShown ? 1 : 0.85, anchor: .topLeading)
+                    .scaleEffect(isShown || reduceMotion ? 1 : 0.85, anchor: .topLeading)
                     .opacity(isShown ? 1 : 0)
                     .offset(x: menu.iconFrame.maxX + 10, y: top(in: proxy.size))
             }
@@ -42,12 +43,13 @@ struct ServerRailMenu: View {
         .onDisappear(perform: hidden)
     }
 
-    // grows out of the icon like discord's, quick enough to feel attached to the finger. a right
+    // grows out of the icon like discord's, quick enough to feel attached to the finger, and
+    // critically damped since nothing was thrown to carry an overshoot. a right
     // click elsewhere on a mac moves to that menu or closes this one, as the others do
     private func show() {
         PointerMenus.opened(menuId, close: close)
 
-        withAnimation(.spring(response: 0.22, dampingFraction: 0.82)) {
+        withAnimation(.spring(response: 0.22, dampingFraction: 1)) {
             isShown = true
         }
     }

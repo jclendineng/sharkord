@@ -13,8 +13,8 @@ extension View {
         modifier(HoverHighlight(cornerRadius: cornerRadius, style: .brighten))
     }
 
-    // an icon button grows a touch on a spring under the pointer, the small bounce discord's
-    // buttons have
+    // an icon button grows a touch under the pointer. the spring is critically damped, a hover
+    // happens dozens of times a session and an overshoot on each one reads as wobble
     func hoverPop(scale: CGFloat = 1.12) -> some View {
         modifier(HoverPop(scale: scale))
     }
@@ -23,12 +23,13 @@ extension View {
 private struct HoverPop: ViewModifier {
     let scale: CGFloat
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isHovered = false
 
     func body(content: Content) -> some View {
         content
-            .scaleEffect(isHovered ? scale : 1)
-            .animation(.spring(response: 0.25, dampingFraction: 0.55), value: isHovered)
+            .scaleEffect(isHovered && !reduceMotion ? scale : 1)
+            .animation(.spring(response: 0.25, dampingFraction: 1), value: isHovered)
             .onHover(perform: setHovered)
     }
 

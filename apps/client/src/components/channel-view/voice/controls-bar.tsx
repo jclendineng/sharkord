@@ -54,7 +54,7 @@ const ControlsBar = memo(({ channelId }: TControlsBarProps) => {
 
   const barClass = alwaysShowControls
     ? 'relative -mt-3'
-    : 'absolute bottom-0 left-0 right-0 transition-all duration-300 ease-in-out invisible opacity-0 translate-y-4 group-hover/voice-stage:visible group-hover/voice-stage:opacity-100 group-hover/voice-stage:translate-y-0';
+    : 'absolute bottom-0 left-0 right-0 transition-[opacity,transform,visibility] duration-200 ease-out motion-reduce:transition-[opacity,visibility] motion-reduce:translate-y-0 invisible opacity-0 translate-y-4 group-hover/voice-stage:visible group-hover/voice-stage:opacity-100 group-hover/voice-stage:translate-y-0';
 
   const handleLeaveVoice = useCallback(() => {
     leaveVoice();
@@ -143,7 +143,7 @@ const ControlsBar = memo(({ channelId }: TControlsBarProps) => {
         <Button
           className={cn(
             'inline-flex h-auto self-stretch min-w-11 items-center justify-center rounded px-3 border border-border',
-            'pointer-events-auto text-white shadow-xl transition-all',
+            'pointer-events-auto text-white shadow-xl transition-colors',
             'bg-[#ec4245] hover:bg-[#da373c]'
           )}
           onClick={handleLeaveVoice}

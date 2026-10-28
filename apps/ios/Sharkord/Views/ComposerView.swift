@@ -107,7 +107,7 @@ struct ComposerView: View {
                 .padding(.trailing, 12)
                 // its own height and a little more up from the box's top, so it sits just above
                 .offset(y: -(ExpressionPicker.height + 6))
-                .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .bottomTrailing)))
+                .popTransition(scale: 0.96, anchor: .bottomTrailing)
                 // escape puts it away, as it does discord's
                 .background {
                     Button("Close Picker", action: closePicker)
@@ -440,7 +440,7 @@ struct ComposerView: View {
                         .contentShape(.circle)
                 }
                     .contentShape(.rect)
-                    .transition(.scale.combined(with: .opacity))
+                    .popTransition()
             }
         }
         .animation(.snappy(duration: 0.2), value: canSend)
@@ -1159,13 +1159,14 @@ private struct ExpressionButton<Label: View>: View {
     }
 }
 
-// discord's emoji button: a grey face that turns to colour, grows and tips under the pointer, a
-// different face each time it is pointed at
+// discord's emoji button: a grey face that turns to colour and grows a touch under the pointer, a
+// different face each time it is pointed at. it settles without a wobble, as apple's hovers do
 private struct FunEmojiButton: View {
     private static let faces = ["😀", "😃", "😄", "😁", "😆", "😅", "🤣", "😂", "🙂", "😉", "😊", "😇", "🥰", "😍", "🤩", "😋", "😛", "😜", "🤪", "🤗", "🤭", "🤔", "😎", "🥳", "😏", "😺"]
 
     let action: () -> Void
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isHovered = false
     @State private var face = "😀"
 
@@ -1175,13 +1176,12 @@ private struct FunEmojiButton: View {
                 .font(.system(size: 19))
                 .grayscale(isHovered ? 0 : 1)
                 .opacity(isHovered ? 1 : 0.55)
-                .scaleEffect(isHovered ? 1.22 : 1)
-                .rotationEffect(.degrees(isHovered ? -10 : 0))
+                .scaleEffect(isHovered && !reduceMotion ? 1.12 : 1)
                 .frame(width: 26, height: 24)
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .animation(.spring(response: 0.3, dampingFraction: 0.5), value: isHovered)
+        .animation(.spring(response: 0.25, dampingFraction: 1), value: isHovered)
         .onHover(perform: setHovered)
         .accessibilityLabel("Emoji")
     }

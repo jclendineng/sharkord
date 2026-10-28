@@ -103,7 +103,7 @@
   "noCustomEmojis": "暂无自定义表情",
   "serverAdminsCanUpload": "服务器管理员可以在服务器设置中上传自定义表情",
   "serverEmojis": "服务器表情（{{count}}）",
-  "searchAllEmojis": "搜索所有表情...",
+  "searchAllEmojis": "搜索所有表情…",
   "emojiTab": "表情",
   "customTab": "自定义",
   "searchResults": "搜索结果（{{count}}）",
@@ -181,5 +181,6 @@
   "commandArgYes": "是",
   "commandArgNo": "否",
   "commandArgMissing": "/{{commandName}} 需要为 {{argName}} 提供一个值。",
-  "mutedByModerator": "你已被管理员禁言。"
+  "mutedByModerator": "你已被管理员禁言。",
+  "copyImageLink": "复制图片链接"
 }

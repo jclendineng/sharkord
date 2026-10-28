@@ -103,13 +103,13 @@
   "noCustomEmojis": "No custom emojis available",
   "serverAdminsCanUpload": "Server admins can upload custom emojis in server settings",
   "serverEmojis": "Server emojis ({{count}})",
-  "searchAllEmojis": "Search all emojis...",
+  "searchAllEmojis": "Search all emojis…",
   "emojiTab": "Emoji",
   "customTab": "Custom",
   "searchResults": "Search results ({{count}})",
   "wasReactedBy": "was reacted by {{reacters}}.",
   "andMore": "and {{count}} more",
-  "typeAMessage": "Type a message...",
+  "typeAMessage": "Type a message…",
   "messageChannel": "Message \"{{name}}\"",
   "toggleParticipants": "Show/hide participants",
   "sendVoiceReaction": "Send a reaction",
@@ -183,5 +183,6 @@
   "commandArgYes": "Yes",
   "commandArgNo": "No",
   "commandArgMissing": "/{{commandName}} needs a value for {{argName}}.",
-  "mutedByModerator": "You were muted by a moderator."
+  "mutedByModerator": "You were muted by a moderator.",
+  "copyImageLink": "Copy image link"
 }

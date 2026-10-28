@@ -348,7 +348,7 @@ private struct UnreadRow: View {
                 Spacer()
 
                 Text("\(session.unreadCounts[channel.id, default: 0])")
-                    .font(.caption.weight(.bold))
+                    .font(.caption.weight(.bold).monospacedDigit())
                     .foregroundStyle(.white)
                     .padding(.horizontal, 7)
                     .padding(.vertical, 2)

@@ -103,7 +103,7 @@
   "noCustomEmojis": "Кастомные смайлики недоступны",
   "serverAdminsCanUpload": "Администраторы сервера могут загружать собственные смайлики в настройках сервера",
   "serverEmojis": "Смайлики сервера ({{count}})",
-  "searchAllEmojis": "Поиск по всем смайликам...",
+  "searchAllEmojis": "Поиск по всем смайликам…",
   "emojiTab": "Смайлики",
   "customTab": "Кастомные",
   "searchResults": "Результаты поиска ({{count}})",
@@ -181,5 +181,6 @@
   "commandArgYes": "Да",
   "commandArgNo": "Нет",
   "commandArgMissing": "/{{commandName}}: укажите значение для {{argName}}.",
-  "mutedByModerator": "Модератор отключил вам микрофон."
+  "mutedByModerator": "Модератор отключил вам микрофон.",
+  "copyImageLink": "Копировать ссылку на изображение"
 }

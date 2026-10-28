@@ -304,6 +304,14 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - On a Mac, hovering a message shows a bar of quick reactions, Reply and More.
 - On a Mac, search is a box in the chat's top bar with the filter menu beside it, and the results drop down under it. The server search above the channel list opens the same card.
 - On a Mac, sheets open centred in the window, scrolling in one no longer fades it out, and they have no grabber.
+- Motion follows Reduce Motion, and settles without a wobble.
+  - Apps: toasts, pills, menus and sign in steps fade in place with Reduce Motion on, and call reactions fade where they appear.
+  - Apps: hover and menu springs no longer overshoot, the emoji button no longer tips, and presses sink to 96%.
+  - Web: menus, dialogs and sheets fade without sliding, the speaking glow holds still, and drawers close without moving.
+  - Web: sheets, the sidebar and channel switches are quicker, and buttons sink a little when pressed.
+- Counters and unread badges keep their width as the number changes, in the apps and on the web.
+- On the web, every icon button has a visible keyboard focus ring and a name for screen readers.
+- On a phone, the web client fills the screen around the notch, its bar matches the theme, and taps no longer flash or select a button's label.
 
 ### Removed
 

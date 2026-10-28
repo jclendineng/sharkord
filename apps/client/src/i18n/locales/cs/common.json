@@ -103,7 +103,7 @@
   "noCustomEmojis": "Žádné vlastní emoji nejsou dostupné",
   "serverAdminsCanUpload": "Administrátoři můžou nahrát vlastní emoji v nastavení serveru",
   "serverEmojis": "Vlastní emoji ({{count}})",
-  "searchAllEmojis": "Hledat ve všech emoji...",
+  "searchAllEmojis": "Hledat ve všech emoji…",
   "emojiTab": "Emoji",
   "customTab": "Vlastní",
   "searchResults": "Výsledky hledání ({{count}})",
@@ -181,5 +181,6 @@
   "commandArgYes": "Ano",
   "commandArgNo": "Ne",
   "commandArgMissing": "/{{commandName}} potřebuje hodnotu pro {{argName}}.",
-  "mutedByModerator": "Moderátor vám vypnul mikrofon."
+  "mutedByModerator": "Moderátor vám vypnul mikrofon.",
+  "copyImageLink": "Kopírovat odkaz na obrázek"
 }

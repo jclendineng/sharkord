@@ -236,7 +236,7 @@ private struct PollAnswerRow: View {
                     }
 
                     Text("\(answer.userIds.count) · \(Int((share * 100).rounded()))%")
-                        .font(.caption.weight(.semibold))
+                        .font(.caption.weight(.semibold).monospacedDigit())
                         .foregroundStyle(Theme.text)
                 }
 

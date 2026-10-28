@@ -99,6 +99,7 @@ const PluginItem = memo(({ plugin, onToggle, onRemove }: TPluginItemProps) => {
             <Tooltip content={t('removeBtn')}>
               <IconButton
                 icon={Trash2}
+                aria-label={t('removeBtn')}
                 variant="ghost"
                 size="sm"
                 onClick={handleRemove}

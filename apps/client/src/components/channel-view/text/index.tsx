@@ -208,7 +208,7 @@ const TextChannel = memo(({ channelId, onClose }: TChannelProps) => {
         onScroll={onScroll}
         onLoadCapture={onAsyncContentLoaded}
         data-messages-container
-        className="flex-1 overflow-y-auto overflow-x-hidden px-2 pt-2 pb-7 animate-in fade-in duration-500"
+        className="flex-1 overflow-y-auto overflow-x-hidden px-2 pt-2 pb-7 animate-in fade-in duration-150"
       >
         <div className="space-y-4">
           {groupedMessages.map((group) => (

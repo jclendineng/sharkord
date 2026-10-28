@@ -107,7 +107,7 @@ const VoiceControl = memo(() => {
               variant="ghost"
               size="icon"
               className={cn(
-                'h-8 w-8 rounded-md transition-all duration-200',
+                'h-8 w-8 rounded-md transition-colors',
                 ownVoiceState.webcamEnabled
                   ? 'bg-green-500/15 hover:bg-green-500/25 text-green-400 hover:text-green-300'
                   : 'bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground'
@@ -132,7 +132,7 @@ const VoiceControl = memo(() => {
                 variant="ghost"
                 size="icon"
                 className={cn(
-                  'h-8 w-8 rounded-md transition-all duration-200',
+                  'h-8 w-8 rounded-md transition-colors',
                   ownVoiceState.sharingScreen
                     ? 'bg-blue-500/15 hover:bg-blue-500/25 text-blue-400 hover:text-blue-300'
                     : 'bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground'

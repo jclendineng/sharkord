@@ -90,6 +90,11 @@ const SearchResultMessageCard = memo(
               variant="ghost"
               size="sm"
               onClick={handleJump}
+              aria-label={
+                message.parentMessageId
+                  ? t('jumpToThreadMessage')
+                  : t('jumpToMessage')
+              }
               data-testid={TestId.SEARCH_RESULT_JUMP}
             />
           </Tooltip>
