@@ -11,6 +11,11 @@ on:
 permissions:
   contents: read
 
+# one run at a time, so a run's cleanup can't revoke the certificate another is still signing with
+concurrency:
+  group: mac-testflight
+  cancel-in-progress: false
+
 env:
   # the voice frameworks are too big for git, they live on this release, see apps/ios/Packages/Mediasoup/README.md
   FRAMEWORKS_RELEASE: mediasoup-0.13.2-mac2
@@ -51,6 +56,15 @@ jobs:
           printf '%s' "$ASC_PRIVATE_KEY" > "$RUNNER_TEMP/asc/AuthKey.p8"
           printf '%s' "$NOTES" > "$RUNNER_TEMP/asc/notes.txt"
           echo "BUILD_NUMBER=$(date -u +%Y%m%d%H%M)" >> "$GITHUB_ENV"
+
+      # the archive makes a development certificate for this runner, which the account only has
+      # room for a few of. the last step revokes it again
+      - name: Save signing certificates
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_PATH: ${{ runner.temp }}/asc/AuthKey.p8
+        run: bun apps/ios/scripts/ci-certificates.ts --save "$RUNNER_TEMP/asc/certificates.json"
 
       - name: Archive and upload
         working-directory: apps/ios
@@ -94,3 +108,15 @@ jobs:
           notes=()
           if [ -s "$RUNNER_TEMP/asc/notes.txt" ]; then notes=(--notes "$RUNNER_TEMP/asc/notes.txt"); fi
           bun apps/ios/scripts/testflight.ts --platform MAC_OS --build "$BUILD_NUMBER" "${notes[@]}"
+
+      - name: Revoke this run's signing certificates
+        if: always()
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_PATH: ${{ runner.temp }}/asc/AuthKey.p8
+        run: |
+          # nothing to compare against when the run stopped before the certificates were saved
+          if [ -f "$RUNNER_TEMP/asc/certificates.json" ]; then
+            bun apps/ios/scripts/ci-certificates.ts --revoke-new "$RUNNER_TEMP/asc/certificates.json"
+          fi

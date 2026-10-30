@@ -300,6 +300,12 @@ managed certificates through the App Store Connect key, uploads, and then
 submits it for beta review and expires the older Mac builds. TestFlight and the App Store keep
 the app up to date by themselves, so nobody downloads a release by hand.
 
+The archive also makes a development certificate for the runner, and an account only holds a
+few, so a full account stops the workflow at signing. `scripts/ci-certificates.ts` saves the
+account's certificates before the archive and revokes the ones that appeared once the run ends,
+whether it passed or not. Runs queue one at a time so a cleanup never revokes a certificate
+another run is still signing with.
+
 The workflow needs three repository secrets from the same key: `ASC_KEY_ID`, `ASC_ISSUER_ID` and
 `ASC_PRIVATE_KEY` (the contents of the `.p8`). The script works for the iOS builds too, run with
 `--platform IOS` after an upload from Xcode.
