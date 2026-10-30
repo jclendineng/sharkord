@@ -8,7 +8,7 @@ import SwiftUI
 struct ComposerPanel<Content: View, Bar: View>: View {
     // the one color the whole panel is, down behind the home indicator
     static var background: Color {
-        Color(hex: "#232428")
+        Theme.raisedBackground
     }
 
     let model: AttachPanelModel

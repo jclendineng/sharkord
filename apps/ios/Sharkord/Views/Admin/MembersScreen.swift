@@ -25,7 +25,7 @@ struct MembersScreen: View {
         SettingsForm {
             if let errorMessage {
                 Text(errorMessage)
-                    .foregroundStyle(Theme.red)
+                    .foregroundStyle(Theme.redText)
             }
 
             Section("\(shown.count) Members") {
@@ -90,7 +90,7 @@ private struct MemberRow: View {
 
                     if user.banned {
                         Text("BANNED")
-                            .font(.system(size: 10, weight: .bold))
+                            .font(.caption2.weight(.bold))
                             .foregroundStyle(.white)
                             .padding(.horizontal, 5)
                             .padding(.vertical, 1)
@@ -238,7 +238,7 @@ private struct MemberDetail: View {
             if let errorMessage {
                 Section {
                     Text(errorMessage)
-                        .foregroundStyle(Theme.red)
+                        .foregroundStyle(Theme.redText)
                 }
             }
         }
@@ -380,11 +380,11 @@ private struct ConfirmModeration: View {
     private var title: String {
         switch action {
         case .kick:
-            "Kick \(name)"
+            String(localized: "Kick \(name)")
         case .ban:
-            "Ban \(name)"
+            String(localized: "Ban \(name)")
         case .delete:
-            "Delete \(name)'s Account"
+            String(localized: "Delete \(name)'s Account")
         }
     }
 
@@ -460,7 +460,7 @@ private struct MemberActivity: View {
             return used
         }
 
-        return "\(used) of \(info.storage.quota.formatted(.byteCount(style: .file)))"
+        return String(localized: "\(used) of \(info.storage.quota.formatted(.byteCount(style: .file)))")
     }
 
     var body: some View {
@@ -502,7 +502,7 @@ private struct MemberActivity: View {
                     OpenFileButton(file: file) { isLoading in
                         HStack(spacing: 12) {
                             Image(systemName: file.symbol)
-                                .foregroundStyle(Theme.blurple)
+                                .foregroundStyle(Theme.accentText)
                                 .frame(width: 24)
 
                             VStack(alignment: .leading, spacing: 2) {

@@ -26,7 +26,7 @@ const SuppressLocalAudioPlaybackAlert = memo(
             href={SUPPRESS_LOCAL_AUDIO_PLAYBACK_COMPATIBILITY_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="underline transition-colors hover:text-primary"
+            className="underline transition-colors hover:text-primary-text"
           >
             {t('suppressLocalAudioPlaybackCompatibilityLink')}
           </a>

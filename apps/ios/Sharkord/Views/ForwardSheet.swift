@@ -29,7 +29,7 @@ struct ForwardSheet: View {
             SettingsForm {
                 if let errorMessage {
                     Text(errorMessage)
-                        .foregroundStyle(Theme.red)
+                        .foregroundStyle(Theme.redText)
                 }
 
                 if !message.files.isEmpty {
@@ -86,7 +86,7 @@ struct ForwardSheet: View {
                 } else {
                     Text("Send")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Theme.blurple)
+                        .foregroundStyle(Theme.accentText)
                 }
             }
             .contentShape(.rect)

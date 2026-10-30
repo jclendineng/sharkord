@@ -21,7 +21,7 @@ struct VoiceRoomScreen: View {
     }
 
     private var channelName: String {
-        shownChannelId.flatMap { session.channel($0)?.name } ?? "Voice"
+        shownChannelId.flatMap { session.channel($0)?.name } ?? String(localized: "Voice")
     }
 
     private var participants: [(user: PublicUser?, state: VoiceUserState)] {
@@ -82,7 +82,7 @@ struct VoiceRoomScreen: View {
             VoiceControls(onLeave: leave)
         }
         .background(Color.black)
-        .preferredColorScheme(.dark)
+        .alwaysDark()
         // the home screen's toast sits under this cover, so a camera or share failing in the call
         // said nothing
         .overlay(alignment: .top) {
@@ -387,7 +387,7 @@ private struct ParticipantTile: View {
             HStack(spacing: 4) {
                 if state.micMuted {
                     Image(systemName: "mic.slash.fill")
-                        .foregroundStyle(Theme.red)
+                        .foregroundStyle(Theme.redText)
                 }
 
                 if !isCompact {

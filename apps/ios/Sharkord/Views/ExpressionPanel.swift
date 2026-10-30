@@ -106,7 +106,7 @@ private struct TabPicker: View {
             }
         }
         .padding(4)
-        .background(Color(hex: "#2B2C31"), in: .rect(cornerRadius: 14, style: .continuous))
+        .background(Theme.floatingBackground, in: .rect(cornerRadius: 14, style: .continuous))
     }
 }
 
@@ -226,6 +226,18 @@ private struct EmojiTab: View {
         return list + EmojiCatalog.groups.map { ($0.name, EmojiCatalog.symbol(for: $0.name)) }
     }
 
+    // the name a section's bar button reads out, the same one its heading shows
+    private func sectionName(_ id: String) -> String {
+        switch id {
+        case "frequent":
+            String(localized: "Frequently Used")
+        case "server":
+            session.serverName
+        default:
+            EmojiCatalog.title(for: id)
+        }
+    }
+
     var body: some View {
         ScrollViewReader { proxy in
             VStack(spacing: 0) {
@@ -324,6 +336,7 @@ private struct EmojiTab: View {
                     .hoverHighlight(cornerRadius: 8)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(sectionName(section.id))
         }
     }
 

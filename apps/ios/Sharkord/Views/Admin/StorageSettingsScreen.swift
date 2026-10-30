@@ -172,7 +172,7 @@ struct StorageSettingsScreen: View {
             if let errorMessage {
                 Section {
                     Text(errorMessage)
-                        .foregroundStyle(Theme.red)
+                        .foregroundStyle(Theme.redText)
                 }
             }
         }
@@ -248,7 +248,7 @@ struct StorageSettingsScreen: View {
             return hours == 1 ? "1 hour" : "\(hours) hours"
         }
 
-        return "\(seconds / 60) minutes"
+        return String(localized: "\(seconds / 60) minutes")
     }
 }
 
@@ -325,7 +325,7 @@ private struct SizeRow: View {
     @State private var custom = ""
 
     private var unitName: String {
-        unit >= 1024 * 1024 * 1024 ? "GB" : "MB"
+        unit >= 1024 * 1024 * 1024 ? String(localized: "GB") : String(localized: "MB")
     }
 
     var body: some View {

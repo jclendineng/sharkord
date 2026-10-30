@@ -83,7 +83,7 @@ const PollAnswerRow = memo(
             {answer.userIds.length} · {percent}%
           </span>
         )}
-        {isPicked && <Check className="relative h-4 w-4 text-primary" />}
+        {isPicked && <Check className="relative h-4 w-4 text-primary-text" />}
       </button>
     );
   }

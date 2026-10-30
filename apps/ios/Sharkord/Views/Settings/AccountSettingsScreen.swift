@@ -46,7 +46,7 @@ struct AccountSettingsScreen: View {
                     DeleteAccountScreen()
                 } label: {
                     Text("Delete Account")
-                        .foregroundStyle(Theme.red)
+                        .foregroundStyle(Theme.redText)
                 }
             }
         }
@@ -93,12 +93,12 @@ private struct ChangePasswordScreen: View {
 
                 if !confirmPassword.isEmpty && newPassword != confirmPassword {
                     Text("The new passwords do not match.")
-                        .foregroundStyle(Theme.red)
+                        .foregroundStyle(Theme.redText)
                 }
 
                 if let errorMessage {
                     Text(errorMessage)
-                        .foregroundStyle(Theme.red)
+                        .foregroundStyle(Theme.redText)
                 }
             } footer: {
                 Text("Changing your password logs you out on every device, this one included.")
@@ -162,7 +162,7 @@ private struct DeleteAccountScreen: View {
 
                 if let deleteError {
                     Text(deleteError)
-                        .foregroundStyle(Theme.red)
+                        .foregroundStyle(Theme.redText)
                 }
             } footer: {
                 Text(wipesMessages

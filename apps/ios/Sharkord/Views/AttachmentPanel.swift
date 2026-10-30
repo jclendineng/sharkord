@@ -71,10 +71,10 @@ struct AttachmentPanel: View {
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 8)
-        .background(Color(hex: "#2B2C31"), in: .rect(cornerRadius: 28, style: .continuous))
+        .background(Theme.floatingBackground, in: .rect(cornerRadius: 28, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .strokeBorder(.white.opacity(0.06), lineWidth: 1)
+                .strokeBorder(Theme.panelEdge, lineWidth: 1)
         }
         .shadow(color: .black.opacity(0.12), radius: 8, y: 3)
         .compositingGroup()

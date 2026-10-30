@@ -40,11 +40,11 @@ enum FilterPicker: String, Identifiable {
     var dateTitle: String {
         switch self {
         case .before:
-            "Before"
+            String(localized: "Before")
         case .after:
-            "After"
+            String(localized: "After")
         default:
-            "Pick a date"
+            String(localized: "Pick a date")
         }
     }
 }
@@ -68,7 +68,7 @@ struct FilterMenu: View {
         } label: {
             Image(systemName: "slider.horizontal.3")
                 .font(.system(size: 17, weight: .medium))
-                .foregroundStyle(isFiltering ? Theme.blurple : Theme.muted)
+                .foregroundStyle(isFiltering ? Theme.accentText : Theme.muted)
                 .frame(width: 36, height: 36)
                 .hoverHighlight(cornerRadius: 8)
         }
@@ -91,7 +91,11 @@ struct FilterChips: View {
             return "#\(channel.name)"
         }
 
-        return "@\(session.directMessagePartner(for: channel.id)?.name ?? "Direct Message")"
+        guard let partner = session.directMessagePartner(for: channel.id) else {
+            return String(localized: "Direct Message")
+        }
+
+        return "@\(partner.name)"
     }
 
     var body: some View {

@@ -46,7 +46,7 @@ const ChannelTypeItem = ({
     {icon}
     <div className="flex flex-col">
       <span>{title}</span>
-      <span className="text-sm text-primary/60">{description}</span>
+      <span className="text-sm text-primary-text/60">{description}</span>
     </div>
   </div>
 );

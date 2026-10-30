@@ -126,6 +126,18 @@ extension View {
         #endif
     }
 
+    // a dark screen in either appearance. a phone takes the preference for its status bar. a mac
+    // keeps it to the screen: a preference turns the whole window dark, and left the window dark
+    // under a light title bar for a moment after the screen went away
+    func alwaysDark() -> some View {
+        #if os(macOS)
+        environment(\.colorScheme, .dark)
+        #else
+        environment(\.colorScheme, .dark)
+            .preferredColorScheme(.dark)
+        #endif
+    }
+
     func navigationBarBackground(_ color: Color) -> some View {
         #if os(macOS)
         toolbarBackground(color, for: .windowToolbar)

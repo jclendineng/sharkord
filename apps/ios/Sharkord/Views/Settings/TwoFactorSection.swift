@@ -74,7 +74,7 @@ struct TwoFactorSection: View {
 
             if let errorMessage {
                 Text(errorMessage)
-                    .foregroundStyle(Theme.red)
+                    .foregroundStyle(Theme.redText)
             }
         } header: {
             Text("Two-Factor Authentication")

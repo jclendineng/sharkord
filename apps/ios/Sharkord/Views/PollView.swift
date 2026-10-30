@@ -57,7 +57,7 @@ struct PollView: View {
                 if let errorMessage {
                     Text(errorMessage)
                         .font(.caption)
-                        .foregroundStyle(Theme.red)
+                        .foregroundStyle(Theme.redText)
                 }
             }
             .padding(14)
@@ -118,21 +118,21 @@ struct PollView: View {
         let votes = count == 1 ? "1 vote" : "\(count) votes"
 
         if isClosed {
-            return "\(votes) · Poll closed"
+            return String(localized: "\(votes) · Poll closed")
         }
 
         let remaining = poll.expiresDate.timeIntervalSince(now)
         let hours = Int(remaining / 3600)
 
         if hours >= 24 {
-            return "\(votes) · \(hours / 24)d left"
+            return String(localized: "\(votes) · \(hours / 24)d left")
         }
 
         if hours >= 1 {
-            return "\(votes) · \(hours)h left"
+            return String(localized: "\(votes) · \(hours)h left")
         }
 
-        return "\(votes) · \(max(1, Int(remaining / 60)))m left"
+        return String(localized: "\(votes) · \(max(1, Int(remaining / 60)))m left")
     }
 
     private func isLeading(_ answer: Poll.Answer) -> Bool {
@@ -242,7 +242,7 @@ private struct PollAnswerRow: View {
 
                 if isPicked || !showsResults {
                     Image(systemName: marker)
-                        .foregroundStyle(isPicked ? Theme.blurple : Theme.muted)
+                        .foregroundStyle(isPicked ? Theme.accentText : Theme.muted)
                 }
             }
             .padding(.horizontal, 12)

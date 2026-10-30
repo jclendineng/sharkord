@@ -52,6 +52,8 @@ struct DirectMessagesPanel: View {
         }
         // handed over by hand: on a mac a sheet's background is worked out before it inherits
         // anything, so a sheet reading a store it was not given crashed on opening
+        // the menu bar's New Message, asked for before this panel was up or while it was
+        .onChange(of: servers.isNewMessageRequested, initial: true, openRequestedNewMessage)
         .sheet(isPresented: $isNewMessagePresented) {
             NewDirectMessageSheet(onOpened: onOpen)
                 .environment(session)
@@ -69,7 +71,7 @@ struct DirectMessagesPanel: View {
     // discord's row under the title: search, add friends, a new message
     private var actions: some View {
         HStack(spacing: 8) {
-            SearchLink(route: SearchRoute(channelId: nil, directMessages: true)) {
+            SearchLink(route: SearchRoute(channelId: nil, directMessages: true), answersFind: true) {
                 Image(systemName: "magnifyingglass")
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(Theme.text)
@@ -127,6 +129,15 @@ struct DirectMessagesPanel: View {
         let rest = session.directMessages.filter { !session.isPinned($0.channelId) }
 
         return pinned + rest
+    }
+
+    private func openRequestedNewMessage() {
+        guard servers.isNewMessageRequested else {
+            return
+        }
+
+        servers.isNewMessageRequested = false
+        isNewMessagePresented = true
     }
 
     private func openNewMessage() {
@@ -200,6 +211,7 @@ private struct ConversationRow: View {
             .scaleEffect(isPressed ? 0.97 : 1)
             .animation(.snappy(duration: 0.2), value: isPressed)
             .onTapGesture(perform: onOpen)
+            .keyboardActivatable(cornerRadius: 16, perform: onOpen)
             .onLongPressGesture(minimumDuration: 0.3, perform: showActions, onPressingChanged: setPressed)
             .onSecondaryClick(perform: showActionsAtPointer)
             .accessibilityAddTraits(.isButton)
@@ -280,7 +292,7 @@ private struct ConversationRow: View {
         let author = conversation.lastMessageUserId.flatMap { userId in
             userId == session.ownUserId ? "You" : session.usersById[userId]?.name
         }
-        let body = text.isEmpty ? "Sent an attachment" : text
+        let body = text.isEmpty ? String(localized: "Sent an attachment") : text
 
         return author.map { "\($0): \(body)" } ?? body
     }
@@ -355,26 +367,26 @@ enum ShortAge {
         let days = hours / 24
 
         if minutes < 1 {
-            return "now"
+            return String(localized: "now")
         }
 
         if hours < 1 {
-            return "\(minutes)m"
+            return String(localized: "\(minutes)m")
         }
 
         if days < 1 {
-            return "\(hours)h"
+            return String(localized: "\(hours)h")
         }
 
         if days < 30 {
-            return "\(days)d"
+            return String(localized: "\(days)d")
         }
 
         if days < 365 {
-            return "\(days / 30)mo"
+            return String(localized: "\(days / 30)mo")
         }
 
-        return "\(days / 365)y"
+        return String(localized: "\(days / 365)y")
     }
 }
 
@@ -600,8 +612,8 @@ private struct NewDirectMessageSheet: View {
             SettingsForm {
                 if let errorMessage {
                     Text(errorMessage)
-                        .foregroundStyle(Theme.red)
-                        .listRowBackground(Theme.listBackground)
+                        .foregroundStyle(Theme.redText)
+                        .listRowBackground(Theme.groupedRowBackground)
                 }
 
                 if query.isEmpty {
@@ -618,7 +630,7 @@ private struct NewDirectMessageSheet: View {
                             }
                             .foregroundStyle(Theme.header)
                         }
-                        .listRowBackground(Theme.listBackground)
+                        .listRowBackground(Theme.groupedRowBackground)
 
                         NavigationLink {
                             AddFriendsScreen()
@@ -631,7 +643,7 @@ private struct NewDirectMessageSheet: View {
                             }
                             .foregroundStyle(Theme.header)
                         }
-                        .listRowBackground(Theme.listBackground)
+                        .listRowBackground(Theme.groupedRowBackground)
                     }
                 }
 
@@ -697,7 +709,7 @@ private struct NewDirectMessageSheet: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .listRowBackground(Theme.listBackground)
+        .listRowBackground(Theme.groupedRowBackground)
     }
 
     private func openGroup(_ channelId: Int) {

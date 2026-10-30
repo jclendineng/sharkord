@@ -57,7 +57,7 @@ struct MembersColumn: View {
 
         let plain = byRole[nil] ?? []
 
-        return (roleSections + [("Online", plain), ("Offline", offline)]).filter { !$0.users.isEmpty }
+        return (roleSections + [(String(localized: "Online"), plain), (String(localized: "Offline"), offline)]).filter { !$0.users.isEmpty }
     }
 
     var body: some View {
@@ -132,7 +132,7 @@ private struct MemberColumnRow: View {
                 VStack(alignment: .leading, spacing: 1) {
                     Text(user.name)
                         .font(.system(size: MembersColumn.nameSize * scale, weight: .medium))
-                        .foregroundStyle(Color(hex: session.roleColor(for: user) ?? "#F2F3F5"))
+                        .foregroundStyle(session.nameColor(for: user))
                         .lineLimit(1)
 
                     if let customStatus = user.customStatus, !customStatus.isEmpty {

@@ -74,13 +74,13 @@ struct ConnectionBadge: View {
     private var title: String {
         switch quality?.grade {
         case .good:
-            "Good Connection"
+            String(localized: "Good Connection")
         case .fair:
-            "Unstable Connection"
+            String(localized: "Unstable Connection")
         case .poor:
-            "Poor Connection"
+            String(localized: "Poor Connection")
         case nil:
-            "Connecting"
+            String(localized: "Connecting")
         }
     }
 

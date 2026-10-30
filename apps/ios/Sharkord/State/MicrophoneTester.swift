@@ -22,7 +22,7 @@ final class MicrophoneTester {
         }
 
         guard await AVAudioApplication.requestRecordPermission() else {
-            errorMessage = "Allow microphone access in Settings to test your mic."
+            errorMessage = String(localized: "Allow microphone access in Settings to test your mic.")
             return
         }
 

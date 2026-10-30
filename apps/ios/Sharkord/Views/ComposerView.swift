@@ -9,6 +9,9 @@ struct ComposerView: View {
     let store: ChannelMessagesStore
 
     @Environment(SessionStore.self) private var session
+    // the input row's buttons, 44 points at the default text size and growing with it beside the
+    // field's first line
+    @ScaledMetric(relativeTo: .body) private var rowHeight: CGFloat = 44
 
     // picked mentions are runs in it, made into real ones when it is sent
     @State private var field = AttributedString()
@@ -283,7 +286,7 @@ struct ComposerView: View {
             if let errorMessage {
                 Text(errorMessage)
                     .font(.caption)
-                    .foregroundStyle(Theme.red)
+                    .foregroundStyle(Theme.redText)
             }
 
             if let mode = modeTitle {
@@ -317,13 +320,13 @@ struct ComposerView: View {
 
     private var modeTitle: String? {
         if store.editing != nil {
-            return "Editing message"
+            return String(localized: "Editing message")
         }
 
         if let reply = store.replyingTo {
-            let name = reply.userId.flatMap { session.usersById[$0]?.name } ?? "a message"
+            let name = reply.userId.flatMap { session.usersById[$0]?.name } ?? String(localized: "a message")
 
-            return "Replying to \(name)"
+            return String(localized: "Replying to \(name)")
         }
 
         return nil
@@ -347,7 +350,7 @@ struct ComposerView: View {
                         .foregroundStyle(Theme.text)
                         .frame(width: 38, height: 38)
                         .background(Theme.inputBackground, in: .circle)
-                        .frame(width: 44, height: 44)
+                        .frame(width: rowHeight, height: rowHeight)
                         .contentShape(.rect)
                         .hoverPop()
                 }
@@ -364,7 +367,7 @@ struct ComposerView: View {
                         .foregroundStyle(Theme.text)
                         .frame(width: 38, height: 38)
                         .background(Theme.inputBackground, in: .circle)
-                        .frame(width: 44, height: 44)
+                        .frame(width: rowHeight, height: rowHeight)
                         .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
@@ -396,7 +399,7 @@ struct ComposerView: View {
                         FunEmojiButton(action: openEmoji)
                     }
                     // centered on the first line, as the mic and the field's text are
-                    .frame(height: 44)
+                    .frame(height: rowHeight)
                 } else {
                     // discord's emoji button turns into a keyboard one while the panel is up
                     Button(action: toggleExpressions) {
@@ -407,7 +410,7 @@ struct ComposerView: View {
                         .labelStyle(.iconOnly)
                         .font(.title3)
                         .foregroundStyle(Theme.muted)
-                        .frame(width: 44, height: 44)
+                        .frame(width: rowHeight, height: rowHeight)
                         .contentShape(.rect)
                     }
                 }
@@ -418,7 +421,7 @@ struct ComposerView: View {
                             .labelStyle(.iconOnly)
                             .font(.title3)
                             .foregroundStyle(Theme.muted)
-                            .frame(width: 44, height: 44)
+                            .frame(width: rowHeight, height: rowHeight)
                             .contentShape(.rect)
                     }
                         .contentShape(.rect)
@@ -436,7 +439,7 @@ struct ComposerView: View {
                         .foregroundStyle(.white)
                         .frame(width: 38, height: 38)
                         .background(Theme.blurple, in: .circle)
-                        .frame(width: 44, height: 44)
+                        .frame(width: rowHeight, height: rowHeight)
                         .contentShape(.circle)
                 }
                     .contentShape(.rect)
@@ -664,7 +667,7 @@ struct ComposerView: View {
     // the call already holds the microphone
     private func startRecording() {
         guard servers.voiceSession == nil else {
-            errorMessage = "Leave the voice channel to record a voice message."
+            errorMessage = String(localized: "Leave the voice channel to record a voice message.")
             return
         }
 
@@ -907,10 +910,10 @@ private struct AttachmentChip: View {
                     .controlSize(.small)
             case .uploaded:
                 Image(systemName: "doc.fill")
-                    .foregroundStyle(Theme.blurple)
+                    .foregroundStyle(Theme.accentText)
             case .failed:
                 Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundStyle(Theme.red)
+                    .foregroundStyle(Theme.redText)
             }
 
             Text(attachment.name)
@@ -995,7 +998,7 @@ private struct RecordingBar: View {
                 Label("Cancel", systemImage: "trash.fill")
                     .labelStyle(.iconOnly)
                     .font(.title3)
-                    .foregroundStyle(Theme.red)
+                    .foregroundStyle(Theme.redText)
                     .frame(width: 38, height: 38)
                     .contentShape(.rect)
             }

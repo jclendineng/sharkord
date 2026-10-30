@@ -59,7 +59,7 @@ const VoiceButtons = memo(({ currentVoiceChannelId }: TVoiceButtonsProps) => {
             <UnreadCount
               count={currentVoiceChannelUnreadCount}
               hasMention={currentVoiceChannelHasUnreadMentions}
-              className="absolute -top-2 -right-3 ml-0 min-w-4 h-4 px-1 text-[10px] leading-none"
+              className="absolute -top-2 -right-3 ml-0 min-w-4 h-4 px-1 text-[11px] leading-none"
             />
           </div>
         </Tooltip>

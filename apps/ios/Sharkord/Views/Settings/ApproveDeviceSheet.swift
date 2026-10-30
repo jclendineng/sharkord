@@ -27,7 +27,7 @@ struct ApproveDeviceSheet: View {
     private var askingDevice: String {
         let parts = [state?.os, state?.device].compactMap { $0 }.filter { !$0.isEmpty }
 
-        return parts.isEmpty ? "A device" : parts.joined(separator: " · ")
+        return parts.isEmpty ? String(localized: "A device") : parts.joined(separator: " · ")
     }
 
     var body: some View {
@@ -38,7 +38,7 @@ struct ApproveDeviceSheet: View {
                 if let errorMessage {
                     Text(errorMessage)
                         .font(.footnote)
-                        .foregroundStyle(Theme.red)
+                        .foregroundStyle(Theme.redText)
                         .multilineTextAlignment(.center)
                 }
             }
@@ -98,7 +98,7 @@ struct ApproveDeviceSheet: View {
         VStack(spacing: 16) {
             Image(systemName: "laptopcomputer.and.iphone")
                 .font(.system(size: 44))
-                .foregroundStyle(Theme.blurple)
+                .foregroundStyle(Theme.accentText)
 
             Text("Sign in \(askingDevice)?")
                 .font(.title3.bold())
@@ -123,7 +123,7 @@ struct ApproveDeviceSheet: View {
             Button(action: decline) {
                 Text("Decline")
                     .font(.headline)
-                    .foregroundStyle(Theme.red)
+                    .foregroundStyle(Theme.redText)
                     .frame(maxWidth: .infinity, minHeight: 50)
                     .background(Theme.listBackground, in: .rect(cornerRadius: 12))
             }

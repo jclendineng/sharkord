@@ -70,9 +70,9 @@ struct GroupFriendPicker: View {
     private var title: String {
         switch mode {
         case .create:
-            "New Group"
+            String(localized: "New Group")
         case .add:
-            "Add Friends"
+            String(localized: "Add Friends")
         }
     }
 
@@ -80,14 +80,14 @@ struct GroupFriendPicker: View {
         SettingsForm {
             if let errorMessage {
                 Text(errorMessage)
-                    .foregroundStyle(Theme.red)
-                    .listRowBackground(Theme.listBackground)
+                    .foregroundStyle(Theme.redText)
+                    .listRowBackground(Theme.groupedRowBackground)
             }
 
             if friends.isEmpty {
                 Text(query.isEmpty ? "Add friends first, a group is made of your friends." : "No friends by that name.")
                     .foregroundStyle(Theme.muted)
-                    .listRowBackground(Theme.listBackground)
+                    .listRowBackground(Theme.groupedRowBackground)
             }
 
             ForEach(friends) { friend in
@@ -111,7 +111,7 @@ struct GroupFriendPicker: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(!picked.contains(friend.id) && count >= GroupLimits.maxMembers)
-                .listRowBackground(Theme.listBackground)
+                .listRowBackground(Theme.groupedRowBackground)
             }
         }
         .scrollContentBackground(.hidden)
@@ -132,9 +132,9 @@ struct GroupFriendPicker: View {
     private var saveTitle: String {
         switch mode {
         case .create:
-            "Create"
+            String(localized: "Create")
         case .add:
-            "Add"
+            String(localized: "Add")
         }
     }
 

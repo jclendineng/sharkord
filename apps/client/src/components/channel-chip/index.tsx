@@ -48,8 +48,8 @@ const ChannelChip = memo(({ channelId }: TChannelChipProps) => {
       className={cn(
         'channel-reference rounded px-0.5 cursor-pointer transition-colors',
         isCurrentChannel
-          ? 'text-primary bg-primary/10 font-medium'
-          : 'text-primary/80 bg-primary/5 hover:bg-primary/15'
+          ? 'text-primary-text bg-primary/10 font-medium'
+          : 'text-primary-text/80 bg-primary/5 hover:bg-primary/15'
       )}
     >
       #{channel.name}

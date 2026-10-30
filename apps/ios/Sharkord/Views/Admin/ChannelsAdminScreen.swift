@@ -25,7 +25,7 @@ struct ChannelsAdminScreen: View {
         SettingsForm {
             if let errorMessage {
                 Text(errorMessage)
-                    .foregroundStyle(Theme.red)
+                    .foregroundStyle(Theme.redText)
             }
 
             ForEach(sortedCategories) { category in
@@ -62,6 +62,7 @@ struct ChannelsAdminScreen: View {
                                 }
                             } label: {
                                 Image(systemName: "ellipsis.circle")
+                                    .accessibilityLabel("Category Options")
                             }
                             // the icon alone, a mac form draws a menu as a bordered pull down
                             .buttonStyle(.borderless)
@@ -346,7 +347,7 @@ struct ChannelEditor: View {
             if let errorMessage {
                 Section {
                     Text(errorMessage)
-                        .foregroundStyle(Theme.red)
+                        .foregroundStyle(Theme.redText)
                 }
             }
         }
@@ -472,7 +473,7 @@ struct NewChannelSheet: View {
                 if let errorMessage {
                     Section {
                         Text(errorMessage)
-                            .foregroundStyle(Theme.red)
+                            .foregroundStyle(Theme.redText)
                     }
                 }
             }
@@ -553,7 +554,7 @@ private struct CategoryOrderSheet: View {
             SettingsForm {
                 if let errorMessage {
                     Text(errorMessage)
-                        .foregroundStyle(Theme.red)
+                        .foregroundStyle(Theme.redText)
                 }
 
                 ForEach(Array(ordered.enumerated()), id: \.element.id) { index, category in

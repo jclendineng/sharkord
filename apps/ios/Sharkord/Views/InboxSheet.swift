@@ -162,14 +162,14 @@ private struct MentionsList: View {
         List {
             if let errorMessage {
                 Text(errorMessage)
-                    .foregroundStyle(Theme.red)
-                    .listRowBackground(Theme.listBackground)
+                    .foregroundStyle(Theme.redText)
+                    .listRowBackground(Theme.groupedRowBackground)
             }
 
             ForEach(mentions) { mention in
                 MentionRow(message: mention.message, onOpen: { onOpen(mention.message, mention.server) })
                     .environment(mention.server)
-                    .listRowBackground(Theme.listBackground)
+                    .listRowBackground(Theme.groupedRowBackground)
                     // a divider under the last row reads as a stray line above the empty space
                     .listRowSeparator(mention.id == mentions.last?.id ? .hidden : .automatic, edges: .bottom)
             }
@@ -231,7 +231,7 @@ private struct MentionRow: View {
             return session.displayName
         }
 
-        return "#\(channel.name) · \(session.displayName)"
+        return String(localized: "#\(channel.name) · \(session.displayName)")
     }
 
     var body: some View {
@@ -243,7 +243,7 @@ private struct MentionRow: View {
                     HStack(spacing: 6) {
                         Text(author?.name ?? message.pluginId ?? "Unknown")
                             .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Color(hex: session.roleColor(for: author) ?? "#F2F3F5"))
+                            .foregroundStyle(session.nameColor(for: author))
 
                         Text(MessageDate.timestamp(message.createdDate))
                             .font(.caption2)
@@ -296,12 +296,12 @@ private struct UnreadsList: View {
                         ForEach(server.unreadChannels) { channel in
                             UnreadRow(channel: channel, onOpen: { onOpen(channel.id, server) })
                                 .environment(server)
-                                .listRowBackground(Theme.listBackground)
+                                .listRowBackground(Theme.groupedRowBackground)
                         }
                     }
                 }
             }
-            .listRowBackground(Theme.listBackground)
+            .listRowBackground(Theme.groupedRowBackground)
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)

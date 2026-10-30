@@ -18,6 +18,10 @@ struct ComposerField: View {
     static let verticalInset: CGFloat = 11
     #endif
 
+    // grows with the text size, as the line it pads and the composer's buttons do, so a single
+    // line stays centered on them at every Dynamic Type size
+    @ScaledMetric(relativeTo: .body) private var inset = ComposerField.verticalInset
+
     private var isEmpty: Bool {
         text.characters.isEmpty
     }
@@ -31,7 +35,7 @@ struct ComposerField: View {
             .opacity(isEmpty ? 1 : 0)
             .frame(maxWidth: .infinity, alignment: .leading)
             // one line comes to 44 points, the buttons' height beside it, so its text is centered
-            .padding(.vertical, Self.verticalInset)
+            .padding(.vertical, inset)
             .overlay {
                 TextEditor(text: $text, selection: $selection)
                     .attributedTextFormattingDefinition(ComposerFormatting())

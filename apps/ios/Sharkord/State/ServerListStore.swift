@@ -55,8 +55,17 @@ final class ServerListStore {
     // it away, as one anywhere puts the search card away, which the chat's own catcher cannot reach
     var isChatDropdownOpen = false
     var chatDropdownDismissals = 0
-    // bumped by the mac's Settings… menu item, which the user bar answers by opening settings
+    // bumped by the ipad's Settings… menu item, which the user bar answers by opening settings. a
+    // mac has a settings window of its own
     var settingsRequests = 0
+    // the menu bar's View › Hide Sidebar, which the home screen answers by sliding the chat over
+    // the rail and the channel list, and the state it reports back for the item's title
+    var sidebarToggleRequests = 0
+    var isSidebarHidden = false
+    // the menu bar's Find, which the search box showing answers by opening its search
+    var searchRequests = 0
+    // the menu bar's New Message, held until the messages panel is up to open its sheet
+    var isNewMessageRequested = false
     // the call over everything, opened by the call bar so it grows out of the bar and goes back
     // into it. a voice channel's sheet asks for it here once it has put itself away
     var isCallPresented = false
@@ -136,6 +145,30 @@ final class ServerListStore {
     func select(_ session: SessionStore) {
         selectedSession = session
         isShowingDirectMessages = false
+    }
+
+    // a server picked from the rail or the menu bar, opened on its default channel when it was
+    // not the one already showing
+    func showServer(_ server: SessionStore) {
+        let isSameServer = server === selectedSession
+
+        select(server)
+
+        if !isSameServer, let channelId = server.defaultChannelId {
+            server.requestedChannelId = channelId
+        }
+    }
+
+    // the menu bar's Previous and Next Server, in the rail's order and wrapping round
+    func showAdjacentServer(_ offset: Int) {
+        guard !sessions.isEmpty else {
+            return
+        }
+
+        let index = sessions.firstIndex { $0 === selectedSession } ?? 0
+        let count = sessions.count
+
+        showServer(sessions[(index + offset + count) % count])
     }
 
     func showServerSheet(for session: SessionStore) {

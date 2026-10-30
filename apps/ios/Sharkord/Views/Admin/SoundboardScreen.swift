@@ -57,7 +57,7 @@ struct SoundboardScreen: View {
             if let errorMessage {
                 Section {
                     Text(errorMessage)
-                        .foregroundStyle(Theme.red)
+                        .foregroundStyle(Theme.redText)
                 }
             }
 
@@ -464,7 +464,7 @@ private struct SoundEditor: View {
             if let errorMessage {
                 Section {
                     Text(errorMessage)
-                        .foregroundStyle(Theme.red)
+                        .foregroundStyle(Theme.redText)
                 }
             }
         }

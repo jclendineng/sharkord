@@ -169,18 +169,18 @@ struct ChannelInfoScreen: View {
 
     private func subtitle(_ channel: Channel) -> String {
         guard channel.isDm else {
-            return "Text Channel"
+            return String(localized: "Text Channel")
         }
 
         if let group {
-            return "\(group.memberIds.count + 1) Members"
+            return String(localized: "\(group.memberIds.count + 1) Members")
         }
 
         if let customStatus = partner?.customStatus, !customStatus.isEmpty {
             return customStatus
         }
 
-        return "Direct Message"
+        return String(localized: "Direct Message")
     }
 
     private func header(_ channel: Channel) -> some View {

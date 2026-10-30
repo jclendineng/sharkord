@@ -376,7 +376,11 @@ struct PointerMenuLayer: View {
                     .foregroundStyle(Theme.header)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 5)
-                    .background(Color.black, in: .rect(cornerRadius: 6))
+                    .background(Theme.floatingBackground, in: .rect(cornerRadius: 6))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 6)
+                            .strokeBorder(Theme.panelEdge, lineWidth: 1)
+                    }
                     .fixedSize()
                     .onGeometryChange(for: CGSize.self, of: \.size) { size in
                         tooltipSize = size

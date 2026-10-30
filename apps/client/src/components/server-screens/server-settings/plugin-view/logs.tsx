@@ -16,7 +16,7 @@ import { StatePanel } from '../../settings-shell/state-panel';
 const LOG_STYLES = {
   error: { color: 'text-destructive', icon: AlertCircle },
   debug: { color: 'text-muted-foreground', icon: Bug },
-  info: { color: 'text-primary', icon: Info }
+  info: { color: 'text-primary-text', icon: Info }
 } as const;
 
 type TLogLineProps = {
@@ -154,7 +154,7 @@ const PluginLogs = memo(({ pluginId }: TPluginLogsProps) => {
     >
       <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
         <span className="flex items-center gap-1.5">
-          <Info className="h-4 w-4 text-primary" />
+          <Info className="h-4 w-4 text-primary-text" />
           {t('infoLabel')} <span className="font-semibold">{counts.info}</span>
         </span>
         <span className="flex items-center gap-1.5">

@@ -201,15 +201,15 @@ private struct ReactionButton: View {
 
     private var title: String {
         switch reaction {
-        case .heart: "Heart"
-        case .thumbsUp: "Thumbs Up"
-        case .thumbsDown: "Thumbs Down"
-        case .balloons: "Balloons"
-        case .rain: "Rain"
-        case .confetti: "Confetti"
-        case .fireworks: "Fireworks"
-        case .lasers: "Lasers"
-        default: "Reaction"
+        case .heart: String(localized: "Heart")
+        case .thumbsUp: String(localized: "Thumbs Up")
+        case .thumbsDown: String(localized: "Thumbs Down")
+        case .balloons: String(localized: "Balloons")
+        case .rain: String(localized: "Rain")
+        case .confetti: String(localized: "Confetti")
+        case .fireworks: String(localized: "Fireworks")
+        case .lasers: String(localized: "Lasers")
+        default: String(localized: "Reaction")
         }
     }
 

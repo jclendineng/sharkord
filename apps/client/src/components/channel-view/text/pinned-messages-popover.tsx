@@ -58,7 +58,7 @@ const PinnedMessageGroupWrapper = memo(
       <div className="rounded-lg border border-border/70 bg-card/60 p-2">
         <div className="mb-2 flex items-center justify-between rounded-md border border-border/50 bg-secondary/35 px-3 py-2">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Pin className="h-3.5 w-3.5 text-primary/80" />
+            <Pin className="h-3.5 w-3.5 text-primary-text/80" />
             <span>
               {t('pinnedBy', { name: user ? user.name : t('unknownUser') })}
             </span>

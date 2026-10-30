@@ -158,7 +158,7 @@ final class SessionStore {
             return serverName
         }
 
-        return address?.baseURL.host() ?? "Server"
+        return address?.baseURL.host() ?? String(localized: "Server")
     }
 
     // what stands in for a server with no icon
@@ -737,7 +737,7 @@ final class SessionStore {
 
     func signIn(serverURL: String, identity: String, password: String, invite: String? = nil, totp: String? = nil) async {
         guard let address = ServerAddress(userInput: serverURL) else {
-            errorMessage = "Enter a valid server address."
+            errorMessage = String(localized: "Enter a valid server address.")
             return
         }
 
@@ -749,7 +749,7 @@ final class SessionStore {
     // a qr code from a device already signed in, approved there rather than typed in here
     func signIn(serverURL: String, linkToken: String) async {
         guard let address = ServerAddress(userInput: serverURL) else {
-            errorMessage = "That code doesn't hold a server address."
+            errorMessage = String(localized: "That code doesn't hold a server address.")
             return
         }
 
@@ -769,7 +769,7 @@ final class SessionStore {
     // back to, it lives in the view since that is where SwiftUI hands out the session
     func signInWithOIDC(serverURL: String, invite: String?, authenticate: (URL) async throws -> URL) async {
         guard let address = ServerAddress(userInput: serverURL) else {
-            errorMessage = "Enter a valid server address."
+            errorMessage = String(localized: "Enter a valid server address.")
             return
         }
 
@@ -1557,10 +1557,10 @@ final class SessionStore {
 
             let names = group.memberIds.compactMap { usersById[$0]?.name }
 
-            return names.isEmpty ? "Group" : names.joined(separator: ", ")
+            return names.isEmpty ? String(localized: "Group") : names.joined(separator: ", ")
         }
 
-        return directMessagePartner(for: channelId)?.name ?? "Direct Message"
+        return directMessagePartner(for: channelId)?.name ?? String(localized: "Direct Message")
     }
 
     func directMessagePartner(for channelId: Int) -> PublicUser? {

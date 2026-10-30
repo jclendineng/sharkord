@@ -29,7 +29,7 @@ struct VoiceVideoSettingsScreen: View {
 
     // a call joined without it has webrtc's own device, which cannot play the mic back
     private var hearYourselfFooter: String {
-        let note = "Plays your mic back to you while you talk. Use headphones to avoid feedback."
+        let note = String(localized: "Plays your mic back to you while you talk. Use headphones to avoid feedback.")
 
         if let voiceSession = servers.voiceSession, !voiceSession.canHearYourselfNow {
             return note + " Turning it on applies the next time you join a voice channel."
@@ -40,10 +40,10 @@ struct VoiceVideoSettingsScreen: View {
 
     private var micFooter: String {
         if isInCall {
-            return "Leave the voice channel to test your mic."
+            return String(localized: "Leave the voice channel to test your mic.")
         }
 
-        return "Talk and watch the meter move. Use headphones to hear yourself without feedback."
+        return String(localized: "Talk and watch the meter move. Use headphones to hear yourself without feedback.")
     }
 
     var body: some View {
@@ -129,7 +129,7 @@ struct VoiceVideoSettingsScreen: View {
 
                 if let errorMessage = tester.errorMessage {
                     Text(errorMessage)
-                        .foregroundStyle(Theme.red)
+                        .foregroundStyle(Theme.redText)
                 }
             } header: {
                 SectionTitle("Input")
@@ -520,7 +520,7 @@ private struct RadioRow: View {
 
                 Image(systemName: isSelected ? "largecircle.fill.circle" : "circle")
                     .font(.title3)
-                    .foregroundStyle(isSelected ? Theme.blurple : Theme.muted)
+                    .foregroundStyle(isSelected ? Theme.accentText : Theme.muted)
             }
             .contentShape(.rect)
         }

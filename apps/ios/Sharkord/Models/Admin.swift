@@ -37,7 +37,12 @@ enum Permission: String, CaseIterable, Codable {
     // packages/shared USER_MODERATION_PERMISSIONS: any one opens the members screen
     static let userModeration: [Permission] = [.manageUsers, .kickMembers, .banMembers, .assignRoles]
 
+    // the english name built from the id, looked up in the catalog by that name
     var title: String {
+        String(localized: String.LocalizationValue(englishTitle))
+    }
+
+    private var englishTitle: String {
         // the id stayed MANAGE_USERS when kicking, banning and roles moved to their own
         if self == .manageUsers {
             return "Manage Accounts"

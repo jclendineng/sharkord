@@ -114,7 +114,7 @@ const PluginView = memo(({ plugin }: TPluginViewProps) => {
             href={plugin.homepage}
             target="_blank"
             rel="noopener noreferrer"
-            className="underline transition-colors hover:text-primary"
+            className="underline transition-colors hover:text-primary-text"
           >
             {plugin.homepage}
           </a>

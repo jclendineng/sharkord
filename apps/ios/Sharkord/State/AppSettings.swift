@@ -18,6 +18,24 @@ final class AppSettings {
         }
     }
 
+    // the app's own light or dark, or the system's
+    enum Appearance: String, CaseIterable {
+        case system
+        case light
+        case dark
+
+        var title: String {
+            switch self {
+            case .system:
+                String(localized: "System")
+            case .light:
+                String(localized: "Light")
+            case .dark:
+                String(localized: "Dark")
+            }
+        }
+    }
+
     static let shared = AppSettings()
 
     private enum Key {
@@ -27,6 +45,7 @@ final class AppSettings {
         static let speakerByDefault = "settings.speakerByDefault"
         static let outputVolume = "settings.outputVolume"
         static let streamQuality = "settings.streamQuality"
+        static let appearance = "settings.appearance"
         static let shareAppAudio = "settings.shareAppAudio"
         static let hearYourselfInCalls = "settings.hearYourselfInCalls"
         static let incomingVideoOff = "settings.incomingVideoOff"
@@ -64,6 +83,10 @@ final class AppSettings {
 
     var streamQuality: StreamQuality {
         didSet { defaults.set(streamQuality.rawValue, forKey: Key.streamQuality) }
+    }
+
+    var appearance: Appearance {
+        didSet { defaults.set(appearance.rawValue, forKey: Key.appearance) }
     }
 
     // puts the game's sound into a screen share, by swapping webrtc's audio device for
@@ -146,5 +169,6 @@ final class AppSettings {
         pushToTalkKey = defaults.string(forKey: Key.pushToTalkKey).flatMap(PushToTalkKey.init(rawValue:)) ?? .rightOption
         inputGain = defaults.double(forKey: Key.inputGain)
         streamQuality = defaults.string(forKey: Key.streamQuality).flatMap(StreamQuality.init(rawValue:)) ?? .standard
+        appearance = defaults.string(forKey: Key.appearance).flatMap(Appearance.init(rawValue:)) ?? .system
     }
 }

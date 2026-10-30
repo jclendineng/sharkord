@@ -53,14 +53,15 @@ struct SharkordApp: App {
         // a mac opens a new window at its content's smallest otherwise
         .defaultSize(width: 1280, height: 820)
         .commands {
-            CommandGroup(replacing: .appSettings) {
-                Button("Settings…", action: requestSettings)
-                    .keyboardShortcut(",")
-            }
+            AppCommands(servers: servers)
         }
-    }
 
-    private func requestSettings() {
-        servers.settingsRequests += 1
+        #if os(macOS)
+        // the App menu's Settings… opens a window of its own, as a mac app's settings do
+        Settings {
+            SettingsScene()
+                .environment(servers)
+        }
+        #endif
     }
 }

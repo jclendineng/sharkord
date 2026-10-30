@@ -33,7 +33,7 @@ struct SetStatusSheet: View {
                 } footer: {
                     Text("\(message.count)/\(Self.messageLimit)")
                         .monospacedDigit()
-                        .foregroundStyle(message.count > Self.messageLimit ? Theme.red : Theme.muted)
+                        .foregroundStyle(message.count > Self.messageLimit ? Theme.redText : Theme.muted)
                         .wrappingFooter()
                 }
 
@@ -60,7 +60,7 @@ struct SetStatusSheet: View {
 
                                 if option == presence {
                                     Image(systemName: "checkmark")
-                                        .foregroundStyle(Theme.blurple)
+                                        .foregroundStyle(Theme.accentText)
                                 }
                             }
                             .contentShape(.rect)
@@ -75,7 +75,7 @@ struct SetStatusSheet: View {
                 if let errorMessage {
                     Section {
                         Text(errorMessage)
-                            .foregroundStyle(Theme.red)
+                            .foregroundStyle(Theme.redText)
                     }
                 }
             }
@@ -105,9 +105,9 @@ struct SetStatusSheet: View {
     private func detail(_ option: Presence) -> String? {
         switch option {
         case .dnd:
-            "You won't get push notifications"
+            String(localized: "You won't get push notifications")
         case .invisible:
-            "You'll appear offline, but still have full access"
+            String(localized: "You'll appear offline, but still have full access")
         case .online, .idle:
             nil
         }

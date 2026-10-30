@@ -22,6 +22,13 @@ the member list down the right. Sheets there close with their own buttons or an 
 a swipe, which a trackpad scroll would set off by mistake (`Helpers/AppSheet.swift`,
 `Helpers/SecondaryClick.swift`, `Views/MembersColumn.swift`).
 
+The app speaks the web client's languages (Czech, Spanish, French, Italian, Brazilian
+Portuguese, Russian and Simplified Chinese) and follows the device's language. It follows the
+system's light or dark appearance, or the one picked under Settings ›
+App Settings › Appearance, and keeps every text colour at 4.5:1 contrast, with stronger colours
+under Increase Contrast. The native Mac app has the app's commands in its menu bar and its
+settings in a settings window.
+
 The app opens on each server as it was last seen, from the last join kept on disk
 (`State/JoinSnapshot.swift`), so channels, avatars and icons are there before the server has
 answered.

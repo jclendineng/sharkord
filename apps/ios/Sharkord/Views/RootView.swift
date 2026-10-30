@@ -16,7 +16,7 @@ struct RootView: View {
             #endif
         }
         .tint(Theme.blurple)
-        .preferredColorScheme(.dark)
+        .appAppearance()
     }
 
     @ViewBuilder
@@ -26,6 +26,8 @@ struct RootView: View {
             // the screen over so it picks up the link instead of keeping the old screen's state
             ConnectView(canCancel: !servers.sessions.isEmpty)
                 .environment(session)
+                // the sign in screens are drawn over a night sky in either appearance
+                .alwaysDark()
                 .id(ObjectIdentifier(session))
         } else if let session = servers.selectedSession {
             HomeView(session: session)

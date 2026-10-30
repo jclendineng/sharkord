@@ -12,7 +12,7 @@ struct PluginsScreen: View {
         SettingsForm {
             if let errorMessage {
                 Text(errorMessage)
-                    .foregroundStyle(Theme.red)
+                    .foregroundStyle(Theme.redText)
             }
 
             Section {
@@ -108,10 +108,10 @@ private struct PluginRow: View {
 
     private var subtitle: String {
         if plugin.loadError != nil {
-            return "Failed to load"
+            return String(localized: "Failed to load")
         }
 
-        return [plugin.version.map { "v\($0)" }, plugin.enabled ? "On" : "Off"]
+        return [plugin.version.map { "v\($0)" }, plugin.enabled ? String(localized: "On") : String(localized: "Off")]
             .compactMap { $0 }
             .joined(separator: " · ")
     }
@@ -126,7 +126,7 @@ private struct PluginRow: View {
 
                 Text(subtitle)
                     .font(.caption)
-                    .foregroundStyle(plugin.loadError == nil ? Theme.muted : Theme.red)
+                    .foregroundStyle(plugin.loadError == nil ? Theme.muted : Theme.redText)
             }
         }
     }
@@ -182,7 +182,7 @@ private struct PluginDetailScreen: View {
                     Section("Load Error") {
                         Text(loadError)
                             .font(.caption.monospaced())
-                            .foregroundStyle(Theme.red)
+                            .foregroundStyle(Theme.redText)
                     }
                 }
 
@@ -222,7 +222,7 @@ private struct PluginDetailScreen: View {
             if let errorMessage {
                 Section {
                     Text(errorMessage)
-                        .foregroundStyle(Theme.red)
+                        .foregroundStyle(Theme.redText)
                 }
             }
         }
@@ -306,7 +306,7 @@ private struct PluginSettingsScreen: View {
             if let errorMessage {
                 Section {
                     Text(errorMessage)
-                        .foregroundStyle(Theme.red)
+                        .foregroundStyle(Theme.redText)
                 }
             }
         }
@@ -460,7 +460,7 @@ private struct PluginSettingsScreen: View {
                 } catch {
                     let name = definitions.first { $0.key == key }?.name ?? key
 
-                    errorMessage = "\(name): \(error.localizedDescription)"
+                    errorMessage = String(localized: "\(name): \(error.localizedDescription)")
                 }
             }
 
@@ -483,7 +483,7 @@ private struct PluginLogsScreen: View {
         SettingsForm {
             if let errorMessage {
                 Text(errorMessage)
-                    .foregroundStyle(Theme.red)
+                    .foregroundStyle(Theme.redText)
             }
 
             ForEach(Array(logs.enumerated()), id: \.offset) { _, entry in

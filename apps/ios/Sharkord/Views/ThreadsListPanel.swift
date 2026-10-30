@@ -40,7 +40,7 @@ struct ThreadsListPanel: View {
                         }
                     } else if let errorMessage {
                         Text(errorMessage)
-                            .foregroundStyle(Theme.red)
+                            .foregroundStyle(Theme.redText)
                             .padding(18)
                     } else {
                         ProgressView()
@@ -62,7 +62,7 @@ struct ThreadsListPanel: View {
         do {
             threads = try await session.request("messages.getThreads", ["channelId": channelId])
         } catch {
-            errorMessage = "Couldn't load threads. The server may need updating to list them."
+            errorMessage = String(localized: "Couldn't load threads. The server may need updating to list them.")
         }
     }
 }
@@ -96,7 +96,7 @@ private struct ThreadListRow: View {
                     HStack(spacing: 6) {
                         Text(author?.name ?? "Unknown")
                             .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Color(hex: session.roleColor(for: author) ?? "#F2F3F5"))
+                            .foregroundStyle(session.nameColor(for: author))
 
                         Text(MessageDate.timestamp(thread.createdDate))
                             .font(.caption2)
@@ -114,7 +114,7 @@ private struct ThreadListRow: View {
 
                     Label(replies, systemImage: "arrow.turn.down.right")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(Theme.blurple)
+                        .foregroundStyle(Theme.accentText)
                 }
 
                 Spacer(minLength: 0)

@@ -17,13 +17,13 @@ enum Presence: String, Codable, CaseIterable {
     var title: String {
         switch self {
         case .online:
-            "Online"
+            String(localized: "Online")
         case .idle:
-            "Idle"
+            String(localized: "Idle")
         case .dnd:
-            "Do Not Disturb"
+            String(localized: "Do Not Disturb")
         case .invisible:
-            "Invisible"
+            String(localized: "Invisible")
         }
     }
 

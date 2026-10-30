@@ -23,7 +23,7 @@ const MentionChip = memo(({ userId, label: labelProp }: TMentionChipProps) => {
           'mention rounded px-0.5 cursor-pointer transition-colors',
           isOwnMention
             ? 'text-yellow-400 dark:text-yellow-200 bg-primary/10 hover:bg-primary/20 font-medium'
-            : 'text-primary bg-primary/10 hover:bg-primary/20'
+            : 'text-primary-text bg-primary/10 hover:bg-primary/20'
         )}
       >
         @{label}

@@ -23,7 +23,7 @@ struct PluginAccessScreen: View {
         SettingsForm {
             if let errorMessage {
                 Text(errorMessage)
-                    .foregroundStyle(Theme.red)
+                    .foregroundStyle(Theme.redText)
             }
 
             ForEach(Self.groups, id: \.type) { group in
@@ -91,12 +91,12 @@ private struct CapabilityRow: View {
 
     private var access: String {
         guard capability.mode == "restricted" else {
-            return "Everyone"
+            return String(localized: "Everyone")
         }
 
         let names = capability.roleIds.compactMap { session.rolesById[$0]?.name }
 
-        return names.isEmpty ? "Owner only" : names.joined(separator: ", ")
+        return names.isEmpty ? String(localized: "Owner only") : names.joined(separator: ", ")
     }
 
     var body: some View {
@@ -197,7 +197,7 @@ private struct CapabilityAccessEditor: View {
             if let errorMessage {
                 Section {
                     Text(errorMessage)
-                        .foregroundStyle(Theme.red)
+                        .foregroundStyle(Theme.redText)
                 }
             }
         }

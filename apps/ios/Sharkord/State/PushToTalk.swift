@@ -55,13 +55,13 @@ enum PushToTalkKey: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .rightOption:
-            "Right Option"
+            String(localized: "Right Option")
         case .rightControl:
-            "Right Control"
+            String(localized: "Right Control")
         case .rightCommand:
-            "Right Command"
+            String(localized: "Right Command")
         case .rightShift:
-            "Right Shift"
+            String(localized: "Right Shift")
         }
     }
 

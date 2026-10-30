@@ -12,34 +12,34 @@ enum ChannelPermission: String, CaseIterable, Codable {
     var title: String {
         switch self {
         case .viewChannel:
-            "View Channel"
+            String(localized: "View Channel")
         case .sendMessages:
-            "Send Messages"
+            String(localized: "Send Messages")
         case .join:
-            "Join Channel"
+            String(localized: "Join Channel")
         case .speak:
-            "Speak"
+            String(localized: "Speak")
         case .shareScreen:
-            "Share Screen"
+            String(localized: "Share Screen")
         case .webcam:
-            "Enable Webcam"
+            String(localized: "Enable Webcam")
         }
     }
 
     var detail: String {
         switch self {
         case .viewChannel:
-            "See the channel and read its messages."
+            String(localized: "See the channel and read its messages.")
         case .sendMessages:
-            "Send messages in the channel."
+            String(localized: "Send messages in the channel.")
         case .join:
-            "Join the voice channel."
+            String(localized: "Join the voice channel.")
         case .speak:
-            "Talk once they've joined."
+            String(localized: "Talk once they've joined.")
         case .shareScreen:
-            "Share their screen in the channel."
+            String(localized: "Share their screen in the channel.")
         case .webcam:
-            "Turn on their camera in the channel."
+            String(localized: "Turn on their camera in the channel.")
         }
     }
 
@@ -161,7 +161,7 @@ struct ChannelPermissionsScreen: View {
             if let errorMessage {
                 Section {
                     Text(errorMessage)
-                        .foregroundStyle(Theme.red)
+                        .foregroundStyle(Theme.redText)
                 }
             }
 
@@ -259,16 +259,16 @@ struct ChannelPermissionsScreen: View {
 
     private func summary(of allowed: Set<ChannelPermission>) -> String {
         guard allowed.contains(.viewChannel) else {
-            return "No access"
+            return String(localized: "No access")
         }
 
         let relevant = ChannelPermission.relevant(to: channel?.type ?? .text)
 
         if relevant.allSatisfy(allowed.contains) {
-            return "Full access"
+            return String(localized: "Full access")
         }
 
-        return "\(relevant.filter(allowed.contains).count) of \(relevant.count)"
+        return String(localized: "\(relevant.filter(allowed.contains).count) of \(relevant.count)")
     }
 
     private func load() async {
@@ -428,9 +428,9 @@ private struct PermissionOverrideEditor: View {
     private var title: String {
         switch target {
         case .role(let id):
-            session.rolesById[id]?.name ?? "Role"
+            session.rolesById[id]?.name ?? String(localized: "Role")
         case .user(let id):
-            session.usersById[id]?.name ?? "Member"
+            session.usersById[id]?.name ?? String(localized: "Member")
         }
     }
 
@@ -470,7 +470,7 @@ private struct PermissionOverrideEditor: View {
             if let errorMessage {
                 Section {
                     Text(errorMessage)
-                        .foregroundStyle(Theme.red)
+                        .foregroundStyle(Theme.redText)
                 }
             }
         }

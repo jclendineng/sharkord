@@ -110,7 +110,7 @@ struct ChannelListPanel: View {
             }
 
             HStack(spacing: 8) {
-                SearchLink(route: SearchRoute()) {
+                SearchLink(route: SearchRoute(), answersFind: true) {
                     Label("Search", systemImage: "magnifyingglass")
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(Theme.text)
@@ -204,6 +204,7 @@ private struct CategoryHeader: View {
         label
             .onHover(perform: setHovered)
             .onTapGesture(perform: onToggle)
+            .keyboardActivatable(perform: onToggle)
             .onLongPressGesture(minimumDuration: 0.3, perform: showActions, onPressingChanged: setPressed)
             .onSecondaryClick(perform: showActionsAtPointer)
             .accessibilityAddTraits(.isButton)
@@ -366,6 +367,7 @@ private struct ChannelRow: View {
             .animation(isHighlighted ? nil : .easeOut(duration: 0.15), value: isHighlighted)
             .onHover(perform: setHovered)
             .onTapGesture(perform: open)
+            .keyboardActivatable(perform: open)
             .onLongPressGesture(minimumDuration: 0.3, perform: showActions, onPressingChanged: setPressed)
             .onSecondaryClick(perform: showActionsAtPointer)
             .accessibilityAddTraits(.isButton)
@@ -602,6 +604,7 @@ private struct VoiceParticipantRow: View {
             .padding(.leading, 32)
             .onHover(perform: setHovered)
             .onTapGesture(perform: showProfile)
+            .keyboardActivatable(perform: showProfile)
             .onLongPressGesture(minimumDuration: 0.3, perform: showMenu, onPressingChanged: setPressed)
             .onSecondaryClick(perform: showMenuAtPointer)
             .accessibilityAddTraits(.isButton)

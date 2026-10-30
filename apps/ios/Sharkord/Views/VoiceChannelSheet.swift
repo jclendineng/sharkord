@@ -333,7 +333,7 @@ private struct JoinBar: View {
                 Label(session.micMuted ? "Unmute" : "Mute", systemImage: session.micMuted ? "mic.slash.fill" : "mic.fill")
                     .labelStyle(.iconOnly)
                     .font(.title3)
-                    .foregroundStyle(session.micMuted ? Theme.red : Theme.header)
+                    .foregroundStyle(session.micMuted ? Theme.redText : Theme.header)
                     .frame(width: 56, height: 56)
                     .background(session.micMuted ? Theme.red.opacity(0.2) : Theme.deepBackground, in: .rect(cornerRadius: 14))
                     .contentShape(.rect(cornerRadius: 14))
@@ -399,10 +399,10 @@ struct VoiceSheetSettings: View {
         }
 
         if settings.hearYourselfInCalls && !session.canHearYourselfNow {
-            return "Hear Yourself applies the next time you join a voice channel."
+            return String(localized: "Hear Yourself applies the next time you join a voice channel.")
         }
 
-        return "Noise Suppression applies the next time you join a voice channel."
+        return String(localized: "Noise Suppression applies the next time you join a voice channel.")
     }
 
     var body: some View {

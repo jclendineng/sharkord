@@ -18,7 +18,7 @@ enum SystemSettings {
 
     // what the app is called on this device, for "set in ..." wording
     static var name: String {
-        isMac ? "System Settings" : "Settings"
+        isMac ? String(localized: "System Settings") : String(localized: "Settings")
     }
 
     static func url(for pane: Pane) -> URL? {

@@ -82,8 +82,13 @@ enum EmojiCatalog {
         "GitHub": ("GitHub", "chevron.left.forwardslash.chevron.right")
     ]
 
+    // looked up in the catalog by its english name, a group the table doesn't know stays as it is
     static func title(for group: String) -> String {
-        groupNames[group]?.title ?? group.capitalized
+        guard let title = groupNames[group]?.title else {
+            return group.capitalized
+        }
+
+        return String(localized: String.LocalizationValue(title))
     }
 
     static func symbol(for group: String) -> String {

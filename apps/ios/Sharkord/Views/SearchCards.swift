@@ -78,7 +78,7 @@ struct FileCardTile: View {
         } else {
             Image(systemName: file.file.symbol)
                 .font(.system(size: 36))
-                .foregroundStyle(Theme.blurple)
+                .foregroundStyle(Theme.accentText)
         }
     }
 

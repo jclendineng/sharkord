@@ -77,7 +77,7 @@ struct PinnedMessagesSheet: View {
                     }
                 } else if let errorMessage {
                     Text(errorMessage)
-                        .foregroundStyle(Theme.red)
+                        .foregroundStyle(Theme.redText)
                         .padding(18)
                 } else {
                     ProgressView()

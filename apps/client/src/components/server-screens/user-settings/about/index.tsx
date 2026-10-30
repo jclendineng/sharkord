@@ -28,7 +28,7 @@ const About = memo(() => {
           description={t('aboutContactDesc')}
         >
           <a
-            className="text-sm text-primary underline"
+            className="text-sm text-primary-text underline"
             href={`mailto:${info.reportEmail}`}
           >
             {info.reportEmail}
@@ -39,7 +39,7 @@ const About = memo(() => {
       <Group label={t('aboutSourceLabel')}>
         <div className="flex gap-4 text-sm">
           <a
-            className="text-primary underline"
+            className="text-primary-text underline"
             href={SOURCE_URL}
             target="_blank"
             rel="noopener noreferrer"
@@ -47,7 +47,7 @@ const About = memo(() => {
             {t('aboutSourceLink')}
           </a>
           <a
-            className="text-primary underline"
+            className="text-primary-text underline"
             href={`${SOURCE_URL}/issues`}
             target="_blank"
             rel="noopener noreferrer"

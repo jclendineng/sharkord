@@ -78,7 +78,7 @@ const UserItem = memo(
       >
         <div className="flex items-center gap-2">
           <Avatar className="h-5 w-5">
-            <AvatarFallback className="text-[10px]">
+            <AvatarFallback className="text-[11px]">
               {getInitialsFromName(user.name)}
             </AvatarFallback>
           </Avatar>

@@ -122,12 +122,12 @@ struct UserBar: View {
         // black box around the bar on the panel's dark background
         .background {
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .fill(Color(hex: "#202125"))
+                .fill(Theme.raisedBackground)
                 .shadow(color: .black.opacity(0.2), radius: 8, y: 3)
         }
         .overlay {
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .strokeBorder(.white.opacity(0.06), lineWidth: 1)
+                .strokeBorder(Theme.panelEdge, lineWidth: 1)
         }
         // handed over by hand: on a mac a sheet's background is worked out before it inherits
         // anything, so a sheet reading a store it was not given crashed on opening
@@ -218,7 +218,7 @@ private struct UserBarButton: View {
             Label(title, systemImage: systemImage)
                 .labelStyle(.iconOnly)
                 .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(isOff ? Theme.red : Theme.muted)
+                .foregroundStyle(isOff ? Theme.redText : Theme.muted)
                 .contentTransition(.symbolEffect(.replace))
                 .frame(width: 36, height: 36)
                 .contentShape(.rect(cornerRadius: highlightRadius))

@@ -144,7 +144,7 @@ const PluginItem = memo(({ plugin, onToggle, onRemove }: TPluginItemProps) => {
                 href={plugin.homepage}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="underline hover:text-primary transition-colors"
+                className="underline hover:text-primary-text transition-colors"
               >
                 {plugin.homepage}
               </a>

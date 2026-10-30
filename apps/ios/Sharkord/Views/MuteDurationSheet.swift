@@ -22,7 +22,7 @@ struct MuteDurationSheet: View {
                         .foregroundStyle(Theme.header)
                     }
                 }
-                .listRowBackground(Theme.listBackground)
+                .listRowBackground(Theme.groupedRowBackground)
             }
             .scrollContentBackground(.hidden)
             .listHoverHighlight()

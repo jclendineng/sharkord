@@ -40,10 +40,6 @@ const VoiceOptionsController = memo(() => {
     setIncomingVideoOff(checked);
   }, []);
 
-  const handleIncomingVideoOffLabelClick = useCallback(() => {
-    setIncomingVideoOff(!incomingVideoOff);
-  }, [incomingVideoOff]);
-
   const handleToggleShowUserBanners = useCallback((checked: boolean) => {
     setShowUserBannersInVoice(checked);
   }, []);
@@ -75,14 +71,12 @@ const VoiceOptionsController = memo(() => {
           </h4>
 
           <div className="flex items-center justify-between space-x-3">
-            <span
-              onClick={() =>
-                handleToggleHideNonVideo(!hideNonVideoParticipants)
-              }
+            <label
+              htmlFor="hide-non-video"
               className="text-sm text-foreground cursor-pointer select-none flex-1"
             >
               {t('hideNonVideoParticipants')}
-            </span>
+            </label>
             <Switch
               id="hide-non-video"
               checked={hideNonVideoParticipants}
@@ -91,12 +85,12 @@ const VoiceOptionsController = memo(() => {
           </div>
 
           <div className="flex items-center justify-between space-x-3">
-            <span
-              onClick={handleIncomingVideoOffLabelClick}
+            <label
+              htmlFor="incoming-video-off"
               className="text-sm text-foreground cursor-pointer select-none flex-1"
             >
               {t('incomingVideoOff')}
-            </span>
+            </label>
             <Switch
               id="incoming-video-off"
               checked={incomingVideoOff}
@@ -105,12 +99,12 @@ const VoiceOptionsController = memo(() => {
           </div>
 
           <div className="flex items-center justify-between space-x-3">
-            <span
-              onClick={() => handleToggleShowUserBanners(!showUserBanners)}
+            <label
+              htmlFor="show-user-banners"
               className="text-sm text-foreground cursor-pointer select-none flex-1"
             >
               {t('displayUserBanners')}
-            </span>
+            </label>
             <Switch
               id="show-user-banners"
               checked={showUserBanners}
@@ -119,14 +113,12 @@ const VoiceOptionsController = memo(() => {
           </div>
 
           <div className="flex items-center justify-between space-x-3">
-            <span
-              onClick={() =>
-                handleToggleAlwaysShowVoiceControls(!alwaysShowVoiceControls)
-              }
+            <label
+              htmlFor="always-show-voice-controls"
               className="text-sm text-foreground cursor-pointer select-none flex-1"
             >
               {t('alwaysShowVoiceControls')}
-            </span>
+            </label>
             <Switch
               id="always-show-voice-controls"
               checked={alwaysShowVoiceControls}
@@ -135,14 +127,12 @@ const VoiceOptionsController = memo(() => {
           </div>
 
           <div className="flex items-center justify-between space-x-3">
-            <span
-              onClick={() =>
-                handleToggleHideOwnScreenShare(!hideOwnScreenShare)
-              }
+            <label
+              htmlFor="hide-own-screen-share"
               className="text-sm text-foreground cursor-pointer select-none flex-1"
             >
               {t('hideOwnScreenShare')}
-            </span>
+            </label>
             <Switch
               id="hide-own-screen-share"
               checked={hideOwnScreenShare}

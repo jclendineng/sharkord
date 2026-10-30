@@ -649,17 +649,24 @@ private struct NewMessagesBar: View {
 
     private var title: String {
         let amount = count >= 25 ? "25+" : "\(count)"
-        let noun = count == 1 ? "new message" : "new messages"
 
         guard let since else {
-            return "\(amount) \(noun)"
+            if count == 1 {
+                return String(localized: "1 new message")
+            }
+
+            return String(localized: "\(amount) new messages")
         }
 
         let time = Calendar.current.isDateInToday(since)
             ? since.formatted(date: .omitted, time: .shortened)
             : since.formatted(date: .abbreviated, time: .shortened)
 
-        return "\(amount) \(noun) since \(time)"
+        if count == 1 {
+            return String(localized: "1 new message since \(time)")
+        }
+
+        return String(localized: "\(amount) new messages since \(time)")
     }
 
     var body: some View {
@@ -708,7 +715,7 @@ private struct NewMessagesDivider: View {
 
             Text("NEW MESSAGES")
                 .font(.caption.weight(.bold))
-                .foregroundStyle(Theme.red)
+                .foregroundStyle(Theme.redText)
                 .fixedSize()
 
             Theme.red.frame(height: 1)

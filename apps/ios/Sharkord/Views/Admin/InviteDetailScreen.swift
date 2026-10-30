@@ -73,7 +73,9 @@ struct InviteDetailScreen: View {
                 Text("Joined With This Invite")
             } footer: {
                 if unlistedUses > 0 {
-                    Text("\(unlistedUses) \(unlistedUses == 1 ? "use isn't" : "uses aren't") listed: from before Sharkord kept who joined, or an account deleted since.")
+                    Text(unlistedUses == 1
+                        ? "1 use isn't listed: from before Sharkord kept who joined, or an account deleted since."
+                        : "\(unlistedUses) uses aren't listed: from before Sharkord kept who joined, or an account deleted since.")
                         .wrappingFooter()
                 }
             }
@@ -81,7 +83,7 @@ struct InviteDetailScreen: View {
             if let errorMessage {
                 Section {
                     Text(errorMessage)
-                        .foregroundStyle(Theme.red)
+                        .foregroundStyle(Theme.redText)
                 }
             }
 

@@ -10,6 +10,8 @@ struct HomeView: View {
     let session: SessionStore
 
     @Environment(ServerListStore.self) private var servers
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
 
     @State private var path = NavigationPath()
 
@@ -51,9 +53,11 @@ struct HomeView: View {
     private static let cardRadius: CGFloat = 22
     private static let cardGap: CGFloat = 8
 
-    // an ipad's alone: a phone in landscape can be wide enough to split, and keeps its own
+    // from the size classes rather than the device: a phone in landscape can be wide enough to
+    // split and keeps its own, its height compact, while an iphone duo's inner display or a wide
+    // ipad window is regular both ways and gets the desktop layout
     private var usesDesktopLayout: Bool {
-        Platform.isMac || (isSplit && Platform.isPad)
+        Platform.isMac || (isSplit && horizontalSizeClass == .regular && verticalSizeClass == .regular)
     }
 
     private static func isSplit(_ size: CGSize) -> Bool {
@@ -131,6 +135,8 @@ struct HomeView: View {
             }
         }
         #endif
+        .onChange(of: servers.sidebarToggleRequests, toggleChat)
+        .onChange(of: isChatExpanded, initial: true, reportSidebar)
         .onChange(of: ObjectIdentifier(session)) {
             path = NavigationPath()
             detailChannelId = nil
@@ -417,6 +423,11 @@ struct HomeView: View {
         }
     }
 
+    // the chat over the rail and the list is the sidebar hidden, for the menu bar item's title
+    private func reportSidebar() {
+        servers.isSidebarHidden = isChatExpanded
+    }
+
     private func collapseChat() {
         guard isChatExpanded else {
             return
@@ -661,13 +672,7 @@ struct HomeView: View {
 
     // a different server opens its default channel straight away, like discord does
     private func selectServer(_ selected: SessionStore) {
-        let isSameServer = selected === session
-
-        servers.select(selected)
-
-        if !isSameServer, let channelId = selected.defaultChannelId {
-            selected.requestedChannelId = channelId
-        }
+        servers.showServer(selected)
     }
 
     private func showDirectMessages() {
@@ -816,7 +821,7 @@ private struct ChatHandle: View {
             .fill(Theme.muted)
             .frame(width: 4, height: 34)
             .frame(width: 22, height: 70)
-            .background(Color(hex: "#3D3F46"), in: .capsule)
+            .background(Theme.panelControl, in: .capsule)
             .shadow(color: .black.opacity(0.45), radius: 8)
             .opacity(isShown ? 1 : 0)
             .animation(.easeOut(duration: 0.15), value: isShown)

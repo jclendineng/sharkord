@@ -60,7 +60,7 @@ private struct HoverHighlight: ViewModifier {
             .overlay {
                 if style == .brighten, isHovered {
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .fill(.white.opacity(0.08))
+                        .fill(Theme.hoverOverlay)
                         .allowsHitTesting(false)
                 }
             }

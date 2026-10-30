@@ -31,7 +31,7 @@ struct SignInDeviceScreen: View {
     private var claimedDevice: String {
         let parts = [state?.os, state?.device].compactMap { $0 }.filter { !$0.isEmpty }
 
-        return parts.isEmpty ? "A device" : parts.joined(separator: " · ")
+        return parts.isEmpty ? String(localized: "A device") : parts.joined(separator: " · ")
     }
 
     private var qrURL: String? {
@@ -68,7 +68,7 @@ struct SignInDeviceScreen: View {
                 if let errorMessage {
                     Text(errorMessage)
                         .font(.footnote)
-                        .foregroundStyle(Theme.red)
+                        .foregroundStyle(Theme.redText)
                 }
             }
             .padding(20)
@@ -106,12 +106,12 @@ struct SignInDeviceScreen: View {
         isScannerPresented = false
 
         guard let url = URL(string: code), let approval = ServerListStore.LoginApproval(url: url) else {
-            errorMessage = "That isn't a Sharkord sign in code."
+            errorMessage = String(localized: "That isn't a Sharkord sign in code.")
             return
         }
 
         guard ServerAddress(userInput: approval.server) == session.address else {
-            errorMessage = "That code is for another server. Scan it from that server's settings."
+            errorMessage = String(localized: "That code is for another server. Scan it from that server's settings.")
             return
         }
 
@@ -171,7 +171,7 @@ struct SignInDeviceScreen: View {
         VStack(spacing: 16) {
             Image(systemName: "laptopcomputer.and.iphone")
                 .font(.system(size: 44))
-                .foregroundStyle(Theme.blurple)
+                .foregroundStyle(Theme.accentText)
 
             Text("Sign in \(claimedDevice)?")
                 .font(.title3.bold())
@@ -196,7 +196,7 @@ struct SignInDeviceScreen: View {
             Button(action: decline) {
                 Text("Decline")
                     .font(.headline)
-                    .foregroundStyle(Theme.red)
+                    .foregroundStyle(Theme.redText)
                     .frame(maxWidth: .infinity, minHeight: 50)
                     .background(Theme.listBackground, in: .rect(cornerRadius: 12))
             }

@@ -76,7 +76,7 @@ struct SettingsWindow<Sidebar: View, Detail: View>: View {
         .overlay {
             ConcentricRectangle()
                 // half the line falls outside the sheet, the inner half shows
-                .stroke(.white.opacity(0.12), lineWidth: 2)
+                .stroke(Theme.divider, lineWidth: 2)
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
         }
@@ -87,6 +87,8 @@ struct SettingsWindow<Sidebar: View, Detail: View>: View {
 }
 
 // a sidebar section's title, lined up over its rows' icons rather than out at the list's edge
+// a row rather than a section header: a mac pins a plain list's header to the top and draws a
+// line under it, which sat between the first heading and its rows
 struct SettingsSidebarHeader: View {
     let title: String
 
@@ -94,10 +96,15 @@ struct SettingsSidebarHeader: View {
         Text(title.uppercased())
             .font(.caption.weight(.semibold))
             .foregroundStyle(Theme.muted)
-            // the row's 8 inset and 10 padding, and the icon's own 2 inside its frame
-            .padding(.leading, 20)
+            .frame(maxWidth: .infinity, alignment: .leading)
             // apart from the section above, whose last row it otherwise sat against
             .padding(.top, 10)
+            .padding(.bottom, 2)
+            // the row's 8 inset and 10 padding, and the icon's own 2 inside its frame
+            .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 8))
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
+            .accessibilityAddTraits(.isHeader)
     }
 }
 
@@ -116,13 +123,16 @@ extension View {
     // page itself, set on the split view a mac drew it a shade off. a mac's close sits in the
     // page's own bottom bar, beside a page's save: one in the sidebar went on a bar of the
     // window's across the whole sheet, tinted by the desktop
-    func settingsPage(onClose close: @escaping () -> Void) -> some View {
+    // no close in the settings window, which has the window's own
+    func settingsPage(onClose close: (() -> Void)?) -> some View {
         navigationBarBackground(Theme.deepBackground)
             .navigationBarBackgroundVisible()
             #if os(macOS)
             .toolbar {
-                ActionToolbarItem(placement: .cancellationAction) {
-                    Button("Close", action: close)
+                if let close {
+                    ActionToolbarItem(placement: .cancellationAction) {
+                        Button("Close", action: close)
+                    }
                 }
             }
             #endif

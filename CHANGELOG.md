@@ -156,6 +156,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 #### Web client
 
+- The web client takes the apps' blurple for buttons and focus rings, with a lighter shade for accent text that keeps 4.5:1 in dark mode.
+- Voice options' switch labels toggle their switches and work with screen readers, and no text is smaller than 11px.
 - Signing in on a computer opens the first text channel instead of an empty page.
 - A refresh shows the server as it was straight away instead of a loading screen, and swaps in the fresh copy once it has reconnected. Nothing can be sent until then.
 - Group direct messages and friends.
@@ -171,6 +173,17 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 #### iOS app
 
+- The iOS, iPad and Mac app speaks the web client's languages: Czech, Spanish, French, Italian, Brazilian Portuguese, Russian and Simplified Chinese, following the device's language.
+  - Message times read in the device's language and date order.
+  - What the server sends, such as channel and category names and its error messages, stays as the server has it.
+- The apps follow the system's light or dark appearance, with Light, Dark or System under Settings › App Settings › Appearance. Calls and sign in stay dark.
+- The Mac app's menu bar carries the app's commands.
+  - File: New Message (⇧⌘N).
+  - View: Hide Sidebar (⌃⌘S), Back (⌘[) and Forward (⌘]).
+  - Server: Search (⌘F), Direct Messages (⌥⌘D), Previous and Next Server (⌥⌘↑, ⌥⌘↓) and Add a Server.
+  - Call: Mute (⇧⌘M), Deafen (⇧⌘D), Show Call and Leave Call.
+- The Mac app's settings open in a settings window of their own from Settings… (⌘,).
+- Channel, category and conversation rows on a Mac can be reached with Tab and opened with Return or Space.
 - A native iOS and iPad app, signing in to any server by its address, with push notifications, SSO and server passwords.
 - The native Mac app goes to TestFlight from GitHub Actions, and TestFlight keeps it up to date, so there is no release to download each time.
 - Joining and leaving a call play a short chime, and muting, deafening, the camera and screen sharing each play a click, the same sounds the web client plays.
@@ -390,6 +403,12 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 #### iOS app
 
+- Text in the apps meets 4.5:1 contrast everywhere it sits, and Increase Contrast brings stronger text and lines.
+  - Thread replies, links and accent text use a lighter blurple, red error text a lighter red, and muted text is brighter.
+  - The sheet close button turns solid with Reduce Transparency.
+  - The APP and BANNED badges grow with the text size, and the emoji panel's group buttons and the channels admin menu read out their names.
+- The message box keeps its text centered on its buttons at every text size.
+- An iPad, or an iPhone with a wide inner display, picks the desktop layout and the member list from its window's size class rather than from the kind of device.
 - An iPad's screen share shows upright on the other side whichever way the iPad is held, portrait, upside down or either landscape. It used to arrive sideways, or shrunk between black bars.
 - A screen share takes its own shape on screen, so a portrait phone or iPad share is no longer boxed into a wide tile.
 - Joining a call on an iPad or a Mac opens the call about half a second sooner: the voice channel's sheet slides away as Join is tapped instead of after the join.

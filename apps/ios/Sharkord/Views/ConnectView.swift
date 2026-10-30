@@ -270,7 +270,7 @@ struct ConnectView: View {
         if let serverError {
             Text(serverError)
                 .font(.footnote)
-                .foregroundStyle(Theme.red)
+                .foregroundStyle(Theme.redText)
         }
 
         AuthButton(title: "Next", isEnabled: !serverURL.isEmpty, isWorking: isCheckingServer) {
@@ -393,7 +393,7 @@ struct ConnectView: View {
         if let errorMessage = session.errorMessage {
             Text(errorMessage)
                 .font(.footnote)
-                .foregroundStyle(Theme.red)
+                .foregroundStyle(Theme.redText)
         }
     }
 
@@ -537,7 +537,7 @@ struct ConnectView: View {
     // a code to show, then waiting on it until a phone approves it, it is declined or runs out
     private func runLoginRequest() async {
         guard let address = ServerAddress(userInput: serverURL) else {
-            session.errorMessage = "That doesn't look like a server address."
+            session.errorMessage = String(localized: "That doesn't look like a server address.")
             return
         }
 
@@ -561,7 +561,7 @@ struct ConnectView: View {
         isScannerPresented = false
 
         guard let url = URL(string: code), let login = ServerListStore.LinkLogin(url: url) else {
-            session.errorMessage = "That isn't a Sharkord sign in code."
+            session.errorMessage = String(localized: "That isn't a Sharkord sign in code.")
             return
         }
 
@@ -579,7 +579,7 @@ struct ConnectView: View {
 
     private func checkServer(for intent: Intent) {
         guard let address = ServerAddress(userInput: serverURL) else {
-            serverError = "That doesn't look like a server address."
+            serverError = String(localized: "That doesn't look like a server address.")
             return
         }
 
@@ -606,7 +606,7 @@ struct ConnectView: View {
                     step = intent == .register || inviteCode != nil ? .register : .login
                 }
             } catch {
-                serverError = "Couldn't reach a Sharkord server there. Check the address and try again."
+                serverError = String(localized: "Couldn't reach a Sharkord server there. Check the address and try again.")
             }
 
             isCheckingServer = false

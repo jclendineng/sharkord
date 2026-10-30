@@ -106,7 +106,7 @@ struct EditProfileSheet: View {
                 } footer: {
                     Text("\(bio.count)/\(Self.bioLimit)")
                         .monospacedDigit()
-                        .foregroundStyle(bio.count > Self.bioLimit ? Theme.red : Theme.muted)
+                        .foregroundStyle(bio.count > Self.bioLimit ? Theme.redText : Theme.muted)
                         .wrappingFooter()
                 }
 
@@ -117,7 +117,7 @@ struct EditProfileSheet: View {
                 if let errorMessage {
                     Section {
                         Text(errorMessage)
-                            .foregroundStyle(Theme.red)
+                            .foregroundStyle(Theme.redText)
                     }
                 }
             }

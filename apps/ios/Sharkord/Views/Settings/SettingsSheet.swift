@@ -6,6 +6,7 @@ struct SettingsSheet: View {
     @Environment(ServerListStore.self) private var servers
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.isSettingsWindow) private var isSettingsWindow
 
     @State private var selection: UserSettingsPage? = .account
     @State private var query = ""
@@ -72,13 +73,13 @@ struct SettingsSheet: View {
             List {
                 ForEach(sections, id: \.title) { section in
                     Section {
+                        SettingsSidebarHeader(title: section.title)
+
                         ForEach(section.pages, id: \.self) { page in
                             SettingsSidebarRow(title: page.title, systemImage: page.systemImage, isSelected: selection == page) {
                                 selection = page
                             }
                         }
-                    } header: {
-                        SettingsSidebarHeader(title: section.title)
                     }
                     .listSectionSeparator(.hidden)
                 }
@@ -104,11 +105,20 @@ struct SettingsSheet: View {
             NavigationStack {
                 if let selection {
                     selection.screen
-                        .settingsPage(onClose: close)
+                        .settingsPage(onClose: closeAction)
                 }
             }
             .id(selection)
         }
+    }
+
+    // the settings window closes with its own button
+    private var closeAction: (() -> Void)? {
+        if isSettingsWindow {
+            return nil
+        }
+
+        return close
     }
 
     private func close() {
@@ -161,7 +171,7 @@ extension View {
             .scrollContentBackground(.hidden)
             .background(Theme.deepBackground)
             .listHoverHighlight()
-            .listRowBackground(Theme.listBackground)
+            .listRowBackground(Theme.groupedRowBackground)
 
         #if os(macOS)
         // a mac's settings form tints its own rows. a tint on the whole page reached a pushed
@@ -329,8 +339,20 @@ private final class HoverFill: NSView {
         super.init(frame: frame)
 
         wantsLayer = true
-        layer?.backgroundColor = NSColor.white.withAlphaComponent(0.06).cgColor
         layer?.cornerRadius = 6
+        updateColor()
+    }
+
+    // a layer's colour is fixed when set, so it is set again when the appearance changes
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        updateColor()
+    }
+
+    private func updateColor() {
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            layer?.backgroundColor = NSColor(Theme.hoverOverlay).cgColor
+        }
     }
 
     required init?(coder: NSCoder) {
@@ -357,7 +379,7 @@ private struct ListHoverHighlighter: UIViewRepresentable {
 }
 
 final class ListHoverProbe: UIView {
-    private static let hoverColor = UIColor.white.withAlphaComponent(0.06)
+    private static let hoverColor = UIColor(Theme.hoverOverlay)
 
     private weak var collectionView: UICollectionView?
     private weak var hoveredCell: UICollectionViewCell?
@@ -473,28 +495,31 @@ enum UserSettingsPage: Hashable {
     case signInDevice
     case voiceVideo
     case notifications
+    case appearance
     case about
 
     static let sections: [(title: String, pages: [UserSettingsPage])] = [
-        ("Account Settings", [.account, .devices, .signInDevice]),
-        ("App Settings", [.voiceVideo, .notifications]),
-        ("Support", [.about])
+        (String(localized: "Account Settings"), [.account, .devices, .signInDevice]),
+        (String(localized: "App Settings"), [.voiceVideo, .notifications, .appearance]),
+        (String(localized: "Support"), [.about])
     ]
 
     var title: String {
         switch self {
         case .account:
-            "Account"
+            String(localized: "Account")
         case .devices:
-            "Devices"
+            String(localized: "Devices")
         case .signInDevice:
-            "Sign In Another Device"
+            String(localized: "Sign In Another Device")
         case .voiceVideo:
-            "Voice & Video"
+            String(localized: "Voice & Video")
         case .notifications:
-            "Notifications"
+            String(localized: "Notifications")
+        case .appearance:
+            String(localized: "Appearance")
         case .about:
-            "About"
+            String(localized: "About")
         }
     }
 
@@ -510,6 +535,8 @@ enum UserSettingsPage: Hashable {
             "mic.fill"
         case .notifications:
             "bell.fill"
+        case .appearance:
+            "circle.lefthalf.filled"
         case .about:
             "info.circle.fill"
         }
@@ -532,6 +559,8 @@ enum UserSettingsPage: Hashable {
             VoiceVideoSettingsScreen()
         case .notifications:
             NotificationSettingsScreen()
+        case .appearance:
+            AppearanceSettingsScreen()
         case .about:
             AboutScreen()
         }

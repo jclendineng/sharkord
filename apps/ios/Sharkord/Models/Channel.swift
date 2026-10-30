@@ -60,12 +60,12 @@ enum MuteDuration: CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .minutes15: "For 15 Minutes"
-        case .hour1: "For 1 Hour"
-        case .hours3: "For 3 Hours"
-        case .hours8: "For 8 Hours"
-        case .hours24: "For 24 Hours"
-        case .forever: "Until I turn it back on"
+        case .minutes15: String(localized: "For 15 Minutes")
+        case .hour1: String(localized: "For 1 Hour")
+        case .hours3: String(localized: "For 3 Hours")
+        case .hours8: String(localized: "For 8 Hours")
+        case .hours24: String(localized: "For 24 Hours")
+        case .forever: String(localized: "Until I turn it back on")
         }
     }
 }

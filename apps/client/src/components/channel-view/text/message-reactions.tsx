@@ -27,7 +27,7 @@ const TooltipPreview = memo(
       <div className="flex items-center gap-2 max-w-xs wrap-break-word whitespace-pre-wrap text-sm">
         <div className="flex items-center flex-col">
           {emojiSlot}
-          <span className="text-[8px]">:{emojiName}:</span>
+          <span className="text-[11px]">:{emojiName}:</span>
         </div>
         <span className="text-xs">{t('wasReactedBy', { reacters })}</span>
       </div>

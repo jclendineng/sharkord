@@ -184,8 +184,8 @@ struct SearchScreen: View {
 
             if let errorMessage {
                 Text(errorMessage)
-                    .foregroundStyle(Theme.red)
-                    .listRowBackground(Theme.listBackground)
+                    .foregroundStyle(Theme.redText)
+                    .listRowBackground(Theme.groupedRowBackground)
             }
 
             if !members.isEmpty {
@@ -344,7 +344,7 @@ struct SearchScreen: View {
 
         if text.count > Self.queryLength.upperBound {
             results = nil
-            errorMessage = "Searches can be at most \(Self.queryLength.upperBound) characters."
+            errorMessage = String(localized: "Searches can be at most \(Self.queryLength.upperBound) characters.")
             return
         }
 
@@ -459,10 +459,10 @@ final class SearchQueryModel {
         }
 
         guard let channel = filters.channel else {
-            return directMessages ? "Search in DMs" : "Search in \(session.displayName)"
+            return directMessages ? String(localized: "Search in DMs") : String(localized: "Search in \(session.displayName)")
         }
 
-        return "Search in \(FilterChips.place(channel, in: session))"
+        return String(localized: "Search in \(FilterChips.place(channel, in: session))")
     }
 }
 
@@ -551,10 +551,10 @@ private struct MessageResultRow: View {
     // a direct message is named after the other person, not its channel
     private var place: String {
         guard message.channelIsDm else {
-            return "#\(message.channelName)"
+            return String(localized: "#\(message.channelName)")
         }
 
-        return "@\(session.conversationTitle(for: message.channelId))"
+        return String(localized: "@\(session.conversationTitle(for: message.channelId))")
     }
 
     // the gifs and pictures shown from its links, as the chat shows them
@@ -584,7 +584,7 @@ private struct MessageResultRow: View {
                     HStack(spacing: 6) {
                         Text(author?.name ?? "Unknown")
                             .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Color(hex: session.roleColor(for: author) ?? "#F2F3F5"))
+                            .foregroundStyle(session.nameColor(for: author))
 
                         Text(place)
                             .font(.caption)

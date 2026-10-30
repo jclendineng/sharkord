@@ -50,7 +50,7 @@ struct DeleteMessageConfirmation: View {
                         HStack(alignment: .firstTextBaseline, spacing: 6) {
                             Text(author?.name ?? message.pluginId ?? "Unknown")
                                 .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(Color(hex: session.roleColor(for: author) ?? "#F2F3F5"))
+                                .foregroundStyle(session.nameColor(for: author))
 
                             Text(MessageDate.timestamp(message.createdDate))
                                 .font(.caption2)
@@ -74,7 +74,7 @@ struct DeleteMessageConfirmation: View {
                             .font(.subheadline)
                             .foregroundStyle(Theme.text)
                         } else if !message.files.isEmpty {
-                            Label("\(message.files.count) attachment\(message.files.count == 1 ? "" : "s")", systemImage: "paperclip")
+                            Label(message.files.count == 1 ? "1 attachment" : "\(message.files.count) attachments", systemImage: "paperclip")
                                 .font(.subheadline)
                                 .foregroundStyle(Theme.muted)
                         }

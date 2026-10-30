@@ -104,7 +104,7 @@ const ConsumersTab = memo(({ snapshot }: TSnapshotTabProps) => (
 ));
 
 const EVENT_CLASSES: Record<TVoiceDebugEvent['category'], string> = {
-  voice: 'text-primary',
+  voice: 'text-primary-text',
   warn: 'text-amber-500',
   error: 'text-destructive',
   ws: 'text-sky-500'

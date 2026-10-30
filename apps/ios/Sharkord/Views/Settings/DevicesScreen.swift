@@ -29,7 +29,7 @@ struct DevicesScreen: View {
             if let errorMessage {
                 Section {
                     Text(errorMessage)
-                        .foregroundStyle(Theme.red)
+                        .foregroundStyle(Theme.redText)
                 }
             }
 
@@ -137,7 +137,7 @@ private struct DeviceRow: View {
             .compactMap { $0 }
             .filter { !$0.isEmpty }
             .joined(separator: " · ")
-            .nonEmpty ?? "Unknown device"
+            .nonEmpty ?? String(localized: "Unknown device")
     }
 
     private var location: String? {

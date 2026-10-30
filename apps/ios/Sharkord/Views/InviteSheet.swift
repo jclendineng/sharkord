@@ -35,38 +35,53 @@ struct InviteSheet: View {
     // none of your links can be reused, and none is made until asked for
     @State private var hasNoLink = false
 
+    private static func usesTitle(_ count: Int) -> String {
+        switch count {
+        case 0:
+            String(localized: "No limit")
+        case 1:
+            String(localized: "1 use")
+        default:
+            String(localized: "\(count) uses")
+        }
+    }
+
     private var usesText: String {
         if usesLimit > 0 {
-            return "Used \(uses) of \(usesLimit) times"
+            return String(localized: "Used \(uses) of \(usesLimit) times")
         }
 
         if uses == 0 {
-            return "Not used yet"
+            return String(localized: "Not used yet")
         }
 
-        return "Used \(uses) \(uses == 1 ? "time" : "times")"
+        if uses == 1 {
+            return String(localized: "Used 1 time")
+        }
+
+        return String(localized: "Used \(uses) times")
     }
 
     private var summary: String {
         if hasNoLink {
-            return "You don't have an invite link yet. Choose how long it lasts and how many times it can be used, then create one."
+            return String(localized: "You don't have an invite link yet. Choose how long it lasts and how many times it can be used, then create one.")
         }
 
-        var expires = "never expires"
+        var expires = String(localized: "never expires")
 
         if let expiresAt {
-            expires = "expires in \(InviteExpiry.timeLeft(until: expiresAt))"
+            expires = String(localized: "expires in \(InviteExpiry.timeLeft(until: expiresAt))")
         }
 
-        return "Your invite link. \(usesText), \(expires)."
+        return String(localized: "Your invite link. \(usesText), \(expires).")
     }
 
     private var replaceMessage: String {
         if uses == 0 {
-            return "Your current link will stop working."
+            return String(localized: "Your current link will stop working.")
         }
 
-        return "Your current link will stop working for anyone you sent it to. \(usesText)."
+        return String(localized: "Your current link will stop working for anyone you sent it to. \(usesText).")
     }
 
     var body: some View {
@@ -108,7 +123,7 @@ struct InviteSheet: View {
                         .tint(Theme.link)
                 } else if let errorMessage {
                     Text(errorMessage)
-                        .foregroundStyle(Theme.red)
+                        .foregroundStyle(Theme.redText)
                 } else if hasNoLink {
                     Button(action: regenerate) {
                         Label("Create Link", systemImage: "link")
@@ -138,7 +153,7 @@ struct InviteSheet: View {
                     settingRow("Max Uses") {
                         Picker("Max Uses", selection: $settings.maxUses) {
                             ForEach(Self.maxUsesChoices, id: \.self) { count in
-                                Text(count == 0 ? "No limit" : "\(count) \(count == 1 ? "use" : "uses")").tag(count)
+                                Text(Self.usesTitle(count)).tag(count)
                             }
                         }
                         .labelsHidden()

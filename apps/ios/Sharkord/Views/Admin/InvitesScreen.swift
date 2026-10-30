@@ -27,7 +27,7 @@ struct InvitesScreen: View {
         SettingsForm {
             if let errorMessage {
                 Text(errorMessage)
-                    .foregroundStyle(Theme.red)
+                    .foregroundStyle(Theme.redText)
             }
 
             Section {
@@ -146,22 +146,26 @@ extension AdminInvite {
 
     var usesText: String {
         if let maxUses, maxUses > 0 {
-            return "\(uses)/\(maxUses) uses"
+            return String(localized: "\(uses)/\(maxUses) uses")
         }
 
-        return "\(uses) \(uses == 1 ? "use" : "uses")"
+        if uses == 1 {
+            return String(localized: "1 use")
+        }
+
+        return String(localized: "\(uses) uses")
     }
 
     var expiryText: String {
         if let deletedAt {
-            return "Deleted \(Self.date(deletedAt).formatted(date: .abbreviated, time: .omitted))"
+            return String(localized: "Deleted \(Self.date(deletedAt).formatted(date: .abbreviated, time: .omitted))")
         }
 
         guard let expiresAt else {
-            return "Never expires"
+            return String(localized: "Never expires")
         }
 
-        return isExpired ? "Expired" : "Expires in \(InviteExpiry.timeLeft(until: Self.date(expiresAt)))"
+        return isExpired ? String(localized: "Expired") : String(localized: "Expires in \(InviteExpiry.timeLeft(until: Self.date(expiresAt)))")
     }
 
     static func date(_ milliseconds: Int) -> Date {
@@ -237,7 +241,7 @@ private struct CreateInviteSheet: View {
                 if let errorMessage {
                     Section {
                         Text(errorMessage)
-                            .foregroundStyle(Theme.red)
+                            .foregroundStyle(Theme.redText)
                     }
                 }
             }

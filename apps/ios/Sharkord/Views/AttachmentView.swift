@@ -101,7 +101,7 @@ private struct FileCard: View {
                 HStack(spacing: 10) {
                     Image(systemName: file.symbol)
                         .font(.title)
-                        .foregroundStyle(Theme.blurple)
+                        .foregroundStyle(Theme.accentText)
                         .frame(width: 32)
 
                     VStack(alignment: .leading, spacing: 2) {

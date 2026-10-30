@@ -60,7 +60,7 @@ struct AddFriendsScreen: View {
                     Label("Add by Username", systemImage: "at")
                         .foregroundStyle(Theme.header)
                 }
-                .listRowBackground(Theme.listBackground)
+                .listRowBackground(Theme.groupedRowBackground)
             }
 
             let incoming = users(session.friendLists.incoming)
@@ -165,7 +165,7 @@ private struct AddByUsernameScreen: View {
             } footer: {
                 if let message {
                     Text(message)
-                        .foregroundStyle(isSent ? Theme.green : Theme.red)
+                        .foregroundStyle(isSent ? Theme.greenText : Theme.redText)
                         .wrappingFooter()
                 }
             }
@@ -220,7 +220,7 @@ struct FriendRow<Actions: View>: View {
 
             actions
         }
-        .listRowBackground(Theme.listBackground)
+        .listRowBackground(Theme.groupedRowBackground)
     }
 }
 

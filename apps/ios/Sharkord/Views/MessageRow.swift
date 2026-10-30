@@ -38,11 +38,11 @@ struct MessageRow: View {
     }
 
     private var authorName: String {
-        author?.name ?? message.webhookName ?? message.pluginId ?? "Unknown"
+        author?.name ?? message.webhookName ?? message.pluginId ?? String(localized: "Unknown")
     }
 
     private var nameColor: Color {
-        session.roleColor(for: author).map { Color(hex: $0) } ?? Theme.header
+        session.nameColor(for: author)
     }
 
     var body: some View {
@@ -164,7 +164,7 @@ struct MessageRow: View {
     private func threadLink(replyCount: Int) -> some View {
         let label = Label(replyCount == 1 ? "1 reply" : "\(replyCount) replies", systemImage: "arrow.turn.down.right")
             .font(.subheadline.weight(.semibold))
-            .foregroundStyle(Theme.blurple)
+            .foregroundStyle(Theme.accentText)
 
         if openThreadPanel != nil {
             Button(action: openThreadInPanel) {
@@ -214,7 +214,7 @@ struct MessageRow: View {
 
             if message.pluginId != nil || message.webhookName != nil {
                 Text("APP")
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.caption2.weight(.bold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 4)
                     .padding(.vertical, 1)
@@ -350,7 +350,7 @@ private struct ReplyLine: View {
 
                 Text(author?.name ?? preview.pluginId ?? "Unknown")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color(hex: session.roleColor(for: author) ?? "#F2F3F5"))
+                    .foregroundStyle(session.nameColor(for: author))
 
                 Text(HTMLText.plainText(from: preview.content ?? "").replacingOccurrences(of: "\n", with: " "))
                     .font(.caption)

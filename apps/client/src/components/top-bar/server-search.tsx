@@ -31,7 +31,7 @@ const ServerSearch = memo(() => {
     >
       <Search className="h-3.5 w-3.5 animate-pulse" />
       <span className="truncate text-left">{t('searchContent')}</span>
-      <span className="ml-auto hidden rounded border border-border bg-background px-1.5 py-0.5 text-[10px] md:inline">
+      <span className="ml-auto hidden rounded border border-border bg-background px-1.5 py-0.5 text-[11px] md:inline">
         Ctrl+K
       </span>
     </button>

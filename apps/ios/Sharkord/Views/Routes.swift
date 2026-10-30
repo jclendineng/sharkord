@@ -37,6 +37,8 @@ extension EnvironmentValues {
 // a way into search: pushed on a phone, the whole screen on an ipad in landscape
 struct SearchLink<Label: View>: View {
     let route: SearchRoute
+    // the panel's own search box, which the menu bar's Find opens. the chat's box has its own route
+    var answersFind = false
     @ViewBuilder let label: Label
 
     @Environment(\.presentSearch) private var presentSearch
@@ -47,6 +49,24 @@ struct SearchLink<Label: View>: View {
     @State private var frame = CGRect.zero
 
     var body: some View {
+        link
+            .onChange(of: servers.searchRequests) {
+                if answersFind {
+                    find()
+                }
+            }
+    }
+
+    private func find() {
+        if usesDesktopSearch {
+            showDropdown()
+        } else if let presentSearch {
+            presentSearch(route)
+        }
+    }
+
+    @ViewBuilder
+    private var link: some View {
         if usesDesktopSearch {
             // discord's mac search drops down from the box, filters and results in it, the same
             // card as the chat's search, drawn by HomeView over the window

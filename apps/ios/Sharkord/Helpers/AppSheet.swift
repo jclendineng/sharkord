@@ -160,6 +160,23 @@ private struct MacDismissLock: ViewModifier {
 private struct SheetCloseButton: View {
     let action: () -> Void
 
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    // plain glass on a mac and an ipad: the interactive kind takes a pointer's press for its own
+    // animation, and the button only saw an occasional click, so the x needed several. with
+    // Reduce Transparency the button is a solid disc instead
+    private var glass: Glass {
+        if reduceTransparency {
+            return .identity
+        }
+
+        if Platform.isMac || Platform.isPad {
+            return .regular
+        }
+
+        return .regular.interactive()
+    }
+
     var body: some View {
         Button(action: action) {
             Image(systemName: "xmark")
@@ -168,9 +185,13 @@ private struct SheetCloseButton: View {
                 .frame(width: 44, height: 44)
         }
         .buttonStyle(.plain)
-        // plain glass on a mac and an ipad: the interactive kind takes a pointer's press for its
-        // own animation, and the button only saw an occasional click, so the x needed several
-        .glassEffect(Platform.isMac || Platform.isPad ? .regular : .regular.interactive(), in: .circle)
+        .background {
+            if reduceTransparency {
+                Circle()
+                    .fill(Theme.floatingBackground)
+            }
+        }
+        .glassEffect(glass, in: .circle)
         .contentShape(.circle)
         .accessibilityLabel("Close")
     }

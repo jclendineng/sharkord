@@ -121,7 +121,7 @@ const PreviewFile = memo(({ item, onRemove }: TPreviewFileProps) => {
           >
             {name}
           </span>
-          <span className="text-[10px] text-muted-foreground">
+          <span className="text-[11px] text-muted-foreground">
             {filesize(size)}
           </span>
         </div>

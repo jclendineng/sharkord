@@ -61,7 +61,7 @@ const ErrorBoundary = ({
               </span>
 
               <details>
-                <summary className="text-[10px] text-red-500">
+                <summary className="text-[11px] text-red-500">
                   {t('errorDetails')}
                 </summary>
 

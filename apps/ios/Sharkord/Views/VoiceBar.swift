@@ -42,23 +42,23 @@ struct VoiceBar: View {
                 systemImage: session.micMuted ? "mic.slash.fill" : "mic.fill",
                 action: toggleMic
             )
-            .foregroundStyle(session.micMuted ? Theme.red : Theme.text)
+            .foregroundStyle(session.micMuted ? Theme.redText : Theme.text)
 
             Button(
                 session.soundMuted ? "Undeafen" : "Deafen",
                 systemImage: session.soundMuted ? "speaker.slash.fill" : "speaker.wave.2.fill",
                 action: toggleSound
             )
-            .foregroundStyle(session.soundMuted ? Theme.red : Theme.text)
+            .foregroundStyle(session.soundMuted ? Theme.redText : Theme.text)
 
             Button("Disconnect", systemImage: "phone.down.fill", action: leave)
-                .foregroundStyle(Theme.red)
+                .foregroundStyle(Theme.redText)
         }
         .labelStyle(.iconOnly)
         .font(.title3)
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .background(Color(hex: "#202125"), in: .rect(cornerRadius: 20))
+        .background(Theme.raisedBackground, in: .rect(cornerRadius: 20))
         // the call grows out of the bar and shrinks back into it, a cover's own slide sent it
         // off the bottom of the screen with the bar nowhere in it
         .matchedTransitionSource(id: "call", in: zoom) { source in

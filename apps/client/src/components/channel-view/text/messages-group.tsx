@@ -70,20 +70,20 @@ const MessagesGroup = memo(
               className={cn(
                 isOwnUser && 'font-bold',
                 isDeletedUser && 'line-through text-muted-foreground',
-                isBotMessage && 'text-primary/80'
+                isBotMessage && 'text-primary-text/80'
               )}
             >
               {authorName}
             </span>
             {isBotMessage && (
-              <span className="inline-flex items-center rounded-sm bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary/60 uppercase tracking-wide">
+              <span className="inline-flex items-center rounded-sm bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary-text/60 uppercase tracking-wide">
                 bot
               </span>
             )}
             <RelativeTime date={date}>
               {(relativeTime) => (
                 <span
-                  className="text-primary/60 text-xs"
+                  className="text-primary-text/60 text-xs"
                   title={format(date, 'PPpp')}
                 >
                   {relativeTime}

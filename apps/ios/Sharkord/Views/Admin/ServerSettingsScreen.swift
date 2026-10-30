@@ -68,14 +68,14 @@ struct ServerSettingsScreen: View {
             List {
                 ForEach(sections, id: \.pages) { section in
                     Section {
+                        if let title = section.title {
+                            SettingsSidebarHeader(title: title)
+                        }
+
                         ForEach(section.pages, id: \.self) { page in
                             SettingsSidebarRow(title: page.title, systemImage: page.systemImage, isSelected: selection == page) {
                                 selection = page
                             }
-                        }
-                    } header: {
-                        if let title = section.title {
-                            SettingsSidebarHeader(title: title)
                         }
                     }
                     .listSectionSeparator(.hidden)
@@ -123,32 +123,32 @@ enum ServerSettingsPage: Hashable {
 
     static let sections: [(title: String?, pages: [ServerSettingsPage])] = [
         (nil, [.overview, .roles, .emoji, .stickers, .soundboard]),
-        ("Community", [.members, .invites, .channels]),
-        ("Server", [.storage, .plugins])
+        (String(localized: "Community"), [.members, .invites, .channels]),
+        (String(localized: "Server"), [.storage, .plugins])
     ]
 
     var title: String {
         switch self {
         case .overview:
-            "Overview"
+            String(localized: "Overview")
         case .roles:
-            "Roles"
+            String(localized: "Roles")
         case .emoji:
-            "Emoji"
+            String(localized: "Emoji")
         case .stickers:
-            "Stickers"
+            String(localized: "Stickers")
         case .soundboard:
-            "Soundboard"
+            String(localized: "Soundboard")
         case .members:
-            "Members"
+            String(localized: "Members")
         case .invites:
-            "Invites"
+            String(localized: "Invites")
         case .channels:
-            "Channels"
+            String(localized: "Channels")
         case .storage:
-            "Storage"
+            String(localized: "Storage")
         case .plugins:
-            "Plugins"
+            String(localized: "Plugins")
         }
     }
 

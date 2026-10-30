@@ -138,7 +138,7 @@ struct ProfileScreen: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
                     }
-                    .foregroundStyle(Theme.red)
+                    .foregroundStyle(Theme.redText)
                     .background(Theme.listBackground, in: .rect(cornerRadius: 12))
                 }
                 .padding(16)
@@ -240,8 +240,21 @@ private struct ProfileSheetPresentation: ViewModifier {
 
     // handed over by hand: on a mac a sheet's background is worked out before it inherits
     // anything, so a sheet reading a store it was not given crashed on opening
+    #if os(macOS)
+    @Environment(\.openSettings) private var openSettings
+    #endif
+
     func body(content: Content) -> some View {
         content
+            #if os(macOS)
+            // a mac's settings are the settings window, opened in place of a sheet
+            .onChange(of: sheet) {
+                if sheet == .settings {
+                    sheet = nil
+                    openSettings()
+                }
+            }
+            #endif
             .sheet(item: sheetBinding) { sheet in
                 screen(for: sheet)
                     .appSheet()

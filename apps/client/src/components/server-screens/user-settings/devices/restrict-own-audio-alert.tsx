@@ -26,7 +26,7 @@ const RestrictOwnAudioAlert = memo(
             href={RESTRICT_OWN_AUDIO_COMPATIBILITY_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="underline transition-colors hover:text-primary"
+            className="underline transition-colors hover:text-primary-text"
           >
             {t('restrictOwnAudioCompatibilityLink')}
           </a>

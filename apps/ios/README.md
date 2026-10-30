@@ -178,13 +178,36 @@ Laid out the way Discord's Mac app is: the server's menu drops down under its na
 settings take the whole window with the pages down the side, a thread opens in a panel beside
 the chat in the member list's place, the plus by the message box is a short menu, and the emoji
 picker keeps to its own width under its button. The member list grows with a wide window.
-The user bar carries mute, deafen and settings, user settings fill the window like server
-settings, and the message box has GIF, sticker and emoji buttons. Back and forward step through
+The user bar carries mute, deafen and settings, user settings open in a settings window of
+their own (`Views/Settings/SettingsScene.swift`), and the message box has GIF, sticker and emoji
+buttons. The menu bar carries the app's commands (`Views/AppCommands.swift`): New Message, Hide
+Sidebar, Back and Forward, Search, Direct Messages, Previous and Next Server, and Mute, Deafen,
+Show Call and Leave Call. Rows drawn with plain gestures take Tab focus and open with Return or
+Space (`Helpers/KeyboardActivation.swift`). Back and forward step through
 the channels shown (`ServerListStore.visits`, ⌘[ and ⌘]). A channel's threads list drops down
 from the top bar (`messages.getThreads`). Push to talk reads its key through the GameController
 framework (`PushToTalk`), which sees a modifier held on its own even while typing. Voice & Video
 picks the input and output device; Automatic uses a headset's or USB mic whenever
 one is plugged in, kept to on every route change (`AudioInputPreference`).
+
+## Appearance
+
+Every colour comes from `Helpers/Theme.swift`, where each one has a light and a dark value and a
+stronger one for Increase Contrast, resolved by the system as either changes. Text colours keep
+4.5:1 on every surface they sit on: blurple fills buttons, and text in the accent colour uses
+`accentText`, red text `redText`. Settings › App Settings › Appearance picks Light, Dark or
+System (`AppSettings.appearance`); a Mac applies it as the app's appearance, so the settings
+window follows too. Calls and the sign in screens stay dark either way (`alwaysDark()`).
+
+## Languages
+
+The app's text lives in `Sharkord/Localizable.xcstrings`, a String Catalog with the web client's
+languages. SwiftUI text written as a literal is picked up by Xcode on its own; text built in code
+goes through `String(localized:)`, and a name worked out at runtime, such as a permission's or an
+emoji group's, is looked up with `String(localized: String.LocalizationValue(name))` and added to
+the catalog by hand. A count is written as its own sentence for one and for many rather than by
+adding an "s", since that does not carry into other languages. Opening the project in Xcode adds
+any new string to the catalog, marked as needing translation.
 
 ## Sessions
 

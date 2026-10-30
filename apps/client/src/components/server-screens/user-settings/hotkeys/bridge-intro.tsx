@@ -20,7 +20,7 @@ type TStep = {
 const IntroStep = memo(({ icon: Icon, title, description }: TStep) => {
   return (
     <li className="flex gap-3">
-      <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+      <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary-text">
         <Icon className="size-5" />
       </div>
       <div>

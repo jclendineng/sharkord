@@ -58,10 +58,10 @@ struct ChatScreen: View {
         return channel?.isDm != true || settings.storageFileSharingInDirectMessages
     }
 
-    // a wide window with room for it beside the conversation, never a direct message. an ipad
-    // in landscape has the same room a mac window does, and used to be left out entirely
+    // a wide window with room for it beside the conversation, never a direct message. a wide
+    // ipad or iphone duo window has the same room a mac window does
     private var canShowMembers: Bool {
-        (Platform.isMac || Platform.isPad)
+        usesDesktopLayout
             && channel?.isDm == false
             && hasRoomForMembers
     }
@@ -730,26 +730,36 @@ private struct ChatTitle: View {
     var group: GroupInfo?
 
     @Environment(SessionStore.self) private var session
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
+    // a mac reports no size class
+    private var titleWidth: CGFloat {
+        if Platform.isMac || horizontalSizeClass == .regular {
+            return 220
+        }
+
+        return 160
+    }
 
     private var subtitle: String {
         if let group {
-            return "\(group.memberIds.count + 1) Members"
+            return String(localized: "\(group.memberIds.count + 1) Members")
         }
 
         if isDirectMessage {
             switch partner?.status {
             case .online:
-                return "Online"
+                return String(localized: "Online")
             case .idle:
-                return "Idle"
+                return String(localized: "Idle")
             case .dnd:
-                return "Do Not Disturb"
+                return String(localized: "Do Not Disturb")
             case .offline, nil:
-                return "Offline"
+                return String(localized: "Offline")
             }
         }
 
-        return "\(session.onlineCount) Online"
+        return String(localized: "\(session.onlineCount) Online")
     }
 
     private var isOnline: Bool {
@@ -820,7 +830,7 @@ private struct ChatTitle: View {
         // a fixed slot rather than a fixed-size title: .fixedSize() forced the whole name into
         // the bar and pushed search and pins off, while an unbounded text collapsed to a couple
         // of characters under the toolbar's minimum width. a slot truncates a long name instead
-        .frame(width: Platform.isPad ? 220 : 160, alignment: .leading)
+        .frame(width: titleWidth, alignment: .leading)
     }
 }
 

@@ -86,7 +86,7 @@ const StatGroup = memo(({ stats, emptyLabel }: TStatGroupProps) => {
           key={typeof stat.id === 'string' ? stat.id : index}
           className="min-w-0 rounded bg-muted/40 p-2"
         >
-          <p className="mb-1 break-all font-mono text-[11px] font-semibold text-primary">
+          <p className="mb-1 break-all font-mono text-[11px] font-semibold text-primary-text">
             {String(stat.type)}
             {typeof stat.id === 'string' ? ` · ${stat.id}` : ''}
           </p>

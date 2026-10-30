@@ -10,13 +10,13 @@ struct NotificationSettingsScreen: View {
     private var statusText: String {
         switch status {
         case .authorized, .provisional, .ephemeral:
-            "On"
+            String(localized: "On")
         case .denied:
-            "Off"
+            String(localized: "Off")
         case .notDetermined:
-            "Not asked yet"
+            String(localized: "Not asked yet")
         @unknown default:
-            "Unknown"
+            String(localized: "Unknown")
         }
     }
 

@@ -36,7 +36,7 @@ struct MarketplaceScreen: View {
         SettingsForm {
             if let errorMessage {
                 Text(errorMessage)
-                    .foregroundStyle(Theme.red)
+                    .foregroundStyle(Theme.redText)
             }
 
             ForEach(shown) { entry in
@@ -92,7 +92,7 @@ struct MarketplaceScreen: View {
                 .sorted { ($0.versions.map(\.timestamp).max() ?? 0) > ($1.versions.map(\.timestamp).max() ?? 0) }
             errorMessage = nil
         } catch {
-            errorMessage = "Couldn't load the plugin list. \(error.localizedDescription)"
+            errorMessage = String(localized: "Couldn't load the plugin list. \(error.localizedDescription)")
         }
 
         isLoading = false
@@ -119,7 +119,7 @@ struct MarketplaceScreen: View {
                 installedVersions[entry.id] = version.version
                 onChange()
             } catch {
-                errorMessage = "\(entry.plugin.name): \(error.localizedDescription)"
+                errorMessage = String(localized: "\(entry.plugin.name): \(error.localizedDescription)")
             }
 
             busyId = nil
@@ -163,7 +163,7 @@ private struct MarketplaceRow: View {
                         if entry.plugin.verified {
                             Image(systemName: "checkmark.seal.fill")
                                 .font(.caption)
-                                .foregroundStyle(Theme.blurple)
+                                .foregroundStyle(Theme.accentText)
                         }
                     }
 
@@ -224,10 +224,10 @@ private struct InstallWarningSheet: View {
 
     private var buttonTitle: String {
         if remaining > 0 {
-            return "Wait (\(remaining)s)"
+            return String(localized: "Wait (\(remaining)s)")
         }
 
-        return isUpdate ? "Update Plugin" : "Install Plugin"
+        return isUpdate ? String(localized: "Update Plugin") : String(localized: "Install Plugin")
     }
 
     var body: some View {
@@ -280,7 +280,7 @@ private struct InstallWarningSheet: View {
                 .foregroundStyle(Theme.header)
         } icon: {
             Image(systemName: systemImage)
-                .foregroundStyle(Theme.red)
+                .foregroundStyle(Theme.redText)
         }
     }
 

@@ -202,19 +202,17 @@ private struct RailItem<Content: View>: View {
     }
 }
 
-// discord's back and forward at the window's top left, through the channels shown, with the
-// mac's own shortcuts for them
+// discord's back and forward at the window's top left, through the channels shown. their
+// shortcuts are on the menu bar's View menu
 private struct HistoryButtons: View {
     @Environment(ServerListStore.self) private var servers
 
     var body: some View {
         HStack(spacing: 2) {
             Button("Back", systemImage: "chevron.left", action: goBack)
-                .keyboardShortcut("[", modifiers: .command)
                 .disabled(!servers.canGoBack)
 
             Button("Forward", systemImage: "chevron.right", action: goForward)
-                .keyboardShortcut("]", modifiers: .command)
                 .disabled(!servers.canGoForward)
         }
         .labelStyle(.iconOnly)

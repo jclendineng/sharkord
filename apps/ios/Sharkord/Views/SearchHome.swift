@@ -290,7 +290,7 @@ private struct SearchTabBar: View {
                         // the fill reaches past the title without moving it, the strip still fits
                         Text(tab.title(inDirectMessages: inDirectMessages))
                             .font(.body.weight(.medium))
-                            .foregroundStyle(selection == tab ? Theme.blurple : Theme.muted)
+                            .foregroundStyle(selection == tab ? Theme.accentText : Theme.muted)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
                             .hoverHighlight()
@@ -426,22 +426,22 @@ enum ChannelActivityText {
         let days = hours / 24
 
         if minutes < 1 {
-            return "Active just now"
+            return String(localized: "Active just now")
         }
 
         if hours < 1 {
-            return "Active \(minutes)m ago"
+            return String(localized: "Active \(minutes)m ago")
         }
 
         if days < 1 {
-            return "Active \(hours)h ago"
+            return String(localized: "Active \(hours)h ago")
         }
 
         if days < 30 {
-            return "Active \(days)d ago"
+            return String(localized: "Active \(days)d ago")
         }
 
-        return "Active \(date.formatted(.dateTime.month(.abbreviated).day()))"
+        return String(localized: "Active \(date.formatted(.dateTime.month(.abbreviated).day()))")
     }
 }
 
@@ -748,7 +748,7 @@ private struct MemberRow: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(user.name)
                         .font(.body.weight(.semibold))
-                        .foregroundStyle(Color(hex: session.roleColor(for: user) ?? "#F2F3F5"))
+                        .foregroundStyle(session.nameColor(for: user))
                         .lineLimit(1)
 
                     if let customStatus = user.customStatus, !customStatus.isEmpty {
@@ -766,6 +766,7 @@ private struct MemberRow: View {
             .contentShape(.rect)
         }
         .onTapGesture(perform: onOpen)
+        .keyboardActivatable(perform: onOpen)
         .accessibilityAddTraits(.isButton)
     }
 }
@@ -965,7 +966,7 @@ struct PinnedMessageRow: View {
                     HStack(spacing: 6) {
                         Text(author?.name ?? "Unknown")
                             .font(.callout.weight(.semibold))
-                            .foregroundStyle(Color(hex: session.roleColor(for: author) ?? "#F2F3F5"))
+                            .foregroundStyle(session.nameColor(for: author))
 
                         Text(MessageDate.timestamp(message.createdDate))
                             .font(.caption)
@@ -1112,7 +1113,7 @@ private struct LoadingTab: View {
         Group {
             if let errorMessage {
                 Text(errorMessage)
-                    .foregroundStyle(Theme.red)
+                    .foregroundStyle(Theme.redText)
                     .padding(.horizontal, 18)
             } else {
                 ProgressView()
