@@ -158,6 +158,9 @@ struct ProfileScreen: View {
         }
         .presentationDragIndicator(.visible)
         .profileSheet($sheet)
+        // settings opens over this sheet, and a switch there would otherwise show here only
+        // once it closed, see SettingsSheet
+        .appAppearance()
     }
 
     private func open(_ sheet: ProfileSheet) {
