@@ -68,7 +68,7 @@ struct SettingsSheet: View {
         .presentationBackground(Theme.deepBackground)
         // a sheet keeps the appearance it opened with when only the root's preference changes,
         // so a switch on the appearance page showed there only once settings closed
-        .appAppearance()
+        .appAppearance(isSheet: true)
     }
 
     private var splitView: some View {

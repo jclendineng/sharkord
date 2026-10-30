@@ -30,12 +30,14 @@ struct AppearanceSettingsScreen: View {
 
 extension View {
     // the appearance picked in settings, or none to follow the system's
-    func appAppearance() -> some View {
-        modifier(AppAppearance())
+    func appAppearance(isSheet: Bool = false) -> some View {
+        modifier(AppAppearance(isSheet: isSheet))
     }
 }
 
 private struct AppAppearance: ViewModifier {
+    let isSheet: Bool
+
     @State private var settings = AppSettings.shared
 
     func body(content: Content) -> some View {
@@ -50,17 +52,6 @@ private struct AppAppearance: ViewModifier {
         #endif
     }
 
-    private var colorScheme: ColorScheme? {
-        switch settings.appearance {
-        case .system:
-            nil
-        case .light:
-            .light
-        case .dark:
-            .dark
-        }
-    }
-
     #if os(macOS)
     private func apply() {
         switch settings.appearance {
@@ -71,6 +62,30 @@ private struct AppAppearance: ViewModifier {
         case .dark:
             NSApp.appearance = NSAppearance(named: .darkAqua)
         }
+    }
+    #else
+    private var colorScheme: ColorScheme? {
+        switch settings.appearance {
+        case .system:
+            isSheet ? systemColorScheme : nil
+        case .light:
+            .light
+        case .dark:
+            .dark
+        }
+    }
+
+    // an open sheet handed no preference keeps the one it had, so a switch to System showed only
+    // once it closed. a sheet is given the system's appearance itself, read off the screen, which
+    // the app's own preference does not reach
+    private var systemColorScheme: ColorScheme? {
+        let scene = UIApplication.shared.connectedScenes.first { $0 is UIWindowScene } as? UIWindowScene
+
+        guard let scene else {
+            return nil
+        }
+
+        return scene.screen.traitCollection.userInterfaceStyle == .dark ? .dark : .light
     }
     #endif
 }

@@ -160,7 +160,7 @@ struct ProfileScreen: View {
         .profileSheet($sheet)
         // settings opens over this sheet, and a switch there would otherwise show here only
         // once it closed, see SettingsSheet
-        .appAppearance()
+        .appAppearance(isSheet: true)
     }
 
     private func open(_ sheet: ProfileSheet) {
