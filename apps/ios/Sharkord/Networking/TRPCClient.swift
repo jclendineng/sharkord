@@ -267,8 +267,11 @@ final class TRPCClient {
 
         if let error = envelope.error {
             let code = error.data?.code
-            // a route this server does not have yet, it runs an older sharkord than the app
-            let message = code == "NOT_FOUND" && error.message?.contains("-procedure on path") == true
+            // a route this server does not have yet, it runs an older sharkord than the app. an
+            // input it does not take yet comes back as zod's issues, raw JSON, for the same reason
+            let isOlderServer = code == "NOT_FOUND" && error.message?.contains("-procedure on path") == true
+                || code == "BAD_REQUEST" && error.message?.hasPrefix("[") == true
+            let message = isOlderServer
                 ? "This server needs to be updated to use this."
                 : error.message ?? "Unknown error"
             let trpcError = TRPCError(message: message, code: code)

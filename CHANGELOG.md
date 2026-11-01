@@ -404,6 +404,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 #### iOS app
 
+- A server running an older Sharkord, such as upstream's, that turns down something the app sends now shows "This server needs to be updated to use this." rather than its raw JSON error.
 - Search on a server that only searches by words, such as upstream Sharkord, no longer shows the server's raw error under Recent. Media, Links and Files show empty there instead.
 - Text in the apps meets 4.5:1 contrast everywhere it sits, and Increase Contrast brings stronger text and lines.
   - Thread replies, links and accent text use a lighter blurple, red error text a lighter red, and muted text is brighter.
