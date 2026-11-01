@@ -4,7 +4,10 @@ import { z } from 'zod';
 import { config } from '../../config';
 import { db } from '../../db';
 import { addGroupDirectMessageMembers } from '../../db/mutations/dms';
-import { publishChannelPermissions } from '../../db/publishers';
+import {
+  publishChannelPermissions,
+  publishDirectMessageConversation
+} from '../../db/publishers';
 import { getDirectMessageChannelParticipantIds } from '../../db/queries/dms';
 import { getFriendIds } from '../../db/queries/friends';
 import { channels, groupDms } from '../../db/schema';
@@ -84,6 +87,8 @@ const addGroupMembersRoute = rateLimitedProcedure(protectedProcedure, {
     ctx.pubsub.publishFor(everyone, ServerEvents.DM_CONVERSATION_OPEN, {
       channelId: input.channelId
     });
+
+    await publishDirectMessageConversation(everyone, input.channelId);
 
     await publishChannelPermissions(newIds);
   });

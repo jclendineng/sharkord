@@ -4,7 +4,10 @@ import { z } from 'zod';
 import { config } from '../../config';
 import { db } from '../../db';
 import { leaveGroupDirectMessage } from '../../db/mutations/dms';
-import { publishChannelPermissions } from '../../db/publishers';
+import {
+  publishChannelPermissions,
+  publishDirectMessageConversation
+} from '../../db/publishers';
 import { groupDms } from '../../db/schema';
 import { assertChannelAccess } from '../../helpers/assert-channel-access';
 import { invariant } from '../../utils/invariant';
@@ -41,6 +44,8 @@ const leaveGroupRoute = rateLimitedProcedure(protectedProcedure, {
       ctx.pubsub.publishFor(remaining, ServerEvents.DM_CONVERSATION_OPEN, {
         channelId: input.channelId
       });
+
+      await publishDirectMessageConversation(remaining, input.channelId);
     }
 
     await publishChannelPermissions([ctx.userId]);

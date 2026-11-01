@@ -82,7 +82,8 @@ struct JoinResult: Decodable {
     // keyed by channel id, sent as strings since it is a JSON object
     let readStates: [String: Int]
     let voiceMap: [String: VoiceChannelUsers]
-    // upstream's from 0.0.29, which dropped dms.get. this fork's server sends none here
+    // from upstream 0.0.29 on, which dropped dms.get, and this fork's server since matching it.
+    // missing from an older server
     let directMessages: [DirectMessageConversation]?
 }
 
@@ -152,7 +153,7 @@ struct DirectMessageConversation: Decodable, Hashable, Identifiable {
     var lastMessageUserId: Int?
     // a group conversation, missing for two people and from an older server
     var group: GroupInfo?
-    // upstream's, which sends closed conversations too. this fork's server leaves those out
+    // when you closed it, sent in the join's list, which has closed ones too. dms.get leaves them out
     var closedAt: Int?
 
     var id: Int { channelId }

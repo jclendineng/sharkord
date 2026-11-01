@@ -69,6 +69,9 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   - A channel's notification level and mute stay on the device until the app is closed, and pinned channels stay on the device.
   - Where a server can't renew picture and file links, the apps connect again once the links run out, or after a call ends.
   - Direct messages show on upstream 0.0.29, which sends them with the join instead of through their own list.
+- The server sends direct messages the way upstream 0.0.29 does, so its apps and desktop app work with this fork's server.
+  - The join lists every conversation, closed ones marked with when they were closed, and `dms.onConversationUpdate` sends each one as it opens, closes or changes.
+  - `dms.get` and `dms.onConversationOpen` stay for older builds of this fork's apps and the web client.
   - Taking a name out of the list turns that feature off in the apps.
 - The server keeps who signed up with each invite.
   - Deleting an invite stops it working but keeps it in the list, marked deleted.

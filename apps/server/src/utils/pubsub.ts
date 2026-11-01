@@ -5,6 +5,7 @@ import type {
   TChannel,
   TChannelUserPermissionsMap,
   TCommandsMapByPlugin,
+  TDirectMessageConversation,
   TExternalStream,
   TJoinedEmoji,
   TJoinedMessage,
@@ -153,6 +154,8 @@ type Events = {
   [ServerEvents.CATEGORY_DELETE]: number;
 
   [ServerEvents.DM_CONVERSATION_OPEN]: { channelId: number };
+  // upstream's: the one conversation as the user it is published to sees it
+  [ServerEvents.DM_CONVERSATION_UPDATE]: TDirectMessageConversation;
 
   // the other person in a friendship that changed, both sides refetch their list
   [ServerEvents.FRIENDSHIP_UPDATE]: { userId: number };

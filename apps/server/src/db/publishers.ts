@@ -17,6 +17,7 @@ import {
   getAllChannelUserPermissions,
   getChannelsForUser
 } from './queries/channels';
+import { getDirectMessageConversations } from './queries/dms';
 import { getEmojiById } from './queries/emojis';
 import { getMessage } from './queries/messages';
 import { getRole } from './queries/roles';
@@ -380,6 +381,29 @@ const publishCategory = async (
   pubsub.publish(targetEvent, category);
 };
 
+// each user gets the conversation as they see it, the other person and their own closedAt
+const publishDirectMessageConversation = async (
+  userIds: number[],
+  channelId: number
+) => {
+  await Promise.all(
+    userIds.map(async (userId) => {
+      const [conversation] = await getDirectMessageConversations(
+        userId,
+        channelId
+      );
+
+      if (!conversation) return;
+
+      pubsub.publishFor(
+        userId,
+        ServerEvents.DM_CONVERSATION_UPDATE,
+        conversation
+      );
+    })
+  );
+};
+
 const publishChannelPermissions = async (affectedUserIds: number[]) => {
   const permissionsMap = new Map<number, TChannelUserPermissionsMap>();
   const promises = affectedUserIds.map(async (userId) => {
@@ -510,6 +534,7 @@ export {
   publishChannelAccessChange,
   publishChannelListChange,
   publishChannelPermissions,
+  publishDirectMessageConversation,
   publishEmoji,
   publishHiddenChannelToUser,
   publishMessage,

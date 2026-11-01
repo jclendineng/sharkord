@@ -93,7 +93,6 @@ const getGroupDirectMessagesForUser = async (userId: number) => {
   }));
 };
 
-// returns all DM channels the user is a participant in along with metadata
 const PREVIEW_LENGTH = 120;
 
 // one line of plain text, short enough for a row
@@ -109,21 +108,40 @@ const preview = (content: string | null | undefined): string | null => {
   return text.slice(0, PREVIEW_LENGTH);
 };
 
+// a closed conversation comes back with the first message after it was closed
+const isDirectMessageOpen = ({
+  closedAt,
+  lastMessageAt
+}: TDirectMessageConversation) => closedAt === null || lastMessageAt > closedAt;
+
+// every DM channel the user is in, closed ones too as upstream sends them, or just the one
+// given, along with metadata
 const getDirectMessageConversations = async (
-  userId: number
+  userId: number,
+  channelId?: number
 ): Promise<TDirectMessageConversation[]> => {
-  const [pairRows, groupRows] = await Promise.all([
+  const [pairRows, allGroupRows] = await Promise.all([
     db
       .select()
       .from(directMessages)
       .where(
-        or(
-          eq(directMessages.userOneId, userId),
-          eq(directMessages.userTwoId, userId)
+        and(
+          or(
+            eq(directMessages.userOneId, userId),
+            eq(directMessages.userTwoId, userId)
+          ),
+          channelId === undefined
+            ? undefined
+            : eq(directMessages.channelId, channelId)
         )
       ),
     getGroupDirectMessagesForUser(userId)
   ]);
+
+  const groupRows =
+    channelId === undefined
+      ? allGroupRows
+      : allGroupRows.filter((row) => row.channelId === channelId);
 
   // one shape for both: a group shows as one of its other members, with the group alongside
   const rows = [
@@ -206,27 +224,20 @@ const getDirectMessageConversations = async (
     lastMessageMap.set(row.channelId, row.lastMessageAt ?? 0);
   }
 
-  const conversations = rows
-    .map((row) => {
-      const lastMessageAt = lastMessageMap.get(row.channelId) ?? row.createdAt;
+  const conversations = rows.map((row) => {
+    const lastMessageAt = lastMessageMap.get(row.channelId) ?? row.createdAt;
 
-      return {
-        channelId: row.channelId,
-        userId: row.otherUserId,
-        group: row.group,
-        unreadCount: unreadMapRaw[row.channelId] ?? 0,
-        lastMessageAt,
-        lastMessagePreview: preview(
-          newestByChannel.get(row.channelId)?.content
-        ),
-        lastMessageUserId: newestByChannel.get(row.channelId)?.userId ?? null
-      };
-    })
-    // a closed conversation comes back with the first message after it was closed
-    .filter(
-      ({ channelId, lastMessageAt }) =>
-        lastMessageAt > (closedAtMap.get(channelId) ?? -1)
-    );
+    return {
+      channelId: row.channelId,
+      userId: row.otherUserId,
+      group: row.group,
+      unreadCount: unreadMapRaw[row.channelId] ?? 0,
+      lastMessageAt,
+      lastMessagePreview: preview(newestByChannel.get(row.channelId)?.content),
+      lastMessageUserId: newestByChannel.get(row.channelId)?.userId ?? null,
+      closedAt: closedAtMap.get(row.channelId) ?? null
+    };
+  });
 
   conversations.sort((a, b) => b.lastMessageAt - a.lastMessageAt);
 
@@ -347,6 +358,7 @@ export {
   getDirectMessageConversations,
   getGroupDirectMessagesForUser,
   isDirectMessageChannel,
+  isDirectMessageOpen,
   isUserDmParticipant,
   normalizePair
 };

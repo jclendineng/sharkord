@@ -13,6 +13,7 @@ import {
   getChannelsForUser,
   getChannelsReadStatesForUser
 } from '../../db/queries/channels';
+import { getDirectMessageConversations } from '../../db/queries/dms';
 import { getEmojis } from '../../db/queries/emojis';
 import { isIpBanned } from '../../db/queries/ip-bans';
 import { hasUserJoinedBefore } from '../../db/queries/logins';
@@ -131,7 +132,8 @@ const joinServerRoute = publicProcedure
       hasJoinedBefore,
       pluginCapabilityAccess,
       stickers,
-      sounds
+      sounds,
+      directMessages
     ] = await Promise.all([
       db.select().from(categories),
       getChannelsForUser(ctx.user.id), // filter channels based on permissions and DM participation
@@ -145,7 +147,9 @@ const joinServerRoute = publicProcedure
       hasUserJoinedBefore(ctx.user.id),
       getCapabilityAccessRules(),
       getStickers(),
-      getSounds()
+      getSounds(),
+      // upstream's place for them since 0.0.29, closed ones included
+      getDirectMessageConversations(ctx.user.id)
     ]);
 
     const showWelcomeDialog = settings.showWelcomeDialog && !hasJoinedBefore;
@@ -223,6 +227,7 @@ const joinServerRoute = publicProcedure
       emojis,
       stickers,
       sounds,
+      directMessages,
       publicSettings,
       channelPermissions,
       readStates,

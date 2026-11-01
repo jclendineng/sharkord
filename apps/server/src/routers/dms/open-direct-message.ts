@@ -4,7 +4,10 @@ import { z } from 'zod';
 import { config } from '../../config';
 import { db } from '../../db';
 import { reopenDirectMessage } from '../../db/mutations/dms';
-import { publishChannelPermissions } from '../../db/publishers';
+import {
+  publishChannelPermissions,
+  publishDirectMessageConversation
+} from '../../db/publishers';
 import { getDirectMessageChannel, normalizePair } from '../../db/queries/dms';
 import { getSettings } from '../../db/queries/server';
 import { channels, directMessages, users } from '../../db/schema';
@@ -56,6 +59,7 @@ const openDirectMessageRoute = rateLimitedProcedure(protectedProcedure, {
 
     if (existing) {
       await reopenDirectMessage(existing.channelId, ctx.userId);
+      await publishDirectMessageConversation([ctx.userId], existing.channelId);
 
       return { channelId: existing.channelId };
     }
@@ -115,6 +119,8 @@ const openDirectMessageRoute = rateLimitedProcedure(protectedProcedure, {
     ctx.pubsub.publishFor(participants, ServerEvents.DM_CONVERSATION_OPEN, {
       channelId: channel.id
     });
+
+    await publishDirectMessageConversation(participants, channel.id);
 
     await publishChannelPermissions(participants);
 

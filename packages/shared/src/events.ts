@@ -62,6 +62,7 @@ export enum ServerEvents {
   CATEGORY_DELETE = 'categoryDelete',
 
   DM_CONVERSATION_OPEN = 'dmConversationOpen',
+  DM_CONVERSATION_UPDATE = 'dmConversationUpdate',
 
   FRIENDSHIP_UPDATE = 'friendshipUpdate'
 }

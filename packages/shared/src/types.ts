@@ -260,6 +260,8 @@ export type TDirectMessageConversation = {
   lastMessageUserId: number | null;
   // a group conversation, its name and everyone in it but you. userId is then one of them
   group: { name: string | null; memberIds: number[] } | null;
+  // when this user closed it, it stays closed until a message newer than this
+  closedAt: number | null;
 };
 
 // createdAt alone is not unique, two messages sent in the same millisecond

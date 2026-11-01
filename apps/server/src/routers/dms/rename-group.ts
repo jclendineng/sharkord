@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { config } from '../../config';
 import { db } from '../../db';
 import { renameGroupDirectMessage } from '../../db/mutations/dms';
+import { publishDirectMessageConversation } from '../../db/publishers';
 import { getDirectMessageChannelParticipantIds } from '../../db/queries/dms';
 import { groupDms } from '../../db/schema';
 import { assertChannelAccess } from '../../helpers/assert-channel-access';
@@ -43,6 +44,8 @@ const renameGroupRoute = rateLimitedProcedure(protectedProcedure, {
     ctx.pubsub.publishFor(memberIds, ServerEvents.DM_CONVERSATION_OPEN, {
       channelId: input.channelId
     });
+
+    await publishDirectMessageConversation(memberIds, input.channelId);
   });
 
 export { renameGroupRoute };

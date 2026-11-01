@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { config } from '../../config';
 import { closeDirectMessage } from '../../db/mutations/dms';
+import { publishDirectMessageConversation } from '../../db/publishers';
 import { isDirectMessageChannel } from '../../db/queries/dms';
 import { getSettings } from '../../db/queries/server';
 import { assertChannelAccess } from '../../helpers/assert-channel-access';
@@ -33,6 +34,7 @@ const closeDirectMessageRoute = rateLimitedProcedure(protectedProcedure, {
     await assertChannelAccess(ctx, input.channelId);
 
     await closeDirectMessage(input.channelId, ctx.userId);
+    await publishDirectMessageConversation([ctx.userId], input.channelId);
   });
 
 export { closeDirectMessageRoute };

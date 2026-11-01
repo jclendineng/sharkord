@@ -95,9 +95,10 @@ final class SessionStore {
     // keyed by channel id, only private channels are bound by it, as on the web
     private(set) var channelPermissions: [Int: [String: Bool]] = [:]
     private(set) var directMessages: [DirectMessageConversation] = []
-    // upstream from 0.0.29 sends them with the join and updates them one by one, with no dms.get
+    // a server from upstream 0.0.29 on, and this fork's since matching it, sends them with the
+    // join and updates them one by one. upstream has no dms.get
     private var directMessagesComeWithJoin = false
-    // upstream's closed ones, kept so a message in one brings it back with whoever it is with
+    // the closed ones the join sent, kept so a message in one brings it back with whoever it is with
     private var closedDirectMessages: [Int: DirectMessageConversation] = [:]
     private(set) var client: TRPCClient?
     let typing = TypingTracker()
@@ -2589,6 +2590,9 @@ final class SessionStore {
 
         client.subscribe("channels.onDelete") { [weak self] (channelId: Int) in
             self?.channels.removeAll { $0.id == channelId }
+            // a group left, which no conversation update reaches
+            self?.directMessages.removeAll { $0.channelId == channelId }
+            self?.closedDirectMessages[channelId] = nil
         }
 
         client.subscribe("voice.onJoin") { [weak self] (event: VoiceJoinEvent) in

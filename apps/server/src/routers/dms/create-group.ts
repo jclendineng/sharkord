@@ -6,7 +6,10 @@ import {
 import { z } from 'zod';
 import { config } from '../../config';
 import { createGroupDirectMessage } from '../../db/mutations/dms';
-import { publishChannelPermissions } from '../../db/publishers';
+import {
+  publishChannelPermissions,
+  publishDirectMessageConversation
+} from '../../db/publishers';
 import { getFriendIds } from '../../db/queries/friends';
 import { getSettings } from '../../db/queries/server';
 import { invariant } from '../../utils/invariant';
@@ -65,6 +68,8 @@ const createGroupRoute = rateLimitedProcedure(protectedProcedure, {
     ctx.pubsub.publishFor(memberIds, ServerEvents.DM_CONVERSATION_OPEN, {
       channelId: channel.id
     });
+
+    await publishDirectMessageConversation(memberIds, channel.id);
 
     await publishChannelPermissions(memberIds);
 

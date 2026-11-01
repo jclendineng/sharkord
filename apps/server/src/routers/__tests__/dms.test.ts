@@ -1,11 +1,25 @@
-import { ServerEvents } from '@sharkord/shared';
-import { describe, expect, test } from 'bun:test';
+import {
+  ServerEvents,
+  type TDirectMessageConversation
+} from '@sharkord/shared';
+import { describe, expect, spyOn, test } from 'bun:test';
 import { eq } from 'drizzle-orm';
 import { initTest } from '../../__tests__/helpers';
 import { tdb } from '../../__tests__/setup';
 import { getChannelsReadStatesForUser } from '../../db/queries/channels';
 import { directMessages, settings } from '../../db/schema';
 import { pubsub } from '../../utils/pubsub';
+
+// upstream's dms.onConversationUpdate, as [who it went to, the conversation] pairs
+const conversationUpdates = (publish: {
+  mock: { calls: unknown[][] };
+}): [number, TDirectMessageConversation][] =>
+  publish.mock.calls
+    .filter(([, event]) => event === ServerEvents.DM_CONVERSATION_UPDATE)
+    .map(([userId, , conversation]) => [
+      userId as number,
+      conversation as TDirectMessageConversation
+    ]);
 
 describe('dms router', () => {
   test('should create a direct message channel and allow messaging', async () => {
@@ -37,6 +51,19 @@ describe('dms router', () => {
     const second = await caller.dms.open({ userId: 2 });
 
     expect(second.channelId).toBe(first.channelId);
+  });
+
+  test('should send a new conversation to both people as each sees it', async () => {
+    const publish = spyOn(pubsub, 'publishFor');
+    const { caller } = await initTest(1);
+    const { channelId } = await caller.dms.open({ userId: 2 });
+
+    const updates = conversationUpdates(publish);
+    const forOne = updates.find(([userId]) => userId === 1);
+    const forTwo = updates.find(([userId]) => userId === 2);
+
+    expect(forOne![1]).toMatchObject({ channelId, userId: 2, closedAt: null });
+    expect(forTwo![1]).toMatchObject({ channelId, userId: 1, closedAt: null });
   });
 
   test('should list direct message conversations', async () => {
@@ -312,6 +339,49 @@ describe('dms.close', () => {
     expect(list.some((dm) => dm.channelId === channelId)).toBe(true);
   });
 
+  test('should send closed conversations with the join, marked closed', async () => {
+    const { caller } = await initTest(1);
+    const { channelId } = await caller.dms.open({ userId: 2 });
+
+    await caller.messages.send({ channelId, content: 'before', files: [] });
+    await caller.dms.close({ channelId });
+
+    const { handshakeHash } = await caller.others.handshake();
+    const joined = await caller.others.joinServer({ handshakeHash });
+    const closed = joined.directMessages.find(
+      (dm) => dm.channelId === channelId
+    );
+
+    expect(closed!.closedAt).toBeNumber();
+    expect(closed!.userId).toBe(2);
+    expect(
+      (await caller.dms.get()).some((dm) => dm.channelId === channelId)
+    ).toBe(false);
+  });
+
+  test('should tell the closer it closed, and opened again', async () => {
+    const publish = spyOn(pubsub, 'publishFor');
+    const { caller } = await initTest(1);
+    const { channelId } = await caller.dms.open({ userId: 2 });
+
+    publish.mockClear();
+    await caller.dms.close({ channelId });
+
+    const [closed] = conversationUpdates(publish);
+
+    expect(closed![0]).toBe(1);
+    expect(closed![1].channelId).toBe(channelId);
+    expect(closed![1].closedAt).toBeNumber();
+
+    publish.mockClear();
+    await caller.dms.open({ userId: 2 });
+
+    const [opened] = conversationUpdates(publish);
+
+    expect(opened![0]).toBe(1);
+    expect(opened![1].closedAt).toBeNull();
+  });
+
   test('should refuse someone who is not in the conversation', async () => {
     // seeded dm between users 3 and 4
     const { caller } = await initTest(1);
@@ -473,6 +543,36 @@ describe('group dms', () => {
     await expect(
       one.dms.renameGroup({ channelId, name: 'gone' })
     ).rejects.toThrow('Group not found');
+  });
+
+  test('should send each group change to everyone still in it', async () => {
+    const one = await befriend(2, 3, 4);
+    const { caller: two } = await initTest(2);
+    const publish = spyOn(pubsub, 'publishFor');
+    const recipients = () =>
+      conversationUpdates(publish)
+        .map(([userId]) => userId)
+        .sort();
+
+    const { channelId } = await one.dms.createGroup({ userIds: [2, 3] });
+
+    expect(recipients()).toEqual([1, 2, 3]);
+
+    publish.mockClear();
+    await one.dms.renameGroup({ channelId, name: 'Crew' });
+
+    expect(recipients()).toEqual([1, 2, 3]);
+    expect(conversationUpdates(publish)[0]![1].group!.name).toBe('Crew');
+
+    publish.mockClear();
+    await one.dms.addGroupMembers({ channelId, userIds: [4] });
+
+    expect(recipients()).toEqual([1, 2, 3, 4]);
+
+    publish.mockClear();
+    await two.dms.leaveGroup({ channelId });
+
+    expect(recipients()).toEqual([1, 3, 4]);
   });
 
   test('should refuse group actions on a two person dm', async () => {
