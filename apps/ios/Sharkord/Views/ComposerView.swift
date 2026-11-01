@@ -9,6 +9,7 @@ struct ComposerView: View {
     let store: ChannelMessagesStore
 
     @Environment(SessionStore.self) private var session
+    @Environment(\.scenePhase) private var scenePhase
     // the input row's buttons, 44 points at the default text size and growing with it beside the
     // field's first line
     @ScaledMetric(relativeTo: .body) private var rowHeight: CGFloat = 44
@@ -26,6 +27,7 @@ struct ComposerView: View {
     @State private var isCameraPresented = false
     @State private var isPollCreatorPresented = false
     @State private var photoSelection: [PhotosPickerItem] = []
+    @State private var pasteboardHasImage = false
     @FocusState private var isFieldFocused: Bool
     @State private var recorder = VoiceMessageRecorder()
 
@@ -46,6 +48,11 @@ struct ComposerView: View {
 
     private var maxFiles: Int {
         session.settings?.storageMaxFilesPerMessage ?? 0
+    }
+
+    // the field takes text only, so a copied picture gets a paste button of its own
+    private var canPasteImage: Bool {
+        pasteboardHasImage && canUpload && store.editing == nil && attachments.count < maxFiles
     }
 
     private var text: String {
@@ -158,8 +165,20 @@ struct ComposerView: View {
         // leaving for another screen, the channel's own among them, drops the field's focus, or
         // swiftui gives it back on the way back and the keyboard comes up unasked
         .onDisappear(perform: unfocusField)
+        .onAppear {
+            pasteboardHasImage = Platform.pasteboardHasImage
+        }
+        // a screenshot copied in photos shows its paste button on the way back
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                pasteboardHasImage = Platform.pasteboardHasImage
+            }
+        }
         // a tap on the field while the panel is up hands over to the keyboard
         .onChange(of: isFieldFocused) { _, isFocused in
+            // back from photos with a screenshot copied, the field is where it is pasted
+            pasteboardHasImage = Platform.pasteboardHasImage
+
             // on an ipad the keyboard wants the whole width, the list beside the chat gives way
             if isFocused, let expandChat {
                 expandChat()
@@ -301,6 +320,13 @@ struct ComposerView: View {
                         }
                     }
                 }
+            }
+
+            if canPasteImage {
+                // the system's own button reads the pasteboard without asking to allow it
+                PasteButton(supportedContentTypes: [.image], payloadAction: pasteImages)
+                    .buttonBorderShape(.capsule)
+                    .controlSize(.small)
             }
 
             if let mentionQuery, !recorder.isRecording {
@@ -774,6 +800,27 @@ struct ComposerView: View {
                     await upload(attachment.id, fileURL: picked.url)
                 } catch {
                     fail(attachment.id, error)
+                }
+            }
+        }
+    }
+
+    private func pasteImages(_ providers: [NSItemProvider]) {
+        pasteboardHasImage = false
+
+        for provider in providers.prefix(max(0, maxFiles - attachments.count)) {
+            let attachment = PendingAttachment(name: "Photo")
+
+            attachments.append(attachment)
+
+            _ = provider.loadTransferable(type: PickedMedia.self) { result in
+                Task { @MainActor in
+                    switch result {
+                    case .success(let picked):
+                        await upload(attachment.id, fileURL: picked.url)
+                    case .failure(let error):
+                        fail(attachment.id, error)
+                    }
                 }
             }
         }

@@ -249,6 +249,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   - A name typed out in full becomes the mention once a space follows it, or when the message is sent.
   - Mention in a member's or a message's menu adds the name and brings up the keyboard.
   - Editing a message keeps its mentions and channel links.
+- A copied picture, such as a screenshot copied from Photos, can be pasted into a message: a Paste button shows above the message box while one is copied, and adds it like a photo from the library.
 
 #### From upstream
 
@@ -403,6 +404,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 #### iOS app
 
+- Search on a server that only searches by words, such as upstream Sharkord, no longer shows the server's raw error under Recent. Media, Links and Files show empty there instead.
 - Text in the apps meets 4.5:1 contrast everywhere it sits, and Increase Contrast brings stronger text and lines.
   - Thread replies, links and accent text use a lighter blurple, red error text a lighter red, and muted text is brighter.
   - The sheet close button turns solid with Reduce Transparency.

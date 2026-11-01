@@ -76,6 +76,16 @@ enum Platform {
         #endif
     }
 
+    // a picture someone copied, a screenshot from photos say. asking does not read it, so it
+    // brings up no paste prompt
+    static var pasteboardHasImage: Bool {
+        #if os(macOS)
+        NSPasteboard.general.canReadObject(forClasses: [NSImage.self])
+        #else
+        UIPasteboard.general.hasImages
+        #endif
+    }
+
     static func dismissKeyboard() {
         #if os(macOS)
         NSApp.keyWindow?.makeFirstResponder(nil)

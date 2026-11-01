@@ -159,7 +159,15 @@ final class SearchHomeModel {
         filters.directMessagesOnly = inDirectMessages
         filters.has = has
 
-        let found: SearchResults = try await client.query("messages.search", input: SearchInput(query: nil, filters: filters))
+        let found: SearchResults
+
+        do {
+            found = try await client.query("messages.search", input: SearchInput(query: nil, filters: filters))
+        } catch let error as TRPCError where error.code == "BAD_REQUEST" {
+            // a server older than the filters searches by words alone, and refuses a search
+            // without any. its tabs show empty rather than its refusal
+            return SearchResults(messages: [], files: [], truncated: false)
+        }
 
         guard !inDirectMessages, scope?.isDm != true else {
             return found
