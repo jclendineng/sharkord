@@ -21,7 +21,9 @@ export enum ServerFeature {
   ROLE_ORDER = 'role-order',
   ONBOARDING = 'onboarding',
   IP_BANS = 'ip-bans',
-  SEARCH_FILTERS = 'search-filters'
+  SEARCH_FILTERS = 'search-filters',
+  PINNED_CHANNELS = 'pinned-channels',
+  FILE_SIGNING = 'file-signing'
 }
 
 export const SERVER_FEATURES = Object.values(ServerFeature);

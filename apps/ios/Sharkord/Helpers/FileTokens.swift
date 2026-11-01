@@ -31,10 +31,16 @@ final class FileTokens {
     @ObservationIgnored private var fresh: [String: [Int: Token]] = [:]
     @ObservationIgnored private var known: [String: [Int: Int]] = [:]
     @ObservationIgnored private var clients: [String: TRPCClient] = [:]
+    // for a server without files.sign, upstream's, what gets it to hand out new links
+    @ObservationIgnored private var renewals: [String: () -> Void] = [:]
     @ObservationIgnored private var refreshTask: Task<Void, Never>?
 
     func setClient(_ client: TRPCClient?, for host: String) {
         clients[host] = client
+    }
+
+    func setRenewal(_ renew: (() -> Void)?, for host: String) {
+        renewals[host] = renew
     }
 
     // the link to use: the file's own while it still works, then the fresh one fetched for it
@@ -83,11 +89,19 @@ final class FileTokens {
         var earliestReplaced = Int.max
 
         for (host, expiries) in known {
-            guard let client = clients[host] else {
+            let due = expiries.filter { $0.value <= threshold }.map(\.key)
+
+            // its links come back new with everything else, and are known again once drawn
+            if let renew = renewals[host], !due.isEmpty {
+                known[host] = nil
+                fresh[host] = nil
+                renew()
                 continue
             }
 
-            let due = expiries.filter { $0.value <= threshold }.map(\.key)
+            guard let client = clients[host] else {
+                continue
+            }
 
             for start in stride(from: 0, to: due.count, by: Self.batchSize) {
                 let batch = Array(due[start..<min(start + Self.batchSize, due.count)])

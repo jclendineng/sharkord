@@ -39,10 +39,16 @@ final class SessionStore {
     private(set) var serverName = ""
     private(set) var serverVersion: String?
     private(set) var serverId: String?
-    private(set) var serverInfo: ServerInfo?
+    private(set) var serverInfo: ServerInfo? {
+        didSet {
+            updateFileLinkRenewal()
+        }
+    }
+    // links that ran out during a call, renewed once it ends
+    private var renewsFileLinksAfterCall = false
 
     func supports(_ feature: ServerFeature) -> Bool {
-        serverInfo?.features?.contains(feature.rawValue) == true
+        serverInfo?.supports(feature) == true
     }
 
     // the address the server's admins set for reports, nil while they haven't
@@ -61,7 +67,6 @@ final class SessionStore {
     // when a mute for a while ends, by channel, in milliseconds
     private(set) var mutedUntil: [Int: Int] = [:]
     private(set) var pinnedChannelIds: [Int] = []
-    private var serverKeepsPins = false
     private(set) var hidesMutedChannels = false
     // voice channels showing who is in them as faces alone, on this device
     private(set) var namesHiddenChannelIds: [Int] = []
@@ -90,6 +95,10 @@ final class SessionStore {
     // keyed by channel id, only private channels are bound by it, as on the web
     private(set) var channelPermissions: [Int: [String: Bool]] = [:]
     private(set) var directMessages: [DirectMessageConversation] = []
+    // upstream from 0.0.29 sends them with the join and updates them one by one, with no dms.get
+    private var directMessagesComeWithJoin = false
+    // upstream's closed ones, kept so a message in one brings it back with whoever it is with
+    private var closedDirectMessages: [Int: DirectMessageConversation] = [:]
     private(set) var client: TRPCClient?
     let typing = TypingTracker()
     private(set) var token: String?
@@ -348,8 +357,8 @@ final class SessionStore {
 
         CredentialStore.setPinnedChannelIds(pinnedChannelIds, for: address)
 
-        // a server from before it kept pins leaves them on this device alone
-        guard let client, serverKeepsPins else {
+        // a server that keeps no pins leaves them on this device alone
+        guard let client, supports(.pinnedChannels) else {
             return
         }
 
@@ -380,11 +389,10 @@ final class SessionStore {
     // the server's pins win, except the first time, when this device's own go up to it so the
     // ones pinned before it kept them are not lost
     private func loadPins() async {
-        guard let client, let address, let serverPins: [Int] = try? await client.query("channels.getPins") else {
+        guard let client, let address, supports(.pinnedChannels),
+              let serverPins: [Int] = try? await client.query("channels.getPins") else {
             return
         }
-
-        serverKeepsPins = true
 
         guard !CredentialStore.hasUploadedPins(for: address) else {
             applyPins(serverPins)
@@ -887,6 +895,7 @@ final class SessionStore {
         messageStores = [:]
         threadStores = [:]
         directMessages = []
+        closedDirectMessages = [:]
         rolesById = [:]
         customEmojis = []
         stickers = []
@@ -1192,6 +1201,38 @@ final class SessionStore {
         stopVoice()
 
         _ = try? await client?.rawMutation("voice.leave", json: nil)
+
+        if renewsFileLinksAfterCall {
+            renewsFileLinksAfterCall = false
+            renewFileLinks()
+        }
+    }
+
+    // upstream has no files.sign to renew links with, so FileTokens connects again instead
+    private func updateFileLinkRenewal() {
+        guard let host = address?.baseURL.host() else {
+            return
+        }
+
+        let signsFiles = serverInfo.map { $0.supports(.fileSigning) } ?? true
+        let renew: (() -> Void)? = signsFiles ? nil : { [weak self] in self?.renewFileLinks() }
+
+        FileTokens.shared.setRenewal(renew, for: host)
+    }
+
+    // connecting again hands out new links for everything on screen. a call would drop with
+    // it, so that waits for the call to end
+    private func renewFileLinks() {
+        guard phase == .connected else {
+            return
+        }
+
+        guard currentVoiceChannelId == nil else {
+            renewsFileLinksAfterCall = true
+            return
+        }
+
+        scheduleReconnect()
     }
 
     func toggleMicMuted() async {
@@ -1510,13 +1551,28 @@ final class SessionStore {
     }
 
     func loadDirectMessages() async {
-        guard let client, settings?.directMessagesEnabled == true else {
+        guard let client, settings?.directMessagesEnabled == true, !directMessagesComeWithJoin else {
             return
         }
 
         if let conversations: [DirectMessageConversation] = try? await client.query("dms.get") {
             directMessages = conversations
         }
+    }
+
+    // upstream's dms.onConversationUpdate, an opened or closed conversation
+    private func applyDirectMessage(_ conversation: DirectMessageConversation) {
+        directMessages.removeAll { $0.channelId == conversation.channelId }
+
+        guard conversation.isOpen else {
+            closedDirectMessages[conversation.channelId] = conversation
+            return
+        }
+
+        closedDirectMessages[conversation.channelId] = nil
+
+        directMessages.append(conversation)
+        directMessages.sort { $0.lastMessageAt > $1.lastMessageAt }
     }
 
     // returns the existing conversation when there already is one with this user
@@ -1756,6 +1812,15 @@ final class SessionStore {
         stickers = result.stickers ?? []
         sounds = result.sounds ?? []
         settings = result.publicSettings
+        directMessagesComeWithJoin = result.directMessages != nil
+
+        if let conversations = result.directMessages {
+            directMessages = conversations.filter(\.isOpen)
+            closedDirectMessages = Dictionary(
+                uniqueKeysWithValues: conversations.filter { !$0.isOpen }.map { ($0.channelId, $0) }
+            )
+        }
+
         applyChannelPermissions(result.channelPermissions ?? [:])
         unreadCounts = Dictionary(
             uniqueKeysWithValues: result.readStates.compactMap { key, count in
@@ -2380,8 +2445,14 @@ final class SessionStore {
             self?.messageStores[update.channelId]?.updateReplyCount(messageId: update.messageId, replyCount: update.replyCount)
         }
 
-        client.subscribe("dms.onConversationOpen") { [weak self] (_: OpenedDirectMessage) in
-            Task { await self?.loadDirectMessages() }
+        if directMessagesComeWithJoin {
+            client.subscribe("dms.onConversationUpdate") { [weak self] (conversation: DirectMessageConversation) in
+                self?.applyDirectMessage(conversation)
+            }
+        } else {
+            client.subscribe("dms.onConversationOpen") { [weak self] (_: OpenedDirectMessage) in
+                Task { await self?.loadDirectMessages() }
+            }
         }
 
         client.subscribe("friends.onUpdate") { [weak self] (_: FriendshipUpdate) in
@@ -2642,6 +2713,12 @@ final class SessionStore {
                 group: conversation.group
             )
             directMessages.sort { $0.lastMessageAt > $1.lastMessageAt }
+        } else if var closed = closedDirectMessages[message.channelId] {
+            // upstream sends no update when a closed conversation gets a message
+            closed.lastMessageAt = message.createdAt
+            closed.lastMessagePreview = HTMLText.plainText(from: message.content ?? "")
+            closed.lastMessageUserId = message.userId
+            applyDirectMessage(closed)
         } else {
             Task { await loadDirectMessages() }
         }

@@ -17,6 +17,10 @@ struct ServerInfo: Decodable {
     // what the fork's server adds over upstream sharkord. upstream sends none
     let features: Set<String>?
 
+    func supports(_ feature: ServerFeature) -> Bool {
+        features?.contains(feature.rawValue) == true
+    }
+
     // through the relay, the only way a server reaches the app
     var offersPush: Bool {
         pushRelayKey != nil && PushRelay.url != nil
@@ -47,6 +51,8 @@ enum ServerFeature: String {
     case onboarding
     case ipBans = "ip-bans"
     case searchFilters = "search-filters"
+    case pinnedChannels = "pinned-channels"
+    case fileSigning = "file-signing"
 }
 
 struct Handshake: Decodable {
@@ -76,6 +82,8 @@ struct JoinResult: Decodable {
     // keyed by channel id, sent as strings since it is a JSON object
     let readStates: [String: Int]
     let voiceMap: [String: VoiceChannelUsers]
+    // upstream's from 0.0.29, which dropped dms.get. this fork's server sends none here
+    let directMessages: [DirectMessageConversation]?
 }
 
 // one channel's entry in the join payload and in channels.onPermissionsUpdate
@@ -138,14 +146,21 @@ struct CustomEmoji: Decodable, Hashable, Identifiable {
 struct DirectMessageConversation: Decodable, Hashable, Identifiable {
     let channelId: Int
     let userId: Int
-    let lastMessageAt: Int
+    var lastMessageAt: Int
     // the newest message as plain text and who sent it, missing from an older server
     var lastMessagePreview: String?
     var lastMessageUserId: Int?
     // a group conversation, missing for two people and from an older server
     var group: GroupInfo?
+    // upstream's, which sends closed conversations too. this fork's server leaves those out
+    var closedAt: Int?
 
     var id: Int { channelId }
+
+    // a closed conversation comes back with the first message after it was closed
+    var isOpen: Bool {
+        closedAt.map { lastMessageAt > $0 } ?? true
+    }
 }
 
 struct GroupInfo: Decodable, Hashable {

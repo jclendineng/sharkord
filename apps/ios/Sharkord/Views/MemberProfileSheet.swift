@@ -92,7 +92,7 @@ struct MemberProfileSheet: View {
                         }
                     }
 
-                    if !isOwn {
+                    if !isOwn, session.supports(.notes) {
                         NoteCard(userId: user.id)
                     }
                 }

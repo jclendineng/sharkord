@@ -65,8 +65,10 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 #### Server, web and apps
 
 - The server lists what this fork adds over upstream Sharkord in `/info` (`features`, from `ServerFeature` in `packages/shared`). The apps show those features only on a server that lists them, so on upstream's server, or this fork's from before the list, they are hidden rather than failing.
-  - Hidden there: polls, GIFs, stickers, the soundboard, two-factor, devices and signing in with another device, group messages, friends, status, mark unread, the mentions inbox, the threads list, allowing direct messages, password reset links, reordering roles, rules messages, IP bans, and search's media, links, files and filters.
-  - A channel's notification level and mute stay on the device until the app is closed.
+  - Hidden there: polls, GIFs, stickers, the soundboard, two-factor, devices and signing in with another device (the QR code on the log in screen too), group messages, friends, status, notes, mark unread, the mentions inbox, the threads list, allowing direct messages, password reset links, reordering roles, rules messages, IP bans, and search's media, links, files and filters.
+  - A channel's notification level and mute stay on the device until the app is closed, and pinned channels stay on the device.
+  - Where a server can't renew picture and file links, the apps connect again once the links run out, or after a call ends.
+  - Direct messages show on upstream 0.0.29, which sends them with the join instead of through their own list.
   - Taking a name out of the list turns that feature off in the apps.
 - The server keeps who signed up with each invite.
   - Deleting an invite stops it working but keeps it in the list, marked deleted.

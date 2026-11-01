@@ -297,13 +297,15 @@ struct ConnectView: View {
 
         // for a device with no camera to scan a code with, a mac mini or a studio: it shows one
         // instead, for a phone already signed in to scan and approve
-        Button(action: showRequestCode) {
-            Label("Log In With a QR Code", systemImage: "qrcode")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Theme.link)
-                .frame(maxWidth: .infinity, minHeight: 40)
+        if serverInfo?.supports(.deviceSignIn) == true {
+            Button(action: showRequestCode) {
+                Label("Log In With a QR Code", systemImage: "qrcode")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Theme.link)
+                    .frame(maxWidth: .infinity, minHeight: 40)
+            }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
 
         if serverInfo?.allowNewUsers == true {
             HStack(spacing: 4) {
@@ -600,7 +602,8 @@ struct ConnectView: View {
             do {
                 serverInfo = try await AuthAPI.fetchInfo(address)
 
-                if intent == .code {
+                // a server without device sign in asks for the password instead
+                if intent == .code, serverInfo?.supports(.deviceSignIn) == true {
                     showRequestCode()
                 } else {
                     step = intent == .register || inviteCode != nil ? .register : .login
