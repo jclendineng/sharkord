@@ -218,7 +218,7 @@ private struct MemberDetail: View {
                 }
             }
 
-            if session.can(.manageUsers) {
+            if session.can(.manageUsers), session.supports(.passwordReset) {
                 Section {
                     if let resetLink {
                         ShareLink(item: resetLink) {
@@ -375,6 +375,7 @@ private struct ConfirmModeration: View {
     @Binding var banIps: Bool
     let onConfirm: () -> Void
 
+    @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
 
     private var title: String {
@@ -406,7 +407,7 @@ private struct ConfirmModeration: View {
                     }
                 }
 
-                if action == .ban {
+                if action == .ban, session.supports(.ipBans) {
                     Section {
                         Toggle("Also Ban Their IP Addresses", isOn: $banIps)
                     } footer: {

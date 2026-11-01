@@ -56,7 +56,9 @@ struct MemberProfileSheet: View {
 
                     if !isOwn {
                         HStack(spacing: 10) {
-                            friendButton
+                            if session.supports(.friends) {
+                                friendButton
+                            }
 
                             Button(action: message) {
                                 Image(systemName: "bubble.left.fill")

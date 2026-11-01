@@ -16,7 +16,9 @@ struct SettingsSheet: View {
         let text = query.trimmingCharacters(in: .whitespaces)
 
         return UserSettingsPage.sections.compactMap { section in
-            let pages = section.pages.filter { text.isEmpty || $0.title.localizedCaseInsensitiveContains(text) }
+            let pages = section.pages.filter {
+                $0.isShown(in: session) && (text.isEmpty || $0.title.localizedCaseInsensitiveContains(text))
+            }
 
             return pages.isEmpty ? nil : (section.title, pages)
         }
@@ -33,7 +35,7 @@ struct SettingsSheet: View {
     private var stackView: some View {
         NavigationStack {
             SettingsForm {
-                ForEach(UserSettingsPage.sections, id: \.title) { section in
+                ForEach(sections, id: \.title) { section in
                     Section(section.title) {
                         ForEach(section.pages, id: \.self) { page in
                             NavigationLink {
@@ -547,6 +549,18 @@ enum UserSettingsPage: Hashable {
 
     var value: String? {
         self == .about ? AppInfo.version : nil
+    }
+
+    // the fork's own pages, left out on a server without them
+    func isShown(in session: SessionStore) -> Bool {
+        switch self {
+        case .devices:
+            session.supports(.deviceSessions)
+        case .signInDevice:
+            session.supports(.deviceSignIn)
+        default:
+            true
+        }
     }
 
     @ViewBuilder

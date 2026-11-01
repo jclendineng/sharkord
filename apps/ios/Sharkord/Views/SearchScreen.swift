@@ -38,8 +38,9 @@ struct SearchScreen: View {
         state.filters
     }
 
+    // a server without the filters searches the words alone, from: and the rest included
     private var token: FilterPicker? {
-        state.token
+        session.supports(.searchFilters) ? state.token : nil
     }
 
     // while a token is up, what is typed narrows its choices rather than searching
@@ -170,7 +171,9 @@ struct SearchScreen: View {
             }
         }
         .onAppear {
-            state.applyOpening(channel: channelId.flatMap { session.channel($0) }, directMessages: directMessages)
+            if session.supports(.searchFilters) {
+                state.applyOpening(channel: channelId.flatMap { session.channel($0) }, directMessages: directMessages)
+            }
         }
     }
 

@@ -66,7 +66,7 @@ struct RolesScreen: View {
         .navigationTitle("Roles")
         .inlineNavigationTitle()
         .toolbar {
-            if movableRoles.count > 1 {
+            if movableRoles.count > 1, session.supports(.roleOrder) {
                 ActionToolbarItem(placement: .pageAction) {
                     Button(isReordering ? "Done" : "Reorder", action: toggleReordering)
                 }

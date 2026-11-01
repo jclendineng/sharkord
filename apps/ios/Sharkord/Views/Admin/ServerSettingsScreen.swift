@@ -183,10 +183,12 @@ enum ServerSettingsPage: Hashable {
             session.can(.manageSettings)
         case .roles:
             session.can(.manageRoles)
-        case .emoji, .stickers:
+        case .emoji:
             session.can(.manageEmojis)
+        case .stickers:
+            session.supports(.stickers) && session.can(.manageEmojis)
         case .soundboard:
-            session.can(.manageSoundboard)
+            session.supports(.soundboard) && session.can(.manageSoundboard)
         case .members:
             Permission.userModeration.contains(where: session.can)
         case .invites:

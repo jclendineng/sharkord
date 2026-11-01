@@ -1,6 +1,7 @@
 export * from './afk';
 export * from './dms';
 export * from './emojis';
+export * from './features';
 export * from './locales';
 export * from './metrics';
 export * from './permissions';

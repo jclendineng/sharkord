@@ -218,7 +218,7 @@ struct ChatScreen: View {
                                 .padding(.trailing, 8)
                         }
 
-                        if canShowThreadPanel {
+                        if canShowThreadPanel, session.supports(.threadsList) {
                             HeaderButton(title: "Threads", systemImage: "bubble.left.and.text.bubble.right", action: showThreads)
                         }
 
@@ -255,7 +255,7 @@ struct ChatScreen: View {
                     }
                 }
 
-                if canShowThreadPanel {
+                if canShowThreadPanel, session.supports(.threadsList) {
                     ToolbarItem(placement: .barTrailing) {
                         Button(action: showThreads) {
                             Image(systemName: "bubble.left.and.text.bubble.right")

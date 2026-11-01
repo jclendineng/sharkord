@@ -41,6 +41,10 @@ final class SessionStore {
     private(set) var serverId: String?
     private(set) var serverInfo: ServerInfo?
 
+    func supports(_ feature: ServerFeature) -> Bool {
+        serverInfo?.features?.contains(feature.rawValue) == true
+    }
+
     // the address the server's admins set for reports, nil while they haven't
     var reportEmail: String? {
         guard let email = serverInfo?.reportEmail, !email.isEmpty else {
@@ -474,6 +478,11 @@ final class SessionStore {
 
         notificationLevels[channelId] = level == .mentions ? nil : level
         mutedUntil[channelId] = muteForMinutes.map { Int((Date().timeIntervalSince1970 + Double($0) * 60) * 1000) }
+
+        // a server without them leaves the level on this device until the app is closed
+        guard supports(.channelNotifications) else {
+            return
+        }
 
         do {
             try await client.mutation(

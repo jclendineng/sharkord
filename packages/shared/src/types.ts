@@ -1,5 +1,11 @@
 import { z } from 'zod';
-import { ChannelPermission, type TFile, type TSettings, type TUser } from '.';
+import {
+  ChannelPermission,
+  type ServerFeature,
+  type TFile,
+  type TSettings,
+  type TUser
+} from '.';
 import type { WithOptional } from './type-utils';
 
 export enum ChannelType {
@@ -171,6 +177,8 @@ export type TServerInfo = Pick<
   // the key the server signs relay pushes with, which the app asks the relay to seal into the
   // device's ticket. null while push is turned off
   pushRelayKey: string | null;
+  // what this fork adds over upstream, which leaves it out
+  features: ServerFeature[];
 };
 
 export enum OidcError {

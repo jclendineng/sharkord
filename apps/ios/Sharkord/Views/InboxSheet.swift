@@ -200,7 +200,8 @@ private struct MentionsList: View {
         var loaded: [ServerMention] = []
         var failure: String?
 
-        for server in servers.sessions where server.phase == .connected {
+        // a server without the mentions inbox has none to list
+        for server in servers.sessions where server.phase == .connected && server.supports(.mentions) {
             do {
                 let messages = try await server.mentions()
 

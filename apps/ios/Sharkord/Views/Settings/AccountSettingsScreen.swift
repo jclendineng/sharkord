@@ -37,7 +37,7 @@ struct AccountSettingsScreen: View {
                 Text("Password")
             }
 
-            if session.ownUserHasPassword {
+            if session.ownUserHasPassword, session.supports(.twoFactor) {
                 TwoFactorSection()
             }
 

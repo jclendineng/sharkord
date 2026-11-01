@@ -242,7 +242,7 @@ struct ComposerView: View {
 
     // a poll is a message of its own, so not one inside a thread
     private var pollAction: (() -> Void)? {
-        guard store.scope == .channel else {
+        guard store.scope == .channel, session.supports(.polls) else {
             return nil
         }
 
@@ -406,20 +406,24 @@ struct ComposerView: View {
                 if Platform.isMac {
                     // discord's mac: gifs, stickers and emoji each a button in the box
                     HStack(spacing: 12) {
-                        ExpressionButton(title: "GIFs", action: openGifs) {
-                            Text("GIF")
-                                .font(.system(size: 10, weight: .heavy))
-                                .padding(.horizontal, 4)
-                                .padding(.vertical, 2)
-                                .overlay {
-                                    RoundedRectangle(cornerRadius: 4)
-                                        .strokeBorder(lineWidth: 1.6)
-                                }
+                        if session.supports(.gifs) {
+                            ExpressionButton(title: "GIFs", action: openGifs) {
+                                Text("GIF")
+                                    .font(.system(size: 10, weight: .heavy))
+                                    .padding(.horizontal, 4)
+                                    .padding(.vertical, 2)
+                                    .overlay {
+                                        RoundedRectangle(cornerRadius: 4)
+                                            .strokeBorder(lineWidth: 1.6)
+                                    }
+                            }
                         }
 
-                        ExpressionButton(title: "Stickers", action: openStickers) {
-                            Image(systemName: "note.text")
-                                .font(.system(size: 18, weight: .semibold))
+                        if session.supports(.stickers) {
+                            ExpressionButton(title: "Stickers", action: openStickers) {
+                                Image(systemName: "note.text")
+                                    .font(.system(size: 18, weight: .semibold))
+                            }
                         }
 
                         FunEmojiButton(action: openEmoji)

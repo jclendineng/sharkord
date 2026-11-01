@@ -1,4 +1,4 @@
-import type { TServerInfo } from '@sharkord/shared';
+import { SERVER_FEATURES, type TServerInfo } from '@sharkord/shared';
 import { afterEach, describe, expect, test } from 'bun:test';
 import { initTest } from '../../__tests__/helpers';
 import { testsBaseUrl } from '../../__tests__/setup';
@@ -21,6 +21,14 @@ describe('/info', () => {
     expect(data.name).toBe('Test Server');
     expect(data.description).toBe('Test server description');
     expect(data.allowNewUsers).toBe(true);
+  });
+
+  test('should list the features this fork adds', async () => {
+    const data = (await (
+      await fetch(`${testsBaseUrl}/info`)
+    ).json()) as TServerInfo;
+
+    expect(data.features).toEqual(SERVER_FEATURES);
   });
 
   test('should publish the report address once an admin sets one', async () => {

@@ -111,7 +111,7 @@ struct MessageActionsSheet: View {
                 ActionGroup {
                     ActionRow(title: "Copy Text", systemImage: "doc.on.doc", action: copy)
 
-                    if store.scope == .channel {
+                    if store.scope == .channel, session.supports(.markUnread) {
                         ActionRow(title: "Mark Unread", systemImage: "envelope.badge", action: markUnread)
                     }
 
@@ -279,7 +279,8 @@ struct MessageActionsSheet: View {
 
     // the new member lounge's rules, a message in a channel rather than a direct message
     private var canSetRules: Bool {
-        store.scope == .channel && session.can(.manageSettings) && session.channel(message.channelId)?.isDm == false
+        store.scope == .channel && session.supports(.onboarding) && session.can(.manageSettings)
+            && session.channel(message.channelId)?.isDm == false
     }
 
     private var isRulesMessage: Bool {

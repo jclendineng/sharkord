@@ -80,14 +80,16 @@ struct DirectMessagesPanel: View {
             }
             .accessibilityLabel("Search")
 
-            Button(action: openAddFriends) {
-                Label("Add Friends", systemImage: "person.badge.plus")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(Theme.text)
-                    .frame(maxWidth: .infinity, minHeight: 40)
-                    .background(Theme.panelControl, in: .rect(cornerRadius: 12, style: .continuous))
+            if session.supports(.friends) {
+                Button(action: openAddFriends) {
+                    Label("Add Friends", systemImage: "person.badge.plus")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(Theme.text)
+                        .frame(maxWidth: .infinity, minHeight: 40)
+                        .background(Theme.panelControl, in: .rect(cornerRadius: 12, style: .continuous))
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
 
             Button(action: openNewMessage) {
                 Image(systemName: "plus.bubble.fill")
@@ -616,34 +618,38 @@ private struct NewDirectMessageSheet: View {
                         .listRowBackground(Theme.groupedRowBackground)
                 }
 
-                if query.isEmpty {
+                if query.isEmpty, session.supports(.groupDMs) || session.supports(.friends) {
                     Section {
-                        NavigationLink {
-                            GroupFriendPicker(mode: .create, onDone: openGroup)
-                        } label: {
-                            Label {
-                                Text("New Group")
-                            } icon: {
-                                // one width for both symbols, or the two titles start apart
-                                Image(systemName: "person.2.badge.plus")
-                                    .frame(width: 24)
+                        if session.supports(.groupDMs) {
+                            NavigationLink {
+                                GroupFriendPicker(mode: .create, onDone: openGroup)
+                            } label: {
+                                Label {
+                                    Text("New Group")
+                                } icon: {
+                                    // one width for both symbols, or the two titles start apart
+                                    Image(systemName: "person.2.badge.plus")
+                                        .frame(width: 24)
+                                }
+                                .foregroundStyle(Theme.header)
                             }
-                            .foregroundStyle(Theme.header)
+                            .listRowBackground(Theme.groupedRowBackground)
                         }
-                        .listRowBackground(Theme.groupedRowBackground)
 
-                        NavigationLink {
-                            AddFriendsScreen()
-                        } label: {
-                            Label {
-                                Text("Add a Friend")
-                            } icon: {
-                                Image(systemName: "person.badge.plus")
-                                    .frame(width: 24)
+                        if session.supports(.friends) {
+                            NavigationLink {
+                                AddFriendsScreen()
+                            } label: {
+                                Label {
+                                    Text("Add a Friend")
+                                } icon: {
+                                    Image(systemName: "person.badge.plus")
+                                        .frame(width: 24)
+                                }
+                                .foregroundStyle(Theme.header)
                             }
-                            .foregroundStyle(Theme.header)
+                            .listRowBackground(Theme.groupedRowBackground)
                         }
-                        .listRowBackground(Theme.groupedRowBackground)
                     }
                 }
 

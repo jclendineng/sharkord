@@ -11,9 +11,16 @@ struct ExpressionPanel: View {
 
         var id: Self { self }
 
-        // the order the tabs run in, the mac's matching its buttons in the message box
-        static var shown: [Tab] {
-            Platform.isMac ? [.gifs, .stickers, .emoji] : allCases
+        // the order the tabs run in, the mac's matching its buttons in the message box. gifs and
+        // stickers only where the server has them
+        static func shown(in session: SessionStore) -> [Tab] {
+            (Platform.isMac ? [.gifs, .stickers, .emoji] : allCases).filter {
+                switch $0 {
+                case .emoji: true
+                case .gifs: session.supports(.gifs)
+                case .stickers: session.supports(.stickers)
+                }
+            }
         }
     }
 
@@ -93,11 +100,13 @@ struct ExpressionPicker: View {
 private struct TabPicker: View {
     @Binding var selection: ExpressionPanel.Tab
 
+    @Environment(SessionStore.self) private var session
+
     @Namespace private var pill
 
     var body: some View {
         HStack(spacing: 4) {
-            ForEach(ExpressionPanel.Tab.shown) { tab in
+            ForEach(ExpressionPanel.Tab.shown(in: session)) { tab in
                 TabButton(tab: tab, isSelected: tab == selection, pill: pill) {
                     withAnimation(.snappy(duration: 0.2)) {
                         selection = tab

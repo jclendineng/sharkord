@@ -280,7 +280,7 @@ struct VoiceRoomScreen: View {
                     .contentShape(.circle)
             }
 
-            if session.can(.useSoundboard) {
+            if session.supports(.soundboard), session.can(.useSoundboard) {
                 Button(action: showSoundboard) {
                     Label("Soundboard", systemImage: "waveform")
                         .labelStyle(.iconOnly)

@@ -1,4 +1,4 @@
-import type { TServerInfo } from '@sharkord/shared';
+import { SERVER_FEATURES, type TServerInfo } from '@sharkord/shared';
 import http from 'http';
 import { getSettings } from '../db/queries/server';
 import { getOidcServerInfo } from '../helpers/oidc/settings';
@@ -23,6 +23,7 @@ const infoRouteHandler = async (
     // public so a report can be sent before signing in, and without an account at all
     reportEmail: settings.reportEmail,
     pushRelayKey: pushRelayKey?.publicKey ?? null,
+    features: SERVER_FEATURES,
     ...getOidcServerInfo()
   };
 

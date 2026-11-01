@@ -98,8 +98,9 @@ final class SearchHomeModel {
                     memberIds = Set(ids)
                 }
             case .channels:
+                // only the "active" times hang on it, as on the recent tab
                 if activity == nil {
-                    activity = try await Self.fetchActivity(client)
+                    activity = (try? await Self.fetchActivity(client)) ?? [:]
                 }
             case .media:
                 if media == nil {
@@ -230,12 +231,26 @@ struct SearchHome: View {
     // the channel screen's members tab starts with an invite row
     var onInvite: (() -> Void)?
 
+    @Environment(SessionStore.self) private var session
+
     private var tabs: [SearchTab] {
-        if model.inDirectMessages {
-            return SearchTab.directMessageTabs
+        let tabs = model.inDirectMessages
+            ? SearchTab.directMessageTabs
+            : only ?? SearchTab.tabs(inChannel: model.scope != nil)
+
+        // media, links and files are searches without words, and a channel's members a route of
+        // the fork's own, which a server without the filters has neither of
+        guard !session.supports(.searchFilters) else {
+            return tabs
         }
 
-        return only ?? SearchTab.tabs(inChannel: model.scope != nil)
+        return tabs.filter { tab in
+            switch tab {
+            case .media, .links, .files: false
+            case .members: model.scope == nil
+            default: true
+            }
+        }
     }
 
     var body: some View {
@@ -246,6 +261,12 @@ struct SearchHome: View {
 
             PagedTabs(selection: $model.tab, items: tabs, value: { $0 }) { tab in
                 SearchTabPage(model: model, tab: tab, onOpenChannel: onOpenChannel, onOpenMessage: onOpenMessage, onOpenUser: onOpenUser, onInvite: onInvite)
+            }
+        }
+        // the tab it opened on can be one this server does not have
+        .onAppear {
+            if !tabs.contains(model.tab), let first = tabs.first {
+                model.tab = first
             }
         }
     }

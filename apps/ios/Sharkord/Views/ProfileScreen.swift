@@ -30,25 +30,27 @@ struct ProfileScreen: View {
                         .padding(6)
                         .background(Theme.deepBackground, in: .circle)
 
-                    // discord's thought bubble beside the avatar, the status message or a nudge
-                    Button(action: setStatus) {
-                        Label(
-                            session.ownCustomStatus ?? "Set a status",
-                            systemImage: session.ownCustomStatus == nil ? "plus.circle.fill" : "bubble.left.fill"
-                        )
-                        .font(.subheadline.italic())
-                        .foregroundStyle(session.ownCustomStatus == nil ? Theme.muted : Theme.text)
-                        .lineLimit(2)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .background(Theme.listBackground, in: .capsule)
-                        .overlay {
-                            Capsule().stroke(Theme.divider, lineWidth: 1)
+                    if session.supports(.presence) {
+                        // discord's thought bubble beside the avatar, the status message or a nudge
+                        Button(action: setStatus) {
+                            Label(
+                                session.ownCustomStatus ?? "Set a status",
+                                systemImage: session.ownCustomStatus == nil ? "plus.circle.fill" : "bubble.left.fill"
+                            )
+                            .font(.subheadline.italic())
+                            .foregroundStyle(session.ownCustomStatus == nil ? Theme.muted : Theme.text)
+                            .lineLimit(2)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 10)
+                            .background(Theme.listBackground, in: .capsule)
+                            .overlay {
+                                Capsule().stroke(Theme.divider, lineWidth: 1)
+                            }
                         }
+                        .buttonStyle(.plain)
+                        // clear of the banner above it, its outline included
+                        .padding(.bottom, 4)
                     }
-                    .buttonStyle(.plain)
-                    // clear of the banner above it, its outline included
-                    .padding(.bottom, 4)
                 }
                 .padding(.leading, 12)
                 .padding(.trailing, 16)
@@ -99,26 +101,28 @@ struct ProfileScreen: View {
                         }
                     }
 
-                    Button(action: showFriends) {
-                        HStack {
-                            Text("Friends")
-                                .font(.headline)
-                                .foregroundStyle(Theme.header)
+                    if session.supports(.friends) {
+                        Button(action: showFriends) {
+                            HStack {
+                                Text("Friends")
+                                    .font(.headline)
+                                    .foregroundStyle(Theme.header)
 
-                            Spacer()
+                                Spacer()
 
-                            Text("\(session.friendLists.friends.count)")
-                                .foregroundStyle(Theme.muted)
+                                Text("\(session.friendLists.friends.count)")
+                                    .foregroundStyle(Theme.muted)
 
-                            Image(systemName: "chevron.right")
-                                .font(.footnote.weight(.semibold))
-                                .foregroundStyle(Theme.muted)
+                                Image(systemName: "chevron.right")
+                                    .font(.footnote.weight(.semibold))
+                                    .foregroundStyle(Theme.muted)
+                            }
+                            .padding(16)
+                            .background(Theme.listBackground, in: .rect(cornerRadius: 12))
+                            .contentShape(.rect)
                         }
-                        .padding(16)
-                        .background(Theme.listBackground, in: .rect(cornerRadius: 12))
-                        .contentShape(.rect)
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
 
                     ProfileCard(title: "Server") {
                         VStack(alignment: .leading, spacing: 4) {

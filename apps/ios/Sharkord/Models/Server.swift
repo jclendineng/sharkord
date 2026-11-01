@@ -14,11 +14,39 @@ struct ServerInfo: Decodable {
     let pushRelayKey: String?
     // where reports about the server or a message on it go, set by its admins
     let reportEmail: String?
+    // what the fork's server adds over upstream sharkord. upstream sends none
+    let features: Set<String>?
 
     // through the relay, the only way a server reaches the app
     var offersPush: Bool {
         pushRelayKey != nil && PushRelay.url != nil
     }
+}
+
+// ServerFeature in packages/shared, one for each thing this fork's server adds. a server without
+// one, upstream's or this fork's from before the list, gets none of it shown
+enum ServerFeature: String {
+    case polls
+    case gifs
+    case stickers
+    case soundboard
+    case twoFactor = "two-factor"
+    case deviceSessions = "device-sessions"
+    case deviceSignIn = "device-sign-in"
+    case groupDMs = "group-dms"
+    case friends
+    case presence
+    case notes
+    case markUnread = "mark-unread"
+    case mentions
+    case threadsList = "threads-list"
+    case channelNotifications = "channel-notifications"
+    case privacy
+    case passwordReset = "password-reset"
+    case roleOrder = "role-order"
+    case onboarding
+    case ipBans = "ip-bans"
+    case searchFilters = "search-filters"
 }
 
 struct Handshake: Decodable {

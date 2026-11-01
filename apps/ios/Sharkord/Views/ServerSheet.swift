@@ -70,12 +70,14 @@ struct ServerSheet: View {
 
                     ActionToggle(title: "Hide Muted Channels", systemImage: "bell.slash", isOn: hideMutedChannels)
 
-                    ActionToggle(
-                        title: "Allow Direct Messages",
-                        subtitle: "Anyone on the server can start a conversation with you",
-                        systemImage: "bubble.left.and.bubble.right",
-                        isOn: allowDirectMessages
-                    )
+                    if session.supports(.privacy) {
+                        ActionToggle(
+                            title: "Allow Direct Messages",
+                            subtitle: "Anyone on the server can start a conversation with you",
+                            systemImage: "bubble.left.and.bubble.right",
+                            isOn: allowDirectMessages
+                        )
+                    }
 
                     ActionRow(title: "Report Server", systemImage: "flag", tint: Theme.red, action: report)
                 }
