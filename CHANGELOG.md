@@ -267,6 +267,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   - A place with attachments turned off says so and can't be picked.
   - Once sent, the channel or direct message it went to opens, the first one when it went to several.
   - A shared document shows its first page before sending.
+- The Mac app has the same share menu entry and file paste.
+  - Files and pictures dragged onto the message box attach instead of going in as a link, photos dragged out of Photos included.
 
 #### From upstream
 

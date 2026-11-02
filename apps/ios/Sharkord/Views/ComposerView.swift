@@ -28,9 +28,7 @@ struct ComposerView: View {
     @State private var photoSelection: [PhotosPickerItem] = []
     @FocusState private var isFieldFocused: Bool
     @State private var recorder = VoiceMessageRecorder()
-    #if os(iOS)
     @State private var filePaste = FilePaste()
-    #endif
 
     @Environment(ServerListStore.self) private var servers
     @Environment(\.expandChat) private var expandChat
@@ -168,6 +166,9 @@ struct ComposerView: View {
         // leaving for another screen, the channel's own among them, drops the field's focus, or
         // swiftui gives it back on the way back and the keyboard comes up unasked
         .onDisappear(perform: unfocusField)
+        #if os(macOS)
+        .onAppear(perform: FilePaste.prepare)
+        #endif
         // a tap on the field while the panel is up hands over to the keyboard
         .onChange(of: isFieldFocused) { _, isFocused in
             // on an ipad the keyboard wants the whole width, the list beside the chat gives way
@@ -853,11 +854,9 @@ struct ComposerView: View {
 
     // the text view comes and goes with the field, so this runs each time it takes focus
     private func installFilePaste() {
-        #if os(iOS)
         filePaste.canTakeFiles = { canPasteFiles }
         filePaste.onFiles = { paste($0) }
         filePaste.install()
-        #endif
     }
 
     private func paste(_ providers: [NSItemProvider]) {

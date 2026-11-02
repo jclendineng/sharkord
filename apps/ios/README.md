@@ -63,6 +63,9 @@ may not call `UIApplication.open`. The app also looks in the inbox each time it 
 so a share it could not open still arrives. `ShareToSheet` sends it on, uploading to each
 server picked. The message box's paste goes through `FilePaste`, a paste delegate set on the
 text view under the `TextEditor`, since the field itself drops any file that isn't a picture.
+On the Mac there is no paste delegate, so `FilePaste` adds its own paste and drop to SwiftUI's
+text view class, and the extension opens the app with `NSWorkspace`. The Mac's app group is
+named for the team, which a sandbox allows without a profile granting it.
 
 ## Mentions in the composer
 

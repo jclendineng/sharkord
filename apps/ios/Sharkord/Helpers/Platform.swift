@@ -80,7 +80,15 @@ enum Platform {
     // what was copied, for a paste the message box took as a picture it cannot show
     static var pasteboardItems: [NSItemProvider] {
         #if os(macOS)
-        let pasteboard = NSPasteboard.general
+        items(on: .general)
+        #else
+        UIPasteboard.general.itemProviders
+        #endif
+    }
+
+    #if os(macOS)
+    // files dragged or copied from Finder, else a picture, on the clipboard or a drag's own board
+    static func items(on pasteboard: NSPasteboard) -> [NSItemProvider] {
         let fileURLs = pasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL] ?? []
 
         if !fileURLs.isEmpty {
@@ -92,10 +100,8 @@ enum Platform {
         }
 
         return [NSItemProvider(item: png as NSData, typeIdentifier: UTType.png.identifier)]
-        #else
-        UIPasteboard.general.itemProviders
-        #endif
     }
+    #endif
 
     static func dismissKeyboard() {
         #if os(macOS)

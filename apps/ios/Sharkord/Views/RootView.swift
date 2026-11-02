@@ -20,6 +20,7 @@ struct RootView: View {
         .sheet(item: pendingShare) { share in
             ShareToSheet(share: share)
                 .environment(servers)
+                .appSheet()
         }
     }
 
