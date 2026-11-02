@@ -265,6 +265,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   - It opens on Share To, listing every channel and direct message on every server you're signed in to, with direct messages showing the person.
   - Pick several at once and add a message; a shared link or text starts the message.
   - A place with attachments turned off says so and can't be picked.
+  - Once sent, the channel or direct message it went to opens, the first one when it went to several.
+  - A shared document shows its first page before sending.
 
 #### From upstream
 

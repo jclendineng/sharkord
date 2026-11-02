@@ -11,6 +11,8 @@ struct ShareToSheet: View {
     @State private var query = ""
     @State private var message: String
     @State private var selected: Set<Destination> = []
+    // the places a send that failed partway already reached, so trying again skips them
+    @State private var sent: Set<Destination> = []
     @State private var isSending = false
     @State private var errorMessage: String?
 
@@ -115,6 +117,8 @@ struct ShareToSheet: View {
                 }
             }
             .settingsListStyle()
+            // a server's conversations arrive a moment after its channels when it has just connected
+            .animation(.default, value: places.map(\.id))
             .pageSearchable(text: $query, prompt: "Search")
             .navigationTitle("Share To")
             .inlineNavigationTitle()
@@ -176,7 +180,7 @@ struct ShareToSheet: View {
     }
 
     private func send() {
-        let targets = places.filter { selected.contains($0.destination) }
+        let targets = places.filter { selected.contains($0.destination) && !sent.contains($0.destination) }
         let content = trimmedMessage.isEmpty ? "" : HTMLText.messageHTML(fromMarkdown: trimmedMessage)
 
         isSending = true
@@ -186,12 +190,17 @@ struct ShareToSheet: View {
             do {
                 for target in targets {
                     try await send(content: content, to: target)
-                    selected.remove(target.destination)
+                    sent.insert(target.destination)
                 }
 
                 share.discard()
                 servers.pendingShare = nil
                 dismiss()
+
+                // where it went opens, the first in the list when it went to several
+                if let first = targets.first {
+                    servers.open(channelId: first.channelId, in: first.session)
+                }
             } catch {
                 errorMessage = error.localizedDescription
             }
@@ -337,7 +346,7 @@ private struct SharedFileTile: View {
         .background(Theme.inputBackground)
         .clipShape(.rect(cornerRadius: 12))
         .task {
-            thumbnail = ImageThumbnail.make(of: url)
+            thumbnail = await ImageThumbnail.make(ofAnyFile: url)
         }
     }
 }

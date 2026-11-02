@@ -140,7 +140,8 @@ Sharkord is in the iPhone and iPad share menu for photos, videos, files, links a
 10 at a time. It opens the app on Share To, which lists every channel and direct message on
 every server the app is signed in to, each marked as one or the other. Several can be ticked
 at once, with an optional message, and the files go up to each server picked. A place whose
-server has attachments off, or takes fewer files in a message, says so and can't be ticked.
+server has attachments off, or takes fewer files in a message, says so and can't be ticked. Once
+sent, the app opens the first place it went to.
 
 Paste in the message box takes any copied file, not just a picture, as an attachment. A
 picture shows as a thumbnail above the box, anything else by its name.

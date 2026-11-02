@@ -4,16 +4,12 @@ import UniformTypeIdentifiers
 // the share sheet's Sharkord. it copies what was shared where the app can read it and opens the
 // app, whose Share To screen picks where it goes, since only the app is signed in to servers
 final class ShareViewController: UIViewController {
-    private var hasStarted = false
+    // starts as soon as it loads rather than once its sheet is up, and draws nothing, so only
+    // a moment of the system's sheet shows before the app opens
+    override func viewDidLoad() {
+        super.viewDidLoad()
 
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-
-        guard !hasStarted else {
-            return
-        }
-
-        hasStarted = true
+        view.backgroundColor = .clear
 
         Task {
             await handOff()
