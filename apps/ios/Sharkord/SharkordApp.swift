@@ -35,6 +35,8 @@ struct SharkordApp: App {
                 .onOpenURL { url in
                     servers.open(inviteURL: url)
                 }
+                // a mac opens a second window for every link otherwise, a share among them
+                .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
                 // a session learns its server's id from the last join on disk or the live one,
                 // and a tapped notification for that server can open then
                 .onChange(of: servers.sessions.map(\.serverId)) {
