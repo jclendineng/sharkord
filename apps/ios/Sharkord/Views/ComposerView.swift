@@ -1,4 +1,3 @@
-import ImageIO
 import Photos
 import PhotosUI
 import SwiftUI
@@ -29,6 +28,9 @@ struct ComposerView: View {
     @State private var photoSelection: [PhotosPickerItem] = []
     @FocusState private var isFieldFocused: Bool
     @State private var recorder = VoiceMessageRecorder()
+    #if os(iOS)
+    @State private var filePaste = FilePaste()
+    #endif
 
     @Environment(ServerListStore.self) private var servers
     @Environment(\.expandChat) private var expandChat
@@ -176,8 +178,19 @@ struct ComposerView: View {
             if isFocused && store.attachPanel.isOpen && !store.attachPanel.isHandingOff {
                 store.attachPanel.beginHandoffToKeyboard()
             }
+
+            if isFocused {
+                Task {
+                    installFilePaste()
+                }
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: KeyboardNotifications.didShow)) { _ in
+            // another screen's text view must keep its own paste
+            if isFieldFocused {
+                installFilePaste()
+            }
+
             if store.attachPanel.isHandingOff && store.attachPanel.isOpen {
                 store.attachPanel.finishHandoffToKeyboard()
             }
@@ -838,6 +851,15 @@ struct ComposerView: View {
         }
     }
 
+    // the text view comes and goes with the field, so this runs each time it takes focus
+    private func installFilePaste() {
+        #if os(iOS)
+        filePaste.canTakeFiles = { canPasteFiles }
+        filePaste.onFiles = { paste($0) }
+        filePaste.install()
+        #endif
+    }
+
     private func paste(_ providers: [NSItemProvider]) {
         for provider in providers.prefix(max(0, maxFiles - attachments.count)) {
             let attachment = PendingAttachment(name: provider.suggestedName ?? "File")
@@ -926,7 +948,7 @@ struct ComposerView: View {
         }
 
         let name = fileURL.lastPathComponent
-        let preview = Self.preview(of: fileURL)
+        let preview = ImageThumbnail.make(of: fileURL)
 
         update(id) {
             $0.name = name
@@ -942,22 +964,6 @@ struct ComposerView: View {
         }
 
         try? FileManager.default.removeItem(at: fileURL)
-    }
-
-    // a picture shows as itself above the box, anything else by its name
-    private static func preview(of url: URL) -> PlatformImage? {
-        guard UTType(filenameExtension: url.pathExtension)?.conforms(to: .image) == true,
-              let source = CGImageSourceCreateWithURL(url as CFURL, nil) else {
-            return nil
-        }
-
-        let options: [CFString: Any] = [
-            kCGImageSourceCreateThumbnailFromImageAlways: true,
-            kCGImageSourceCreateThumbnailWithTransform: true,
-            kCGImageSourceThumbnailMaxPixelSize: 180
-        ]
-
-        return CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary).map { PlatformImage(cgImage: $0) }
     }
 
     private func fail(_ id: UUID, _ error: Error) {

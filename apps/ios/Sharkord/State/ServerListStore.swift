@@ -69,6 +69,8 @@ final class ServerListStore {
     // the call over everything, opened by the call bar so it grows out of the bar and goes back
     // into it. a voice channel's sheet asks for it here once it has put itself away
     var isCallPresented = false
+    // something another app shared, which the Share To sheet sends on
+    var pendingShare: PendingShare?
 
     var searchDropdown: SearchDropdown? {
         didSet {
@@ -278,6 +280,11 @@ final class ServerListStore {
     // an invite link tapped anywhere: a server already signed in to just opens, as discord does
     // for a server you are in, and any other starts adding it with the invite filled in
     func open(inviteURL url: URL) {
+        if url.host() == "share" {
+            takePendingShare()
+            return
+        }
+
         if let approval = LoginApproval(url: url) {
             guard let session = session(approving: approval) else {
                 selectedSession?.showError(AuthAPI.RequestError(message: "Sign in to that server on this device first, then scan the code again."))
@@ -497,6 +504,17 @@ final class ServerListStore {
         endBackgroundTask()
         #endif
         sessions.forEach { $0.appDidBecomeActive() }
+        takePendingShare()
+    }
+
+    // looked for each time the app comes forward too, since the share sheet opening the app is a
+    // way around what an extension may do, and a share it could not open waits here
+    func takePendingShare() {
+        guard !sessions.isEmpty, let share = PendingShare.latest(), share.id != pendingShare?.id else {
+            return
+        }
+
+        pendingShare = share
     }
 
     // ios freezes the app seconds after it leaves the screen and its sockets die with it. the

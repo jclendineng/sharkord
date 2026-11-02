@@ -260,7 +260,11 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   - Editing a message keeps its mentions and channel links.
 - Copied photos and files paste straight into a message with the system's Paste.
   - A picture shows as a thumbnail above the box, and a file as its name, each with a button to take it off.
-  - Text pastes as before.
+  - Any file works, PDFs and documents from Files included. Text pastes as before.
+- Sharkord is in the share menu for photos, videos, files, links and text.
+  - It opens on Share To, listing every channel and direct message on every server you're signed in to, with direct messages showing the person.
+  - Pick several at once and add a message; a shared link or text starts the message.
+  - A place with attachments turned off says so and can't be picked.
 
 #### From upstream
 

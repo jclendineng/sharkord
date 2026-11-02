@@ -55,6 +55,15 @@ panel over the conversation, a drag down slides the composer and panel together 
 offset, so nothing is laid out again under the finger. `AnimatedImage` plays GIFs, APNGs and
 animated WebPs, decoding frames off the main thread at the size they are shown.
 
+## Sharing and pasting files
+
+The `SharkordShare` extension copies what was shared into the app group's
+`ShareInbox` folder and opens `sharkord://share/<id>`, through the runtime since an extension
+may not call `UIApplication.open`. The app also looks in the inbox each time it comes forward,
+so a share it could not open still arrives. `ShareToSheet` sends it on, uploading to each
+server picked. The message box's paste goes through `FilePaste`, a paste delegate set on the
+text view under the `TextEditor`, since the field itself drops any file that isn't a picture.
+
 ## Mentions in the composer
 
 The composer's box is `ComposerField`, a `TextEditor` over an `AttributedString`, since a

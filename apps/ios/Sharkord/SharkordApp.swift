@@ -28,6 +28,7 @@ struct SharkordApp: App {
                     PushToTalk.start(servers: servers)
                     appDelegate.servers = servers
                     await servers.restore()
+                    servers.takePendingShare()
                 }
                 // sharkord:// links, invites and sign in codes alike, which work with any server
                 // since nothing ties the app to one domain

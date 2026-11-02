@@ -17,6 +17,16 @@ struct RootView: View {
         }
         .tint(Theme.blurple)
         .appAppearance()
+        .sheet(item: pendingShare) { share in
+            ShareToSheet(share: share)
+                .environment(servers)
+        }
+    }
+
+    private var pendingShare: Binding<PendingShare?> {
+        @Bindable var servers = servers
+
+        return $servers.pendingShare
     }
 
     @ViewBuilder
