@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 #if os(macOS)
 import AppKit
 
@@ -76,13 +77,23 @@ enum Platform {
         #endif
     }
 
-    // a picture someone copied, a screenshot from photos say. asking does not read it, so it
-    // brings up no paste prompt
-    static var pasteboardHasImage: Bool {
+    // what was copied, for a paste the message box took as a picture it cannot show
+    static var pasteboardItems: [NSItemProvider] {
         #if os(macOS)
-        NSPasteboard.general.canReadObject(forClasses: [NSImage.self])
+        let pasteboard = NSPasteboard.general
+        let fileURLs = pasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL] ?? []
+
+        if !fileURLs.isEmpty {
+            return fileURLs.compactMap(NSItemProvider.init(contentsOf:))
+        }
+
+        guard let png = pasteboard.data(forType: .png) else {
+            return pasteboard.data(forType: .tiff).map { [NSItemProvider(item: $0 as NSData, typeIdentifier: UTType.tiff.identifier)] } ?? []
+        }
+
+        return [NSItemProvider(item: png as NSData, typeIdentifier: UTType.png.identifier)]
         #else
-        UIPasteboard.general.hasImages
+        UIPasteboard.general.itemProviders
         #endif
     }
 

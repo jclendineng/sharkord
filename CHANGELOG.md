@@ -258,7 +258,9 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   - A name typed out in full becomes the mention once a space follows it, or when the message is sent.
   - Mention in a member's or a message's menu adds the name and brings up the keyboard.
   - Editing a message keeps its mentions and channel links.
-- A copied picture, such as a screenshot copied from Photos, can be pasted into a message: a Paste button shows above the message box while one is copied, and adds it like a photo from the library.
+- Copied photos and files paste straight into a message with the system's Paste.
+  - A picture shows as a thumbnail above the box, and a file as its name, each with a button to take it off.
+  - Text pastes as before.
 
 #### From upstream
 

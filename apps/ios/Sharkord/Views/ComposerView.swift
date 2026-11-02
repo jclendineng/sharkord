@@ -1,3 +1,4 @@
+import ImageIO
 import Photos
 import PhotosUI
 import SwiftUI
@@ -9,7 +10,6 @@ struct ComposerView: View {
     let store: ChannelMessagesStore
 
     @Environment(SessionStore.self) private var session
-    @Environment(\.scenePhase) private var scenePhase
     // the input row's buttons, 44 points at the default text size and growing with it beside the
     // field's first line
     @ScaledMetric(relativeTo: .body) private var rowHeight: CGFloat = 44
@@ -27,7 +27,6 @@ struct ComposerView: View {
     @State private var isCameraPresented = false
     @State private var isPollCreatorPresented = false
     @State private var photoSelection: [PhotosPickerItem] = []
-    @State private var pasteboardHasImage = false
     @FocusState private var isFieldFocused: Bool
     @State private var recorder = VoiceMessageRecorder()
 
@@ -50,9 +49,11 @@ struct ComposerView: View {
         session.settings?.storageMaxFilesPerMessage ?? 0
     }
 
-    // the field takes text only, so a copied picture gets a paste button of its own
-    private var canPasteImage: Bool {
-        pasteboardHasImage && canUpload && store.editing == nil && attachments.count < maxFiles
+    // what the field puts in the text for a pasted picture
+    private static let attachmentCharacter: Character = "\u{FFFC}"
+
+    private var canPasteFiles: Bool {
+        canUpload && store.editing == nil && attachments.count < maxFiles
     }
 
     private var text: String {
@@ -165,20 +166,8 @@ struct ComposerView: View {
         // leaving for another screen, the channel's own among them, drops the field's focus, or
         // swiftui gives it back on the way back and the keyboard comes up unasked
         .onDisappear(perform: unfocusField)
-        .onAppear {
-            pasteboardHasImage = Platform.pasteboardHasImage
-        }
-        // a screenshot copied in photos shows its paste button on the way back
-        .onChange(of: scenePhase) { _, phase in
-            if phase == .active {
-                pasteboardHasImage = Platform.pasteboardHasImage
-            }
-        }
         // a tap on the field while the panel is up hands over to the keyboard
         .onChange(of: isFieldFocused) { _, isFocused in
-            // back from photos with a screenshot copied, the field is where it is pasted
-            pasteboardHasImage = Platform.pasteboardHasImage
-
             // on an ipad the keyboard wants the whole width, the list beside the chat gives way
             if isFocused, let expandChat {
                 expandChat()
@@ -204,6 +193,26 @@ struct ComposerView: View {
         // any change counts as typing, deleting and punctuation included, as on the web, but
         // not the field being cleared after a send or a draft being loaded for an edit
         .onChange(of: text) { old, new in
+            // a pasted picture lands as an attachment character the field can't show, which sent
+            // a blank message. it comes out, and what was copied joins the message instead
+            if new.contains(Self.attachmentCharacter) {
+                // removing through the character view traps on the attachment's run
+                var cleaned = field
+
+                while let range = cleaned.range(of: String(Self.attachmentCharacter)) {
+                    cleaned.removeSubrange(range)
+                }
+
+                field = cleaned
+                selection = AttributedTextSelection(insertionPoint: field.endIndex)
+
+                if canPasteFiles {
+                    paste(Platform.pasteboardItems)
+                }
+
+                return
+            }
+
             if !new.isEmpty && store.editing == nil {
                 session.signalTyping(channelId: store.channelId, parentMessageId: store.typingPlace.parentMessageId)
             }
@@ -322,13 +331,6 @@ struct ComposerView: View {
                 }
             }
 
-            if canPasteImage {
-                // the system's own button reads the pasteboard without asking to allow it
-                PasteButton(supportedContentTypes: [.image], payloadAction: pasteImages)
-                    .buttonBorderShape(.capsule)
-                    .controlSize(.small)
-            }
-
             if let mentionQuery, !recorder.isRecording {
                 MentionSuggestions(trigger: mentionQuery.trigger, query: mentionQuery.query, onPick: pickMention)
             }
@@ -402,6 +404,8 @@ struct ComposerView: View {
 
             HStack(alignment: .bottom, spacing: 10) {
                 ComposerField(placeholder: placeholder, text: $field, selection: $selection, isFocused: $isFieldFocused, onSubmit: sendIfReady)
+                    // a copied file, which the field itself does not take, through the system's paste
+                    .pasteDestination(for: PickedMedia.self, action: pasteFiles, validator: validatePaste)
 
                 if Platform.isMac {
                     // discord's mac: gifs, stickers and emoji each a button in the box
@@ -809,11 +813,34 @@ struct ComposerView: View {
         }
     }
 
-    private func pasteImages(_ providers: [NSItemProvider]) {
-        pasteboardHasImage = false
+    // copied text is the field's own to paste, as text rather than a file
+    private func validatePaste(_ files: [PickedMedia]) -> [PickedMedia] {
+        guard canPasteFiles else {
+            return []
+        }
 
+        return files.filter { file in
+            let type = UTType(filenameExtension: file.url.pathExtension)
+
+            return type?.conforms(to: .text) != true
+        }
+    }
+
+    private func pasteFiles(_ files: [PickedMedia]) {
+        for file in files.prefix(max(0, maxFiles - attachments.count)) {
+            let attachment = PendingAttachment(name: file.url.lastPathComponent)
+
+            attachments.append(attachment)
+
+            Task {
+                await upload(attachment.id, fileURL: file.url)
+            }
+        }
+    }
+
+    private func paste(_ providers: [NSItemProvider]) {
         for provider in providers.prefix(max(0, maxFiles - attachments.count)) {
-            let attachment = PendingAttachment(name: "Photo")
+            let attachment = PendingAttachment(name: provider.suggestedName ?? "File")
 
             attachments.append(attachment)
 
@@ -899,8 +926,12 @@ struct ComposerView: View {
         }
 
         let name = fileURL.lastPathComponent
+        let preview = Self.preview(of: fileURL)
 
-        update(id) { $0.name = name }
+        update(id) {
+            $0.name = name
+            $0.preview = preview
+        }
 
         do {
             let uploaded = try await UploadAPI.upload(fileAt: fileURL, name: name, to: address, token: token)
@@ -911,6 +942,22 @@ struct ComposerView: View {
         }
 
         try? FileManager.default.removeItem(at: fileURL)
+    }
+
+    // a picture shows as itself above the box, anything else by its name
+    private static func preview(of url: URL) -> PlatformImage? {
+        guard UTType(filenameExtension: url.pathExtension)?.conforms(to: .image) == true,
+              let source = CGImageSourceCreateWithURL(url as CFURL, nil) else {
+            return nil
+        }
+
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceThumbnailMaxPixelSize: 180
+        ]
+
+        return CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary).map { PlatformImage(cgImage: $0) }
     }
 
     private func fail(_ id: UUID, _ error: Error) {
@@ -939,6 +986,7 @@ struct PendingAttachment: Identifiable, Equatable {
     var state: State = .uploading
     // the library photo it came from, so the panel can show it picked
     var assetId: String?
+    var preview: PlatformImage?
 
     var uploaded: TemporaryFile? {
         if case .uploaded(let file) = state {
@@ -954,6 +1002,14 @@ private struct AttachmentChip: View {
     let onRemove: () -> Void
 
     var body: some View {
+        if let preview = attachment.preview {
+            PictureChip(preview: preview, state: attachment.state, onRemove: onRemove)
+        } else {
+            nameChip
+        }
+    }
+
+    private var nameChip: some View {
         HStack(spacing: 6) {
             switch attachment.state {
             case .uploading:
@@ -983,7 +1039,44 @@ private struct AttachmentChip: View {
     }
 }
 
-// photos come out of the picker as a file that is deleted when the import closure returns
+// a picture by itself, with its upload's progress or failure over it
+private struct PictureChip: View {
+    let preview: PlatformImage
+    let state: PendingAttachment.State
+    let onRemove: () -> Void
+
+    var body: some View {
+        Image(platformImage: preview)
+            .resizable()
+            .scaledToFill()
+            .frame(width: 60, height: 60)
+            .clipShape(.rect(cornerRadius: 8))
+            .overlay {
+                switch state {
+                case .uploading:
+                    ProgressView()
+                        .controlSize(.small)
+                        .padding(6)
+                        .background(.black.opacity(0.4), in: .circle)
+                case .uploaded:
+                    EmptyView()
+                case .failed:
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(Theme.redText)
+                }
+            }
+            .overlay(alignment: .topTrailing) {
+                Button("Remove", systemImage: "xmark.circle.fill", action: onRemove)
+                    .labelStyle(.iconOnly)
+                    .foregroundStyle(.white, .black.opacity(0.6))
+                    .buttonStyle(.plain)
+                    .padding(3)
+            }
+    }
+}
+
+// photos come out of the picker, and pastes out of the pasteboard, as a file that is deleted
+// when the import closure returns. any other file is taken as it is
 private nonisolated struct PickedMedia: Transferable {
     let url: URL
 
@@ -993,6 +1086,10 @@ private nonisolated struct PickedMedia: Transferable {
         }
 
         FileRepresentation(importedContentType: .image) { received in
+            PickedMedia(url: try TemporaryCopy.make(of: received.file))
+        }
+
+        FileRepresentation(importedContentType: .data) { received in
             PickedMedia(url: try TemporaryCopy.make(of: received.file))
         }
     }
