@@ -91,8 +91,15 @@ enum Platform {
     static func items(on pasteboard: NSPasteboard) -> [NSItemProvider] {
         let fileURLs = pasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL] ?? []
 
+        // a provider made from a file is named for its type on a mac, "text.txt", unless told
         if !fileURLs.isEmpty {
-            return fileURLs.compactMap(NSItemProvider.init(contentsOf:))
+            return fileURLs.compactMap { url in
+                let provider = NSItemProvider(contentsOf: url)
+
+                provider?.suggestedName = url.lastPathComponent
+
+                return provider
+            }
         }
 
         guard let png = pasteboard.data(forType: .png) else {

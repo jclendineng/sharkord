@@ -85,8 +85,11 @@ final class FilePaste {
     private static weak var current: FilePaste?
     private weak var textView: NSTextView?
 
+    // not the key window: a drag from Finder focuses the box while Finder still holds it
     func install() {
-        guard let textView = NSApp.keyWindow?.firstResponder as? NSTextView else {
+        let window = NSApp.orderedWindows.first { $0.firstResponder is NSTextView }
+
+        guard let textView = window?.firstResponder as? NSTextView else {
             return
         }
 
