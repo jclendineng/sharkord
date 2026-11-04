@@ -20,6 +20,7 @@ import { z } from 'zod';
 import { config } from '../../config';
 import { db } from '../../db';
 import { publishMessage, publishReplyCount } from '../../db/publishers';
+import { getDirectMessageBlock } from '../../db/queries/blocks';
 import { assertDmChannel } from '../../db/queries/dms';
 import { getSettings } from '../../db/queries/server';
 import { messageFiles, messages, stickers } from '../../db/schema';
@@ -134,6 +135,21 @@ const sendMessageRoute = rateLimitedProcedure(protectedProcedure, {
       getSettings(),
       assertDmChannel(input.channelId, ctx.userId)
     ]);
+
+    // a one to one conversation stays readable across a block, but nothing more goes through
+    if (isDmChannel) {
+      const block = await getDirectMessageBlock(input.channelId, ctx.userId);
+
+      invariant(block !== 'blocked', {
+        code: 'FORBIDDEN',
+        message: 'You blocked this person. Unblock them to send a message.'
+      });
+
+      invariant(block !== 'blockedBy', {
+        code: 'FORBIDDEN',
+        message: "Your message couldn't be delivered."
+      });
+    }
 
     const { storageMaxFilesPerMessage, enablePlugins } = settings;
 

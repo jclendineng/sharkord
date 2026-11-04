@@ -182,5 +182,13 @@
   "commandArgNo": "Нет",
   "commandArgMissing": "/{{commandName}}: укажите значение для {{argName}}.",
   "mutedByModerator": "Модератор отключил вам микрофон.",
-  "copyImageLink": "Копировать ссылку на изображение"
+  "copyImageLink": "Копировать ссылку на изображение",
+  "blockUser": "Заблокировать",
+  "unblockUser": "Разблокировать",
+  "blockUserTitle": "Заблокировать этого человека?",
+  "blockUserMsg": "Он не сможет писать вам или отправлять запросы в друзья, а его сообщения будут скрыты для вас. Дружба с ним закончится. Он не получит уведомления.",
+  "blockedMessages_one": "{{count}} заблокированное сообщение",
+  "blockedMessages_other": "Заблокированных сообщений: {{count}}",
+  "showBlockedMessages": "Показать",
+  "hideBlockedMessages": "Скрыть"
 }

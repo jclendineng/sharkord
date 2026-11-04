@@ -16,12 +16,14 @@ describe('friends', () => {
     expect(await asker.friends.get()).toEqual({
       friends: [],
       incoming: [],
-      outgoing: [2]
+      outgoing: [2],
+      blocked: []
     });
     expect(await asked.friends.get()).toEqual({
       friends: [],
       incoming: [1],
-      outgoing: []
+      outgoing: [],
+      blocked: []
     });
 
     await asked.friends.accept({ userId: 1 });
@@ -72,7 +74,8 @@ describe('friends', () => {
     expect(await one.friends.get()).toEqual({
       friends: [],
       incoming: [],
-      outgoing: []
+      outgoing: [],
+      blocked: []
     });
 
     await one.friends.request({ userId: 2 });

@@ -13,6 +13,8 @@ struct MessageRow: View {
     var onSecondaryClick: (SecondaryClick) -> Void = { _ in }
     // the mac's bar over a hovered message, left off where the row has nowhere to send them
     var hoverActions: MessageHoverActions?
+    // shown before the server has it, faint and with nothing to act on until it has an id
+    var isPending = false
 
     @Environment(SessionStore.self) private var session
     @Environment(ServerListStore.self) private var servers
@@ -81,6 +83,8 @@ struct MessageRow: View {
         .gesture(PressTracker(isPressed: $isFingerDown))
         #endif
         .onSecondaryClick(perform: onSecondaryClick)
+        .opacity(isPending ? 0.55 : 1)
+        .allowsHitTesting(!isPending)
     }
 
     private var row: some View {
@@ -93,7 +97,20 @@ struct MessageRow: View {
                 .disabled(author == nil)
                 .modifier(AuthorProfilePresentation(user: author, isPresented: $isProfilePresented))
             } else {
-                Color.clear.frame(width: 40, height: 1)
+                // discord's time in the gutter of a follow-up line, while the pointer is over it
+                Color.clear
+                    .frame(width: 40, height: 1)
+                    .overlay(alignment: .top) {
+                        if isHovered {
+                            Text(message.createdDate, format: .dateTime.hour().minute())
+                                .font(.caption2)
+                                .foregroundStyle(Theme.muted)
+                                .monospacedDigit()
+                                .fixedSize()
+                                .padding(.top, 3)
+                                .accessibilityHidden(true)
+                        }
+                    }
             }
 
             VStack(alignment: .leading, spacing: 4) {
@@ -157,6 +174,9 @@ struct MessageRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.horizontal, 16)
+        // a long press is out of reach under voiceover, the menu is one of the row's actions
+        .accessibilityElement(children: .contain)
+        .accessibilityAction(named: Text("Message Actions"), onLongPress)
     }
 
     // the mac's panel beside the chat, a page of its own everywhere else

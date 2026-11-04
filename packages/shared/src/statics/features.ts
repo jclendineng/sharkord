@@ -23,7 +23,8 @@ export enum ServerFeature {
   IP_BANS = 'ip-bans',
   SEARCH_FILTERS = 'search-filters',
   PINNED_CHANNELS = 'pinned-channels',
-  FILE_SIGNING = 'file-signing'
+  FILE_SIGNING = 'file-signing',
+  BLOCKING = 'blocking'
 }
 
 export const SERVER_FEATURES = Object.values(ServerFeature);

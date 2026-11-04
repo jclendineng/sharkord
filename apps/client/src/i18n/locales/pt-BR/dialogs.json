@@ -149,5 +149,7 @@
   "rulesRemoveDefault": "Remover {{role}} ao reagir",
   "rulesRemoveDefaultHelp": "Para um cargo que só indica que alguém ainda não aceitou as regras. Deixe desligado se {{role}} dá permissões de que os membros precisam.",
   "rulesGiveExisting": "Dar a todos que já estão aqui",
-  "rulesGiveExistingHelp": "Sem isso, membros que entraram antes das regras perdem os canais que você fechar."
+  "rulesGiveExistingHelp": "Sem isso, membros que entraram antes das regras perdem os canais que você fechar.",
+  "blockedSection": "Bloqueados",
+  "unblockUser": "Desbloquear"
 }

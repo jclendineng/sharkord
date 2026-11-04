@@ -2,7 +2,7 @@ import SwiftUI
 
 // discord's add friends, for one server: there is no central directory to share yourself into,
 // everyone you could add is already here. add by username, then requests waiting on you, the
-// ones you sent, and everyone else on the server to ask
+// ones you sent, your friends, the people you blocked, and everyone else on the server to ask
 struct AddFriendsSheet: View {
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
@@ -42,7 +42,7 @@ struct AddFriendsScreen: View {
     // members who are neither you nor already linked to you, filtered by the search
     private var others: [PublicUser] {
         let lists = session.friendLists
-        let linked = Set(lists.friends + lists.incoming + lists.outgoing)
+        let linked = Set(lists.friends + lists.incoming + lists.outgoing + lists.blocked)
         let search = query.trimmingCharacters(in: .whitespaces).lowercased()
 
         return session.members
@@ -103,6 +103,21 @@ struct AddFriendsScreen: View {
                         FriendRow(user: user) {
                             RoundIconButton(title: "Remove Friend", systemImage: "person.badge.minus", tint: Theme.muted) {
                                 change("remove", user)
+                            }
+                        }
+                    }
+                }
+            }
+
+            let blocked = users(session.friendLists.blocked)
+                .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+
+            if !blocked.isEmpty {
+                Section("Blocked") {
+                    ForEach(blocked) { user in
+                        FriendRow(user: user) {
+                            RoundIconButton(title: "Unblock", systemImage: "nosign", tint: Theme.muted) {
+                                change("unblock", user)
                             }
                         }
                     }

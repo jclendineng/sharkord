@@ -182,5 +182,13 @@
   "commandArgNo": "Ne",
   "commandArgMissing": "/{{commandName}} potřebuje hodnotu pro {{argName}}.",
   "mutedByModerator": "Moderátor vám vypnul mikrofon.",
-  "copyImageLink": "Kopírovat odkaz na obrázek"
+  "copyImageLink": "Kopírovat odkaz na obrázek",
+  "blockUser": "Zablokovat",
+  "unblockUser": "Odblokovat",
+  "blockUserTitle": "Zablokovat tohoto uživatele?",
+  "blockUserMsg": "Nebude vám moci psát ani posílat žádosti o přátelství a jeho zprávy se vám skryjí. Přátelství s ním skončí. Nedozví se o tom.",
+  "blockedMessages_one": "{{count}} blokovaná zpráva",
+  "blockedMessages_other": "Blokované zprávy: {{count}}",
+  "showBlockedMessages": "Zobrazit",
+  "hideBlockedMessages": "Skrýt"
 }

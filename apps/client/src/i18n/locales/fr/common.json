@@ -182,5 +182,13 @@
   "commandArgNo": "Non",
   "commandArgMissing": "/{{commandName}} a besoin d'une valeur pour {{argName}}.",
   "mutedByModerator": "Un modérateur vous a rendu muet.",
-  "copyImageLink": "Copier le lien de l'image"
+  "copyImageLink": "Copier le lien de l'image",
+  "blockUser": "Bloquer",
+  "unblockUser": "Débloquer",
+  "blockUserTitle": "Bloquer cette personne ?",
+  "blockUserMsg": "Elle ne pourra plus vous écrire ni vous envoyer de demande d'ami, et ses messages seront masqués pour vous. Votre amitié prend fin. Elle n'est pas prévenue.",
+  "blockedMessages_one": "{{count}} message bloqué",
+  "blockedMessages_other": "{{count}} messages bloqués",
+  "showBlockedMessages": "Afficher",
+  "hideBlockedMessages": "Masquer"
 }

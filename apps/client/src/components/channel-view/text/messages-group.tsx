@@ -1,6 +1,8 @@
 import { PluginAvatar } from '@/components/plugin-avatar';
 import { RelativeTime } from '@/components/relative-time';
 import { UserAvatar } from '@/components/user-avatar';
+import { useIsUserBlocked } from '@/features/server/dms/hooks';
+import { isPendingMessage } from '@/features/server/messages/actions';
 import { usePluginMetadata } from '@/features/server/plugins/hooks';
 import { useIsOwnUser, useUserById } from '@/features/server/users/hooks';
 import { cn } from '@/lib/utils';
@@ -10,6 +12,7 @@ import {
 } from '@sharkord/shared';
 import { format } from 'date-fns';
 import { memo } from 'react';
+import { BlockedMessages } from './blocked-messages';
 import { areGroupsEqual } from './helpers';
 import { useMessageAuthorName } from './hooks/use-message-author-name';
 import { Message } from './message';
@@ -44,6 +47,8 @@ const MessagesGroup = memo(
     const user = useUserById(firstMessage.userId);
     const date = new Date(firstMessage.createdAt);
     const isOwnUser = useIsOwnUser(firstMessage.userId);
+    // a plugin or a webhook has no user id, and can't be blocked
+    const isBlocked = useIsUserBlocked(firstMessage.userId ?? -1);
     const authorName = useMessageAuthorName(firstMessage);
     const isDeletedUser = user?.name === DELETED_USER_IDENTITY_AND_NAME;
     const isPluginMessage = !!firstMessage.pluginId;
@@ -96,11 +101,14 @@ const MessagesGroup = memo(
               <div
                 key={message.id}
                 id={`message-${message.id}`}
-                className="rounded-md transition-colors duration-1000"
+                className={cn(
+                  'rounded-md transition-colors duration-1000',
+                  isPendingMessage(message) && 'opacity-55'
+                )}
               >
                 <Message
                   message={message}
-                  disableActions={disableActions}
+                  disableActions={disableActions || isPendingMessage(message)}
                   disableFiles={disableFiles}
                   disableReactions={disableReactions}
                   onReplyMessageSelect={onReplyMessageSelect}
@@ -116,15 +124,21 @@ const MessagesGroup = memo(
       </div>
     );
 
+    let content = groupContent;
+
     if (isReplyToMessage) {
-      return (
+      content = (
         <MessageReplyPreviewWrapper message={firstMessage}>
           {groupContent}
         </MessageReplyPreviewWrapper>
       );
     }
 
-    return groupContent;
+    if (isBlocked) {
+      return <BlockedMessages count={group.length}>{content}</BlockedMessages>;
+    }
+
+    return content;
   },
   areGroupsEqual
 );

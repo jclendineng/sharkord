@@ -11,6 +11,11 @@ struct MemberProfileSheet: View {
 
     // who made the invite they signed up with, for people who manage invites
     @State private var inviterName: String?
+    @State private var isConfirmingBlock = false
+
+    private var isBlocked: Bool {
+        session.isBlocked(user.id)
+    }
 
     private var isOwn: Bool {
         user.id == session.ownUserId
@@ -56,7 +61,13 @@ struct MemberProfileSheet: View {
 
                     if !isOwn {
                         HStack(spacing: 10) {
-                            if session.supports(.friends) {
+                            if isBlocked {
+                                Menu {
+                                    Button("Unblock", systemImage: "nosign", action: unblock)
+                                } label: {
+                                    wideLabel("Blocked", systemImage: "nosign", filled: false)
+                                }
+                            } else if session.supports(.friends) {
                                 friendButton
                             }
 
@@ -69,6 +80,20 @@ struct MemberProfileSheet: View {
                             }
                             .buttonStyle(.plain)
                             .accessibilityLabel("Message")
+
+                            if session.supports(.blocking), !isBlocked {
+                                Menu {
+                                    Button("Block", systemImage: "nosign", role: .destructive, action: confirmBlock)
+                                } label: {
+                                    Image(systemName: "ellipsis")
+                                        .font(.body.weight(.semibold))
+                                        .foregroundStyle(Theme.header)
+                                        .frame(width: 48, height: 46)
+                                        .background(Theme.listBackground, in: .rect(cornerRadius: 10))
+                                }
+                                .menuIndicator(.hidden)
+                                .accessibilityLabel("More")
+                            }
                         }
                     }
 
@@ -100,6 +125,11 @@ struct MemberProfileSheet: View {
             }
         }
         .background(Theme.deepBackground)
+        .confirmationDialog("Block \(user.name)?", isPresented: $isConfirmingBlock, titleVisibility: .visible) {
+            Button("Block", role: .destructive, action: block)
+        } message: {
+            Text("They can't message you or send you a friend request, and their messages are folded away for you. A friendship with them ends. They aren't told.")
+        }
         .task {
             await loadInviter()
         }
@@ -153,6 +183,18 @@ struct MemberProfileSheet: View {
             .foregroundStyle(filled ? .white : Theme.header)
             .frame(maxWidth: .infinity, minHeight: 46)
             .background(filled ? Theme.blurple : Theme.listBackground, in: .rect(cornerRadius: 10))
+    }
+
+    private func confirmBlock() {
+        isConfirmingBlock = true
+    }
+
+    private func block() {
+        change("block")
+    }
+
+    private func unblock() {
+        change("unblock")
     }
 
     private func change(_ action: String) {

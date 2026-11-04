@@ -4,6 +4,10 @@ struct MessageContentView: View {
     let html: String
 
     @Environment(SessionStore.self) private var session
+    // a message of emoji alone, as large next to body text at every text size
+    @ScaledMetric(relativeTo: .body) private var jumboSize = 44.0
+    // the server's own emoji, drawn as pictures, keep pace with the text around them
+    @ScaledMetric(relativeTo: .body) private var customEmojiSize = 22.0
 
     private var emojiCache: EmojiImageCache { .shared }
 
@@ -16,7 +20,7 @@ struct MessageContentView: View {
                 switch block {
                 case .paragraph(let inlines):
                     paragraph(inlines, isJumbo: isJumbo)
-                        .font(isJumbo ? .system(size: 44) : .body)
+                        .font(isJumbo ? .system(size: jumboSize) : .body)
                         .foregroundStyle(Theme.text)
                         .fixedSize(horizontal: false, vertical: true)
                 case .code(let code):
@@ -53,7 +57,7 @@ struct MessageContentView: View {
         var result = Text("")
 
         for inline in inlines {
-            let piece = text(for: inline, emojiSize: isJumbo ? 48 : 22)
+            let piece = text(for: inline, emojiSize: isJumbo ? jumboSize + 4 : customEmojiSize)
 
             result = Text("\(result)\(piece)")
         }

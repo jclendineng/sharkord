@@ -96,6 +96,16 @@ struct MemberActionsSheet: View {
                         }
                     }
                 }
+
+                if !isSelf, session.supports(.blocking) {
+                    ActionGroup {
+                        if session.isBlocked(user.id) {
+                            ActionRow(title: "Unblock", systemImage: "nosign", action: unblock)
+                        } else {
+                            ActionRow(title: "Block", systemImage: "nosign", tint: Theme.red, action: block)
+                        }
+                    }
+                }
             }
             .padding(.horizontal, isPointerMenu ? 6 : 16)
             .fittedSheet()
@@ -149,6 +159,20 @@ struct MemberActionsSheet: View {
     private func message() {
         close()
         onMessage()
+    }
+
+    // asked about once the menu has gone, over the whole window
+    private func block() {
+        close()
+        session.userAwaitingBlock = user
+    }
+
+    private func unblock() {
+        close()
+
+        Task {
+            await session.changeFriendship("unblock", with: user.id)
+        }
     }
 
     private func mention() {

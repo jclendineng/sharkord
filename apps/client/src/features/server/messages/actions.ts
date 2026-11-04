@@ -28,7 +28,12 @@ import {
   ownUserRoleIdsSelector,
   userByIdSelector
 } from '../users/selectors';
-import { threadMessagesMapSelector } from './selectors';
+import {
+  isChannelDetachedSelector,
+  messagesByChannelIdSelector,
+  messagesMapSelector,
+  threadMessagesMapSelector
+} from './selectors';
 
 const sendBrowserNotification = (
   message: TJoinedMessage,
@@ -89,6 +94,12 @@ export const addMessages = (
 ) => {
   const rootMessages = messages.filter((m) => !m.parentMessageId);
   const threadReplies = messages.filter((m) => !!m.parentMessageId);
+
+  if (isSubscriptionMessage) {
+    rootMessages.forEach((message) =>
+      replacePendingMessage(channelId, message)
+    );
+  }
 
   if (rootMessages.length > 0) {
     store.dispatch(
@@ -217,6 +228,126 @@ export const updateMessage = (channelId: number, message: TJoinedMessage) => {
     );
   } else {
     store.dispatch(serverSliceActions.updateMessage({ channelId, message }));
+  }
+};
+
+// a message sent from here shows at once under a negative id, faint and with nothing to act on,
+// until the server's own copy arrives and takes its place
+let nextPendingMessageId = -1;
+
+export const isPendingMessage = (message: TJoinedMessage) => message.id < 0;
+
+export const addPendingMessage = ({
+  channelId,
+  content,
+  replyTo
+}: {
+  channelId: number;
+  content: string;
+  replyTo?: TJoinedMessage;
+}): number | undefined => {
+  const state = store.getState();
+  const ownUserId = ownUserIdSelector(state);
+  const existing = messagesMapSelector(state)[channelId];
+  const isDetached = isChannelDetachedSelector(state, channelId);
+
+  // a channel not loaded, or showing an older window, has nowhere to put it
+  if (!ownUserId || !existing || isDetached) {
+    return undefined;
+  }
+
+  const id = nextPendingMessageId;
+  const newest = existing.at(-1);
+
+  nextPendingMessageId -= 1;
+
+  const message: TJoinedMessage = {
+    id,
+    content,
+    userId: ownUserId,
+    pluginId: null,
+    webhookName: null,
+    pluginComponents: null,
+    channelId,
+    parentMessageId: null,
+    replyToMessageId: replyTo?.id ?? null,
+    stickerId: null,
+    editable: false,
+    metadata: null,
+    // never before the newest message, whatever this computer's clock says
+    createdAt: Math.max(Date.now(), (newest?.createdAt ?? 0) + 1),
+    updatedAt: null,
+    pinned: false,
+    pinnedAt: null,
+    pinnedBy: null,
+    editedAt: null,
+    editedBy: null,
+    files: [],
+    reactions: [],
+    poll: null,
+    sticker: null,
+    replyTo: replyTo
+      ? {
+          id: replyTo.id,
+          content: replyTo.content,
+          userId: replyTo.userId,
+          pluginId: replyTo.pluginId
+        }
+      : null
+  };
+
+  store.dispatch(
+    serverSliceActions.addMessages({ channelId, messages: [message] })
+  );
+
+  return id;
+};
+
+export const removePendingMessage = (channelId: number, messageId: number) => {
+  store.dispatch(serverSliceActions.deleteMessage({ channelId, messageId }));
+};
+
+// the server said which message it saved: if it has already arrived, the placeholder goes now,
+// otherwise its arrival takes the place of one
+export const settlePendingMessage = (
+  channelId: number,
+  pendingId: number,
+  messageId: number | null
+) => {
+  const state = store.getState();
+  const messages = messagesByChannelIdSelector(state, channelId);
+  const pending = messages.find((message) => message.id === pendingId);
+
+  if (!pending) {
+    return;
+  }
+
+  const hasArrived = messages.some((message) => message.id === messageId);
+
+  if (messageId === null || hasArrived) {
+    removePendingMessage(channelId, pendingId);
+  }
+};
+
+// your own message arriving live replaces the oldest placeholder in its channel
+const replacePendingMessage = (channelId: number, message: TJoinedMessage) => {
+  const state = store.getState();
+  const ownUserId = ownUserIdSelector(state);
+
+  if (message.userId !== ownUserId || message.parentMessageId) {
+    return;
+  }
+
+  const messages = messagesByChannelIdSelector(state, channelId);
+
+  if (messages.some((existing) => existing.id === message.id)) {
+    return;
+  }
+
+  const pending = messages.find(isPendingMessage);
+
+  if (pending) {
+    removePendingMessage(channelId, pending.id);
   }
 };
 

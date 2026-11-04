@@ -100,6 +100,25 @@ Online, idle, do not disturb or invisible, and a custom status message. Routes
 A member can turn off new direct messages from people they have no conversation with.
 Routes `users.getPrivacy` and `users.updatePrivacy`, column `users.allow_direct_messages`.
 
+## Blocking
+
+A member can block someone on the server, as in Discord. The blocked person can't start a
+direct message with them, send in a one to one conversation they already have, or ask to be
+friends, and a block ends any friendship or request between the two. The conversation stays
+readable. The blocked person is never told: a direct message is refused with the same words as
+the privacy setting above, a message in an existing one with "Your message couldn't be
+delivered.", and a friend request with "That friend request couldn't be sent." Messages in
+server channels still go through, and the blocker sees each run of the blocked person's
+messages folded into one "blocked messages" row they can open. Group direct messages are left
+alone.
+
+Routes `friends.block` and `friends.unblock`; `friends.get` returns the list as `blocked`, and
+`friends.onUpdate` tells the blocker's other devices. Table `user_blocks` (migration
+`0078_user_blocks`), feature `blocking` in `/info`. On the web, Block sits on the user card and
+the Friends dialog has a Blocked section with Unblock. In the apps, a profile has Block in its
+more menu and shows Blocked with Unblock once blocked, the member menu (a right click on a Mac)
+has Block or Unblock at the bottom, and Add Friends lists the people you blocked.
+
 ## Mentions in the iOS app
 
 The iOS composer lists members, roles and channels as you type `@` or `#`, and sends the same

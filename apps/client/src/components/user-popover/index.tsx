@@ -1,11 +1,12 @@
 import { PluginSlotRenderer } from '@/components/plugin-slot-renderer';
 import { setModViewOpen, setSelectedDmChannelId } from '@/features/app/actions';
+import { requestConfirmation } from '@/features/dialogs/actions';
 import { setDmsOpen } from '@/features/server/actions';
 import {
   changeFriendship,
   type TFriendshipAction
 } from '@/features/server/dms/actions';
-import { useFriendStatus } from '@/features/server/dms/hooks';
+import { useFriendStatus, useIsUserBlocked } from '@/features/server/dms/hooks';
 import { usePublicServerSettings, useUserRoles } from '@/features/server/hooks';
 import { useIsOwnUser, useUserById } from '@/features/server/users/hooks';
 import { getFileUrl } from '@/helpers/get-file-url';
@@ -28,6 +29,7 @@ import {
 } from '@sharkord/ui';
 import { format } from 'date-fns';
 import {
+  Ban,
   MessageSquare,
   ShieldCheck,
   Trash,
@@ -78,6 +80,7 @@ const UserPopover = memo(({ userId, children }: TUserPopoverProps) => {
   );
   const isOwnUser = useIsOwnUser(userId);
   const friendStatus = useFriendStatus(userId);
+  const isBlocked = useIsUserBlocked(userId);
 
   const pluginProps = useMemo(() => ({ userId }), [userId]);
 
@@ -119,6 +122,26 @@ const UserPopover = memo(({ userId, children }: TUserPopoverProps) => {
     changeFriendship(friendButton.action, userId);
   }, [friendButton, userId]);
 
+  // asked first, a block ends any friendship with them. unblocking needs no asking
+  const onBlockClick = useCallback(async () => {
+    if (isBlocked) {
+      changeFriendship('unblock', userId);
+
+      return;
+    }
+
+    const confirmed = await requestConfirmation({
+      title: t('blockUserTitle'),
+      message: t('blockUserMsg'),
+      confirmLabel: t('blockUser'),
+      variant: 'danger'
+    });
+
+    if (!confirmed) return;
+
+    changeFriendship('block', userId);
+  }, [isBlocked, userId, t]);
+
   const onModerateClick = useCallback(() => {
     setModViewOpen(true, userId);
   }, [userId]);
@@ -128,7 +151,9 @@ const UserPopover = memo(({ userId, children }: TUserPopoverProps) => {
   const isDeleted = user.name === DELETED_USER_IDENTITY_AND_NAME;
   const showDmButton =
     settings?.directMessagesEnabled && !isDeleted && !isOwnUser;
-  const showFriendButton = !isDeleted && !isOwnUser && !user.banned;
+  const showFriendButton =
+    !isDeleted && !isOwnUser && !user.banned && !isBlocked;
+  const showBlockButton = !isDeleted && !isOwnUser;
 
   return (
     <Popover>
@@ -232,6 +257,16 @@ const UserPopover = memo(({ userId, children }: TUserPopoverProps) => {
                   size="sm"
                   title={friendButton.title}
                   onClick={onFriendClick}
+                />
+              )}
+
+              {showBlockButton && (
+                <IconButton
+                  icon={Ban}
+                  variant="ghost"
+                  size="sm"
+                  title={isBlocked ? t('unblockUser') : t('blockUser')}
+                  onClick={onBlockClick}
                 />
               )}
 

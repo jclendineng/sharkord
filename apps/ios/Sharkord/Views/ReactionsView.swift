@@ -7,6 +7,9 @@ struct ReactionsView: View {
     @Environment(ServerListStore.self) private var servers
 
     @State private var isPickerPresented = false
+    // a tap shows at once, the server's update catching up. each emoji holds whether it should
+    // be yours until the message says so, so someone else reacting meanwhile does not undo it
+    @State private var pendingMine: [String: Bool] = [:]
 
     private struct Group: Identifiable {
         let emoji: String
@@ -28,7 +31,27 @@ struct ReactionsView: View {
             }
         }
 
-        return groups
+        guard let ownUserId = session.ownUserId else {
+            return groups
+        }
+
+        for (emoji, isMine) in pendingMine {
+            if let index = groups.firstIndex(where: { $0.emoji == emoji }) {
+                groups[index].userIds.removeAll { $0 == ownUserId }
+
+                if isMine {
+                    groups[index].userIds.append(ownUserId)
+                }
+            } else if isMine {
+                groups.append(Group(emoji: emoji, file: nil, userIds: [ownUserId]))
+            }
+        }
+
+        return groups.filter { !$0.userIds.isEmpty }
+    }
+
+    private func isMineOnServer(_ emoji: String) -> Bool {
+        message.reactions.contains { $0.emoji == emoji && $0.userId == session.ownUserId }
     }
 
     var body: some View {
@@ -60,6 +83,8 @@ struct ReactionsView: View {
             }
         }
         .padding(.top, 2)
+        .animation(.snappy(duration: 0.2), value: groups.map(\.userIds.count))
+        .onChange(of: message.reactions, settlePending)
         // handed over by hand: on a mac a sheet's background is worked out before it inherits
         // anything, so a sheet reading a store it was not given crashed on opening
         .sheet(isPresented: $isPickerPresented) {
@@ -76,22 +101,36 @@ struct ReactionsView: View {
 
     // one already on it from you stays, the picker only adds
     private func add(_ emoji: String) {
-        let isMine = message.reactions.contains { $0.emoji == emoji && $0.userId == session.ownUserId }
-
-        guard !isMine else {
+        guard !isMine(emoji) else {
             return
         }
 
         toggle(emoji)
     }
 
+    private func isMine(_ emoji: String) -> Bool {
+        pendingMine[emoji] ?? isMineOnServer(emoji)
+    }
+
     private func toggle(_ emoji: String) {
+        let wantsMine = !isMine(emoji)
+
+        pendingMine[emoji] = wantsMine
+        Haptics.selection()
+
         Task {
             do {
                 try await session.toggleReaction(messageId: message.id, emoji: emoji)
             } catch {
+                pendingMine[emoji] = nil
                 session.showError(error)
             }
+        }
+    }
+
+    private func settlePending() {
+        pendingMine = pendingMine.filter { emoji, isMine in
+            isMineOnServer(emoji) != isMine
         }
     }
 }
@@ -112,6 +151,7 @@ private struct ReactionPill: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(isMine ? Theme.mentionText : Theme.muted)
                     .monospacedDigit()
+                    .contentTransition(.numericText(value: Double(count)))
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
@@ -123,6 +163,14 @@ private struct ReactionPill: View {
             .hoverBrighten(cornerRadius: 8)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityAddTraits(isMine ? .isSelected : [])
+    }
+
+    private var accessibilityLabel: String {
+        let name = emoji.hasPrefix(":") ? emoji.trimmingCharacters(in: CharacterSet(charactersIn: ":")) : emoji
+
+        return count == 1 ? String(localized: "\(name), 1 reaction") : String(localized: "\(name), \(count) reactions")
     }
 }
 

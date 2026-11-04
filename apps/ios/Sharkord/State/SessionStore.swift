@@ -32,6 +32,8 @@ final class SessionStore {
     // set when the server refused the sign in rather than you logging out, so the login screen opens once
     var wantsSignInPrompt = false
     private(set) var toastMessage: String?
+    // someone a menu asked to block, asked about over the whole window once the menu has gone
+    var userAwaitingBlock: PublicUser?
 
     @ObservationIgnored private var toastTask: Task<Void, Never>?
 
@@ -1541,7 +1543,11 @@ final class SessionStore {
         return .none
     }
 
-    // request, accept or remove, then the list as the server has it
+    func isBlocked(_ userId: Int) -> Bool {
+        friendLists.blocked.contains(userId)
+    }
+
+    // request, accept, remove, block or unblock, then the list as the server has it
     func changeFriendship(_ action: String, with userId: Int) async {
         do {
             try await perform("friends.\(action)", ["userId": userId])

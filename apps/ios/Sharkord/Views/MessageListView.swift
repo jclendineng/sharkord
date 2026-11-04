@@ -27,6 +27,9 @@ struct MessageListView<Header: View>: View {
     // consecutive messages from the same author inside this window share one header
     private static var groupingWindow: Int { 7 * 60 * 1000 }
 
+    // runs of a blocked person's messages opened on asking, by their first message
+    @State private var revealedBlockedStretches: Set<Int> = []
+
     // the message a jump landed on, ringed by a soft glow that pulses twice and fades
     @State private var highlightedMessageId: Int?
     @State private var highlightStrength = 0.0
@@ -108,6 +111,7 @@ struct MessageListView<Header: View>: View {
         // read once, not once per row: the lookup is a scan of every loaded message, and the
         // list asked for it twice in each of fifty rows
         let unreadId = store.firstUnreadMessage?.id
+        let blockedStretches = blockedStretches()
 
         return ScrollView {
             // every loaded message is laid out, not only the ones on screen: a lazy stack guessed the
@@ -134,29 +138,39 @@ struct MessageListView<Header: View>: View {
                     }
 
                     let showsHeader = showsHeader(at: index) || message.id == unreadId
+                    let blockedStretch = blockedStretches[message.id]
 
-                    MessageRow(
-                        message: message,
-                        showsHeader: showsHeader,
-                        isFollowedClosely: isFollowedClosely(at: index),
-                        showsThreadLink: store.scope == .channel,
-                        isShowingActions: actionsMessage?.id == message.id,
-                        onLongPress: { showActions(for: message) },
-                        onDoubleTap: { react(to: message) },
-                        onSecondaryClick: { click in showActions(for: message, at: click) },
-                        hoverActions: MessageHoverActions(
-                            onReact: { emoji in quickReact(emoji, to: message) },
-                            onReply: { reply(to: message) },
-                            onMore: { click in showActions(for: message, at: click) }
+                    if let blockedStretch, !revealedBlockedStretches.contains(blockedStretch.startId) {
+                        if blockedStretch.startId == message.id {
+                            BlockedMessagesRow(count: blockedStretch.count) {
+                                revealBlockedStretch(blockedStretch.startId)
+                            }
+                        }
+                    } else {
+                        MessageRow(
+                            message: message,
+                            showsHeader: showsHeader,
+                            isFollowedClosely: isFollowedClosely(at: index),
+                            showsThreadLink: store.scope == .channel,
+                            isShowingActions: actionsMessage?.id == message.id,
+                            onLongPress: { showActions(for: message) },
+                            onDoubleTap: { react(to: message) },
+                            onSecondaryClick: { click in showActions(for: message, at: click) },
+                            hoverActions: MessageHoverActions(
+                                onReact: { emoji in quickReact(emoji, to: message) },
+                                onReply: { reply(to: message) },
+                                onMore: { click in showActions(for: message, at: click) }
+                            ),
+                            isPending: store.isPending(message)
                         )
-                    )
-                    .background {
-                        if highlightedMessageId == message.id {
-                            JumpHighlight(
-                                strength: highlightStrength,
-                                hasHeader: showsHeader,
-                                isFollowedClosely: isFollowedClosely(at: index)
-                            )
+                        .background {
+                            if highlightedMessageId == message.id {
+                                JumpHighlight(
+                                    strength: highlightStrength,
+                                    hasHeader: showsHeader,
+                                    isFollowedClosely: isFollowedClosely(at: index)
+                                )
+                            }
                         }
                     }
                 }
@@ -194,6 +208,8 @@ struct MessageListView<Header: View>: View {
                 isPinnedToBottom = false
             }
         }
+        // what you send shows at the bottom, so the list goes there to show it
+        .onChange(of: store.pendingIds.last, scrollToSentMessage)
         .onScrollGeometryChange(for: Bool.self) { geometry in
             let distance = geometry.contentSize.height - geometry.contentOffset.y - geometry.containerSize.height
 
@@ -413,6 +429,14 @@ struct MessageListView<Header: View>: View {
         }
     }
 
+    private func scrollToSentMessage(_: Int?, _ pendingId: Int?) {
+        guard pendingId != nil else {
+            return
+        }
+
+        scrollToBottom()
+    }
+
     private func jumpToFirstUnread() {
         Task {
             await store.jumpToFirstUnread()
@@ -575,6 +599,57 @@ struct MessageListView<Header: View>: View {
         }
 
         return !showsHeader(at: next) && store.messages[next].id != firstUnreadId
+    }
+
+    // each message by someone you blocked, keyed to the run of their messages it is part of:
+    // the run folds into one row until it is asked to show
+    private func blockedStretches() -> [Int: BlockedStretch] {
+        let blocked = Set(session.friendLists.blocked)
+
+        guard !blocked.isEmpty else {
+            return [:]
+        }
+
+        var stretches: [Int: BlockedStretch] = [:]
+        var current: BlockedStretch?
+        var currentIds: [Int] = []
+
+        func close() {
+            if let current {
+                for id in currentIds {
+                    stretches[id] = BlockedStretch(startId: current.startId, count: currentIds.count)
+                }
+            }
+
+            current = nil
+            currentIds = []
+        }
+
+        var previousUserId: Int?
+
+        for message in store.messages {
+            guard let userId = message.userId, blocked.contains(userId) else {
+                close()
+                previousUserId = nil
+                continue
+            }
+
+            if userId != previousUserId {
+                close()
+                current = BlockedStretch(startId: message.id, count: 0)
+            }
+
+            currentIds.append(message.id)
+            previousUserId = userId
+        }
+
+        close()
+
+        return stretches
+    }
+
+    private func revealBlockedStretch(_ startId: Int) {
+        revealedBlockedStretches.insert(startId)
     }
 
     private func showsHeader(at index: Int) -> Bool {
@@ -748,5 +823,44 @@ private struct JumpToBottomButton: View {
         }
         .shadow(color: .black.opacity(0.3), radius: 6, y: 2)
         .buttonStyle(.plain)
+    }
+}
+
+private struct BlockedStretch {
+    let startId: Int
+    let count: Int
+}
+
+// a blocked person's run of messages folded into one line, as discord does, opened on asking
+private struct BlockedMessagesRow: View {
+    let count: Int
+    let onShow: () -> Void
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "nosign")
+                .foregroundStyle(Theme.muted)
+
+            label
+                .foregroundStyle(Theme.muted)
+
+            Button("Show", action: onShow)
+                .buttonStyle(.plain)
+                .foregroundStyle(Theme.accentText)
+                .fontWeight(.semibold)
+        }
+        .font(.subheadline)
+        .padding(.horizontal, 16)
+        .padding(.top, MessageRowBand.headerGap)
+        .accessibilityElement(children: .combine)
+        .accessibilityAction(named: Text("Show"), onShow)
+    }
+
+    private var label: Text {
+        if count == 1 {
+            return Text("1 blocked message")
+        }
+
+        return Text("\(count) blocked messages")
     }
 }

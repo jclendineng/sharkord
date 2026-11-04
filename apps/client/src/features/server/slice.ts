@@ -168,7 +168,7 @@ const initialState: IServerState = {
   activeFullscreenPluginId: undefined,
   dmsOpen: false,
   directMessages: [],
-  friendLists: { friends: [], incoming: [], outgoing: [] },
+  friendLists: { friends: [], incoming: [], outgoing: [], blocked: [] },
   restoredFromSnapshot: false,
   staleChannelIds: {},
   hideOwnScreenShare: getLocalStorageItemBool(

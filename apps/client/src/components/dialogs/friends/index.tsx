@@ -42,7 +42,8 @@ const Section = memo(({ title, userIds, onOpenedDm }: TSectionProps) => {
 });
 
 // friends for one server: there is no central directory, everyone you could add is already here.
-// add by username, then requests waiting on you, the ones you sent, your friends and everyone else
+// add by username, then requests waiting on you, the ones you sent, your friends, the people you
+// blocked and everyone else
 const FriendsDialog = memo(({ isOpen, close }: TDialogBaseProps) => {
   const { t } = useTranslation('dialogs');
   const lists = useFriendLists();
@@ -58,7 +59,8 @@ const FriendsDialog = memo(({ isOpen, close }: TDialogBaseProps) => {
     const linked = new Set([
       ...lists.friends,
       ...lists.incoming,
-      ...lists.outgoing
+      ...lists.outgoing,
+      ...lists.blocked
     ]);
 
     const visible = users.filter(
@@ -76,6 +78,7 @@ const FriendsDialog = memo(({ isOpen, close }: TDialogBaseProps) => {
       incoming: idsIn(lists.incoming),
       outgoing: idsIn(lists.outgoing),
       friends: idsIn(lists.friends),
+      blocked: idsIn(lists.blocked),
       others: visible
         .filter((user) => !linked.has(user.id))
         .map((user) => user.id)
@@ -173,6 +176,11 @@ const FriendsDialog = memo(({ isOpen, close }: TDialogBaseProps) => {
           <Section
             title={t('friendsSection')}
             userIds={sections.friends}
+            onOpenedDm={close}
+          />
+          <Section
+            title={t('blockedSection')}
+            userIds={sections.blocked}
             onOpenedDm={close}
           />
           <Section

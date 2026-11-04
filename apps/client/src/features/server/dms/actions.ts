@@ -30,9 +30,11 @@ export const loadFriends = async () => {
   }
 };
 
-export type TFriendshipAction = 'request' | 'accept' | 'remove';
+export type TFriendshipAction =
+  'request' | 'accept' | 'remove' | 'block' | 'unblock';
 
-// the user popover and the friends dialog both send these, and both want the lists fresh after
+// the user popover and the friends dialog both send these, and both want the lists fresh after.
+// blocking lives with them, the server keeps the blocked list beside the friends
 export const changeFriendship = async (
   action: TFriendshipAction,
   userId: number
@@ -44,6 +46,10 @@ export const changeFriendship = async (
       await trpc.friends.request.mutate({ userId });
     } else if (action === 'accept') {
       await trpc.friends.accept.mutate({ userId });
+    } else if (action === 'block') {
+      await trpc.friends.block.mutate({ userId });
+    } else if (action === 'unblock') {
+      await trpc.friends.unblock.mutate({ userId });
     } else {
       await trpc.friends.remove.mutate({ userId });
     }

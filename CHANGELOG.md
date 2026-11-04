@@ -17,6 +17,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   - Upstream's plugin storage migrations run as this fork's `0060_plugin_storage`, after the fork's own, so a database that already ran `0059` still gets them.
   - `0075_push_relay` adds the relay ticket and encryption key columns to push devices. Devices registered before it keep going straight to Apple.
   - `0076_push_relay_setting` adds the setting that turns push off, on for every server.
+  - `0078_user_blocks` adds the table of who blocked whom.
   - `0077_push_relay_only` deletes the devices registered straight with Apple and drops their `sandbox` column. Those devices get notifications again once the app is updated and opened.
   - `config.ini` loses `[push] enabled` and the `apns` keys at the first start, and gains `relayEnabled`. `SHARKORD_PUSH_ENABLED` and the `SHARKORD_PUSH_APNS_*` variables no longer do anything.
   - `config.ini` rate limits still at their old defaults move up to the new ones at the first start: sending and editing 15 to 60 a minute, message actions 60 to 120, uploads 30 to 60 and search 15 to 30. A limit changed by hand is kept. `[rateLimiters.deleteMessage]` is new, at 120 a minute.
@@ -117,6 +118,11 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 #### Messaging
 
+- Members can block each other, in the app and on the web.
+  - A block stops new direct messages, messages in an existing one to one conversation and friend requests, both ways, and ends any friendship between the two.
+  - The blocker sees a blocked person's messages folded into one row they can open.
+  - The blocked person is never told.
+  - Block is on the profile and the member menu, and the people you blocked are listed with Unblock beside your friends.
 - Polls.
 - Voice messages that play in place.
 - Server stickers and Klipy GIFs in the picker.
@@ -335,6 +341,15 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   - Rows with more choices (Mute Channel, Notification Settings, Add Reaction) open them beside the menu.
   - Add Reaction and the reactions along the top lead with the emoji you use most.
 - On a Mac, hovering a message shows a bar of quick reactions, Reply and More.
+- A message shows in the chat the moment it is sent, faint until the server has it, and the message box empties at once for the next one, in the app and on the web.
+  - A send that fails puts the text back in the box with the error.
+  - Sending while scrolled up goes back down to the new message.
+- Reactions show the moment they are clicked, in the app and on the web.
+  - In the app, with a light tap under the finger and the count rolling to the new number.
+- In the app, emoji-only messages and the server's own emoji grow with the device's text size.
+- On a Mac, pointing at a follow-up message shows its time beside it.
+- In the app, VoiceOver offers Message Actions on every message and reads each reaction's count and whether it is yours.
+- The typing dots hold still with Reduce Motion on.
 - On a Mac, search is a box in the chat's top bar with the filter menu beside it, and the results drop down under it. The server search above the channel list opens the same card.
 - On a Mac, sheets open centred in the window, scrolling in one no longer fades it out, and they have no grabber.
 - Motion follows Reduce Motion, and settles without a wobble.

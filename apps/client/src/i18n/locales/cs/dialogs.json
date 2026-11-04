@@ -149,5 +149,7 @@
   "rulesRemoveDefault": "Odebrat {{role}} po reakci",
   "rulesRemoveDefaultHelp": "Pro roli, která jen znamená, že někdo ještě nepřijal pravidla. Nechte vypnuté, pokud {{role}} dává oprávnění, která členové potřebují.",
   "rulesGiveExisting": "Dát ji všem současným členům",
-  "rulesGiveExistingHelp": "Bez toho přijdou členové, kteří se připojili před pravidly, o kanály, které zavřete."
+  "rulesGiveExistingHelp": "Bez toho přijdou členové, kteří se připojili před pravidly, o kanály, které zavřete.",
+  "blockedSection": "Blokovaní",
+  "unblockUser": "Odblokovat"
 }

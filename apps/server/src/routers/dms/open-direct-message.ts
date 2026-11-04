@@ -8,6 +8,7 @@ import {
   publishChannelPermissions,
   publishDirectMessageConversation
 } from '../../db/publishers';
+import { getBlockBetween } from '../../db/queries/blocks';
 import { getDirectMessageChannel, normalizePair } from '../../db/queries/dms';
 import { getSettings } from '../../db/queries/server';
 import { channels, directMessages, users } from '../../db/schema';
@@ -64,8 +65,16 @@ const openDirectMessageRoute = rateLimitedProcedure(protectedProcedure, {
       return { channelId: existing.channelId };
     }
 
-    // a conversation that already exists stays open, only new ones are refused
-    invariant(targetUser.allowDirectMessages, {
+    const block = await getBlockBetween(ctx.userId, input.userId);
+
+    invariant(block !== 'blocked', {
+      code: 'FORBIDDEN',
+      message: 'You blocked this person. Unblock them to message them.'
+    });
+
+    // a conversation that already exists stays open, only new ones are refused. a block from
+    // them reads the same as their privacy setting, so it can't be told apart
+    invariant(targetUser.allowDirectMessages && block !== 'blockedBy', {
       code: 'FORBIDDEN',
       message: "This person isn't accepting direct messages."
     });

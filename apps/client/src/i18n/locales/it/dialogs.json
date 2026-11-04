@@ -149,5 +149,7 @@
   "rulesRemoveDefault": "Togli {{role}} dopo la reazione",
   "rulesRemoveDefaultHelp": "Per un ruolo che indica solo che qualcuno non ha ancora accettato le regole. Lascialo disattivato se {{role}} dà permessi di cui i membri hanno bisogno.",
   "rulesGiveExisting": "Assegnalo a tutti i membri attuali",
-  "rulesGiveExistingHelp": "Senza questo, i membri entrati prima delle regole perdono i canali che chiudi."
+  "rulesGiveExistingHelp": "Senza questo, i membri entrati prima delle regole perdono i canali che chiudi.",
+  "blockedSection": "Bloccati",
+  "unblockUser": "Sblocca"
 }

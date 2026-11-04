@@ -4,6 +4,11 @@ import {
   useChannelCan,
   useTypingUsersByChannelId
 } from '@/features/server/hooks';
+import {
+  addPendingMessage,
+  removePendingMessage,
+  settlePendingMessage
+} from '@/features/server/messages/actions';
 import { useMessages } from '@/features/server/messages/hooks';
 import { SoundType } from '@/features/server/types';
 import { playSound } from '@/helpers/sounds';
@@ -14,6 +19,7 @@ import { getTRPCClient } from '@/lib/trpc';
 import type { TReplyTarget } from '@/types';
 import {
   ChannelPermission,
+  getPlainTextFromHtml,
   getTrpcError,
   prepareMessageHtml,
   TestId,
@@ -133,19 +139,53 @@ const TextChannel = memo(({ channelId, onClose }: TChannelProps) => {
     async (message: string, files: { id: string }[]) => {
       sendTypingSignal.cancel();
 
-      const trpc = getTRPCClient();
+      const content = prepareMessageHtml(message);
+      const replyTo = replyingToMessage;
+      // text alone shows at once and the box empties for the next message. files have nothing
+      // to draw until the server saved them, and a command comes back as something else
+      const isCommand = getPlainTextFromHtml(content).trim().startsWith('/');
+      const pendingId =
+        files.length === 0 && !isCommand
+          ? addPendingMessage({ channelId, content, replyTo })
+          : undefined;
+
+      if (pendingId !== undefined) {
+        setNewMessageHandler('');
+        setReplyingToMessage(undefined);
+        // once the new row is drawn
+        requestAnimationFrame(scrollToBottom);
+      }
 
       try {
-        await trpc.messages.send.mutate({
-          content: prepareMessageHtml(message),
+        const trpc = getTRPCClient();
+        const messageId = await trpc.messages.send.mutate({
+          content,
           channelId,
           files: files.map((f) => f.id),
-          replyToMessageId: replyingToMessage?.id
+          replyToMessageId: replyTo?.id
         });
 
         playSound(SoundType.MESSAGE_SENT);
+
+        if (pendingId !== undefined) {
+          settlePendingMessage(channelId, pendingId, messageId);
+
+          // the box already emptied, and may hold the next message by now
+          return true;
+        }
       } catch (error) {
         toast.error(getTrpcError(error, t('failedSendMessage')));
+
+        // the text and the reply come back, unless something new was typed meanwhile
+        if (pendingId !== undefined) {
+          removePendingMessage(channelId, pendingId);
+
+          if (!getDraftMessage(draftChannelKey)) {
+            setNewMessageHandler(message);
+            setReplyingToMessage(replyTo);
+          }
+        }
+
         return false;
       }
 
@@ -156,10 +196,12 @@ const TextChannel = memo(({ channelId, onClose }: TChannelProps) => {
     },
     [
       channelId,
+      draftChannelKey,
+      replyingToMessage,
+      scrollToBottom,
       sendTypingSignal,
       setNewMessageHandler,
-      t,
-      replyingToMessage?.id
+      t
     ]
   );
 

@@ -120,7 +120,7 @@ enum Platform {
 }
 
 // a mac taps through a force touch trackpad, the only part of it that can, and only while a
-// finger is on it. it has one kind of tap, so all three are the same there
+// finger is on it. it has one kind of tap, so they are all the same there
 enum Haptics {
     static func light() {
         #if os(iOS)
@@ -133,6 +133,14 @@ enum Haptics {
     static func medium() {
         #if os(iOS)
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        #else
+        tapTrackpad()
+        #endif
+    }
+
+    static func selection() {
+        #if os(iOS)
+        UISelectionFeedbackGenerator().selectionChanged()
         #else
         tapTrackpad()
         #endif

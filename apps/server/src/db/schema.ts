@@ -819,6 +819,26 @@ const friendships = sqliteTable(
   ]
 );
 
+// someone a user blocked: they can't start a direct message, send one in an existing one or
+// ask to be friends, and their messages are hidden behind a row for the blocker. one way only,
+// the blocked user is never told
+const userBlocks = sqliteTable(
+  'user_blocks',
+  {
+    blockerId: integer('blocker_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    blockedId: integer('blocked_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: integer('created_at').notNull()
+  },
+  (t) => [
+    primaryKey({ columns: [t.blockerId, t.blockedId] }),
+    index('user_blocks_blocked_idx').on(t.blockedId)
+  ]
+);
+
 // a direct message between more than two people, as discord's group dms: the channel is a dm
 // channel like any other, these say who is in it and what it is called
 const groupDms = sqliteTable('group_dms', {
@@ -1165,6 +1185,7 @@ export {
   settings,
   soundboardSounds,
   stickers,
+  userBlocks,
   userNotes,
   userRoles,
   users,

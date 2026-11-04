@@ -53,6 +53,7 @@ enum ServerFeature: String {
     case searchFilters = "search-filters"
     case pinnedChannels = "pinned-channels"
     case fileSigning = "file-signing"
+    case blocking
 }
 
 struct Handshake: Decodable {
@@ -183,6 +184,23 @@ struct FriendLists: Decodable, Equatable {
     var incoming: [Int] = []
     // asked by you, waiting on them
     var outgoing: [Int] = []
+    // blocked by you, none from a server without blocking
+    var blocked: [Int] = []
+
+    private enum CodingKeys: String, CodingKey {
+        case friends, incoming, outgoing, blocked
+    }
+
+    init() {}
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        friends = try container.decode([Int].self, forKey: .friends)
+        incoming = try container.decode([Int].self, forKey: .incoming)
+        outgoing = try container.decode([Int].self, forKey: .outgoing)
+        blocked = try container.decodeIfPresent([Int].self, forKey: .blocked) ?? []
+    }
 }
 
 struct FriendshipUpdate: Decodable {

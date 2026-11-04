@@ -149,5 +149,7 @@
   "rulesRemoveDefault": "Take away {{role}} once they react",
   "rulesRemoveDefaultHelp": "For a role that only means someone has not accepted the rules yet. Leave it off if {{role}} gives permissions members need.",
   "rulesGiveExisting": "Give it to everyone already here",
-  "rulesGiveExistingHelp": "Without it, members who joined before the rules lose the channels you close."
+  "rulesGiveExistingHelp": "Without it, members who joined before the rules lose the channels you close.",
+  "blockedSection": "Blocked",
+  "unblockUser": "Unblock"
 }

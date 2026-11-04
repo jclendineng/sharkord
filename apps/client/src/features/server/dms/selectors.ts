@@ -27,3 +27,8 @@ export const friendStatusSelector = createCachedSelector(
     return 'none';
   }
 )((_, userId: number) => userId);
+
+export const isUserBlockedSelector = createCachedSelector(
+  [friendListsSelector, (_: IRootState, userId: number) => userId],
+  (lists, userId) => lists.blocked.includes(userId)
+)((_, userId: number) => userId);

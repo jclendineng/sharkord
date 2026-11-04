@@ -149,5 +149,7 @@
   "rulesRemoveDefault": "Retirer {{role}} après la réaction",
   "rulesRemoveDefaultHelp": "Pour un rôle qui signifie seulement que quelqu'un n'a pas encore accepté les règles. Laissez désactivé si {{role}} donne des permissions dont les membres ont besoin.",
   "rulesGiveExisting": "Le donner à tous les membres actuels",
-  "rulesGiveExistingHelp": "Sans cela, les membres arrivés avant les règles perdent les salons que vous fermez."
+  "rulesGiveExistingHelp": "Sans cela, les membres arrivés avant les règles perdent les salons que vous fermez.",
+  "blockedSection": "Bloqués",
+  "unblockUser": "Débloquer"
 }

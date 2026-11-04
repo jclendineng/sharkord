@@ -149,5 +149,7 @@
   "rulesRemoveDefault": "回应后移除 {{role}}",
   "rulesRemoveDefaultHelp": "适用于仅表示尚未接受规则的角色。如果 {{role}} 提供成员需要的权限，请保持关闭。",
   "rulesGiveExisting": "授予所有现有成员",
-  "rulesGiveExistingHelp": "否则，在规则之前加入的成员将失去你关闭的频道。"
+  "rulesGiveExistingHelp": "否则，在规则之前加入的成员将失去你关闭的频道。",
+  "blockedSection": "已屏蔽",
+  "unblockUser": "取消屏蔽"
 }

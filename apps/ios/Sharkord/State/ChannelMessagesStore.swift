@@ -49,6 +49,11 @@ final class ChannelMessagesStore {
         }
     }
 
+    // messages sent from here that show before the server has them, oldest first. a live
+    // message of your own takes the place of the oldest one
+    private(set) var pendingIds: [Int] = []
+    private var nextPendingId = -1
+
     private var nextCursor: MessagesCursor?
     private unowned let session: SessionStore
 
@@ -97,6 +102,8 @@ final class ChannelMessagesStore {
         guard let page = await fetchPage(cursor: nil) else {
             return
         }
+
+        pendingIds = []
 
         messages = Self.sorted(page.messages)
         nextCursor = page.nextCursor
@@ -206,19 +213,99 @@ final class ChannelMessagesStore {
         }
 
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        try await client.mutation(
-            "messages.send",
-            input: SendInput(
-                channelId: channelId,
-                content: trimmed.isEmpty ? "" : customEmojiSpans(in: HTMLText.messageHTML(fromMarkdown: trimmed, mentions: mentions)),
-                files: files.map(\.id),
-                parentMessageId: parentMessageId,
-                replyToMessageId: replyingTo?.id
-            )
-        )
+        let content = trimmed.isEmpty ? "" : customEmojiSpans(in: HTMLText.messageHTML(fromMarkdown: trimmed, mentions: mentions))
+        let replyTo = replyingTo
+        // text alone shows at once. files have nothing to draw until the server has saved them,
+        // and a slash command comes back as something else
+        let pendingId = files.isEmpty && !trimmed.hasPrefix("/") ? addPending(content: content, parentMessageId: parentMessageId, replyTo: replyTo) : nil
 
         replyingTo = nil
+
+        let messageId: Int?
+
+        do {
+            messageId = try await client.mutation(
+                "messages.send",
+                input: SendInput(
+                    channelId: channelId,
+                    content: content,
+                    files: files.map(\.id),
+                    parentMessageId: parentMessageId,
+                    replyToMessageId: replyTo?.id
+                )
+            )
+        } catch {
+            if let pendingId {
+                removePending(pendingId)
+            }
+
+            replyingTo = replyingTo ?? replyTo
+
+            throw error
+        }
+
+        guard let pendingId else {
+            return
+        }
+
+        // the live message already took a placeholder's place, or never comes (a command
+        // answered to you alone). otherwise the live message replaces it when it arrives
+        guard let messageId, !messages.contains(where: { $0.id == messageId }) else {
+            removePending(pendingId)
+
+            return
+        }
+
+        // a live message lost on the way, the socket dropping as it came, would leave the
+        // placeholder for good. the page from the server settles it, without holding up the
+        // composer meanwhile
+        Task {
+            try? await Task.sleep(for: .seconds(10))
+
+            if pendingIds.contains(pendingId) {
+                await reload()
+            }
+        }
+    }
+
+    private func addPending(content: String, parentMessageId: Int?, replyTo: Message?) -> Int? {
+        guard hasLoaded, !hasNewer, let ownUserId = session.ownUserId else {
+            return nil
+        }
+
+        let id = nextPendingId
+        let now = Int(Date().timeIntervalSince1970 * 1000)
+        // never before the newest message, whatever this device's clock says
+        let createdAt = max(now, (messages.last?.createdAt ?? 0) + 1)
+
+        nextPendingId -= 1
+        pendingIds.append(id)
+        messages.append(Message(
+            id: id,
+            content: content,
+            userId: ownUserId,
+            pluginId: nil,
+            webhookName: nil,
+            channelId: channelId,
+            parentMessageId: parentMessageId,
+            replyToMessageId: replyTo?.id,
+            createdAt: createdAt,
+            editedAt: nil,
+            files: [],
+            reactions: [],
+            replyTo: replyTo.map { ReplyPreview(id: $0.id, content: $0.content, userId: $0.userId, pluginId: $0.pluginId) }
+        ))
+
+        return id
+    }
+
+    private func removePending(_ id: Int) {
+        pendingIds.removeAll { $0 == id }
+        messages.removeAll { $0.id == id }
+    }
+
+    func isPending(_ message: Message) -> Bool {
+        message.id < 0
     }
 
     // built once, rather than for every message sent
@@ -327,6 +414,12 @@ final class ChannelMessagesStore {
     func insert(_ message: Message) {
         guard hasLoaded, !hasNewer, belongs(message) else {
             return
+        }
+
+        if let pendingId = pendingIds.first,
+           message.userId == session.ownUserId,
+           !messages.contains(where: { $0.id == message.id }) {
+            removePending(pendingId)
         }
 
         // live messages arrive in order, so appending is the common case. sorting the whole

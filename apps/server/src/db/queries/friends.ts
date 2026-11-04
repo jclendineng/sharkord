@@ -2,6 +2,7 @@ import type { TFriendLists } from '@sharkord/shared';
 import { and, eq, or } from 'drizzle-orm';
 import { db } from '..';
 import { friendships } from '../schema';
+import { getBlockedIds } from './blocks';
 import { normalizePair } from './dms';
 
 const getFriendship = async (userId: number, otherUserId: number) => {
@@ -21,7 +22,7 @@ const getFriendship = async (userId: number, otherUserId: number) => {
 };
 
 const getFriendLists = async (userId: number): Promise<TFriendLists> => {
-  const rows = await db
+  const rowsQuery = db
     .select({
       userOneId: friendships.userOneId,
       userTwoId: friendships.userTwoId,
@@ -33,7 +34,14 @@ const getFriendLists = async (userId: number): Promise<TFriendLists> => {
       or(eq(friendships.userOneId, userId), eq(friendships.userTwoId, userId))
     );
 
-  const lists: TFriendLists = { friends: [], incoming: [], outgoing: [] };
+  const [rows, blocked] = await Promise.all([rowsQuery, getBlockedIds(userId)]);
+
+  const lists: TFriendLists = {
+    friends: [],
+    incoming: [],
+    outgoing: [],
+    blocked
+  };
 
   for (const row of rows) {
     const otherUserId =

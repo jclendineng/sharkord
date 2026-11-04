@@ -247,6 +247,8 @@ export type TFriendLists = {
   incoming: number[];
   // asked by this user, waiting on them
   outgoing: number[];
+  // blocked by this user
+  blocked: number[];
 };
 
 export type TDirectMessageConversation = {

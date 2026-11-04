@@ -2,12 +2,19 @@ import { UserAvatar } from '@/components/user-avatar';
 import { setSelectedDmChannelId } from '@/features/app/actions';
 import { setDmsOpen } from '@/features/server/actions';
 import { changeFriendship } from '@/features/server/dms/actions';
-import { useFriendStatus } from '@/features/server/dms/hooks';
+import { useFriendStatus, useIsUserBlocked } from '@/features/server/dms/hooks';
 import { useUserById } from '@/features/server/users/hooks';
 import { getTRPCClient } from '@/lib/trpc';
 import { getTrpcError } from '@sharkord/shared';
 import { IconButton } from '@sharkord/ui';
-import { Check, MessageSquare, UserMinus, UserPlus, X } from 'lucide-react';
+import {
+  Ban,
+  Check,
+  MessageSquare,
+  UserMinus,
+  UserPlus,
+  X
+} from 'lucide-react';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -21,6 +28,7 @@ const FriendRow = memo(({ userId, onOpenedDm }: TFriendRowProps) => {
   const { t } = useTranslation('dialogs');
   const user = useUserById(userId);
   const status = useFriendStatus(userId);
+  const isBlocked = useIsUserBlocked(userId);
 
   const onRequest = useCallback(() => {
     changeFriendship('request', userId);
@@ -32,6 +40,10 @@ const FriendRow = memo(({ userId, onOpenedDm }: TFriendRowProps) => {
 
   const onRemove = useCallback(() => {
     changeFriendship('remove', userId);
+  }, [userId]);
+
+  const onUnblock = useCallback(() => {
+    changeFriendship('unblock', userId);
   }, [userId]);
 
   const onMessage = useCallback(async () => {
@@ -100,7 +112,16 @@ const FriendRow = memo(({ userId, onOpenedDm }: TFriendRowProps) => {
           />
         </>
       )}
-      {status === 'none' && (
+      {isBlocked && (
+        <IconButton
+          variant="ghost"
+          size="sm"
+          icon={Ban}
+          title={t('unblockUser')}
+          onClick={onUnblock}
+        />
+      )}
+      {status === 'none' && !isBlocked && (
         <IconButton
           variant="ghost"
           size="sm"

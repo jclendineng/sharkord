@@ -182,5 +182,13 @@
   "commandArgNo": "No",
   "commandArgMissing": "/{{commandName}} necesita un valor para {{argName}}.",
   "mutedByModerator": "Un moderador te ha silenciado.",
-  "copyImageLink": "Copiar enlace de la imagen"
+  "copyImageLink": "Copiar enlace de la imagen",
+  "blockUser": "Bloquear",
+  "unblockUser": "Desbloquear",
+  "blockUserTitle": "¿Bloquear a esta persona?",
+  "blockUserMsg": "No podrá enviarte mensajes ni solicitudes de amistad, y sus mensajes quedarán ocultos para ti. Si erais amigos, dejaréis de serlo. No se le avisa.",
+  "blockedMessages_one": "{{count}} mensaje bloqueado",
+  "blockedMessages_other": "{{count}} mensajes bloqueados",
+  "showBlockedMessages": "Mostrar",
+  "hideBlockedMessages": "Ocultar"
 }

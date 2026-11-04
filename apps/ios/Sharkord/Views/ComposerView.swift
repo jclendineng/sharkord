@@ -771,6 +771,12 @@ struct ComposerView: View {
         let draft = ComposerMention.resolvingTyped(in: ComposerMention.draft(of: field), session: session)
         let files = uploadedFiles
 
+        // text alone shows in the chat at once, so the box empties at once for the next
+        // message, and gets it back if the send fails
+        guard store.editing != nil || !files.isEmpty || draft.text.hasPrefix("/") else {
+            return sendText(draft)
+        }
+
         isSending = true
         errorMessage = nil
 
@@ -790,6 +796,27 @@ struct ComposerView: View {
             }
 
             isSending = false
+        }
+    }
+
+    private func sendText(_ draft: (text: String, mentions: [ComposerMention])) {
+        let sentField = field
+
+        errorMessage = nil
+        field = AttributedString()
+        attachments = []
+        session.typing.resetSignal(in: store.typingPlace)
+
+        Task {
+            do {
+                try await store.send(draft.text, files: [], mentions: draft.mentions)
+            } catch {
+                errorMessage = error.localizedDescription
+
+                if field.characters.isEmpty {
+                    field = sentField
+                }
+            }
         }
     }
 
@@ -1268,14 +1295,17 @@ private struct TypingIndicator: View {
 }
 
 private struct TypingDots: View {
+    // reduce motion holds the dots still at full strength, the words alone say it
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
-        TimelineView(.animation) { timeline in
+        TimelineView(.animation(paused: reduceMotion)) { timeline in
             let time = timeline.date.timeIntervalSinceReferenceDate
 
             HStack(spacing: 3) {
                 ForEach(0..<3) { index in
                     // each dot rises and fades a third of a beat after the one before
-                    let phase = (sin((time * 2 * .pi / 1.2) - Double(index) * 0.9) + 1) / 2
+                    let phase = reduceMotion ? 1 : (sin((time * 2 * .pi / 1.2) - Double(index) * 0.9) + 1) / 2
 
                     Circle()
                         .fill(Theme.header)

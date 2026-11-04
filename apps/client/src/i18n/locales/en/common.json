@@ -184,5 +184,13 @@
   "commandArgNo": "No",
   "commandArgMissing": "/{{commandName}} needs a value for {{argName}}.",
   "mutedByModerator": "You were muted by a moderator.",
-  "copyImageLink": "Copy image link"
+  "copyImageLink": "Copy image link",
+  "blockUser": "Block",
+  "unblockUser": "Unblock",
+  "blockUserTitle": "Block this person?",
+  "blockUserMsg": "They can't message you or send you a friend request, and their messages are folded away for you. A friendship with them ends. They aren't told.",
+  "blockedMessages_one": "{{count}} blocked message",
+  "blockedMessages_other": "{{count}} blocked messages",
+  "showBlockedMessages": "Show",
+  "hideBlockedMessages": "Hide"
 }

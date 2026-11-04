@@ -7,6 +7,7 @@ import {
   acceptFriendRequest,
   addFriendRequest
 } from '../../db/mutations/friends';
+import { getBlockBetween } from '../../db/queries/blocks';
 import { getFriendship } from '../../db/queries/friends';
 import { users } from '../../db/schema';
 import { invariant } from '../../utils/invariant';
@@ -38,7 +39,21 @@ const requestFriendRoute = rateLimitedProcedure(protectedProcedure, {
       message: 'User not found'
     });
 
-    const existing = await getFriendship(ctx.userId, input.userId);
+    const [existing, block] = await Promise.all([
+      getFriendship(ctx.userId, input.userId),
+      getBlockBetween(ctx.userId, input.userId)
+    ]);
+
+    invariant(block !== 'blocked', {
+      code: 'BAD_REQUEST',
+      message: 'You blocked this person. Unblock them to send a friend request.'
+    });
+
+    // the same answer as any refused request, so a block can't be told apart from one
+    invariant(block !== 'blockedBy', {
+      code: 'FORBIDDEN',
+      message: "That friend request couldn't be sent."
+    });
 
     invariant(existing?.status !== 'accepted', {
       code: 'BAD_REQUEST',

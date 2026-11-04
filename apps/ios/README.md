@@ -30,7 +30,7 @@ screen shares, sharing your own screen, profile editing, settings (account, devi
 video, notifications, about with the server's contact), the full server settings (with who joined with each invite), polls, voice messages, and Discord's
 attachment and expression panels (emoji, GIFs, stickers), typing indicators, pinning messages
 and a channel's pinned list, a channel screen from its name (members, media, pins, links, files),
-search in the expression panel at full height, a double tap reaction you pick, friends and friend requests, group direct messages, direct message menus (close, pin, mute for a while), profile banners, voice reactions, the soundboard (playing in calls, your own soundboard volume, and managing sounds with uploads and the server's library), moving people between voice
+search in the expression panel at full height, a double tap reaction you pick, friends and friend requests, blocking (Block on a profile and in the member menu, a blocked person's messages folded into one row), group direct messages, direct message menus (close, pin, mute for a while), profile banners, voice reactions, the soundboard (playing in calls, your own soundboard volume, and managing sounds with uploads and the server's library), moving people between voice
 channels, a member's activity for moderators, posting locked where a private channel does
 not allow it, Discord style Markdown in the composer (`HTMLText.messageHTML(fromMarkdown:)`,
 turned back with `markdown(from:)` when editing) with lists, quotes, strikethrough and
@@ -44,6 +44,17 @@ only. See
 
 [API_AUDIT.md](API_AUDIT.md) lists the iOS 26 and 27 SDK changes still to adopt, with the
 deprecations the compiler reports.
+
+## Sending and reacting without waiting
+
+Text sent from the composer shows at once as a faint row with a negative id
+(`ChannelMessagesStore.addPending`), and the box empties for the next message. The server's
+own copy arriving live takes the place of the oldest placeholder (`insert`), and if the send
+returns an id that is already in the list, its placeholder goes then. A send that fails takes
+its placeholder away and puts the text and reply back in the box. If no live copy came within
+ten seconds the page is loaded again. Files and slash commands still wait for the server.
+Reactions do the same in `ReactionsView`: a tap shows at once, and each emoji holds the state
+you asked for until the message from the server agrees.
 
 ## The composer's panels
 

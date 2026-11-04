@@ -122,6 +122,7 @@ struct HomeView: View {
             }
         }
         .animation(.snappy, value: session.toastMessage)
+        .modifier(BlockConfirmation(session: session))
         #if os(macOS)
         .overlay {
             if servers.isCallPresented, let voiceSession = servers.voiceSession {
@@ -853,5 +854,39 @@ private struct ChatHandle: View {
                     onRelease(value.translation.width, value.velocity.width)
                 }
             }
+    }
+}
+
+// the question before a block a member menu asked for. the menu itself is gone by then, so it
+// is asked here, over the whole window
+private struct BlockConfirmation: ViewModifier {
+    @Bindable var session: SessionStore
+
+    private var isPresented: Binding<Bool> {
+        Binding {
+            session.userAwaitingBlock != nil
+        } set: { isShown in
+            if !isShown {
+                session.userAwaitingBlock = nil
+            }
+        }
+    }
+
+    func body(content: Content) -> some View {
+        content.alert("Block \(session.userAwaitingBlock?.name ?? "")?", isPresented: isPresented, presenting: session.userAwaitingBlock) { user in
+            Button("Block", role: .destructive) {
+                block(user)
+            }
+
+            Button("Cancel", role: .cancel) {}
+        } message: { _ in
+            Text("They can't message you or send you a friend request, and their messages are folded away for you. A friendship with them ends. They aren't told.")
+        }
+    }
+
+    private func block(_ user: PublicUser) {
+        Task {
+            await session.changeFriendship("block", with: user.id)
+        }
     }
 }

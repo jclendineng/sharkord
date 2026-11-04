@@ -182,5 +182,13 @@
   "commandArgNo": "否",
   "commandArgMissing": "/{{commandName}} 需要为 {{argName}} 提供一个值。",
   "mutedByModerator": "你已被管理员禁言。",
-  "copyImageLink": "复制图片链接"
+  "copyImageLink": "复制图片链接",
+  "blockUser": "屏蔽",
+  "unblockUser": "取消屏蔽",
+  "blockUserTitle": "屏蔽此人？",
+  "blockUserMsg": "对方将无法给你发消息或好友请求，其消息会对你折叠隐藏。你们的好友关系也会结束。对方不会收到通知。",
+  "blockedMessages_one": "{{count}} 条已屏蔽的消息",
+  "blockedMessages_other": "{{count}} 条已屏蔽的消息",
+  "showBlockedMessages": "显示",
+  "hideBlockedMessages": "隐藏"
 }

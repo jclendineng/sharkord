@@ -547,6 +547,13 @@
       "when": 1793038564251,
       "tag": "0077_push_relay_only",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "6",
+      "when": 1793751865777,
+      "tag": "0078_user_blocks",
+      "breakpoints": true
     }
   ]
 }
