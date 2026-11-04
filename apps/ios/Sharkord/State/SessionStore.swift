@@ -1512,7 +1512,31 @@ final class SessionStore {
             let emoji: String
         }
 
-        try await client.mutation("messages.toggleReaction", input: ReactionInput(messageId: messageId, emoji: emoji))
+        // shown at once in every list holding the message, the chat and a thread alike
+        let stores = (Array(messageStores.values) + Array(threadStores.values)).filter { store in
+            store.messages.contains { $0.id == messageId }
+        }
+        var serverReactions: [MessageReaction] = []
+
+        if let store = stores.first, let message = store.messages.first(where: { $0.id == messageId }) {
+            serverReactions = message.reactions
+        }
+
+        let isMine = serverReactions.contains { $0.emoji == emoji && $0.userId == ownUserId }
+
+        for store in stores {
+            store.setPendingReaction(emoji, isMine: !isMine, on: messageId)
+        }
+
+        do {
+            try await client.mutation("messages.toggleReaction", input: ReactionInput(messageId: messageId, emoji: emoji))
+        } catch {
+            for store in stores {
+                store.dropPendingReaction(emoji, on: messageId, serverReactions: serverReactions)
+            }
+
+            throw error
+        }
 
         // what the mac's menus offer first, discord's frequently used
         FrequentExpressions.use(emoji: emoji)

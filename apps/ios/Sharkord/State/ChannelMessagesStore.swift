@@ -444,7 +444,66 @@ final class ChannelMessagesStore {
             return
         }
 
+        var message = message
+
+        settlePendingReactions(on: &message)
         messages[index] = message
+    }
+
+    // reactions tapped here, by message and emoji, that show before the server has them: each
+    // says whether your own should be there. a later update that agrees settles it, one that
+    // doesn't yet (someone else's reaction arriving first) keeps it showing
+    private var pendingReactions: [Int: [String: Bool]] = [:]
+
+    func setPendingReaction(_ emoji: String, isMine: Bool, on messageId: Int) {
+        guard let index = messages.firstIndex(where: { $0.id == messageId }) else {
+            return
+        }
+
+        pendingReactions[messageId, default: [:]][emoji] = isMine
+        apply(emoji, isMine: isMine, to: &messages[index])
+    }
+
+    // a refused toggle goes back to what the server last said
+    func dropPendingReaction(_ emoji: String, on messageId: Int, serverReactions: [MessageReaction]) {
+        pendingReactions[messageId]?[emoji] = nil
+
+        guard let index = messages.firstIndex(where: { $0.id == messageId }) else {
+            return
+        }
+
+        messages[index].reactions = serverReactions
+        settlePendingReactions(on: &messages[index])
+    }
+
+    private func settlePendingReactions(on message: inout Message) {
+        guard let pending = pendingReactions[message.id], let ownUserId = session.ownUserId else {
+            return
+        }
+
+        for (emoji, isMine) in pending {
+            let isMineOnServer = message.reactions.contains { $0.emoji == emoji && $0.userId == ownUserId }
+
+            if isMineOnServer == isMine {
+                pendingReactions[message.id]?[emoji] = nil
+            } else {
+                apply(emoji, isMine: isMine, to: &message)
+            }
+        }
+    }
+
+    private func apply(_ emoji: String, isMine: Bool, to message: inout Message) {
+        guard let ownUserId = session.ownUserId else {
+            return
+        }
+
+        let existing = message.reactions.first { $0.emoji == emoji }
+
+        message.reactions.removeAll { $0.emoji == emoji && $0.userId == ownUserId }
+
+        if isMine {
+            message.reactions.append(MessageReaction(userId: ownUserId, emoji: emoji, file: existing?.file))
+        }
     }
 
     func updateReplyCount(messageId: Int, replyCount: Int) {

@@ -176,6 +176,18 @@ describe('isEmojiOnlyMessage', () => {
     ).toBe(true);
   });
 
+  test('should return true for emoji typed as plain characters', () => {
+    expect(isEmojiOnlyMessage('<p>🎉🎉</p>')).toBe(true);
+    expect(isEmojiOnlyMessage('<p>👍🏽 🇳🇴</p>')).toBe(true);
+    expect(isEmojiOnlyMessage('<p>👨‍👩‍👧</p>')).toBe(true);
+  });
+
+  test('should return false for typed emoji mixed with text or digits', () => {
+    expect(isEmojiOnlyMessage('<p>I am in. 👍</p>')).toBe(false);
+    expect(isEmojiOnlyMessage('<p>123</p>')).toBe(false);
+    expect(isEmojiOnlyMessage('<p>👍 1</p>')).toBe(false);
+  });
+
   test('should return false for emoji mixed with text', () => {
     expect(
       isEmojiOnlyMessage(

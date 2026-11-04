@@ -78,6 +78,10 @@ enum MessageHTML {
                     count += 1
                 case .text(let text, _) where text.trimmingCharacters(in: .whitespaces).isEmpty:
                     continue
+                case .text(let text, _) where isTypedEmoji(text):
+                    let emoji = text.filter { !$0.isWhitespace }
+
+                    count += emoji.count
                 default:
                     return false
                 }
@@ -85,6 +89,22 @@ enum MessageHTML {
         }
 
         return count > 0 && count <= 10
+    }
+
+    // emoji typed from the keyboard arrive as plain characters rather than emoji spans:
+    // pictographs and flags, with what builds them up. digits, which take part in keycaps, are
+    // left out, so "123" is not emoji. the web's isEmojiOnlyMessage draws the same line
+    private static func isTypedEmoji(_ text: String) -> Bool {
+        text.unicodeScalars.allSatisfy { scalar in
+            let properties = scalar.properties
+
+            return properties.isWhitespace
+                || (properties.isEmoji && (properties.isEmojiPresentation || scalar.value > 0x238C))
+                || properties.isEmojiModifier
+                || (0x1F1E6...0x1F1FF).contains(scalar.value)
+                || (0xE0020...0xE007F).contains(scalar.value)
+                || [0x200D, 0xFE0F, 0x20E3].contains(scalar.value)
+        }
     }
 }
 

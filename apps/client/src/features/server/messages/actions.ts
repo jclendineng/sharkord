@@ -9,6 +9,7 @@ import {
 import { store } from '@/features/store';
 import { getFileUrl } from '@/helpers/get-file-url';
 import { playSound } from '@/helpers/sounds';
+import { getTRPCClient } from '@/lib/trpc';
 import {
   getPlainTextFromHtml,
   hasMention,
@@ -218,7 +219,7 @@ export const addMessages = (
   }
 };
 
-export const updateMessage = (channelId: number, message: TJoinedMessage) => {
+const storeMessage = (channelId: number, message: TJoinedMessage) => {
   if (message.parentMessageId) {
     store.dispatch(
       serverSliceActions.updateThreadMessage({
@@ -229,6 +230,137 @@ export const updateMessage = (channelId: number, message: TJoinedMessage) => {
   } else {
     store.dispatch(serverSliceActions.updateMessage({ channelId, message }));
   }
+};
+
+// reactions toggled here, by message and emoji, that show before the server has them: each says
+// whether your own should be there. an update that agrees settles it, one that doesn't yet
+// (someone else's reaction arriving first) keeps it showing
+const pendingReactions = new Map<number, Map<string, boolean>>();
+
+const withOwnReaction = (
+  message: TJoinedMessage,
+  emoji: string,
+  isMine: boolean,
+  ownUserId: number
+): TJoinedMessage => {
+  const existing = message.reactions.find(
+    (reaction) => reaction.emoji === emoji
+  );
+  const others = message.reactions.filter(
+    (reaction) => !(reaction.emoji === emoji && reaction.userId === ownUserId)
+  );
+
+  if (!isMine) {
+    return { ...message, reactions: others };
+  }
+
+  return {
+    ...message,
+    reactions: [
+      ...others,
+      {
+        messageId: message.id,
+        userId: ownUserId,
+        pluginId: null,
+        emoji,
+        fileId: existing?.fileId ?? null,
+        file: existing?.file ?? null,
+        createdAt: Date.now()
+      }
+    ]
+  };
+};
+
+const settlePendingReactions = (message: TJoinedMessage) => {
+  const pending = pendingReactions.get(message.id);
+  const ownUserId = ownUserIdSelector(store.getState());
+
+  if (!pending || !ownUserId) {
+    return message;
+  }
+
+  let settled = message;
+
+  for (const [emoji, isMine] of pending) {
+    const isMineOnServer = message.reactions.some(
+      (reaction) => reaction.emoji === emoji && reaction.userId === ownUserId
+    );
+
+    if (isMineOnServer === isMine) {
+      pending.delete(emoji);
+    } else {
+      settled = withOwnReaction(settled, emoji, isMine, ownUserId);
+    }
+  }
+
+  return settled;
+};
+
+const findMessage = (channelId: number, messageId: number) => {
+  const state = store.getState();
+  const rootMessage = messagesByChannelIdSelector(state, channelId).find(
+    (message: TJoinedMessage) => message.id === messageId
+  );
+
+  if (rootMessage) {
+    return rootMessage;
+  }
+
+  const threads = Object.values(threadMessagesMapSelector(state));
+
+  for (const thread of threads) {
+    const reply = thread?.find((message) => message.id === messageId);
+
+    if (reply) {
+      return reply;
+    }
+  }
+
+  return undefined;
+};
+
+// the pills and the emoji picker both toggle through here, so a reaction shows the moment it is
+// picked wherever it came from. a refused toggle goes back to what the message said before
+export const toggleReaction = async (
+  channelId: number,
+  messageId: number,
+  emoji: string
+) => {
+  const ownUserId = ownUserIdSelector(store.getState());
+  const message = findMessage(channelId, messageId);
+
+  if (ownUserId && message) {
+    const isMine = message.reactions.some(
+      (reaction) => reaction.emoji === emoji && reaction.userId === ownUserId
+    );
+    const pending = pendingReactions.get(messageId) ?? new Map();
+
+    pending.set(emoji, !isMine);
+    pendingReactions.set(messageId, pending);
+    storeMessage(
+      channelId,
+      withOwnReaction(message, emoji, !isMine, ownUserId)
+    );
+  }
+
+  try {
+    const trpc = getTRPCClient();
+
+    await trpc.messages.toggleReaction.mutate({ messageId, emoji });
+  } catch (error) {
+    pendingReactions.get(messageId)?.delete(emoji);
+
+    if (message) {
+      storeMessage(channelId, message);
+    }
+
+    throw error;
+  }
+};
+
+// an update from the server, with any reaction still on its way kept showing
+export const updateMessage = (channelId: number, message: TJoinedMessage) => {
+  storeMessage(channelId, settlePendingReactions(message));
 };
 
 // a message sent from here shows at once under a negative id, faint and with nothing to act on,

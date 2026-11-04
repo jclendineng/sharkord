@@ -204,6 +204,7 @@ const MessageRenderer = memo(
         {!disableReactions && (
           <MessageReactions
             reactions={message.reactions}
+            channelId={message.channelId}
             messageId={message.id}
           />
         )}

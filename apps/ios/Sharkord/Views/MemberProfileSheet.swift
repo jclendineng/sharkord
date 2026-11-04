@@ -81,9 +81,13 @@ struct MemberProfileSheet: View {
                             .buttonStyle(.plain)
                             .accessibilityLabel("Message")
 
-                            if session.supports(.blocking), !isBlocked {
+                            if session.supports(.blocking) {
                                 Menu {
-                                    Button("Block", systemImage: "nosign", role: .destructive, action: confirmBlock)
+                                    if isBlocked {
+                                        Button("Unblock", systemImage: "nosign", action: unblock)
+                                    } else {
+                                        Button("Block", systemImage: "nosign", role: .destructive, action: confirmBlock)
+                                    }
                                 } label: {
                                     Image(systemName: "ellipsis")
                                         .font(.body.weight(.semibold))
@@ -92,9 +96,20 @@ struct MemberProfileSheet: View {
                                         .background(Theme.listBackground, in: .rect(cornerRadius: 10))
                                 }
                                 .menuIndicator(.hidden)
+                                // the menu's icon takes the tint: red beside Block, plain beside Unblock
+                                .tint(isBlocked ? Theme.header : Theme.red)
                                 .accessibilityLabel("More")
+                                // on the button, so the question points at what asked it
+                                .confirmationDialog("Block \(user.name)?", isPresented: $isConfirmingBlock, titleVisibility: .visible) {
+                                    Button("Block", role: .destructive, action: block)
+                                } message: {
+                                    Text("They can't message you or send you a friend request, and their messages are folded away for you. A friendship with them ends. They aren't told.")
+                                }
                             }
                         }
+                        // menu icons in the text's colour: the app's blurple tint drew a blue
+                        // icon beside red Block and Remove Friend
+                        .tint(Theme.header)
                     }
 
                     if let bio = user.bio, !bio.isEmpty {
@@ -125,11 +140,6 @@ struct MemberProfileSheet: View {
             }
         }
         .background(Theme.deepBackground)
-        .confirmationDialog("Block \(user.name)?", isPresented: $isConfirmingBlock, titleVisibility: .visible) {
-            Button("Block", role: .destructive, action: block)
-        } message: {
-            Text("They can't message you or send you a friend request, and their messages are folded away for you. A friendship with them ends. They aren't told.")
-        }
         .task {
             await loadInviter()
         }

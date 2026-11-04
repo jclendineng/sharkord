@@ -12,6 +12,7 @@ import { useIsShiftHeld } from '@/features/app/hooks';
 import { requestConfirmation } from '@/features/dialogs/actions';
 import { useChannelById } from '@/features/server/channels/hooks';
 import { useCustomEmojis } from '@/features/server/emojis/hooks';
+import { toggleReaction } from '@/features/server/messages/actions';
 import { getTRPCClient } from '@/lib/trpc';
 import { Permission, PluginSlot } from '@sharkord/shared';
 import { IconButton } from '@sharkord/ui';
@@ -136,20 +137,15 @@ const MessageActions = memo(
 
     const onEmojiSelect = useCallback(
       async (emoji: TEmojiItem) => {
-        const trpc = getTRPCClient();
-
         try {
-          await trpc.messages.toggleReaction.mutate({
-            messageId,
-            emoji: emoji.shortcodes[0]
-          });
+          await toggleReaction(channelId, messageId, emoji.shortcodes[0]);
         } catch (error) {
           toast.error(t('failedAddReaction'));
 
           console.error('Error adding reaction:', error);
         }
       },
-      [messageId, t]
+      [channelId, messageId, t]
     );
 
     const onReplyClick = useCallback(() => {

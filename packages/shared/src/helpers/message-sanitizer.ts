@@ -71,14 +71,24 @@ const isEmptyMessage = (content: string | undefined | null): boolean => {
   return !hasText && !hasMedia && !hasChannelReference;
 };
 
+// emoji typed straight from a phone's keyboard arrive as plain characters rather than emoji
+// elements: pictographs and flags, with the joiners, variation selectors, skin tones and tags
+// that build them up. digits, which also take part in keycaps, are left out
+const typedEmojiPattern =
+  /^(?:\p{Extended_Pictographic}|\p{Regional_Indicator}|\p{Emoji_Modifier}|[\u{E0020}-\u{E007F}]|\u200D|\uFE0F|\u20E3|\s)+$/u;
+
 const isEmojiOnlyMessage = (content: string | undefined | null): boolean => {
   if (!content) return false;
 
-  if (!hasEmojiElement(content)) return false;
-
   if (hasChannelReferenceElement(content)) return false;
 
-  return stripToText(content, [removeEmojiElements]).length === 0;
+  const text = stripToText(content, [removeEmojiElements]);
+
+  if (text.length === 0) {
+    return hasEmojiElement(content);
+  }
+
+  return typedEmojiPattern.test(text);
 };
 
 const getPlainTextFromHtml = (html: string): string => {

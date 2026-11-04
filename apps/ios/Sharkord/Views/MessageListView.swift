@@ -140,13 +140,15 @@ struct MessageListView<Header: View>: View {
                     let showsHeader = showsHeader(at: index) || message.id == unreadId
                     let blockedStretch = blockedStretches[message.id]
 
-                    if let blockedStretch, !revealedBlockedStretches.contains(blockedStretch.startId) {
-                        if blockedStretch.startId == message.id {
-                            BlockedMessagesRow(count: blockedStretch.count) {
-                                revealBlockedStretch(blockedStretch.startId)
-                            }
+                    let isRevealed = blockedStretch.map { revealedBlockedStretches.contains($0.startId) } ?? false
+
+                    if let blockedStretch, blockedStretch.startId == message.id {
+                        BlockedMessagesRow(count: blockedStretch.count, isShown: isRevealed) {
+                            toggleBlockedStretch(blockedStretch.startId)
                         }
-                    } else {
+                    }
+
+                    if blockedStretch == nil || isRevealed {
                         MessageRow(
                             message: message,
                             showsHeader: showsHeader,
@@ -648,8 +650,12 @@ struct MessageListView<Header: View>: View {
         return stretches
     }
 
-    private func revealBlockedStretch(_ startId: Int) {
-        revealedBlockedStretches.insert(startId)
+    private func toggleBlockedStretch(_ startId: Int) {
+        if revealedBlockedStretches.contains(startId) {
+            revealedBlockedStretches.remove(startId)
+        } else {
+            revealedBlockedStretches.insert(startId)
+        }
     }
 
     private func showsHeader(at index: Int) -> Bool {
@@ -733,9 +739,20 @@ private struct NewMessagesBar: View {
             return String(localized: "\(amount) new messages")
         }
 
-        let time = Calendar.current.isDateInToday(since)
-            ? since.formatted(date: .omitted, time: .shortened)
-            : since.formatted(date: .abbreviated, time: .shortened)
+        // short enough to fit beside Jump: the time today, the weekday and time this week, the
+        // date alone before that. a full date with its year ran off the end
+        let time: String
+        let calendar = Calendar.current
+        let elapsed = calendar.dateComponents([.day], from: calendar.startOfDay(for: since), to: calendar.startOfDay(for: .now))
+        let daysAgo = elapsed.day ?? 0
+
+        if daysAgo == 0 {
+            time = since.formatted(date: .omitted, time: .shortened)
+        } else if daysAgo < 7 {
+            time = since.formatted(.dateTime.weekday(.abbreviated).hour().minute())
+        } else {
+            time = since.formatted(.dateTime.month(.abbreviated).day())
+        }
 
         if count == 1 {
             return String(localized: "1 new message since \(time)")
@@ -834,7 +851,9 @@ private struct BlockedStretch {
 // a blocked person's run of messages folded into one line, as discord does, opened on asking
 private struct BlockedMessagesRow: View {
     let count: Int
-    let onShow: () -> Void
+    // opened, the row stays above the messages to fold them away again
+    let isShown: Bool
+    let onToggle: () -> Void
 
     var body: some View {
         HStack(spacing: 6) {
@@ -844,7 +863,7 @@ private struct BlockedMessagesRow: View {
             label
                 .foregroundStyle(Theme.muted)
 
-            Button("Show", action: onShow)
+            Button(toggleTitle, action: onToggle)
                 .buttonStyle(.plain)
                 .foregroundStyle(Theme.accentText)
                 .fontWeight(.semibold)
@@ -853,7 +872,11 @@ private struct BlockedMessagesRow: View {
         .padding(.horizontal, 16)
         .padding(.top, MessageRowBand.headerGap)
         .accessibilityElement(children: .combine)
-        .accessibilityAction(named: Text("Show"), onShow)
+        .accessibilityAction(named: Text(toggleTitle), onToggle)
+    }
+
+    private var toggleTitle: LocalizedStringKey {
+        isShown ? "Hide" : "Show"
     }
 
     private var label: Text {

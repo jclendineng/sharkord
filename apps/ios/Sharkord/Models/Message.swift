@@ -20,7 +20,7 @@ struct Message: Codable, Hashable, Identifiable {
     let createdAt: Int
     let editedAt: Int?
     let files: [SharkordFile]
-    let reactions: [MessageReaction]
+    var reactions: [MessageReaction]
     // missing from a server without polls
     var poll: Poll?
     var sticker: Sticker?

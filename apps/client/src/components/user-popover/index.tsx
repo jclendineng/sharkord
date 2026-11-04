@@ -13,7 +13,9 @@ import { getFileUrl } from '@/helpers/get-file-url';
 import { getRenderedUsername } from '@/helpers/get-rendered-username';
 import { useDateLocale } from '@/hooks/use-date-locale';
 import { getTRPCClient } from '@/lib/trpc';
+import { cn } from '@/lib/utils';
 import {
+  DEFAULT_PROFILE_COLOR,
   DELETED_USER_IDENTITY_AND_NAME,
   PluginSlot,
   TestId,
@@ -154,6 +156,10 @@ const UserPopover = memo(({ userId, children }: TUserPopoverProps) => {
   const showFriendButton =
     !isDeleted && !isOwnUser && !user.banned && !isBlocked;
   const showBlockButton = !isDeleted && !isOwnUser;
+  // the near black every account starts with reads as a hole in a light theme, so it is drawn
+  // as the theme's own muted surface until someone picks a colour
+  const hasChosenColor =
+    !!user.profileColor && user.profileColor !== DEFAULT_PROFILE_COLOR;
 
   return (
     <Popover>
@@ -186,10 +192,13 @@ const UserPopover = memo(({ userId, children }: TUserPopoverProps) => {
             />
           ) : (
             <div
-              className="h-24 w-full rounded-t-md"
-              style={{
-                background: user.profileColor || '#5865f2'
-              }}
+              className={cn(
+                'h-24 w-full rounded-t-md',
+                !hasChosenColor && 'bg-muted'
+              )}
+              style={
+                hasChosenColor ? { background: user.profileColor } : undefined
+              }
             />
           )}
           <div className="absolute left-4 top-16">

@@ -319,8 +319,20 @@ struct ProfileBanner: View {
 
     @Environment(SessionStore.self) private var session
 
+    // the near black every account starts with read as a hole on a light page, so it is drawn
+    // as a soft grey for the appearance until someone picks a colour
+    private static let defaultProfileColor = "#262626"
+
+    private var color: Color {
+        guard let profileColor = user?.profileColor, profileColor.uppercased() != Self.defaultProfileColor else {
+            return Theme.panelSelected
+        }
+
+        return Color(hex: profileColor)
+    }
+
     var body: some View {
-        Color(hex: user?.profileColor ?? "#5865F2")
+        color
             .frame(height: 130)
             .overlay {
                 if let banner = user?.banner, let address = session.address {

@@ -120,7 +120,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 - Members can block each other, in the app and on the web.
   - A block stops new direct messages, messages in an existing one to one conversation and friend requests, both ways, and ends any friendship between the two.
-  - The blocker sees a blocked person's messages folded into one row they can open.
+  - The blocker sees a blocked person's messages folded into one row they can open with Show and fold again with Hide.
   - The blocked person is never told.
   - Block is on the profile and the member menu, and the people you blocked are listed with Unblock beside your friends.
 - Polls.
@@ -344,7 +344,11 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - A message shows in the chat the moment it is sent, faint until the server has it, and the message box empties at once for the next one, in the app and on the web.
   - A send that fails puts the text back in the box with the error.
   - Sending while scrolled up goes back down to the new message.
-- Reactions show the moment they are clicked, in the app and on the web.
+- Reactions show the moment they are clicked, in the app and on the web, from the reaction itself, a double tap or the emoji picker.
+- Emoji typed straight from a keyboard show large when they are the whole message, in the app and on the web.
+- A profile with no colour picked shows a soft grey banner instead of near black, in the app and on the web.
+- On the web, confirmations for deleting or blocking have a red button.
+- In the app, the "new messages since" bar fits beside Jump: the time today, the weekday and time this week, the date before that.
   - In the app, with a light tap under the finger and the count rolling to the new number.
 - In the app, emoji-only messages and the server's own emoji grow with the device's text size.
 - On a Mac, pointing at a follow-up message shows its time beside it.

@@ -1,6 +1,6 @@
 import { Emoji } from '@/components/emoji';
+import { toggleReaction } from '@/features/server/messages/actions';
 import { useOwnUserId } from '@/features/server/users/hooks';
-import { getTRPCClient } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
 import {
   getTrpcError,
@@ -8,7 +8,7 @@ import {
   type TJoinedMessageReaction
 } from '@sharkord/shared';
 import { Button, Tooltip } from '@sharkord/ui';
-import { memo, useCallback, useMemo, useState } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useReactorNames } from './hooks/use-reactor-names';
@@ -93,6 +93,7 @@ const Reaction = memo(
 );
 
 type TMessageReactionsProps = {
+  channelId: number;
   messageId: number;
   reactions: TJoinedMessageReaction[];
 };
@@ -107,63 +108,22 @@ type TAggregatedReaction = {
   file: TFile | null;
 };
 
-// a click shows at once. it holds while the reactions are still the ones it was made on, or
-// once the server agrees with it, so a late update can't flip it back and forth
-type TPendingReaction = {
-  isMine: boolean;
-  base: TJoinedMessageReaction[];
-};
-
-const isOwnReaction = (
-  reactions: TJoinedMessageReaction[],
-  emoji: string,
-  ownUserId: number
-) =>
-  reactions.some(
-    (reaction) => reaction.emoji === emoji && reaction.userId === ownUserId
-  );
-
 const MessageReactions = memo(
-  ({ messageId, reactions }: TMessageReactionsProps) => {
+  ({ channelId, messageId, reactions }: TMessageReactionsProps) => {
     const { t } = useTranslation();
     const ownUserId = useOwnUserId();
-    const [pending, setPending] = useState<Record<string, TPendingReaction>>(
-      {}
-    );
 
     const handleReactionClick = useCallback(
       async (emoji: string) => {
         if (!ownUserId) return;
 
-        const entry = pending[emoji];
-        const isMine =
-          entry && entry.base === reactions
-            ? entry.isMine
-            : isOwnReaction(reactions, emoji, ownUserId);
-
-        setPending((current) => ({
-          ...current,
-          [emoji]: { isMine: !isMine, base: reactions }
-        }));
-
         try {
-          const trpc = getTRPCClient();
-
-          await trpc.messages.toggleReaction.mutate({
-            messageId,
-            emoji
-          });
+          await toggleReaction(channelId, messageId, emoji);
         } catch (error) {
-          setPending((current) => {
-            const { [emoji]: _, ...rest } = current;
-
-            return rest;
-          });
-
           toast.error(getTrpcError(error, t('failedToggleReaction')));
         }
       },
-      [messageId, ownUserId, pending, reactions, t]
+      [channelId, messageId, ownUserId, t]
     );
 
     const aggregatedReactions = useMemo((): TAggregatedReaction[] => {
@@ -197,51 +157,11 @@ const MessageReactions = memo(
         }
       });
 
-      if (ownUserId) {
-        Object.entries(pending).forEach(([emoji, entry]) => {
-          const isMineOnServer = isOwnReaction(reactions, emoji, ownUserId);
-
-          if (entry.base !== reactions || entry.isMine === isMineOnServer) {
-            return;
-          }
-
-          const aggregated = reactionMap.get(emoji);
-
-          if (entry.isMine) {
-            if (aggregated) {
-              aggregated.count++;
-              aggregated.userIds.push(ownUserId);
-              aggregated.isUserReacted = true;
-            } else {
-              reactionMap.set(emoji, {
-                emoji,
-                count: 1,
-                userIds: [ownUserId],
-                pluginIds: [],
-                isUserReacted: true,
-                createdAt: Date.now(),
-                file: null
-              });
-            }
-          } else if (aggregated) {
-            aggregated.count--;
-            aggregated.userIds = aggregated.userIds.filter(
-              (userId) => userId !== ownUserId
-            );
-            aggregated.isUserReacted = false;
-
-            if (aggregated.count === 0) {
-              reactionMap.delete(emoji);
-            }
-          }
-        });
-      }
-
       // sort by first reaction createdAt desc
       return Array.from(reactionMap.values()).sort(
         (a, b) => b.createdAt - a.createdAt
       );
-    }, [reactions, ownUserId, pending]);
+    }, [reactions, ownUserId]);
 
     if (!aggregatedReactions.length) return null;
 

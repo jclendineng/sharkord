@@ -7,7 +7,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AutoFocus
+  AutoFocus,
+  buttonVariants
 } from '@sharkord/ui';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -20,7 +21,7 @@ type TConfirmActionDialogProps = TDialogBaseProps & {
   message?: string;
   confirmLabel?: string;
   cancelLabel?: string;
-  variant?: 'destructive' | 'default';
+  variant?: 'danger' | 'info';
 };
 
 const ConfirmActionDialog = memo(
@@ -31,9 +32,15 @@ const ConfirmActionDialog = memo(
     title,
     message,
     confirmLabel,
-    cancelLabel
+    cancelLabel,
+    variant
   }: TConfirmActionDialogProps) => {
     const { t } = useTranslation('dialogs');
+    // a deleting or blocking confirm is red, as the danger it asks about
+    const confirmClassName =
+      variant === 'danger'
+        ? buttonVariants({ variant: 'destructive' })
+        : undefined;
 
     return (
       <AlertDialog open={isOpen}>
@@ -51,7 +58,10 @@ const ConfirmActionDialog = memo(
               {cancelLabel ?? t('cancel')}
             </AlertDialogCancel>
             <AutoFocus>
-              <AlertDialogAction onClick={onConfirm}>
+              <AlertDialogAction
+                onClick={onConfirm}
+                className={confirmClassName}
+              >
                 {confirmLabel ?? t('confirm')}
               </AlertDialogAction>
             </AutoFocus>
