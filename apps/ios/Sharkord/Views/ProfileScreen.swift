@@ -319,20 +319,10 @@ struct ProfileBanner: View {
 
     @Environment(SessionStore.self) private var session
 
-    // the near black every account starts with read as a hole on a light page, so it is drawn
-    // as a soft grey for the appearance until someone picks a colour
-    private static let defaultProfileColor = "#262626"
-
-    private var color: Color {
-        guard let profileColor = user?.profileColor, profileColor.uppercased() != Self.defaultProfileColor else {
-            return Theme.panelSelected
-        }
-
-        return Color(hex: profileColor)
-    }
-
+    // with no picture, the owner's avatar colours: the near black every account starts with
+    // read as a hole on a light page, and a flat grey left the card with no colour at all
     var body: some View {
-        color
+        LinearGradient(colors: AvatarView.gradient(for: user), startPoint: .topLeading, endPoint: .bottomTrailing)
             .frame(height: 130)
             .overlay {
                 if let banner = user?.banner, let address = session.address {

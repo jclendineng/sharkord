@@ -17,6 +17,7 @@ struct ServerRail: View {
                 }
 
                 RailItem(
+                    title: "Direct Messages",
                     isSelected: servers.isShowingDirectMessages,
                     hasUnread: false,
                     badge: session.directMessagesUnreadCount,
@@ -41,7 +42,7 @@ struct ServerRail: View {
                     )
                 }
 
-                RailItem(isSelected: false, hasUnread: false, badge: 0, action: addServer) {
+                RailItem(title: "Add a Server", isSelected: false, hasUnread: false, badge: 0, action: addServer) {
                     Image(systemName: "plus")
                         .font(.system(size: 20, weight: .semibold))
                         .foregroundStyle(Theme.green)
@@ -74,6 +75,7 @@ private struct ServerRailItem: View {
 
     var body: some View {
         RailItem(
+            title: server.serverName,
             isSelected: isSelected,
             hasUnread: server.hasUnreadChannels,
             badge: isSelected ? 0 : server.directMessagesUnreadCount,
@@ -141,6 +143,8 @@ struct ServerIcon: View {
 
 // the pill on the left edge is tall for the selected item and a dot for unread ones
 private struct RailItem<Content: View>: View {
+    // what voiceover reads, the icon itself is a picture or initials
+    let title: String
     let isSelected: Bool
     let hasUnread: Bool
     let badge: Int
@@ -192,9 +196,20 @@ private struct RailItem<Content: View>: View {
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(title)
+        .accessibilityValue(accessibilityValue)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
         .onHover(perform: setHovered)
         .animation(.snappy, value: isSelected)
         .animation(.snappy(duration: 0.2), value: isHovered)
+    }
+
+    private var accessibilityValue: String {
+        if badge > 0 {
+            return String(localized: "\(badge) unread")
+        }
+
+        return hasUnread ? String(localized: "Unread messages") : ""
     }
 
     private func setHovered(_ hovered: Bool) {

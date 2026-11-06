@@ -9,6 +9,7 @@ import jwt from 'jsonwebtoken';
 import { db } from '..';
 import { signFile } from '../../helpers/files-crypto';
 import type { TTokenPayload } from '../../types';
+import { prepared } from '../prepared';
 import { files, userRoles, users } from '../schema';
 import { getServerToken, getSettings } from './server';
 import { getSession } from './sessions';
@@ -41,14 +42,8 @@ const getPublicUserById = async (
 
   if (!results) return undefined;
 
-  const [roles, { storageSignedUrlsTtlSeconds }] = await Promise.all([
-    db
-      .select({ roleId: userRoles.roleId })
-      .from(userRoles)
-      .where(eq(userRoles.userId, userId))
-      .all(),
-    getSettings()
-  ]);
+  const roles = getRoleIdsForUser(userId);
+  const { storageSignedUrlsTtlSeconds } = await getSettings();
 
   return {
     id: results.id,
@@ -201,13 +196,12 @@ const getStorageUsageByUserId = async (
   };
 };
 
-const getJoinedUser = async (
-  where: SQL | undefined
-): Promise<TJoinedUser | undefined> => {
+// the user and their files, the where left to the caller
+const joinedUserQuery = () => {
   const avatarFiles = alias(files, 'avatarFiles');
   const bannerFiles = alias(files, 'bannerFiles');
 
-  const user = await db
+  return db
     .select({
       id: users.id,
       identity: users.identity,
@@ -235,20 +229,31 @@ const getJoinedUser = async (
     })
     .from(users)
     .leftJoin(avatarFiles, eq(users.avatarId, avatarFiles.id))
-    .leftJoin(bannerFiles, eq(users.bannerId, bannerFiles.id))
-    .where(where)
-    .get();
+    .leftJoin(bannerFiles, eq(users.bannerId, bannerFiles.id));
+};
 
-  if (!user) return undefined;
+type TJoinedUserRow = Awaited<
+  ReturnType<ReturnType<typeof joinedUserQuery>['get']>
+>;
 
-  const [roles, { storageSignedUrlsTtlSeconds }] = await Promise.all([
+// a user's role ids, read for every permission check
+const getRoleIdsForUser = (userId: number) => {
+  const statement = prepared('roleIdsForUser', () =>
     db
       .select({ roleId: userRoles.roleId })
       .from(userRoles)
-      .where(eq(userRoles.userId, user.id))
-      .all(),
-    getSettings()
-  ]);
+      .where(eq(userRoles.userId, sql.placeholder('userId')))
+      .prepare()
+  );
+
+  return statement.all({ userId });
+};
+
+const withRolesAndSignedFiles = async (
+  user: NonNullable<TJoinedUserRow>
+): Promise<TJoinedUser> => {
+  const roles = getRoleIdsForUser(user.id);
+  const { storageSignedUrlsTtlSeconds } = await getSettings();
 
   return {
     ...user,
@@ -258,8 +263,31 @@ const getJoinedUser = async (
   };
 };
 
-const getUserById = async (userId: number): Promise<TJoinedUser | undefined> =>
-  getJoinedUser(eq(users.id, userId));
+const getJoinedUser = async (
+  where: SQL | undefined
+): Promise<TJoinedUser | undefined> => {
+  const user = await joinedUserQuery().where(where).get();
+
+  if (!user) return undefined;
+
+  return withRolesAndSignedFiles(user);
+};
+
+// the caller of nearly every request, prepared once
+const getUserById = async (
+  userId: number
+): Promise<TJoinedUser | undefined> => {
+  const statement = prepared('userById', () =>
+    joinedUserQuery()
+      .where(eq(users.id, sql.placeholder('userId')))
+      .prepare()
+  );
+  const user = statement.get({ userId });
+
+  if (!user) return undefined;
+
+  return withRolesAndSignedFiles(user);
+};
 
 const getUserByIdentity = async (
   identity: string

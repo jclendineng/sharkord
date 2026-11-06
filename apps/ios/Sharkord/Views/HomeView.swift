@@ -91,7 +91,10 @@ struct HomeView: View {
         .onReceive(NotificationCenter.default.publisher(for: AVCaptureDevice.wasDisconnectedNotification), perform: cameraDisconnected)
         #endif
         .onGeometryChange(for: Bool.self, of: { Self.isSplit($0.size) }, action: setSplit)
-        .onGeometryChange(for: Bool.self, of: { $0.size.height > $0.size.width }) { portrait in
+        // with the height the keyboard takes added back: an ipad in portrait with the keyboard
+        // up was left wider than tall, and the list and chat swapped to their landscape widths
+        // while typing
+        .onGeometryChange(for: Bool.self, of: { $0.size.height + $0.safeAreaInsets.bottom > $0.size.width }) { portrait in
             isPortrait = portrait
         }
         .onGeometryChange(for: CGFloat.self, of: { $0.safeAreaInsets.bottom }) { inset in

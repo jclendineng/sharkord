@@ -152,8 +152,6 @@ const TextChannel = memo(({ channelId, onClose }: TChannelProps) => {
       if (pendingId !== undefined) {
         setNewMessageHandler('');
         setReplyingToMessage(undefined);
-        // once the new row is drawn
-        requestAnimationFrame(scrollToBottom);
       }
 
       try {
@@ -198,7 +196,6 @@ const TextChannel = memo(({ channelId, onClose }: TChannelProps) => {
       channelId,
       draftChannelKey,
       replyingToMessage,
-      scrollToBottom,
       sendTypingSignal,
       setNewMessageHandler,
       t

@@ -207,6 +207,10 @@ private struct CategoryHeader: View {
             .keyboardActivatable(perform: onToggle)
             .onLongPressGesture(minimumDuration: 0.3, perform: showActions, onPressingChanged: setPressed)
             .onSecondaryClick(perform: showActionsAtPointer)
+            // the chevron read as "Go Down" on its own
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(title)
+            .accessibilityValue(isCollapsed ? String(localized: "Collapsed") : String(localized: "Expanded"))
             .accessibilityAddTraits(.isButton)
             .accessibilityAction(named: "More Options", showActions)
             .actionsPresentation(isPresented: $isActionsPresented, anchor: menuAnchor, onDismiss: showWantedSheet) {
@@ -370,7 +374,12 @@ private struct ChannelRow: View {
             .keyboardActivatable(perform: open)
             .onLongPressGesture(minimumDuration: 0.3, perform: showActions, onPressingChanged: setPressed)
             .onSecondaryClick(perform: showActionsAtPointer)
-            .accessibilityAddTraits(.isButton)
+            // one element read as a whole: the symbol, lock and bold unread weight say nothing
+            // to voiceover on their own
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(channel.name)
+            .accessibilityValue(accessibilityValue)
+            .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
             .accessibilityAction(named: "More Options", showActions)
             .actionsPresentation(isPresented: $isActionsSheetPresented, anchor: menuAnchor, onDismiss: showWantedSheet) {
                 ChannelActionsSheet(channel: channel, onMute: requestMute, onInvite: requestInvite, onEdit: requestEdit)
@@ -469,6 +478,22 @@ private struct ChannelRow: View {
             wantsInvite = false
             isInvitePresented = true
         }
+    }
+
+    private var accessibilityValue: String {
+        var parts = [channel.type == .text ? String(localized: "Text channel") : String(localized: "Voice channel")]
+
+        if channel.private {
+            parts.append(String(localized: "Private"))
+        }
+
+        if isMuted {
+            parts.append(String(localized: "Muted"))
+        } else if unreadCount > 0 {
+            parts.append(String(localized: "\(unreadCount) unread"))
+        }
+
+        return parts.joined(separator: ", ")
     }
 
     // like discord, a voice channel shows who is in it before anyone joins

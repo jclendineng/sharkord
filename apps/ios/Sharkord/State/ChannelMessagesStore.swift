@@ -212,6 +212,9 @@ final class ChannelMessagesStore {
             parentMessageId = id
         }
 
+        // writing in the conversation means it has been caught up on, the bar has done its job
+        unreadMarker = nil
+
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         let content = trimmed.isEmpty ? "" : customEmojiSpans(in: HTMLText.messageHTML(fromMarkdown: trimmed, mentions: mentions))
         let replyTo = replyingTo

@@ -122,6 +122,8 @@ private struct ReactionPill: View {
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
+            // the hig's 28 point floor for something to tap, the emoji and its padding came to 26
+            .frame(minHeight: 28)
             .background(isMine ? Theme.blurple.opacity(0.15) : Theme.listBackground, in: .rect(cornerRadius: 8))
             .overlay {
                 RoundedRectangle(cornerRadius: 8)

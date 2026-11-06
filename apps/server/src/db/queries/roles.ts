@@ -15,6 +15,7 @@ import {
   sql
 } from 'drizzle-orm';
 import { db } from '..';
+import { prepared } from '../prepared';
 import { rolePermissions, roles, userRoles } from '../schema';
 type TQueryResult = TRole & {
   permissions: string | null;
@@ -121,16 +122,21 @@ const userCan = async (
   return !!match;
 };
 
+// read for every permission check, so prepared once
 const getUserRoles = async (userId: number): Promise<TJoinedRole[]> => {
-  const result = await db
-    .select({
-      role: roles,
-      permission: rolePermissions.permission
-    })
-    .from(userRoles)
-    .innerJoin(roles, eq(userRoles.roleId, roles.id))
-    .leftJoin(rolePermissions, eq(roles.id, rolePermissions.roleId))
-    .where(eq(userRoles.userId, userId));
+  const statement = prepared('userRoles', () =>
+    db
+      .select({
+        role: roles,
+        permission: rolePermissions.permission
+      })
+      .from(userRoles)
+      .innerJoin(roles, eq(userRoles.roleId, roles.id))
+      .leftJoin(rolePermissions, eq(roles.id, rolePermissions.roleId))
+      .where(eq(userRoles.userId, sql.placeholder('userId')))
+      .prepare()
+  );
+  const result = statement.all({ userId });
 
   if (result.length === 0) return [];
 

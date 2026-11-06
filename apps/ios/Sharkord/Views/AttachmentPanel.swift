@@ -190,6 +190,7 @@ private struct PhotoGrid: View, Equatable {
                         .background(Theme.inputBackground, in: .rect(cornerRadius: 8, style: .continuous))
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Camera")
 
                 ForEach(library.assets, id: \.localIdentifier) { asset in
                     let isSelected = selectedIds.contains(asset.localIdentifier)

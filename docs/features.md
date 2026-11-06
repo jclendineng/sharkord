@@ -669,6 +669,22 @@ storage and plugins (marketplace, settings, who can use them, logs) are all in t
 app, each shown only to people with the permission for it. They use the same routes as the
 web client.
 
+## Load test
+
+`bun run test:load` in `packages/e2e` seeds a throwaway database, starts its own server on port
+4991 and puts a thousand browserless members on it (`LOAD_SIZE` changes the number). They join
+together, send a message each inside five seconds, keep a busy channel going at twenty messages a
+second, all react to one message, type, open direct messages in pairs and block each other, and a
+fifth of them drop and reconnect at once. Each step checks what every member received, and a
+`curl` in its own process times `/healthz` throughout to show how long the server's event loop
+was held. `LOAD_PROFILE_DIR=<dir>` writes the server's CPU profile there. Nothing else may be
+listening on the port.
+
+On an M-series Mac with the thousand clients on the same machine: every delivery arrives once,
+steady traffic reaches everyone in about 10 ms (p99 about 20 ms), and the stampede of a thousand
+messages in five seconds lands in about 2 s at the median while holding the server up for a few
+seconds at its peak.
+
 ## Running the fork
 
 The fork's server image is published to `ghcr.io/jclendineng/sharkord` by

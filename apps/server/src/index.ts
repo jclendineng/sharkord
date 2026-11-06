@@ -66,3 +66,11 @@ printDebug();
 enqueueActivityLog({
   type: ActivityLogType.SERVER_STARTED
 });
+
+// mediasoup listens for SIGTERM and SIGINT to stop its workers, and any listener stops bun from
+// exiting on the signal by itself. the server sat through docker stop until docker killed it.
+// mediasoup's listener was added first, so its workers close before this exits
+const shutdown = () => process.exit(0);
+
+process.once('SIGTERM', shutdown);
+process.once('SIGINT', shutdown);

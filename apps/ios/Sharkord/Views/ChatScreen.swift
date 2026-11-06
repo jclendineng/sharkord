@@ -241,6 +241,16 @@ struct ChatScreen: View {
                     }
                 }
             } else {
+                // a wide ipad's box sits with the icons, as a mac's does. in the middle of the bar
+                // the bar sized the item to the filter button alone, and the box drawn past it
+                // took no taps
+                if hasDesktopRoom && usesDesktopSearch {
+                    ToolbarItem(placement: .barTrailing) {
+                        desktopSearch
+                    }
+                    .sharedBackgroundVisibility(.hidden)
+                }
+
                 if canShowMembers {
                     ToolbarItem(placement: .barTrailing) {
                         Button(action: toggleMemberList) {
@@ -278,17 +288,7 @@ struct ChatScreen: View {
                 }
             }
 
-            if hasDesktopRoom && usesDesktopSearch {
-                // the box itself sits in the top bar, the results drop down under. a wide ipad's
-                // in the middle of the bar, a mac's in its icon row
-                if !Platform.isMac {
-                    ToolbarItem(placement: .principal) {
-                        desktopSearch
-                            .frame(maxWidth: .infinity, alignment: .trailing)
-                    }
-                    .sharedBackgroundVisibility(.hidden)
-                }
-            } else {
+            if !(hasDesktopRoom && usesDesktopSearch) {
                 ToolbarItem(placement: .barTrailing) {
                     SearchLink(route: SearchRoute(channelId: channelId)) {
                         Image(systemName: "magnifyingglass")
@@ -310,7 +310,7 @@ struct ChatScreen: View {
             }
         }
         .onChange(of: searchModel.focusRequest) {
-            isSearchFocused = true
+            focusSearch()
         }
         .task {
             searchModel.applyOpening(channel: channel, directMessages: false)
@@ -362,12 +362,21 @@ struct ChatScreen: View {
     // its magnifier instead
     private var desktopSearch: some View {
         HStack(spacing: 8) {
+            #if os(macOS)
             SearchBox(
                 model: searchModel,
                 prompt: searchModel.prompt(in: session, directMessages: false),
                 isFocused: $isSearchFocused
             )
             .frame(width: 240)
+            #else
+            SearchBoxButton(
+                query: searchModel.query,
+                prompt: searchModel.prompt(in: session, directMessages: false),
+                action: openSearch
+            )
+            .frame(width: 240)
+            #endif
 
             FilterMenu(isFiltering: searchModel.filters.narrowsPastChannel, onChoose: chooseFilter)
         }
@@ -441,7 +450,26 @@ struct ChatScreen: View {
 
         searchModel.token = picker
         searchModel.query = ""
+        #if os(macOS)
         isSearchFocused = true
+        #else
+        // the panel's box takes focus on this as well as when the panel opens
+        searchModel.focusRequest += 1
+        #endif
+    }
+
+    // a mac types in the top bar's box. an ipad types in the panel's own box, which focuses as
+    // the panel opens: a field in an ipad's top bar never kept focus once the panel appeared
+    private func focusSearch() {
+        #if os(macOS)
+        isSearchFocused = true
+        #else
+        dropdown = .search
+        #endif
+    }
+
+    private func openSearch() {
+        dropdown = .search
     }
 
     private func jumpToFirstUnreadIfAsked() async {
@@ -517,7 +545,15 @@ private struct ChatDropdownPanel: View {
         case .search:
             // wide enough for every tab of the strip without it scrolling
             panel(width: 500, maxHeight: 640) {
+                #if os(macOS)
                 SearchScreen(channelId: channelId, directMessages: false, model: searchModel, showsSearchBox: false)
+                #else
+                VStack(spacing: 0) {
+                    PanelSearchField(model: searchModel)
+
+                    SearchScreen(channelId: channelId, directMessages: false, model: searchModel, showsSearchBox: false)
+                }
+                #endif
             }
         }
     }
@@ -913,3 +949,68 @@ private struct InboxButton: View {
         .help("Inbox")
     }
 }
+
+#if os(iOS)
+// the ipad's box in the top bar: it opens the panel, which has the field to type in
+private struct SearchBoxButton: View {
+    let query: String
+    let prompt: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(Theme.muted)
+
+                label
+                    .lineLimit(1)
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 12)
+            .frame(height: 38)
+            .frame(maxWidth: .infinity)
+            .background(Theme.listBackground, in: .rect(cornerRadius: 12, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(Theme.divider, lineWidth: 1)
+            }
+            .contentShape(.rect(cornerRadius: 12))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Search")
+        .accessibilityValue(query)
+    }
+
+    @ViewBuilder
+    private var label: some View {
+        if query.isEmpty {
+            Text(prompt)
+                .foregroundStyle(Theme.muted)
+        } else {
+            Text(query)
+                .foregroundStyle(Theme.header)
+        }
+    }
+}
+
+// the ipad panel's own box, focused as the panel opens and whenever a filter asks for it
+private struct PanelSearchField: View {
+    let model: SearchQueryModel
+
+    @Environment(SessionStore.self) private var session
+    @FocusState private var isFocused: Bool
+
+    var body: some View {
+        SearchBox(model: model, prompt: model.prompt(in: session, directMessages: false), isFocused: $isFocused)
+            .padding(12)
+            .task {
+                isFocused = true
+            }
+            .onChange(of: model.focusRequest) {
+                isFocused = true
+            }
+    }
+}
+#endif

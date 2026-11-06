@@ -346,9 +346,19 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   - Sending while scrolled up goes back down to the new message.
 - Reactions show the moment they are clicked, in the app and on the web, from the reaction itself, a double tap or the emoji picker.
 - Emoji typed straight from a keyboard show large when they are the whole message, in the app and on the web.
-- A profile with no colour picked shows a soft grey banner instead of near black, in the app and on the web.
 - On the web, confirmations for deleting or blocking have a red button.
 - In the app, the "new messages since" bar fits beside Jump: the time today, the weekday and time this week, the date before that.
+- The server stops on `docker stop` straight away instead of waiting out Docker's ten seconds and being killed: the voice library's signal listener had kept it from exiting.
+- The server reads its settings, the caller and their roles through prepared statements, which halved how long a burst of a thousand messages held it up.
+- A load test puts a thousand members on a server at once and checks every delivery (`bun run test:load` in `packages/e2e`).
+- In the app, VoiceOver reads the server rail by name with its unread count, each channel as one item with its type, privacy and unread count, and category headers as collapsed or expanded.
+- In the app, reactions are at least 28 points tall to tap, and the attachment panel's camera button has a name for VoiceOver.
+- In the app, the "new messages since" bar goes away once you send in the conversation.
+- On iPad, the search box in a channel's top bar works: tapping it opens the search panel with a box to type in, focused straight away.
+  - Before, the box in the bar took no taps, and later took them without keeping the keyboard.
+- On iPad in portrait, the keyboard no longer swaps the channel list and chat to their landscape widths.
+- On iPad mini, a profile opened from a message fits beside the avatar instead of running into its own margins.
+- A profile card or sheet without a banner picture shows the person's avatar colours instead of a flat grey, in the app and on the web.
   - In the app, with a light tap under the finger and the count rolling to the new number.
 - In the app, emoji-only messages and the server's own emoji grow with the device's text size.
 - On a Mac, pointing at a follow-up message shows its time beside it.

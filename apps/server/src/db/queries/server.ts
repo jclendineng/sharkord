@@ -2,17 +2,21 @@ import type { TJoinedSettings, TPublicServerSettings } from '@sharkord/shared';
 import { eq } from 'drizzle-orm';
 import { db } from '..';
 import { config } from '../../config';
+import { prepared } from '../prepared';
 import { files, settings } from '../schema';
 
 // since this is static, we can keep it in memory to avoid querying the DB every time
 let token: string;
 
 const getSettings = async (): Promise<TJoinedSettings> => {
-  const row = await db
-    .select({ settings, logo: files })
-    .from(settings)
-    .leftJoin(files, eq(files.id, settings.logoId))
-    .get();
+  const statement = prepared('settings', () =>
+    db
+      .select({ settings, logo: files })
+      .from(settings)
+      .leftJoin(files, eq(files.id, settings.logoId))
+      .prepare()
+  );
+  const row = statement.get();
 
   if (!row) {
     throw new Error(

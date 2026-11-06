@@ -119,7 +119,9 @@ struct SearchScreen: View {
                 .task {
                     try? await Task.sleep(for: .milliseconds(Platform.isMac ? 50 : 450))
                     isFieldFocused = true
-                    focusNavigationBarField()
+                    #if os(iOS)
+                    NavigationBarField.focus()
+                    #endif
                 }
         } else {
             // the mac chat's panel types into the top bar's box and sits inside the chat's own
@@ -259,35 +261,6 @@ struct SearchScreen: View {
             state.focusRequest += 1
         }
     }
-
-    private func focusNavigationBarField() {
-        #if os(iOS)
-        let windows = UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .flatMap(\.windows)
-
-        guard let window = windows.first(where: \.isKeyWindow) else {
-            return
-        }
-
-        // the topmost one, a full screen cover's bar over the screen it covers
-        let field = navigationBarFields(in: window).last
-
-        field?.becomeFirstResponder()
-        #endif
-    }
-
-    #if os(iOS)
-    private func navigationBarFields(in view: UIView, isInBar: Bool = false) -> [UITextField] {
-        let isBar = isInBar || view is UINavigationBar
-
-        if isBar, let field = view as? UITextField {
-            return [field]
-        }
-
-        return view.subviews.flatMap { navigationBarFields(in: $0, isInBar: isBar) }
-    }
-    #endif
 
     private func clearToken() {
         state.clearToken()
@@ -511,6 +484,18 @@ struct SearchBox: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .strokeBorder(isFocused.wrappedValue ? Theme.blurple : Theme.divider, lineWidth: 1)
         }
+        // the whole box takes a tap, its magnifier and padding as well as the text. in an ipad's
+        // top bar a tap on the field never brought the keyboard, so the tap makes it first
+        // responder itself
+        .contentShape(.rect(cornerRadius: 12))
+        .onTapGesture(perform: focus)
+    }
+
+    private func focus() {
+        isFocused.wrappedValue = true
+        #if os(iOS)
+        NavigationBarField.focus()
+        #endif
     }
 
     private func clearToken() {

@@ -76,10 +76,13 @@ const joinCrowdMember = async (index: number) => {
   const name = crowdName(index);
   const token = await signIn(index);
   const received: TJoinedMessage[] = [];
+  // when each of `received` arrived, for the load test's delivery times
+  const receivedAt: number[] = [];
   const failures: unknown[] = [];
 
   const onMessage = (message: TJoinedMessage) => {
     received.push(message);
+    receivedAt.push(performance.now());
   };
 
   let session = await connect(token, onMessage);
@@ -140,12 +143,18 @@ const joinCrowdMember = async (index: number) => {
     session = await connect(token, onMessage);
   };
 
+  // the live client, for calls the helpers above don't wrap. read it each time, a reconnect
+  // replaces it
+  const client = () => session.trpc;
+
   return {
     index,
     name,
     userId,
     received,
+    receivedAt,
     failures,
+    client,
     channelIdByName,
     startTyping,
     send,

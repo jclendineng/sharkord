@@ -48,6 +48,12 @@ struct AvatarView: View {
     // getAvatarGradient in packages/shared: a picked profile color, otherwise a hue from the id
     // spread by the golden angle so neighbouring ids look different
     private var gradient: [Color] {
+        Self.gradient(for: user)
+    }
+
+    // the profile banner falls back to the same colours, so a card without a banner still
+    // carries its owner's colour
+    static func gradient(for user: PublicUser?) -> [Color] {
         if let profileColor = user?.profileColor, profileColor != "#262626" {
             return [Color(hex: profileColor)]
         }
@@ -55,8 +61,8 @@ struct AvatarView: View {
         let hue = ((Double(user?.id ?? 0) * 137.508).truncatingRemainder(dividingBy: 360)).rounded()
 
         return [
-            Self.hsl(hue: hue, saturation: 0.60, lightness: 0.52),
-            Self.hsl(hue: (hue + 40).truncatingRemainder(dividingBy: 360), saturation: 0.65, lightness: 0.38)
+            hsl(hue: hue, saturation: 0.60, lightness: 0.52),
+            hsl(hue: (hue + 40).truncatingRemainder(dividingBy: 360), saturation: 0.65, lightness: 0.38)
         ]
     }
 

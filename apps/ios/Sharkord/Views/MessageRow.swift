@@ -292,8 +292,10 @@ private struct AuthorProfilePresentation: ViewModifier {
             } else {
                 content
                     .popover(isPresented: $isPresented, opensAwayFrom: .leading) {
+                        // narrower when the room beside the avatar is short of it: an ipad mini's
+                        // popover came out narrower than a fixed width, cutting into its margins
                         profile(user)
-                            .frame(width: 340)
+                            .frame(minWidth: 280, idealWidth: 340, maxWidth: 340)
                             .fixedSize(horizontal: false, vertical: true)
                             .presentationCompactAdaptation(.popover)
                     }
