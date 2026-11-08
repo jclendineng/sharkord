@@ -1191,6 +1191,26 @@ export { onLoad, onUnload };
     });
   });
 
+  describe('while a plugin is being installed', () => {
+    const installing =
+      "Plugin 'plugin-a' is still being installed. Try again once it has finished.";
+
+    test('should refuse to toggle or remove it', async () => {
+      pluginManager.markInstalling('plugin-a');
+
+      try {
+        await expect(
+          pluginManager.togglePlugin('plugin-a', true)
+        ).rejects.toThrow(installing);
+        await expect(pluginManager.removePlugin('plugin-a')).rejects.toThrow(
+          installing
+        );
+      } finally {
+        pluginManager.clearInstalling('plugin-a');
+      }
+    });
+  });
+
   describe('removePlugin', () => {
     test('should forget the logs and the load error of a removed plugin', async () => {
       const pluginPath = path.join(PLUGINS_PATH, 'plugin-throws-error');

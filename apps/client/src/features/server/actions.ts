@@ -126,6 +126,10 @@ export const joinServer = async (handshakeHash: string, password?: string) => {
 
   store.dispatch(serverSliceActions.setInitialData(data));
 
+  // here rather than after connect(), which returns as soon as a server password is asked for,
+  // with the voice map still the one from before the socket dropped
+  rejoinVoiceAfterReconnect();
+
   setPluginCommands(data.commands);
   setPluginCapabilityAccess(data.pluginCapabilityAccess);
 
@@ -302,7 +306,6 @@ export const reconnectToServer = (info: TDisconnectInfo) => {
       // so reconnecting stays true until setInitialData clears it
       await connect();
       cancelReconnect();
-      rejoinVoiceAfterReconnect();
 
       pushVoiceDebugEvent('ws', 'reconnected', {
         voiceChannelId: currentVoiceChannelIdSelector(store.getState())

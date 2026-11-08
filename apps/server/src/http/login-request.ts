@@ -100,7 +100,14 @@ const loginRequestRouteHandler = async (
     .limit(1)
     .get();
 
-  await deleteLoginRequest(request.id);
+  const isConsumed = await deleteLoginRequest(request.id);
+
+  if (!isConsumed) {
+    throw new HttpValidationError(
+      'id',
+      'This sign in code has run out. Show a new one.'
+    );
+  }
 
   if (!user || user.banned) {
     throw new HttpValidationError('id', 'This account cannot sign in.');

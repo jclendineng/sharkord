@@ -469,6 +469,15 @@ class PluginManager {
     this.installing.delete(pluginId);
   };
 
+  // an install replaces the plugin's directory, so nothing else may load or delete it meanwhile
+  private assertNotInstalling = (pluginId: string) => {
+    if (this.installing.has(pluginId)) {
+      throw new Error(
+        `Plugin '${pluginId}' is still being installed. Try again once it has finished.`
+      );
+    }
+  };
+
   public reconcileRemovedPlugins = async () => {
     for (const pluginId of this.stateStore.knownPluginIds()) {
       if (this.installing.has(pluginId)) continue;
@@ -556,6 +565,8 @@ class PluginManager {
   };
 
   public togglePlugin = async (pluginId: string, enabled: boolean) => {
+    this.assertNotInstalling(pluginId);
+
     await this.stateStore.ensure(pluginId);
 
     // a plugin that is not on disk at all must not get an enabled state written
@@ -839,6 +850,8 @@ class PluginManager {
   };
 
   public removePlugin = async (pluginId: string) => {
+    this.assertNotInstalling(pluginId);
+
     await this.unload(pluginId);
 
     const pluginPath = getPluginPath(pluginId);

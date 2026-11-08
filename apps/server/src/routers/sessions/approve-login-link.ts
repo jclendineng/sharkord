@@ -2,7 +2,7 @@ import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../../db';
 import { loginLinks } from '../../db/schema';
-import { setLoginLinkStatus } from '../../helpers/login-links';
+import { answerLoginLink } from '../../helpers/login-links';
 import { invariant } from '../../utils/invariant';
 import { protectedProcedure } from '../../utils/trpc';
 
@@ -34,7 +34,12 @@ const approveLoginLinkRoute = protectedProcedure
       message: 'No device has scanned that code yet.'
     });
 
-    await setLoginLinkStatus(input.id, input.approve ? 'approved' : 'denied');
+    const isAnswered = await answerLoginLink(input.id, input.approve);
+
+    invariant(isAnswered, {
+      code: 'BAD_REQUEST',
+      message: 'That sign in code was already answered.'
+    });
   });
 
 export { approveLoginLinkRoute };

@@ -12,16 +12,18 @@ const inFlight = new Map<string, Promise<unknown>>();
 
 const swapPluginVersion = async (pluginId: string, version: string) => {
   const versionData = await fetchMarketplaceVersion(pluginId, version);
-  const wasEnabled = pluginManager.isEnabled(pluginId);
   const wasInstalled = await fs.exists(getPluginPath(pluginId));
 
-  if (wasEnabled) {
-    await pluginManager.unload(pluginId);
-  }
-
+  // before wasEnabled is read, so a toggle cannot change the answer while this runs
   pluginManager.markInstalling(pluginId);
 
+  const wasEnabled = pluginManager.isEnabled(pluginId);
+
   try {
+    if (wasEnabled) {
+      await pluginManager.unload(pluginId);
+    }
+
     await downloadPlugin(
       pluginId,
       versionData.downloadUrl,

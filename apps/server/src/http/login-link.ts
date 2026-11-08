@@ -111,7 +111,14 @@ const loginLinkRouteHandler = async (
     .limit(1)
     .get();
 
-  await deleteLoginLink(link.id);
+  const isConsumed = await deleteLoginLink(link.id);
+
+  if (!isConsumed) {
+    throw new HttpValidationError(
+      'token',
+      'This sign in code has run out. Show a new one on your other device.'
+    );
+  }
 
   if (!user || user.banned) {
     throw new HttpValidationError('token', 'This account cannot sign in.');

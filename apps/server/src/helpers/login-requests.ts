@@ -93,8 +93,15 @@ const answerLoginRequest = async (
   return answered.length > 0;
 };
 
-const deleteLoginRequest = async (id: string) =>
-  db.delete(loginRequests).where(eq(loginRequests.id, id));
+// true for the one caller that removed it, so an approved request pays out a single session
+const deleteLoginRequest = async (id: string) => {
+  const deleted = await db
+    .delete(loginRequests)
+    .where(eq(loginRequests.id, id))
+    .returning({ id: loginRequests.id });
+
+  return deleted.length > 0;
+};
 
 const matchesLoginSecret = matchesLoginLinkSecret;
 

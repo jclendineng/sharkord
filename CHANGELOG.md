@@ -387,6 +387,11 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 #### Server and web client
 
+- A call dropped by a lost connection on a server with a password is joined again once the password is entered. The web client used to go on showing a call that had ended.
+- A message whose live copy was lost on the way stops showing as sending after 10 seconds, the way the apps already did.
+- QR code sign ins take only the first answer and hand out a single session, however many requests arrive at once.
+- Starting and confirming two-factor setup at the same moment can no longer turn it on with a secret your authenticator does not have.
+- A plugin can't be toggled or removed while it is being installed.
 - Deleting messages has a rate limit of its own, so clearing out messages no longer stops you sending. The limits for sending and editing, message actions, uploads and search are higher.
 - A saved sign in that is no longer good, after a kick, a ban or a password change, opens the connect screen again. It used to show connection lost, since the server's refusal reached the tab as a dropped connection.
 - A chat that lost its connection catches up when it is back. Messages sent while it was away used to stay missing until the channel was opened again.
@@ -452,6 +457,8 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 #### iOS app
 
+- Tapping two voice channels in quick succession joins only the first.
+- Joining another call just after leaving one no longer ends the new call.
 - A server running an older Sharkord, such as upstream's, that turns down something the app sends now shows "This server needs to be updated to use this." rather than its raw JSON error.
 - Search on a server that only searches by words, such as upstream Sharkord, no longer shows the server's raw error under Recent. Media, Links and Files show empty there instead.
 - Text in the apps meets 4.5:1 contrast everywhere it sits, and Increase Contrast brings stronger text and lines.

@@ -42,7 +42,6 @@ import { MAX_VOICE_REACTIONS_PER_USER } from './voice/statics';
 
 export interface IServerState {
   connected: boolean;
-  connecting: boolean;
   reconnect: TReconnectState | null;
   disconnectInfo?: TDisconnectInfo;
   serverId?: string;
@@ -106,7 +105,6 @@ export interface IServerState {
 
 const initialState: IServerState = {
   connected: false,
-  connecting: false,
   reconnect: null,
   disconnectInfo: undefined,
   serverId: undefined,
@@ -210,7 +208,6 @@ export const serverSlice = createSlice({
     },
     setConnected: (state, action: PayloadAction<boolean>) => {
       state.connected = action.payload;
-      state.connecting = false;
     },
     setReconnect: (state, action: PayloadAction<TReconnectState | null>) => {
       state.reconnect = action.payload;

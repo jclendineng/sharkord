@@ -129,6 +129,35 @@ describe('signing in another device with a qr code', () => {
     ).rejects.toThrow('No device has scanned that code yet.');
   });
 
+  test('should take only the first of two answers given together', async () => {
+    const { caller } = await initTest(1);
+    const link = await caller.sessions.createLoginLink();
+
+    await scan(link.token);
+
+    const results = await Promise.allSettled([
+      caller.sessions.approveLoginLink({ id: link.id, approve: true }),
+      caller.sessions.approveLoginLink({ id: link.id, approve: false })
+    ]);
+
+    expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+  });
+
+  test('should hand out one session when two polls collect it together', async () => {
+    const { caller } = await initTest(1);
+    const link = await caller.sessions.createLoginLink();
+    const claim = await scan(link.token);
+
+    await caller.sessions.approveLoginLink({ id: link.id, approve: true });
+
+    const results = await Promise.all([
+      scan(link.token, claim.body.claimKey),
+      scan(link.token, claim.body.claimKey)
+    ]);
+
+    expect(results.filter((r) => r.status === 200)).toHaveLength(1);
+  });
+
   test('should not let someone else see or approve a code', async () => {
     const { caller } = await initTest(1);
     const { caller: otherCaller } = await initTest(2);

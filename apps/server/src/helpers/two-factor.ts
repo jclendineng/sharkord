@@ -1,6 +1,6 @@
 import { sha256 } from '@sharkord/shared';
 import { randomBytes } from 'crypto';
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { db } from '../db';
 import { getSettings } from '../db/queries/server';
 import { userTotp, users } from '../db/schema';
@@ -51,7 +51,9 @@ const startTwoFactorSetup = async (userId: number) => {
 
   const secret = generateTotpSecret();
 
-  await db
+  // the condition again in the write, a confirm finishing after the read above must not have
+  // its secret and recovery codes replaced
+  const started = await db
     .insert(userTotp)
     .values({ userId, secret, createdAt: Date.now() })
     .onConflictDoUpdate({
@@ -61,8 +63,15 @@ const startTwoFactorSetup = async (userId: number) => {
         lastStep: 0,
         recoveryCodeHashes: [],
         createdAt: Date.now()
-      }
-    });
+      },
+      setWhere: isNull(userTotp.enabledAt)
+    })
+    .returning({ userId: userTotp.userId });
+
+  invariant(started.length > 0, {
+    code: 'BAD_REQUEST',
+    message: 'Two-factor authentication is already on.'
+  });
 
   return { secret, uri: getTotpUri(settings.name, user.identity, secret) };
 };
@@ -95,10 +104,24 @@ const confirmTwoFactorSetup = async (userId: number, code: string) => {
     recoveryCodes.map((recoveryCode) => sha256(normalizeCode(recoveryCode)))
   );
 
-  await db
+  // only the secret the code was checked against, and only once: hashing leaves time for a
+  // new setup or a second confirm to get in
+  const confirmed = await db
     .update(userTotp)
     .set({ lastStep: step, recoveryCodeHashes, enabledAt: Date.now() })
-    .where(eq(userTotp.userId, userId));
+    .where(
+      and(
+        eq(userTotp.userId, userId),
+        eq(userTotp.secret, row.secret),
+        isNull(userTotp.enabledAt)
+      )
+    )
+    .returning({ userId: userTotp.userId });
+
+  invariant(confirmed.length > 0, {
+    code: 'BAD_REQUEST',
+    message: 'Start the setup first.'
+  });
 
   return recoveryCodes;
 };

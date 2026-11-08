@@ -179,6 +179,21 @@ describe('signing in a device without a camera by its qr code', () => {
     ).rejects.toThrow('That sign in code is gone. Show a new one.');
   });
 
+  test('should hand out one session when two polls collect it together', async () => {
+    const { caller } = await initTest(1);
+    const request = await start();
+
+    await caller.sessions.approveLoginRequest({
+      token: request.token,
+      approve: true
+    });
+
+    const poll = { id: request.id, pollKey: request.pollKey };
+    const results = await Promise.all([ask(poll), ask(poll)]);
+
+    expect(results.filter((r) => r.status === 200)).toHaveLength(1);
+  });
+
   test('should answer a request only once', async () => {
     const { caller } = await initTest(1);
     const { caller: otherCaller } = await initTest(2);

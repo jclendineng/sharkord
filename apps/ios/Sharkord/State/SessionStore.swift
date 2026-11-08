@@ -1034,18 +1034,20 @@ final class SessionStore {
             return
         }
 
+        // before the first await, a second tap comes in while the call being left closes
+        isJoiningVoice = true
+
+        defer {
+            isJoiningVoice = false
+        }
+
         await onWillJoinVoice?(self)
 
         if currentVoiceChannelId != nil {
             await leaveVoice(playsSound: false)
         }
 
-        isJoiningVoice = true
         voiceTakenOverChannelId = nil
-
-        defer {
-            isJoiningVoice = false
-        }
 
         // listening still works without the microphone, the user just joins muted
         let canSpeak = await AVAudioApplication.requestRecordPermission()
@@ -1154,6 +1156,13 @@ final class SessionStore {
         }
 
         try? await Task.sleep(for: .milliseconds(400))
+
+        // already over, by joining another call or the connection dropping, and whatever call
+        // is current now is not the one this was asked to leave
+        guard isLeavingVoice else {
+            return
+        }
+
         await leaveVoice()
     }
 

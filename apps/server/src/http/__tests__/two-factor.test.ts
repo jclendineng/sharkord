@@ -51,6 +51,38 @@ describe('two-factor authentication', () => {
     expect(await caller.users.getTwoFactor()).toEqual({ enabled: false });
   });
 
+  test('should finish a setup once when two confirms come together', async () => {
+    const { caller } = await initTest(2);
+    const { secret } = await caller.users.startTwoFactor();
+    const code = getTotpCode(secret, getTotpStep());
+
+    const results = await Promise.allSettled([
+      caller.users.confirmTwoFactor({ code }),
+      caller.users.confirmTwoFactor({ code })
+    ]);
+
+    expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+  });
+
+  test('should never turn on with a secret the code was not checked against', async () => {
+    const { caller } = await initTest(2);
+    const { secret } = await caller.users.startTwoFactor();
+
+    const results = await Promise.allSettled([
+      caller.users.confirmTwoFactor({
+        code: getTotpCode(secret, getTotpStep())
+      }),
+      caller.users.startTwoFactor()
+    ]);
+    const [row] = await tdb
+      .select()
+      .from(userTotp)
+      .where(eq(userTotp.userId, 2));
+
+    expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+    expect(row?.enabledAt === null || row?.secret === secret).toBe(true);
+  });
+
   test('should ask for the code after the right password, then sign in with it', async () => {
     const { secret } = await enableTwoFactor();
 

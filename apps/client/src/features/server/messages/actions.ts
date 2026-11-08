@@ -11,6 +11,7 @@ import { getFileUrl } from '@/helpers/get-file-url';
 import { playSound } from '@/helpers/sounds';
 import { getTRPCClient } from '@/lib/trpc';
 import {
+  DEFAULT_MESSAGES_LIMIT,
   getPlainTextFromHtml,
   hasMention,
   TYPING_MS,
@@ -439,6 +440,37 @@ export const removePendingMessage = (channelId: number, messageId: number) => {
   store.dispatch(serverSliceActions.deleteMessage({ channelId, messageId }));
 };
 
+const PENDING_RELOAD_DELAY_MS = 10_000;
+
+// the server saved it but the live copy never came, lost as the socket dropped, which would
+// leave the placeholder for good. the newest page settles it
+const reloadIfStillPending = async (channelId: number, pendingId: number) => {
+  const state = store.getState();
+  const messages = messagesByChannelIdSelector(state, channelId);
+
+  if (!messages.some((message) => message.id === pendingId)) {
+    return;
+  }
+
+  // a window of older messages has no place for the newest page
+  if (!isChannelDetachedSelector(state, channelId)) {
+    try {
+      const trpc = getTRPCClient();
+      const { messages: page } = await trpc.messages.get.query({
+        channelId,
+        cursor: null,
+        limit: DEFAULT_MESSAGES_LIMIT
+      });
+
+      addMessages(channelId, [...page].reverse());
+    } catch {
+      // no client during a reconnect, which fetches the channel again by itself
+    }
+  }
+
+  removePendingMessage(channelId, pendingId);
+};
+
 // the server said which message it saved: if it has already arrived, the placeholder goes now,
 // otherwise its arrival takes the place of one
 export const settlePendingMessage = (
@@ -458,7 +490,14 @@ export const settlePendingMessage = (
 
   if (messageId === null || hasArrived) {
     removePendingMessage(channelId, pendingId);
+
+    return;
   }
+
+  setTimeout(
+    () => reloadIfStillPending(channelId, pendingId),
+    PENDING_RELOAD_DELAY_MS
+  );
 };
 
 // your own message arriving live replaces the oldest placeholder in its channel

@@ -5,8 +5,6 @@ import { and, eq } from 'drizzle-orm';
 import { db } from '../db';
 import { loginLinks } from '../db/schema';
 
-type TLoginLinkStatus = 'waiting' | 'claimed' | 'approved' | 'denied';
-
 const hash = (value: string) =>
   createHash('sha256').update(value).digest('hex');
 
@@ -90,19 +88,33 @@ const claimLoginLink = async (
   return claimed.length > 0 ? claimKey : undefined;
 };
 
-const setLoginLinkStatus = async (id: string, status: TLoginLinkStatus) =>
-  db.update(loginLinks).set({ status }).where(eq(loginLinks.id, id));
+// answered once, by whichever of the owner's devices gets there first
+const answerLoginLink = async (id: string, approve: boolean) => {
+  const answered = await db
+    .update(loginLinks)
+    .set({ status: approve ? 'approved' : 'denied' })
+    .where(and(eq(loginLinks.id, id), eq(loginLinks.status, 'claimed')))
+    .returning({ id: loginLinks.id });
 
-const deleteLoginLink = async (id: string) =>
-  db.delete(loginLinks).where(eq(loginLinks.id, id));
+  return answered.length > 0;
+};
+
+// true for the one caller that removed it, so an approved link pays out a single session
+const deleteLoginLink = async (id: string) => {
+  const deleted = await db
+    .delete(loginLinks)
+    .where(eq(loginLinks.id, id))
+    .returning({ id: loginLinks.id });
+
+  return deleted.length > 0;
+};
 
 export {
+  answerLoginLink,
   claimLoginLink,
   createLoginLink,
   deleteLoginLink,
   getLoginLinkByToken,
   hash as hashLoginSecret,
-  matches as matchesLoginLinkSecret,
-  setLoginLinkStatus
+  matches as matchesLoginLinkSecret
 };
-export type { TLoginLinkStatus };
