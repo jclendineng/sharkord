@@ -5,6 +5,7 @@ import { getTRPCClient } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
 import {
   getTrpcError,
+  isPollClosed,
   Permission,
   type TJoinedPoll,
   type TJoinedPollAnswer
@@ -121,7 +122,7 @@ const Poll = memo(({ messageId, authorId, poll }: TPollProps) => {
     [poll.answers]
   );
 
-  const isClosed = poll.endedAt !== null || poll.expiresAt <= now;
+  const isClosed = isPollClosed(poll, now);
   const showsResults = isClosed || ownVotes.length > 0;
   const canEnd =
     !isClosed && (authorId === ownUserId || can(Permission.MANAGE_MESSAGES));

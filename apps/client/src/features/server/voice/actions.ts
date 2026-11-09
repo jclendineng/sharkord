@@ -21,19 +21,20 @@ import {
 } from '@sharkord/shared';
 import type { RtpCapabilities } from 'mediasoup-client/types';
 import { toast } from 'sonner';
-import {
-  setCurrentVoiceChannelId,
-  setSelectedChannelId
-} from '../channels/actions';
+import { setSelectedChannelId } from '../channels/actions';
 import {
   currentVoiceChannelIdSelector,
   selectedChannelIdSelector
 } from '../channels/selectors';
-import { ownVoiceUserSelector } from '../selectors';
 import { serverSliceActions } from '../slice';
 import { SoundType } from '../types';
 import { ownUserIdSelector } from '../users/selectors';
-import { ownVoiceStateSelector } from './selectors';
+import {
+  isUserInVoiceSelector,
+  isVoiceJoiningSelector,
+  ownVoiceStateSelector,
+  voiceSessionSelector
+} from './selectors';
 import { VOICE_REACTION_DURATION_MS } from './statics';
 
 const syncOwnServerMute = (
@@ -125,30 +126,41 @@ const clearLocalVoiceSession = (): void => {
     setSelectedChannelId(undefined);
   }
 
-  setCurrentVoiceChannelId(undefined);
+  store.dispatch(serverSliceActions.endVoiceSession());
   updateOwnVoiceState({ webcamEnabled: false, sharingScreen: false });
   setPinnedCard(undefined);
 };
 
-// joining while this account sits in voice elsewhere takes that seat over, and the server
-// announces the old seat's leave before the join returns. that leave is ours, but it is not
-// for the call being started
-let isJoiningVoice = false;
-
 export const removeUserFromVoiceChannel = (
   userId: number,
-  channelId: number
+  channelId: number,
+  takenOver = false
 ): void => {
   const state = store.getState();
   const ownUserId = ownUserIdSelector(state);
   const currentChannelId = currentVoiceChannelIdSelector(state);
+  const isJoiningVoice = isVoiceJoiningSelector(state);
+  const { phase } = voiceSessionSelector(state);
 
   store.dispatch(
     serverSliceActions.removeUserFromVoiceChannel({ userId, channelId })
   );
 
+  // the device that took the call over hung up, there is nothing left to reconnect from
+  if (
+    userId === ownUserId &&
+    !takenOver &&
+    phase === 'takenOver' &&
+    !isUserInVoiceSelector(store.getState(), userId)
+  ) {
+    endVoiceSession();
+  }
+
   if (channelId !== currentChannelId) return;
 
+  // joining while this account sits in voice elsewhere takes that seat over, and the server
+  // announces the old seat's leave before the join returns. that leave is ours, but it is not
+  // for the call being started
   if (userId === ownUserId && isJoiningVoice) return;
 
   // the server took us out of this call rather than the other way round: the channel was
@@ -160,6 +172,11 @@ export const removeUserFromVoiceChannel = (
     });
 
     clearLocalVoiceSession();
+    playSound(SoundType.OWN_USER_LEFT_VOICE_CHANNEL);
+
+    if (takenOver) {
+      store.dispatch(serverSliceActions.setVoiceTakenOver(channelId));
+    }
 
     return;
   }
@@ -266,8 +283,8 @@ export const joinVoice = async (
   const state = store.getState();
   const currentChannelId = currentVoiceChannelIdSelector(state);
 
-  if (channelId === currentChannelId) {
-    // already in the desired channel
+  // already in the desired channel, or on the way into one
+  if (channelId === currentChannelId || isVoiceJoiningSelector(state)) {
     return undefined;
   }
 
@@ -277,12 +294,15 @@ export const joinVoice = async (
     voiceChatSidebar.channelId !== undefined &&
     voiceChatSidebar.channelId === currentChannelId;
 
-  if (currentChannelId) {
-    // is already in a voice channel, leave it first
-    await leaveVoice({ reason: 'switch_channel' });
-  }
+  // is already in a voice channel, leave it first. its local part runs before its first await,
+  // so the join is marked with no gap for a second click to get in
+  const leaving = currentChannelId
+    ? leaveVoice({ reason: 'switch_channel' })
+    : undefined;
 
-  setCurrentVoiceChannelId(channelId);
+  store.dispatch(serverSliceActions.startVoiceJoin(channelId));
+
+  await leaving;
 
   // an open chat of the call being left moves to the new call's chat. it is never opened on
   // its own, joining a call leaves a closed chat closed
@@ -305,8 +325,6 @@ export const joinVoice = async (
     soundMuted
   });
 
-  isJoiningVoice = true;
-
   try {
     const client = getTRPCClient();
 
@@ -317,14 +335,14 @@ export const joinVoice = async (
 
     voiceLogger.info('session: joined', { channelId });
 
+    store.dispatch(serverSliceActions.setVoiceConnecting(channelId));
+
     return routerRtpCapabilities;
   } catch (error) {
     voiceLogger.error('session: join failed', error, { channelId });
     clearLocalVoiceSession();
 
     toast.error(getTrpcError(error, i18n.t('common:failedJoinVoiceChannel')));
-  } finally {
-    isJoiningVoice = false;
   }
 
   return undefined;
@@ -369,22 +387,39 @@ export const leaveVoice = async (options?: {
   }
 };
 
-// the server ends the call of a socket that closes, so a connection that dropped mid call comes
-// back with the call gone while this client still shows it. the stale session is released and
-// the call joined again, the way a move is
-export const rejoinVoiceAfterReconnect = (): void => {
-  const state = store.getState();
-  const currentVoiceChannelId = currentVoiceChannelIdSelector(state);
-  const ownVoiceUser = ownVoiceUserSelector(state);
+export const setVoiceInCall = (channelId: number): void => {
+  store.dispatch(serverSliceActions.setVoiceInCall(channelId));
+};
 
-  if (currentVoiceChannelId === undefined || ownVoiceUser) return;
+// the server ends the call of a socket that closes, so the call stops with the connection, as
+// it does in the apps, and is joined again once the connection is back
+export const holdVoiceForRejoin = (): void => {
+  const currentVoiceChannelId = currentVoiceChannelIdSelector(store.getState());
 
-  voiceLogger.info('session: call ended by the reconnect, joining again', {
+  if (currentVoiceChannelId === undefined) return;
+
+  voiceLogger.info('session: call ended by a dropped connection', {
     channelId: currentVoiceChannelId
   });
 
-  clearLocalVoiceSession();
-  setVoiceMoveTargetChannelId(currentVoiceChannelId);
+  playSound(SoundType.OWN_USER_LEFT_VOICE_CHANNEL);
+  store.dispatch(serverSliceActions.awaitVoiceRejoin(currentVoiceChannelId));
+  updateOwnVoiceState({ webcamEnabled: false, sharingScreen: false });
+  setPinnedCard(undefined);
+};
+
+// the voice provider that does the joining is React's, so the join is picked up from here by
+// useFollowVoiceMove
+export const rejoinVoiceAfterReconnect = (): void => {
+  const session = voiceSessionSelector(store.getState());
+
+  if (session.phase !== 'awaitingRejoin') return;
+
+  store.dispatch(serverSliceActions.setVoiceRejoinReady(session.channelId));
+};
+
+export const endVoiceSession = (): void => {
+  store.dispatch(serverSliceActions.endVoiceSession());
 };
 
 export const setVoiceMoveTargetChannelId = (

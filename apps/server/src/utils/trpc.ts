@@ -20,7 +20,7 @@ import {
 } from './rate-limiters/rate-limiter';
 
 export type Context = {
-  handshakeHash: string;
+  handshakeHash: string | undefined;
   authenticated: boolean;
   pubsub: typeof pubsub;
   user: TUser;

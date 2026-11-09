@@ -611,6 +611,7 @@
   "hotkeysSaved": "Ajustes de atajos guardados",
   "failedSaveHotkeys": "No se pudieron guardar los ajustes de atajos",
   "hotkeysBridgeFailed": "No encontrado, se dejó de intentar",
+  "hotkeysBridgeReplaced": "En uso por otra pestaña",
   "hotkeysBridgeRetry": "Intentar conectar",
   "deleteAccountTab": "Eliminar cuenta",
   "deleteAccountTitle": "Eliminar cuenta",

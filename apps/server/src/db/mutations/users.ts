@@ -1,4 +1,4 @@
-import { and, eq, isNull, lt, max, or, sql } from 'drizzle-orm';
+import { and, eq, gte, isNull, lt, max, or, sql } from 'drizzle-orm';
 import { db } from '..';
 import { HttpValidationError } from '../../http/errors';
 import { eventBus } from '../../plugins/event-bus';
@@ -61,6 +61,7 @@ const createUser = async ({
           and(
             eq(invites.code, inviteCode),
             isNull(invites.deletedAt),
+            or(isNull(invites.expiresAt), gte(invites.expiresAt, Date.now())),
             or(isNull(invites.maxUses), lt(invites.uses, invites.maxUses))
           )
         )
@@ -70,7 +71,7 @@ const createUser = async ({
       if (consumed.length === 0) {
         throw new HttpValidationError(
           'identity',
-          'This invite code has reached its maximum uses'
+          'This invite code is no longer valid'
         );
       }
 

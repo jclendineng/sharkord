@@ -10,6 +10,9 @@ type TUseWebcamTestParams = {
 
 const DEFAULT_DEVICE_NAME = 'default';
 
+type TWebcamTestPhase =
+  'idle' | 'requesting' | 'attaching' | 'previewing' | 'attachFailed';
+
 const getWebcamErrorMessage = (error: unknown) => {
   if (!(error instanceof DOMException)) {
     return 'Failed to access webcam.';
@@ -35,9 +38,11 @@ const useWebcamTest = ({
   webcamResolution,
   webcamFramerate
 }: TUseWebcamTestParams) => {
-  const [isStarting, setIsStarting] = useState(false);
-  const [isTesting, setIsTesting] = useState(false);
-  const [isPreviewReady, setIsPreviewReady] = useState(false);
+  const [phase, setPhase] = useState<TWebcamTestPhase>('idle');
+  const isStarting = phase === 'requesting' || phase === 'attaching';
+  const isTesting =
+    phase === 'attaching' || phase === 'previewing' || phase === 'attachFailed';
+  const isPreviewReady = phase === 'previewing';
   const [error, setError] = useState<string | undefined>(undefined);
   const [videoStream, setVideoStream] = useState<MediaStream | undefined>(
     undefined
@@ -64,9 +69,7 @@ const useWebcamTest = ({
     }
 
     setVideoStream(undefined);
-    setIsPreviewReady(false);
-    setIsStarting(false);
-    setIsTesting(false);
+    setPhase('idle');
   }, [stopVideoTracks]);
 
   const getVideoConstraints = useCallback((): MediaTrackConstraints => {
@@ -113,8 +116,7 @@ const useWebcamTest = ({
 
       try {
         await videoElement.play();
-        setIsPreviewReady(true);
-        setIsStarting(false);
+        setPhase('previewing');
         return true;
       } catch {
         // Ignore transient autoplay race conditions and retry from the effect.
@@ -130,7 +132,7 @@ const useWebcamTest = ({
 
     cleanup();
     setError(undefined);
-    setIsStarting(true);
+    setPhase('requesting');
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -147,8 +149,7 @@ const useWebcamTest = ({
       videoStreamRef.current = stream;
 
       setVideoStream(stream);
-      setIsPreviewReady(false);
-      setIsTesting(true);
+      setPhase('attaching');
 
       return true;
     } catch (error) {
@@ -157,7 +158,6 @@ const useWebcamTest = ({
       }
 
       cleanup();
-      setIsStarting(false);
       setError(getWebcamErrorMessage(error));
 
       return false;
@@ -187,7 +187,7 @@ const useWebcamTest = ({
       if (attached) return;
 
       if (attemptCount >= maxAttempts) {
-        setIsStarting(false);
+        setPhase('attachFailed');
         setError(
           'Failed to start webcam preview. Please retry or choose another webcam.'
         );

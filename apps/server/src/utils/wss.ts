@@ -246,7 +246,7 @@ const createContext = async ({
     authenticated: false,
     userId: decodedUser.id,
     sessionId,
-    handshakeHash: '',
+    handshakeHash: undefined,
     currentVoiceChannelId: undefined,
     locale: DEFAULT_LOCALE,
     hasPermission,

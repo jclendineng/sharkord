@@ -30,20 +30,19 @@ import type {
 import { DEFAULT_MESSAGES_LIMIT } from '@sharkord/shared';
 import { mergeMessagesChronologically } from './helpers';
 import type {
+  TConnectionState,
   TDisconnectInfo,
   TInitialData,
   TMessagesMap,
-  TReconnectState,
   TServerSnapshot,
   TThreadMessagesMap,
-  TVoiceReaction
+  TVoiceReaction,
+  TVoiceSession
 } from './types';
 import { MAX_VOICE_REACTIONS_PER_USER } from './voice/statics';
 
 export interface IServerState {
-  connected: boolean;
-  reconnect: TReconnectState | null;
-  disconnectInfo?: TDisconnectInfo;
+  connection: TConnectionState;
   serverId?: string;
   categories: TCategory[];
   channels: TChannel[];
@@ -53,7 +52,7 @@ export interface IServerState {
   ownUserId: number | undefined;
   ownUserPasswordSet: boolean;
   selectedChannelId: number | undefined;
-  currentVoiceChannelId: number | undefined;
+  voiceSession: TVoiceSession;
   // it lives here rather than in the subscription because joining the new room needs the voice provider context
   voiceMoveTargetChannelId: number | undefined;
   messagesMap: TMessagesMap;
@@ -98,15 +97,12 @@ export interface IServerState {
   directMessages: TDirectMessageConversation[];
   friendLists: TFriendLists;
   // showing the copy saved before a refresh, see restoreSnapshot
-  restoredFromSnapshot: boolean;
   // channels whose messages may have missed changes, replaced by their first fetched page
   staleChannelIds: Record<number, true>;
 }
 
 const initialState: IServerState = {
-  connected: false,
-  reconnect: null,
-  disconnectInfo: undefined,
+  connection: { kind: 'signedOut' },
   serverId: undefined,
   ownUserId: undefined,
   ownUserPasswordSet: true,
@@ -116,7 +112,7 @@ const initialState: IServerState = {
   stickers: [],
   sounds: [],
   selectedChannelId: undefined,
-  currentVoiceChannelId: undefined,
+  voiceSession: { phase: 'idle' },
   voiceMoveTargetChannelId: undefined,
   messagesMap: {},
   detachedChannels: {},
@@ -167,7 +163,6 @@ const initialState: IServerState = {
   dmsOpen: false,
   directMessages: [],
   friendLists: { friends: [], incoming: [], outgoing: [], blocked: [] },
-  restoredFromSnapshot: false,
   staleChannelIds: {},
   hideOwnScreenShare: getLocalStorageItemBool(
     LocalStorageKey.HIDE_OWN_SCREEN_SHARE,
@@ -176,8 +171,7 @@ const initialState: IServerState = {
 };
 
 const applyInitialData = (state: IServerState, data: TInitialData) => {
-  state.connected = true;
-  state.reconnect = null;
+  state.connection = { kind: 'connected' };
   state.categories = data.categories;
   state.channels = data.channels;
   state.emojis = data.emojis;
@@ -206,11 +200,26 @@ export const serverSlice = createSlice({
         info: state.info
       });
     },
-    setConnected: (state, action: PayloadAction<boolean>) => {
-      state.connected = action.payload;
+    setReconnect: (
+      state,
+      action: PayloadAction<{ attempt: number; nextAttemptAt: number | null }>
+    ) => {
+      state.connection = { kind: 'reconnecting', ...action.payload };
     },
-    setReconnect: (state, action: PayloadAction<TReconnectState | null>) => {
-      state.reconnect = action.payload;
+    // from a screen with nothing on it yet, a reconnect or a restored page already says what it is
+    setConnecting: (state, action: PayloadAction<boolean>) => {
+      if (state.connection.kind === 'signedOut') {
+        state.connection = { kind: 'connecting', auto: action.payload };
+      }
+    },
+    setNeedsServerPassword: (state) => {
+      const { kind } = state.connection;
+      let resumesFrom: 'signIn' | 'reconnect' | 'restore' = 'signIn';
+
+      if (kind === 'reconnecting') resumesFrom = 'reconnect';
+      if (kind === 'restoring') resumesFrom = 'restore';
+
+      state.connection = { kind: 'needsServerPassword', resumesFrom };
     },
     setInfo: (state, action: PayloadAction<TServerInfo | undefined>) => {
       state.info = action.payload;
@@ -222,11 +231,10 @@ export const serverSlice = createSlice({
       state,
       action: PayloadAction<TDisconnectInfo | undefined>
     ) => {
-      state.disconnectInfo = action.payload;
+      state.connection = { kind: 'signedOut', disconnectInfo: action.payload };
     },
     setInitialData: (state, action: PayloadAction<TInitialData>) => {
       applyInitialData(state, action.payload);
-      state.restoredFromSnapshot = false;
     },
     // shown inert, the way a reconnect is, until joining returns: a first attempt shows no
     // reconnecting dialog, so the page looks as it did before the refresh
@@ -235,9 +243,7 @@ export const serverSlice = createSlice({
 
       applyInitialData(state, data);
 
-      state.connected = false;
-      state.reconnect = { attempt: 1, maxAttempts: 1, nextAttemptAt: null };
-      state.restoredFromSnapshot = true;
+      state.connection = { kind: 'restoring' };
       state.selectedChannelId = selectedChannelId;
 
       if (selectedChannelId !== undefined) {
@@ -713,11 +719,37 @@ export const serverSlice = createSlice({
         state.activeFullscreenPluginId = undefined;
       }
     },
-    setCurrentVoiceChannelId: (
-      state,
-      action: PayloadAction<number | undefined>
-    ) => {
-      state.currentVoiceChannelId = action.payload;
+    startVoiceJoin: (state, action: PayloadAction<number>) => {
+      state.voiceSession = { phase: 'joining', channelId: action.payload };
+    },
+    setVoiceConnecting: (state, action: PayloadAction<number>) => {
+      state.voiceSession = { phase: 'connecting', channelId: action.payload };
+    },
+    // a call left while its transports were still coming up stays left
+    setVoiceInCall: (state, action: PayloadAction<number>) => {
+      const session = state.voiceSession;
+
+      if (
+        session.phase === 'connecting' &&
+        session.channelId === action.payload
+      ) {
+        state.voiceSession = { phase: 'inCall', channelId: action.payload };
+      }
+    },
+    awaitVoiceRejoin: (state, action: PayloadAction<number>) => {
+      state.voiceSession = {
+        phase: 'awaitingRejoin',
+        channelId: action.payload
+      };
+    },
+    setVoiceRejoinReady: (state, action: PayloadAction<number>) => {
+      state.voiceSession = { phase: 'rejoinReady', channelId: action.payload };
+    },
+    setVoiceTakenOver: (state, action: PayloadAction<number>) => {
+      state.voiceSession = { phase: 'takenOver', channelId: action.payload };
+    },
+    endVoiceSession: (state) => {
+      state.voiceSession = { phase: 'idle' };
     },
     setVoiceMoveTargetChannelId: (
       state,

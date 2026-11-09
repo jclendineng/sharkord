@@ -11,13 +11,29 @@ export type TPickedImage = {
 };
 
 // uploads to the temporary store only, the settings form commits the id when it saves
-const usePickImage = () => {
+const usePickImage = ({
+  prepare,
+  refusesGif
+}: {
+  prepare?: (file: File) => Promise<File | undefined>;
+  refusesGif?: boolean;
+} = {}) => {
   const { t } = useTranslation('common');
   const openFilePicker = useFilePicker();
 
   return useCallback(async (): Promise<TPickedImage | undefined> => {
     try {
-      const [file] = await openFilePicker('image/*');
+      const [picked] = await openFilePicker('image/*');
+
+      if (!picked) return;
+
+      if (refusesGif && picked.type === 'image/gif') {
+        toast.error(t('gifNotAllowed'));
+
+        return;
+      }
+
+      const file = prepare ? await prepare(picked) : picked;
 
       if (!file) return;
 
@@ -32,7 +48,7 @@ const usePickImage = () => {
     } catch (error) {
       toast.error(getTrpcError(error, t('failedUploadImage')));
     }
-  }, [openFilePicker, t]);
+  }, [openFilePicker, prepare, refusesGif, t]);
 };
 
 export { usePickImage };

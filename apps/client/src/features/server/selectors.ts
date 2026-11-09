@@ -52,20 +52,48 @@ import {
   voiceChannelStateSelector
 } from './voice/selectors';
 
-export const connectedSelector = (state: IRootState) => state.server.connected;
+export const connectionSelector = (state: IRootState) =>
+  state.server.connection;
+
+// resuming a session, which on a refresh is still the page loading rather than a sign in
+export const isAutoConnectingSelector = (state: IRootState) =>
+  state.server.connection.kind === 'connecting' && state.server.connection.auto;
+
+export const connectedSelector = (state: IRootState) =>
+  state.server.connection.kind === 'connected';
 
 export const disconnectInfoSelector = (state: IRootState) =>
-  state.server.disconnectInfo;
+  state.server.connection.kind === 'signedOut'
+    ? state.server.connection.disconnectInfo
+    : undefined;
 
-export const reconnectSelector = (state: IRootState) => state.server.reconnect;
+export const reconnectSelector = (state: IRootState) =>
+  state.server.connection.kind === 'reconnecting'
+    ? state.server.connection
+    : null;
 
-export const reconnectingSelector = (state: IRootState) =>
-  !!state.server.reconnect;
+// the server stays on screen, inert, in every state that is on its way back to it
+export const reconnectingSelector = (state: IRootState) => {
+  const { connection } = state.server;
+
+  if (connection.kind === 'needsServerPassword') {
+    return connection.resumesFrom !== 'signIn';
+  }
+
+  return connection.kind === 'reconnecting' || connection.kind === 'restoring';
+};
 
 export const serverIdSelector = (state: IRootState) => state.server.serverId;
 
-export const restoredFromSnapshotSelector = (state: IRootState) =>
-  state.server.restoredFromSnapshot;
+export const restoredFromSnapshotSelector = (state: IRootState) => {
+  const { connection } = state.server;
+
+  if (connection.kind === 'needsServerPassword') {
+    return connection.resumesFrom === 'restore';
+  }
+
+  return connection.kind === 'restoring';
+};
 
 export const isChannelStaleSelector = (state: IRootState, channelId: number) =>
   !!state.server.staleChannelIds[channelId];

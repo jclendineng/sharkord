@@ -5,10 +5,8 @@ import type { IRootState } from '../store';
 
 export const appLoadingSelector = (state: IRootState) => state.app.appLoading;
 
-export const isAutoConnectingSelector = (state: IRootState) =>
-  state.app.isAutoConnecting;
-
-export const modViewOpenSelector = (state: IRootState) => state.app.modViewOpen;
+export const modViewOpenSelector = (state: IRootState) =>
+  state.app.modViewUserId !== undefined;
 
 export const modViewUserIdSelector = (state: IRootState) =>
   state.app.modViewUserId;
@@ -20,13 +18,13 @@ export const mobileDrawerSelector = (state: IRootState) =>
   state.app.mobileDrawer;
 
 export const threadSidebarOpenSelector = (state: IRootState) =>
-  state.app.threadSidebarOpen;
+  state.app.threadSidebar !== undefined;
 
 export const threadParentMessageIdSelector = (state: IRootState) =>
-  state.app.threadParentMessageId;
+  state.app.threadSidebar?.parentMessageId;
 
 export const threadChannelIdSelector = (state: IRootState) =>
-  state.app.threadChannelId;
+  state.app.threadSidebar?.channelId;
 
 export const autoJoinLastChannelSelector = (state: IRootState) =>
   state.app.autoJoinLastChannel;

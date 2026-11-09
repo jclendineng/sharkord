@@ -278,12 +278,13 @@ describe('bridge source', () => {
   });
 
   it('stops for good when another tab replaces it', () => {
-    connectSource();
+    const { events } = connectSource();
 
     lastSocket().receive({ type: 'replaced' });
 
     expect(lastSocket().closed).toBe(true);
     expect(timers).toHaveLength(0);
+    expect(events[events.length - 1]).toMatchObject({ status: 'replaced' });
   });
 
   it('closes the socket and stops retrying when the last listener leaves', () => {

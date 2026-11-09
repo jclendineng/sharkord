@@ -182,10 +182,14 @@ final class ServerListStore {
         signingInSession = makeSession(nil)
     }
 
-    // an invite link opened from outside the app, waiting for the sign in screen to take it up
-    var pendingInviteLink: String?
-    // a sign in qr code scanned with the camera app, the same
-    var pendingLinkLogin: LinkLogin?
+    // opened from outside the app, waiting for the sign in screen to take it up
+    enum PendingSignIn {
+        // a sign in qr code scanned with the camera app
+        case linkLogin(LinkLogin)
+        case invite(String)
+    }
+
+    var pendingSignIn: PendingSignIn?
     // another device's code asking to be signed in, scanned here, waiting to be approved
     var pendingApproval: LoginApproval?
     // a tapped notification waiting for its server, see open(_:)
@@ -309,7 +313,7 @@ final class ServerListStore {
         }
 
         if let login = LinkLogin(url: url) {
-            pendingLinkLogin = login
+            pendingSignIn = .linkLogin(login)
             signingInSession = makeSession(nil)
             return
         }
@@ -323,7 +327,7 @@ final class ServerListStore {
             return
         }
 
-        pendingInviteLink = link
+        pendingSignIn = .invite(link)
         signingInSession = makeSession(nil)
     }
 

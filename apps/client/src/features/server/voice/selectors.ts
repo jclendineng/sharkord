@@ -60,3 +60,15 @@ export const hideOwnScreenShareSelector = (state: IRootState) =>
 
 export const alwaysShowVoiceControlsSelector = (state: IRootState) =>
   state.server.alwaysShowVoiceControls;
+
+export const voiceSessionSelector = (state: IRootState) =>
+  state.server.voiceSession;
+
+export const isVoiceJoiningSelector = (state: IRootState) => {
+  const { phase } = state.server.voiceSession;
+
+  return phase === 'joining' || phase === 'connecting';
+};
+
+export const isUserInVoiceSelector = (state: IRootState, userId: number) =>
+  Object.values(state.server.voiceMap).some(({ users }) => !!users[userId]);

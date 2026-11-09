@@ -1,4 +1,5 @@
 import type { TInvite, TInviteJoin, TJoinedInvite } from '@sharkord/shared';
+import { isInviteExpired, isInviteUsedUp } from '@sharkord/shared';
 import { asc, eq, inArray } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/sqlite-core';
 import { db } from '..';
@@ -24,11 +25,11 @@ const isInviteValid = async (
     return { error: 'Invite code not found' };
   }
 
-  if (invite.expiresAt && invite.expiresAt < Date.now()) {
+  if (isInviteExpired(invite)) {
     return { error: 'Invite code has expired' };
   }
 
-  if (invite.maxUses && invite.uses >= invite.maxUses) {
+  if (isInviteUsedUp(invite)) {
     return { error: 'Invite code has reached maximum uses' };
   }
 

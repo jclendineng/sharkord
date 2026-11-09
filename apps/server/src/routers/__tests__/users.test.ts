@@ -596,6 +596,38 @@ describe('users router', () => {
     ).rejects.toThrow('New password and confirmation do not match');
   });
 
+  test('should refuse a gif as an avatar, even one renamed to a png', async () => {
+    const { caller, mockedToken } = await initTest();
+
+    for (const [name, type] of [
+      ['moving.gif', 'image/gif'],
+      ['renamed.png', 'image/png']
+    ] as const) {
+      const file = new File(['GIF89a animation'], name, { type });
+      const uploadResponse = await uploadFile(file, mockedToken);
+      const { id } = (await uploadResponse.json()) as TTempFile;
+
+      await expect(caller.users.changeAvatar({ fileId: id })).rejects.toThrow(
+        "GIFs can't be used as an avatar or server icon."
+      );
+    }
+  });
+
+  test('should still take a gif as a banner', async () => {
+    const { caller, mockedToken } = await initTest();
+    const file = new File(['GIF89a animation'], 'moving.gif', {
+      type: 'image/gif'
+    });
+    const uploadResponse = await uploadFile(file, mockedToken);
+    const { id } = (await uploadResponse.json()) as TTempFile;
+
+    await caller.users.changeBanner({ fileId: id });
+
+    const { user } = await caller.users.getInfo({ userId: 1 });
+
+    expect(user.bannerId).not.toBeNull();
+  });
+
   test('should change avatar', async () => {
     const { caller, mockedToken } = await initTest();
 

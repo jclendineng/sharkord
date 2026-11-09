@@ -15,15 +15,11 @@ import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 export interface TAppState {
   appLoading: boolean;
-  isAutoConnecting: boolean;
   loadingPlugins: boolean;
   devices: TDevices | undefined;
-  modViewOpen: boolean;
   modViewUserId: number | undefined;
   mobileDrawer: MobileDrawer | undefined;
-  threadSidebarOpen: boolean;
-  threadParentMessageId: number | undefined;
-  threadChannelId: number | undefined;
+  threadSidebar: { parentMessageId: number; channelId: number } | undefined;
   autoJoinLastChannel: boolean;
   micMode: MicMode;
   hotkeysEnabled: boolean;
@@ -44,15 +40,11 @@ export interface TAppState {
 
 const initialState: TAppState = {
   appLoading: true,
-  isAutoConnecting: false,
   loadingPlugins: true,
   devices: undefined,
-  modViewOpen: false,
   modViewUserId: undefined,
   mobileDrawer: undefined,
-  threadSidebarOpen: false,
-  threadParentMessageId: undefined,
-  threadChannelId: undefined,
+  threadSidebar: undefined,
   autoJoinLastChannel: getLocalStorageItemBool(
     LocalStorageKey.AUTO_JOIN_LAST_CHANNEL,
     false
@@ -128,8 +120,9 @@ export const appSlice = createSlice({
         userId?: number;
       }>
     ) => {
-      state.modViewOpen = action.payload.modViewOpen;
-      state.modViewUserId = action.payload.userId;
+      const { modViewOpen, userId } = action.payload;
+
+      state.modViewUserId = modViewOpen ? userId : undefined;
     },
     setMobileDrawer: (
       state,
@@ -145,9 +138,12 @@ export const appSlice = createSlice({
         channelId?: number;
       }>
     ) => {
-      state.threadSidebarOpen = action.payload.open;
-      state.threadParentMessageId = action.payload.parentMessageId;
-      state.threadChannelId = action.payload.channelId;
+      const { open, parentMessageId, channelId } = action.payload;
+
+      state.threadSidebar =
+        open && parentMessageId !== undefined && channelId !== undefined
+          ? { parentMessageId, channelId }
+          : undefined;
     },
     setAutoJoinLastChannel: (state, action: PayloadAction<boolean>) => {
       state.autoJoinLastChannel = action.payload;
@@ -157,9 +153,6 @@ export const appSlice = createSlice({
     },
     setHotkeysEnabled: (state, action: PayloadAction<boolean>) => {
       state.hotkeysEnabled = action.payload;
-    },
-    setIsAutoConnecting: (state, action: PayloadAction<boolean>) => {
-      state.isAutoConnecting = action.payload;
     },
     setSelectedDmChannelId: (
       state,

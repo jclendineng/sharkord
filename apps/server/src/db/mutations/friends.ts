@@ -24,11 +24,21 @@ const addFriendRequest = async (requesterId: number, addresseeId: number) => {
   });
 };
 
+// only a request the other person sent, one you sent waits on them
 const acceptFriendRequest = async (userId: number, otherUserId: number) => {
-  await db
+  const accepted = await db
     .update(friendships)
     .set({ status: 'accepted', acceptedAt: Date.now() })
-    .where(pairWhere(userId, otherUserId));
+    .where(
+      and(
+        pairWhere(userId, otherUserId),
+        eq(friendships.status, 'pending'),
+        eq(friendships.requesterId, otherUserId)
+      )
+    )
+    .returning({ requesterId: friendships.requesterId });
+
+  return accepted.length > 0;
 };
 
 // unfriends, cancels a request sent or declines one received alike

@@ -613,6 +613,7 @@
   "hotkeysSaved": "Configurações de atalhos salvas",
   "failedSaveHotkeys": "Falha ao salvar as configurações de atalhos",
   "hotkeysBridgeFailed": "Não encontrado, parou de tentar",
+  "hotkeysBridgeReplaced": "Em uso por outra aba",
   "hotkeysBridgeRetry": "Tentar conectar",
   "deleteAccountTab": "Excluir conta",
   "deleteAccountTitle": "Excluir conta",

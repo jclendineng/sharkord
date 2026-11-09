@@ -239,14 +239,12 @@ struct MessageActionsSheet: View {
     }
 
     private func edit() {
-        store.replyingTo = nil
-        store.editing = message
+        store.composerMode = .editing(message)
         closeMenu()
     }
 
     private func reply() {
-        store.editing = nil
-        store.replyingTo = message
+        store.composerMode = .replying(message)
         closeMenu()
     }
 

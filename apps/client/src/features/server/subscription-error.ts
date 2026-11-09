@@ -1,5 +1,6 @@
 import { pushVoiceDebugEvent } from '@/helpers/voice-debug';
 import { store } from '../store';
+import { connectedSelector } from './selectors';
 import { serverSliceActions } from './slice';
 
 export const handleSubscriptionError =
@@ -10,5 +11,7 @@ export const handleSubscriptionError =
       error: String(error)
     });
 
-    store.dispatch(serverSliceActions.setConnected(false));
+    if (connectedSelector(store.getState())) {
+      store.dispatch(serverSliceActions.setDisconnectInfo(undefined));
+    }
   };

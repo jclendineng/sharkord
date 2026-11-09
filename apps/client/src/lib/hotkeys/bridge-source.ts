@@ -89,7 +89,6 @@ const createBridgeSource = ({
   let retryDelay = MIN_RETRY_MS;
   let status: THotkeyStatus = 'disconnected';
   let ready = false;
-  let replaced = false;
   let latestBindings: THotkeyBinding[] = [];
   let attempts = 0;
   let activeToken: string | null = null;
@@ -153,9 +152,7 @@ const createBridgeSource = ({
     socket = undefined;
     ready = false;
 
-    if (replaced) {
-      emitStatus('disconnected');
-
+    if (status === 'replaced') {
       return;
     }
 
@@ -179,7 +176,7 @@ const createBridgeSource = ({
         'another tab for this server took over the bridge, not reconnecting'
       );
 
-      replaced = true;
+      emitStatus('replaced');
 
       current.close();
 
@@ -272,7 +269,6 @@ const createBridgeSource = ({
     clearTimeout(retryTimer);
     dropSocket();
 
-    replaced = false;
     attempts = 0;
     retryDelay = MIN_RETRY_MS;
 

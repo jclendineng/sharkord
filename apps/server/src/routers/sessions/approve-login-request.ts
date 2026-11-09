@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { config } from '../../config';
+import { isLoginCodeExpired } from '../../helpers/login-links';
 import {
   answerLoginRequest,
   getLoginRequestByToken
@@ -22,7 +23,7 @@ const approveLoginRequestRoute = rateLimitedProcedure(protectedProcedure, {
       message: 'That sign in code is gone. Show a new one.'
     });
 
-    invariant(request.expiresAt >= Date.now(), {
+    invariant(!isLoginCodeExpired(request), {
       code: 'BAD_REQUEST',
       message: 'That sign in code has run out. Show a new one.'
     });

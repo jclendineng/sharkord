@@ -660,7 +660,7 @@ struct HomeView: View {
 
     private var needsServerPassword: Binding<Bool> {
         Binding(
-            get: { session.phase == .needsServerPassword },
+            get: { session.phase.needsServerPassword },
             set: { _ in }
         )
     }

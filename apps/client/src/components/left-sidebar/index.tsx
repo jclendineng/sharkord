@@ -21,6 +21,7 @@ import { PluginButtons } from './plugin-buttons';
 import { ServerDropdownMenu } from './server-dropdown';
 import { UserControl } from './user-control';
 import { VoiceControl } from './voice-control';
+import { VoiceTakenOverBanner } from './voice-taken-over-banner';
 
 const MIN_WIDTH = 200;
 const MAX_WIDTH = 400;
@@ -61,6 +62,7 @@ const LeftSidebar = memo(({ className }: TLeftSidebarProps) => {
           <ServerDropdownMenu />
         </div>
       </div>
+      <VoiceTakenOverBanner />
       {publicSettings?.directMessagesEnabled && <DmButton />}
       <PluginButtons />
       <div className="flex-1 overflow-y-auto">

@@ -1,5 +1,6 @@
 import { Permission, ServerEvents, StreamKind } from '@sharkord/shared';
 import z from 'zod';
+import { getHeldVoiceChannelId } from '../../helpers/voice-seat';
 import { logger } from '../../logger';
 import { VoiceRuntime } from '../../runtimes/voice';
 import { invariant } from '../../utils/invariant';
@@ -14,10 +15,10 @@ const closeProducerRoute = protectedProcedure
   .mutation(async ({ ctx, input }) => {
     await ctx.needsPermission(Permission.JOIN_VOICE_CHANNELS);
 
-    const ownSocket = ctx.getOwnWs();
+    const channelId = getHeldVoiceChannelId(ctx);
 
     // a socket whose seat another device took over would close that device's stream
-    if (!ctx.currentVoiceChannelId || (ownSocket && !ownSocket.inVoice)) {
+    if (!channelId) {
       logger.debug(
         'Ignoring closeProducer for %s/%s: user already left voice',
         ctx.user.name,
@@ -26,7 +27,7 @@ const closeProducerRoute = protectedProcedure
       return;
     }
 
-    const runtime = VoiceRuntime.findById(ctx.currentVoiceChannelId);
+    const runtime = VoiceRuntime.findById(channelId);
 
     invariant(runtime, {
       code: 'INTERNAL_SERVER_ERROR',
@@ -47,10 +48,10 @@ const closeProducerRoute = protectedProcedure
     runtime.removeProducer(ctx.user.id, input.kind);
 
     ctx.pubsub.publishForChannel(
-      ctx.currentVoiceChannelId,
+      channelId,
       ServerEvents.VOICE_PRODUCER_CLOSED,
       {
-        channelId: ctx.currentVoiceChannelId,
+        channelId,
         remoteId: ctx.user.id,
         kind: input.kind
       }

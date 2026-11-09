@@ -346,6 +346,10 @@ class VoiceRuntime {
   };
 
   public destroy = async () => {
+    // first, so a join arriving during the teardown is told there is no such room rather than
+    // getting a router that has been closed
+    voiceRuntimes.delete(this.id);
+
     await this.router?.close();
 
     Object.values(this.consumerTransports).forEach((transport) => {
@@ -410,8 +414,6 @@ class VoiceRuntime {
         });
       })
     );
-
-    voiceRuntimes.delete(this.id);
 
     eventBus.emit('voice:runtime_closed', {
       channelId: this.id

@@ -16,6 +16,7 @@ import {
   consumeVoiceMoveGrant,
   hasVoiceMoveGrant
 } from '../../helpers/voice-move-grants';
+import { claimVoiceSeat } from '../../helpers/voice-seat';
 import { logger } from '../../logger';
 import { pluginManager } from '../../plugins';
 import { runHook } from '../../plugins/run-hook';
@@ -105,11 +106,7 @@ const joinVoiceRoute = rateLimitedProcedure(protectedProcedure, {
 
     const state = runtime.getUserState(ctx.user.id);
 
-    ctx.currentVoiceChannelId = channel.id;
-
-    const ws = ctx.getOwnWs();
-
-    if (ws) ws.inVoice = true;
+    claimVoiceSeat(ctx, channel.id);
 
     await publishVoiceEvent(ServerEvents.USER_JOIN_VOICE, {
       channelId: input.channelId,

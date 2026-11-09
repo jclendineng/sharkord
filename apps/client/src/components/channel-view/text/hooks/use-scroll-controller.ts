@@ -31,6 +31,7 @@ const useScrollController = ({
   const hasInitialScroll = useRef(false);
   const shouldStickToBottom = useRef(true);
   const isProgrammaticScroll = useRef(false);
+  const lastScrollTop = useRef(0);
 
   const isNearBottom = useCallback((container: HTMLDivElement) => {
     const distanceFromBottom =
@@ -58,9 +59,20 @@ const useScrollController = ({
 
     if (!container) return;
 
+    const hasMovedUp = container.scrollTop < lastScrollTop.current;
+
+    lastScrollTop.current = container.scrollTop;
+
     if (isProgrammaticScroll.current) return;
 
-    shouldStickToBottom.current = isNearBottom(container);
+    const isNear = isNearBottom(container);
+
+    // only moving up leaves the bottom. media loading above makes the browser's scroll anchoring
+    // move the view down, and that scroll event arrives before the resize that would follow it,
+    // so taking a gap of that size for the reader leaving stopped the view following for good
+    if (hasMovedUp || isNear) {
+      shouldStickToBottom.current = isNear;
+    }
 
     if (fetching) return;
 

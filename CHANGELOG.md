@@ -387,6 +387,16 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 #### Server and web client
 
+- A new server icon is framed to a square and saved small before it uploads, instead of going up at full size.
+- GIFs can no longer be set as an avatar or server icon. Ones already set stay, and banners can still be GIFs.
+- The web client says when your voice moved to another device and offers to take it back, as the apps do.
+- A channel full of images opens at the newest message however slowly they load. The web client used to stop a little short of it.
+- Replies in a thread on the web show at once while sending, the way channel messages and the apps do.
+- The hotkey bridge says when another tab has taken it over, instead of showing it as not running.
+- The web client keeps trying to reconnect after losing the server, retrying at once and then backing off to 30 seconds, instead of giving up after five tries. It stops only when you are kicked, banned or refused, or press the button to stop.
+- The web client ends a call when its connection drops and joins it again once back, as the apps do.
+- Clicking another voice channel while one is joining no longer starts a second join.
+- A message you send from another device no longer clears a sending placeholder on this one.
 - A call dropped by a lost connection on a server with a password is joined again once the password is entered. The web client used to go on showing a call that had ended.
 - A message whose live copy was lost on the way stops showing as sending after 10 seconds, the way the apps already did.
 - QR code sign ins take only the first answer and hand out a single session, however many requests arrive at once.
@@ -457,6 +467,9 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 #### iOS app
 
+- The account card opened from an invite link has a way to log in for someone who already has an account.
+- A moderator's mute now holds in the app: the microphone closes and can't be reopened until the moderator lifts it.
+- Deafening closes an open microphone and hearing again opens it back up, as on the web.
 - Tapping two voice channels in quick succession joins only the first.
 - Joining another call just after leaving one no longer ends the new call.
 - A server running an older Sharkord, such as upstream's, that turns down something the app sends now shows "This server needs to be updated to use this." rather than its raw JSON error.

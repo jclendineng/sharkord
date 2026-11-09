@@ -4,6 +4,17 @@ import Observation
 // one list of messages: either a channel's top level messages or the replies of one thread
 @Observable
 final class ChannelMessagesStore {
+    enum PendingJump: Equatable {
+        case message(Int)
+        case firstUnread
+    }
+
+    enum ComposerMode: Equatable {
+        case composing
+        case replying(Message)
+        case editing(Message)
+    }
+
     enum Scope: Hashable {
         case channel
         case thread(parentMessageId: Int)
@@ -17,23 +28,55 @@ final class ChannelMessagesStore {
     private(set) var hasOlder = false
     // showing a window around an older message, not the present: live messages wait until the
     // list goes back to the newest page
-    private(set) var hasNewer = false
+    private(set) var isDetached = false
     // the message a jump landed on, which the list scrolls to and lights up
     var focusedMessageId: Int?
     // a jump asked for from another screen, made when the chat next appears
-    var pendingJumpMessageId: Int?
+    var pendingJumpMessageId: Int? {
+        get {
+            if case .message(let messageId) = pendingJump {
+                return messageId
+            }
+
+            return nil
+        }
+        set {
+            pendingJump = newValue.map { .message($0) }
+        }
+    }
     // a thread to open once the jump has brought its first message into the list, for a tapped
     // notification about a reply in it
     var pendingThreadParentId: Int?
     // the inbox's unreads open the chat at its first unread message, lit up
-    var pendingJumpToFirstUnread = false
+    var pendingJumpToFirstUnread: Bool {
+        get {
+            pendingJump == .firstUnread
+        }
+        set {
+            pendingJump = newValue ? .firstUnread : nil
+        }
+    }
     private(set) var hasLoaded = false
     private(set) var isLoading = false
     var errorMessage: String?
     var isVisible = false
     // the composer's mode, set from a message's long press sheet
-    var replyingTo: Message?
-    var editing: Message?
+    private var pendingJump: PendingJump?
+    var composerMode = ComposerMode.composing
+    var replyingTo: Message? {
+        if case .replying(let message) = composerMode {
+            return message
+        }
+
+        return nil
+    }
+    var editing: Message? {
+        if case .editing(let message) = composerMode {
+            return message
+        }
+
+        return nil
+    }
     // a mention the composer adds, from a member's or a message's menu
     var pendingMention: ComposerMention?
     // the composer's attachment panel, which the message list can drag away too
@@ -53,6 +96,7 @@ final class ChannelMessagesStore {
     // message of your own takes the place of the oldest one
     private(set) var pendingIds: [Int] = []
     private var nextPendingId = -1
+    private var pendingNonces: [Int: String] = [:]
 
     private var nextCursor: MessagesCursor?
     private unowned let session: SessionStore
@@ -81,6 +125,7 @@ final class ChannelMessagesStore {
         let parentMessageId: Int?
         let replyToMessageId: Int?
         var stickerId: Int?
+        var clientNonce: String?
     }
 
     func loadIfNeeded() async {
@@ -104,11 +149,12 @@ final class ChannelMessagesStore {
         }
 
         pendingIds = []
+        pendingNonces = [:]
 
         messages = Self.sorted(page.messages)
         nextCursor = page.nextCursor
         hasOlder = page.nextCursor != nil
-        hasNewer = false
+        isDetached = false
         hasLoaded = true
     }
 
@@ -127,7 +173,7 @@ final class ChannelMessagesStore {
             messages = Self.sorted(page.messages)
             nextCursor = page.nextCursor
             hasOlder = page.nextCursor != nil
-            hasNewer = page.hasNewer ?? false
+            isDetached = page.hasNewer ?? false
             hasLoaded = true
         }
 
@@ -144,7 +190,7 @@ final class ChannelMessagesStore {
     var unreadMarker: UnreadMarker?
 
     func setUnreadMarker(count: Int) {
-        guard count > 0, hasLoaded, !hasNewer, let newest = messages.last else {
+        guard count > 0, hasLoaded, !isDetached, let newest = messages.last else {
             unreadMarker = nil
             return
         }
@@ -220,9 +266,10 @@ final class ChannelMessagesStore {
         let replyTo = replyingTo
         // text alone shows at once. files have nothing to draw until the server has saved them,
         // and a slash command comes back as something else
-        let pendingId = files.isEmpty && !trimmed.hasPrefix("/") ? addPending(content: content, parentMessageId: parentMessageId, replyTo: replyTo) : nil
+        let clientNonce = UUID().uuidString
+        let pendingId = files.isEmpty && !trimmed.hasPrefix("/") ? addPending(content: content, clientNonce: clientNonce, parentMessageId: parentMessageId, replyTo: replyTo) : nil
 
-        replyingTo = nil
+        composerMode = .composing
 
         let messageId: Int?
 
@@ -234,7 +281,8 @@ final class ChannelMessagesStore {
                     content: content,
                     files: files.map(\.id),
                     parentMessageId: parentMessageId,
-                    replyToMessageId: replyTo?.id
+                    replyToMessageId: replyTo?.id,
+                    clientNonce: clientNonce
                 )
             )
         } catch {
@@ -242,7 +290,9 @@ final class ChannelMessagesStore {
                 removePending(pendingId)
             }
 
-            replyingTo = replyingTo ?? replyTo
+            if composerMode == .composing, let replyTo {
+                composerMode = .replying(replyTo)
+            }
 
             throw error
         }
@@ -271,8 +321,8 @@ final class ChannelMessagesStore {
         }
     }
 
-    private func addPending(content: String, parentMessageId: Int?, replyTo: Message?) -> Int? {
-        guard hasLoaded, !hasNewer, let ownUserId = session.ownUserId else {
+    private func addPending(content: String, clientNonce: String, parentMessageId: Int?, replyTo: Message?) -> Int? {
+        guard hasLoaded, !isDetached, let ownUserId = session.ownUserId else {
             return nil
         }
 
@@ -283,6 +333,7 @@ final class ChannelMessagesStore {
 
         nextPendingId -= 1
         pendingIds.append(id)
+        pendingNonces[id] = clientNonce
         messages.append(Message(
             id: id,
             content: content,
@@ -304,6 +355,7 @@ final class ChannelMessagesStore {
 
     private func removePending(_ id: Int) {
         pendingIds.removeAll { $0 == id }
+        pendingNonces[id] = nil
         messages.removeAll { $0.id == id }
     }
 
@@ -382,7 +434,7 @@ final class ChannelMessagesStore {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
 
         try await client.mutation("messages.edit", input: EditInput(messageId: message.id, content: HTMLText.messageHTML(fromMarkdown: trimmed, mentions: mentions)))
-        editing = nil
+        composerMode = .composing
     }
 
     func delete(_ message: Message) async throws {
@@ -415,11 +467,17 @@ final class ChannelMessagesStore {
     }
 
     func insert(_ message: Message) {
-        guard hasLoaded, !hasNewer, belongs(message) else {
+        guard hasLoaded, !isDetached, belongs(message) else {
             return
         }
 
-        if let pendingId = pendingIds.first,
+        // matched by the nonce it was sent with. a copy without one, from a server or an app older
+        // than the nonce, takes the oldest
+        let matchingPending = message.clientNonce == nil
+            ? pendingIds.first
+            : pendingIds.first { pendingNonces[$0] == message.clientNonce }
+
+        if let pendingId = matchingPending,
            message.userId == session.ownUserId,
            !messages.contains(where: { $0.id == message.id }) {
             removePending(pendingId)

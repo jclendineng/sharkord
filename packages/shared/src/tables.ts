@@ -155,6 +155,8 @@ export type TJoinedPoll = Pick<
 };
 
 export type TJoinedMessage = TMessage & {
+  // only on a message arriving live, what its sender sent it with
+  clientNonce?: string;
   files: TFile[];
   reactions: TJoinedMessageReaction[];
   poll: TJoinedPoll | null;

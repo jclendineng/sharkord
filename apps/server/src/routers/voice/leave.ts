@@ -7,6 +7,7 @@ import {
 } from '../../db/publishers';
 import { channels } from '../../db/schema';
 import { getCurrentVoiceRuntime } from '../../helpers/get-current-voice-runtime';
+import { releaseVoiceSeat } from '../../helpers/voice-seat';
 import { logger } from '../../logger';
 import { invariant } from '../../utils/invariant';
 import { protectedProcedure } from '../../utils/trpc';
@@ -50,11 +51,7 @@ const leaveVoiceRoute = protectedProcedure.mutation(async ({ ctx }) => {
 
   await unpublishHiddenChannelFromUser(ctx.user.id, channel.id);
 
-  ctx.currentVoiceChannelId = undefined;
-
-  const ws = ctx.getOwnWs();
-
-  if (ws) ws.inVoice = false;
+  releaseVoiceSeat(ctx);
 
   logger.info('%s left voice channel %s', ctx.user.name, channel.name);
 });

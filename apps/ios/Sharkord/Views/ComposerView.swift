@@ -708,8 +708,7 @@ struct ComposerView: View {
             field = AttributedString()
         }
 
-        store.editing = nil
-        store.replyingTo = nil
+        store.composerMode = .composing
     }
 
     // the call already holds the microphone

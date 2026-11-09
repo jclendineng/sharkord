@@ -11,12 +11,42 @@ import UserNotifications
 
 @Observable
 final class SessionStore {
-    enum Phase: Equatable {
+    enum Phase: Hashable {
         case signedOut
         case connecting
-        case needsServerPassword
+        case needsServerPassword(handshakeHash: String)
         case connected
-        case reconnecting
+        case reconnecting(attempt: Int)
+
+        var isReconnecting: Bool {
+            if case .reconnecting = self {
+                return true
+            }
+
+            return false
+        }
+
+        var needsServerPassword: Bool {
+            if case .needsServerPassword = self {
+                return true
+            }
+
+            return false
+        }
+    }
+
+    enum CallPhase: Equatable {
+        case idle
+        // leaving one call on the way into another
+        case switching(Int)
+        case joining
+        case signalling(Int)
+        case consuming(Int)
+        case inCall(Int)
+        // behind a closing sheet
+        case leaving(Int)
+        // the server drops a socket's voice session with the socket, so a reconnect rejoins it
+        case awaitingRejoin(Int)
     }
 
     struct ChannelSection: Identifiable {
@@ -109,11 +139,47 @@ final class SessionStore {
     var requestedChannelId: Int?
     // who is in which voice channel, keyed by channel id then user id
     private(set) var voiceUsers: [Int: [Int: VoiceUserState]] = [:]
-    private(set) var currentVoiceChannelId: Int?
+    private(set) var callPhase = CallPhase.idle
+
+    var currentVoiceChannelId: Int? {
+        switch callPhase {
+        case .idle, .joining, .awaitingRejoin:
+            return nil
+        case .switching(let channelId), .signalling(let channelId), .consuming(let channelId), .inCall(let channelId), .leaving(let channelId):
+            return channelId
+        }
+    }
+
+    var isJoiningVoice: Bool {
+        switch callPhase {
+        case .switching, .joining, .signalling, .consuming:
+            return true
+        case .idle, .inCall, .leaving, .awaitingRejoin:
+            return false
+        }
+    }
+
+    // the call is on its way out behind a closing sheet, nothing should come up for it meanwhile
+    var isLeavingVoice: Bool {
+        if case .leaving = callPhase {
+            return true
+        }
+
+        return false
+    }
+
+    // the leave sound only follows a call that was really joined, not a join that failed
+    private var isInCall: Bool {
+        switch callPhase {
+        case .consuming, .inCall:
+            return true
+        default:
+            return false
+        }
+    }
     // the emoji each person in the call just sent, VOICE_REACTION_DURATION_MS on the web
     private(set) var voiceReactions: [Int: [VoiceReaction]] = [:]
     @ObservationIgnored private var nextVoiceReactionId = 0
-    private(set) var isJoiningVoice = false
     // who in this device's call is talking, for discord's green ring
     private(set) var speakingUserIds: Set<Int> = []
     private var lastSpokeAt: [Int: Date] = [:]
@@ -123,9 +189,9 @@ final class SessionStore {
     var voiceTakenOverChannelId: Int?
     private(set) var micMuted = false
     private(set) var soundMuted = false
+    @ObservationIgnored private var wasMicOpenBeforeDeafen = false
+    private(set) var isServerMuted = false
     private(set) var cameraEnabled = false
-    // the call is on its way out behind a closing sheet, nothing should come up for it meanwhile
-    private(set) var isLeavingVoice = false
     private(set) var isSharingScreen = false
     // webcams and screen shares in the current voice channel, the own camera under the own id
     private(set) var videoTracks: [VoiceStreamKey: VideoTrackBox] = [:]
@@ -137,27 +203,21 @@ final class SessionStore {
     // the quality last asked of the server for each stream
     @ObservationIgnored private var requestedLayers: [VoiceStreamKey: Int] = [:]
 
-    private var handshakeHash: String?
     private var messageStores: [Int: ChannelMessagesStore] = [:]
     private var threadStores: [Int: ChannelMessagesStore] = [:]
     private var reconnectTask: Task<Void, Never>?
     private var reconnectBannerTask: Task<Void, Never>?
-    private var reconnectAttempt = 0
     private var pushToken: String?
     private var hasRequestedPush = false
     private var voice: VoiceConnection?
     private var producerSubscriptions: (client: TRPCClient, ids: [Int])?
     @ObservationIgnored private let soundboardPlayer = SoundboardPlayer()
     @ObservationIgnored private let callSounds = CallSounds()
-    // the leave sound only follows a call that was really joined, not a join that failed
-    @ObservationIgnored private var isInCall = false
     // the call still waiting for its join sound, see playJoinSound
     @ObservationIgnored private var joinSoundConnection: VoiceConnection?
     private var screenCapture: ScreenCapture?
     // present when the call was joined with app audio on, see AppSettings.shareAppAudio
     private var mixingDevice: MixingAudioDevice?
-    // the server drops a socket's voice session with the socket, so a reconnect rejoins it
-    private var voiceChannelToRejoin: Int?
 
     // set by ServerListStore, which keeps the list of servers and allows voice on one at a time
     @ObservationIgnored var onAuthenticated: ((SessionStore) -> Void)?
@@ -265,7 +325,7 @@ final class SessionStore {
     func readyClient() async throws -> TRPCClient {
         var waited = 0
 
-        while phase == .connecting || phase == .reconnecting, waited < 150 {
+        while phase == .connecting || phase.isReconnecting, waited < 150 {
             try await Task.sleep(for: .milliseconds(100))
             waited += 1
         }
@@ -841,7 +901,7 @@ final class SessionStore {
     }
 
     func submitServerPassword(_ password: String) async {
-        guard let handshakeHash, let client else {
+        guard case .needsServerPassword(let handshakeHash) = phase, let client else {
             return
         }
 
@@ -857,7 +917,6 @@ final class SessionStore {
     func signOut(message: String? = nil) {
         reconnectTask?.cancel()
         stopVoice()
-        voiceChannelToRejoin = nil
 
         // the socket has to stay open long enough to tell the server to stop pushing here
         if let client, let pushToken {
@@ -890,7 +949,6 @@ final class SessionStore {
         hasRequestedPush = false
         requestedChannelId = nil
         voiceUsers = [:]
-        handshakeHash = nil
         categories = []
         channels = []
         usersById = [:]
@@ -917,7 +975,7 @@ final class SessionStore {
             Task { await markAsRead(channelId) }
         }
 
-        guard phase == .reconnecting, let address, let token else {
+        guard phase.isReconnecting, let address, let token else {
             return
         }
 
@@ -1025,7 +1083,7 @@ final class SessionStore {
         #if DEBUG
         // the playground has no server, joining only has to look done for the sheet's motion
         if DebugLaunch.opensVoicePlayground {
-            currentVoiceChannelId = channelId
+            callPhase = .inCall(channelId)
             return
         }
         #endif
@@ -1035,10 +1093,12 @@ final class SessionStore {
         }
 
         // before the first await, a second tap comes in while the call being left closes
-        isJoiningVoice = true
+        callPhase = currentVoiceChannelId.map { .switching($0) } ?? .joining
 
         defer {
-            isJoiningVoice = false
+            if callPhase == .joining {
+                callPhase = .idle
+            }
         }
 
         await onWillJoinVoice?(self)
@@ -1070,7 +1130,12 @@ final class SessionStore {
                 throw VoiceConnection.VoiceError(message: "The server did not answer the voice join.")
             }
 
-            currentVoiceChannelId = channelId
+            // signed out or dropped while the server answered
+            guard callPhase == .joining else {
+                return
+            }
+
+            callPhase = .signalling(channelId)
 
             let settings = AppSettings.shared
             let audioOptions = VoiceConnection.AudioOptions(
@@ -1127,7 +1192,11 @@ final class SessionStore {
                 canSpeak: canSpeak
             )
 
-            isInCall = true
+            guard callPhase == .signalling(channelId), voice === connection else {
+                return
+            }
+
+            callPhase = .consuming(channelId)
                 playJoinSound(on: connection)
             subscribeToProducers(client)
 
@@ -1137,23 +1206,38 @@ final class SessionStore {
             for key in producers.keys where wantsStream(key) {
                 await connection.consume(key)
             }
+
+            if callPhase == .consuming(channelId) {
+                callPhase = .inCall(channelId)
+            }
         } catch {
+            // the connection dropped under it, and the call comes back with the connection
+            if case .awaitingRejoin = callPhase {
+                return
+            }
+
             showError(error)
-            await leaveVoice()
+
+            if currentVoiceChannelId == channelId {
+                await leaveVoice()
+            }
         }
     }
 
     // the call's sheet slides off first and the call is left once it has: leaving at the tap
     // emptied the tiles and dropped the video while the sheet was still on its way down
     func leaveVoiceAfterClosing() async {
-        isLeavingVoice = true
+        guard let channelId = currentVoiceChannelId else {
+            return
+        }
 
         // at the tap, while the call's audio still runs: played as it was torn down, the chime
         // was cut off. it is over before the sheet is
         if isInCall {
-            isInCall = false
             callSounds.play(.leave)
         }
+
+        callPhase = .leaving(channelId)
 
         try? await Task.sleep(for: .milliseconds(400))
 
@@ -1206,11 +1290,7 @@ final class SessionStore {
             return
         }
 
-        if !playsSound {
-            isInCall = false
-        }
-
-        stopVoice()
+        stopVoice(playsLeaveSound: playsSound)
 
         _ = try? await client?.rawMutation("voice.leave", json: nil)
 
@@ -1248,6 +1328,16 @@ final class SessionStore {
     }
 
     func toggleMicMuted() async {
+        // deafened, the mic stays closed until you can hear again
+        guard !(soundMuted && micMuted) else {
+            return
+        }
+
+        guard !(isServerMuted && micMuted) else {
+            showError(VoiceConnection.VoiceError(message: String(localized: "You were muted by a moderator.")))
+            return
+        }
+
         micMuted.toggle()
         callSounds.play(micMuted ? .mute : .unmute)
         voice?.setMicMuted(micMuted || AppSettings.shared.pushToTalk)
@@ -1432,7 +1522,20 @@ final class SessionStore {
         callSounds.play(soundMuted ? .mute : .unmute)
         voice?.setSoundMuted(soundMuted)
 
-        await updateVoiceState(["soundMuted": soundMuted])
+        var update = ["soundMuted": soundMuted]
+
+        // deafening closes an open mic, and hearing again opens it back up
+        let changesMic = soundMuted ? !micMuted : wasMicOpenBeforeDeafen && !isServerMuted
+
+        wasMicOpenBeforeDeafen = soundMuted && !micMuted
+
+        if changesMic {
+            micMuted = soundMuted
+            voice?.setMicMuted(micMuted || AppSettings.shared.pushToTalk)
+            update["micMuted"] = micMuted
+        }
+
+        await updateVoiceState(update)
     }
 
     func isChannelVisible(_ channelId: Int) -> Bool {
@@ -1698,7 +1801,7 @@ final class SessionStore {
         self.address = address
         self.token = token
 
-        if phase != .reconnecting {
+        if !phase.isReconnecting {
             phase = .connecting
         }
 
@@ -1723,8 +1826,7 @@ final class SessionStore {
             let handshake: Handshake = try await client.query("others.handshake")
 
             if handshake.hasPassword {
-                handshakeHash = handshake.handshakeHash
-                phase = .needsServerPassword
+                phase = .needsServerPassword(handshakeHash: handshake.handshakeHash)
                 return
             }
 
@@ -1783,8 +1885,6 @@ final class SessionStore {
         let stores = Array(messageStores.values) + Array(threadStores.values)
         let missedStores = stores.filter(\.hasLoaded)
 
-        self.handshakeHash = nil
-        reconnectAttempt = 0
         phase = .connected
         hideReconnectingBanner()
 
@@ -1798,8 +1898,8 @@ final class SessionStore {
         async let personalSettings: Void = loadPersonalSettings()
         async let friends: Void = loadFriends()
 
-        if let channelId = voiceChannelToRejoin {
-            voiceChannelToRejoin = nil
+        if case .awaitingRejoin(let channelId) = callPhase {
+            callPhase = .idle
             await joinVoice(channelId)
         }
 
@@ -1888,7 +1988,7 @@ final class SessionStore {
         reconnectBannerTask = Task {
             try? await Task.sleep(for: .seconds(2))
 
-            if !Task.isCancelled, phase == .reconnecting {
+            if !Task.isCancelled, phase.isReconnecting {
                 showsReconnectingBanner = true
             }
         }
@@ -2119,15 +2219,12 @@ final class SessionStore {
         producerSubscriptions = (client, [newProducerId, producerClosedId])
     }
 
-    private func stopVoice() {
-        isLeavingVoice = false
-
+    private func stopVoice(playsLeaveSound wantsLeaveSound: Bool = true) {
         // here rather than in leaveVoice, so a call ended by another device, a moderator or a
         // dropped connection sounds the same as one left by hand
-        let playsLeaveSound = isInCall
+        let playsLeaveSound = wantsLeaveSound && isInCall
 
-        if isInCall {
-            isInCall = false
+        if playsLeaveSound {
             callSounds.play(.leave)
         }
 
@@ -2166,7 +2263,13 @@ final class SessionStore {
         speakingUserIds = []
         lastSpokeAt = [:]
         mixingDevice = nil
-        currentVoiceChannelId = nil
+
+        if case .switching = callPhase {
+            callPhase = .joining
+        } else {
+            callPhase = .idle
+        }
+
         cameraEnabled = false
         videoTracks = [:]
         videoTileHeights = [:]
@@ -2382,6 +2485,19 @@ final class SessionStore {
 
     // the server turns the camera or screen share off when its permission is taken away mid call.
     // only a change from on to off on the server counts, the user's own toggles are already applied
+    private func followServerMute(_ event: VoiceJoinEvent) {
+        guard event.userId == ownUserId else {
+            return
+        }
+
+        isServerMuted = event.state.serverMuted == true
+
+        if isServerMuted, !micMuted {
+            micMuted = true
+            voice?.setMicMuted(true)
+        }
+    }
+
     private func followServerStreamChanges(_ event: VoiceJoinEvent) {
         guard
             event.userId == ownUserId,
@@ -2635,11 +2751,13 @@ final class SessionStore {
         }
 
         client.subscribe("voice.onJoin") { [weak self] (event: VoiceJoinEvent) in
+            self?.followServerMute(event)
             self?.playSoundForOthers(event.userId, in: event.channelId, state: event.state)
             self?.setVoiceUser(event.userId, in: event.channelId, state: event.state)
         }
 
         client.subscribe("voice.onUpdateState") { [weak self] (event: VoiceJoinEvent) in
+            self?.followServerMute(event)
             self?.followServerStreamChanges(event)
             self?.playSoundForOthers(event.userId, in: event.channelId, state: event.state)
             self?.setVoiceUser(event.userId, in: event.channelId, state: event.state)
@@ -2796,17 +2914,22 @@ final class SessionStore {
         }
 
         if let channelId = currentVoiceChannelId {
-            voiceChannelToRejoin = channelId
             stopVoice()
+            callPhase = .awaitingRejoin(channelId)
         }
 
-        phase = .reconnecting
-        reconnectAttempt += 1
+        var attempt = 1
+
+        if case .reconnecting(let previous) = phase {
+            attempt = previous + 1
+        }
+
+        phase = .reconnecting(attempt: attempt)
         showReconnectingBannerLater()
 
         // the first retry is immediate, a socket ios dropped in the background usually comes
         // straight back, only repeated failures back off
-        let delay = reconnectAttempt == 1 ? 0 : min(pow(2, Double(reconnectAttempt - 2)), 30)
+        let delay = attempt == 1 ? 0 : min(pow(2, Double(attempt - 2)), 30)
 
         reconnectTask?.cancel()
         reconnectTask = Task {

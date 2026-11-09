@@ -3,6 +3,7 @@ import { publishVoiceEvent } from '../db/publishers';
 import { VoiceRuntime } from '../runtimes/voice';
 import type { Context } from '../utils/trpc';
 import { findVoiceSocket } from '../utils/wss';
+import { revokeVoiceSeat } from './voice-seat';
 
 // joining voice from another device, or from the same one after its connection dropped,
 // takes the seat over as discord does. the old seat's leave tells the device that held it to
@@ -20,7 +21,7 @@ const takeOverVoiceSeat = async (ctx: Context) => {
   if (voiceSocket === ownSocket) return;
 
   // the old socket closing later must not take the new seat with it
-  if (voiceSocket) voiceSocket.inVoice = false;
+  if (voiceSocket) revokeVoiceSeat(voiceSocket);
 
   const runtime = VoiceRuntime.findRuntimeByUserId(ctx.user.id);
 

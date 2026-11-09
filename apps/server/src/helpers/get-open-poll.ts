@@ -1,3 +1,4 @@
+import { isPollClosed } from '@sharkord/shared';
 import { eq } from 'drizzle-orm';
 import { db } from '../db';
 import { polls } from '../db/schema';
@@ -21,7 +22,7 @@ const getOpenPoll = async (messageId: number) => {
     message: 'This message has no poll.'
   });
 
-  invariant(poll.endedAt === null && poll.expiresAt > Date.now(), {
+  invariant(!isPollClosed(poll), {
     code: 'BAD_REQUEST',
     message: 'This poll has ended.'
   });

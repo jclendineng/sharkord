@@ -6,6 +6,7 @@ import {
   clearServerSnapshot,
   reconnectToServer,
   resetServerState,
+  retryReconnectNow,
   setDisconnectInfo
 } from '@/features/server/actions';
 import { SoundType } from '@/features/server/types';
@@ -38,6 +39,11 @@ let isCleaningUp = false;
 let isNavigatingAway = false;
 window.addEventListener('beforeunload', () => {
   isNavigatingAway = true;
+});
+
+window.addEventListener('online', retryReconnectNow);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') retryReconnectNow();
 });
 
 const isTerminalClose = (code: number) =>

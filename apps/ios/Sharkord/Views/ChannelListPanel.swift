@@ -324,18 +324,24 @@ private struct ChannelRow: View {
     @Environment(SessionStore.self) private var session
     @Environment(ServerListStore.self) private var servers
 
-    @State private var isVoiceSheetPresented = false
     @State private var isActionsSheetPresented = false
     @State private var menuAnchor = UnitPoint.center
     // see ConversationRow, the mute lengths open once the menu has gone
-    @State private var wantsMute = false
-    @State private var isMutePresented = false
-    @State private var wantsInvite = false
-    @State private var isInvitePresented = false
-    @State private var wantsEdit = false
-    @State private var isEditPresented = false
+    @State private var wantedSheet: RowSheet?
+    @State private var shownSheet: RowSheet?
     @State private var isPressed = false
     @State private var isHovered = false
+
+    private enum RowSheet: String, Identifiable {
+        case mute
+        case invite
+        case edit
+        case voice
+
+        var id: String {
+            rawValue
+        }
+    }
 
     let channel: Channel
     let unreadCount: Int
@@ -386,36 +392,29 @@ private struct ChannelRow: View {
                     .environment(session)
                     .environment(servers)
             }
-            .sheet(isPresented: $isMutePresented) {
-                MuteDurationSheet(title: "Mute Channel", subtitle: "#\(channel.name)", channelIds: [channel.id])
-                    .environment(session)
-                    .environment(servers)
-                    .appSheet()
-            }
-            .sheet(isPresented: $isInvitePresented) {
-                InviteSheet()
-                    .environment(session)
-                    .environment(servers)
-                    .appSheet()
-            }
-            .sheet(isPresented: $isEditPresented) {
-                NavigationStack {
-                    ChannelEditor(channel: channel)
-                        .toolbar {
-                            ActionToolbarItem(placement: .cancellationAction) {
-                                Button("Cancel", action: closeEditor)
-                            }
+            .sheet(item: $shownSheet) { sheet in
+                Group {
+                    switch sheet {
+                    case .mute:
+                        MuteDurationSheet(title: "Mute Channel", subtitle: "#\(channel.name)", channelIds: [channel.id])
+                    case .invite:
+                        InviteSheet()
+                    case .edit:
+                        NavigationStack {
+                            ChannelEditor(channel: channel)
+                                .toolbar {
+                                    ActionToolbarItem(placement: .cancellationAction) {
+                                        Button("Cancel", action: closeEditor)
+                                    }
+                                }
                         }
+                    case .voice:
+                        VoiceChannelSheet(channel: channel)
+                    }
                 }
                 .environment(session)
                 .environment(servers)
                 .appSheet()
-            }
-            .sheet(isPresented: $isVoiceSheetPresented) {
-                VoiceChannelSheet(channel: channel)
-                    .environment(session)
-                    .environment(servers)
-                    .appSheet()
             }
     }
 
@@ -445,39 +444,27 @@ private struct ChannelRow: View {
     }
 
     private func requestMute() {
-        wantsMute = true
+        wantedSheet = .mute
         isActionsSheetPresented = false
     }
 
     private func requestInvite() {
-        wantsInvite = true
+        wantedSheet = .invite
         isActionsSheetPresented = false
     }
 
     private func closeEditor() {
-        isEditPresented = false
+        shownSheet = nil
     }
 
     private func requestEdit() {
-        wantsEdit = true
+        wantedSheet = .edit
         isActionsSheetPresented = false
     }
 
     private func showWantedSheet() {
-        if wantsEdit {
-            wantsEdit = false
-            isEditPresented = true
-        }
-
-        if wantsMute {
-            wantsMute = false
-            isMutePresented = true
-        }
-
-        if wantsInvite {
-            wantsInvite = false
-            isInvitePresented = true
-        }
+        shownSheet = wantedSheet
+        wantedSheet = nil
     }
 
     private var accessibilityValue: String {
@@ -498,7 +485,7 @@ private struct ChannelRow: View {
 
     // like discord, a voice channel shows who is in it before anyone joins
     private func showVoiceSheet() {
-        isVoiceSheetPresented = true
+        shownSheet = .voice
     }
 
     private func showActions() {

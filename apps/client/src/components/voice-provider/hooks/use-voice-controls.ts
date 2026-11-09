@@ -11,11 +11,6 @@ import { useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
-type TPendingMicRestoreState = {
-  previousMicMuted: boolean;
-  shouldRestoreOnUndeafen: boolean;
-};
-
 type TVoiceStateUpdate = {
   micMuted?: boolean;
   soundMuted?: boolean;
@@ -51,9 +46,7 @@ const useVoiceControls = ({
   const isTogglingSound = useRef(false);
   const isTogglingWebcam = useRef(false);
   const isTogglingScreenShare = useRef(false);
-  const pendingMicRestoreStateRef = useRef<TPendingMicRestoreState | null>(
-    null
-  );
+  const wasMicOpenBeforeDeafen = useRef(false);
 
   const toggleMic = useCallback(async () => {
     if (isTogglingMic.current) return;
@@ -73,10 +66,10 @@ const useVoiceControls = ({
 
     voiceLogger.info('mic: toggle requested', { micMuted: nextMicMuted });
 
-    const previousPendingMicRestoreState = pendingMicRestoreStateRef.current;
+    const previousWasMicOpen = wasMicOpenBeforeDeafen.current;
 
     if (ownVoiceState.soundMuted) {
-      pendingMicRestoreStateRef.current = null;
+      wasMicOpenBeforeDeafen.current = false;
     }
 
     updateOwnVoiceState({ micMuted: nextMicMuted });
@@ -105,7 +98,7 @@ const useVoiceControls = ({
         await startMicStream();
       }
     } catch (error) {
-      pendingMicRestoreStateRef.current = previousPendingMicRestoreState;
+      wasMicOpenBeforeDeafen.current = previousWasMicOpen;
 
       updateOwnVoiceState({ micMuted: !nextMicMuted });
       voiceLogger.error('mic: toggle failed, rolled back', error, {
@@ -134,33 +127,24 @@ const useVoiceControls = ({
     const trpc = getTRPCClient();
 
     voiceLogger.info('sound: toggle requested', { soundMuted: nextSoundMuted });
-    const previousPendingMicRestoreState = pendingMicRestoreStateRef.current;
+    const previousWasMicOpen = wasMicOpenBeforeDeafen.current;
     const nextVoiceState: TVoiceStateUpdate = {
       soundMuted: nextSoundMuted
     };
 
+    // deafening closes an open mic, and hearing again opens it back up
     if (nextSoundMuted) {
-      const shouldRestoreOnUndeafen = !ownVoiceState.micMuted;
+      wasMicOpenBeforeDeafen.current = !ownVoiceState.micMuted;
 
-      pendingMicRestoreStateRef.current = {
-        previousMicMuted: ownVoiceState.micMuted,
-        shouldRestoreOnUndeafen
-      };
-
-      if (shouldRestoreOnUndeafen) {
+      if (!ownVoiceState.micMuted) {
         nextVoiceState.micMuted = true;
       }
     } else {
-      const pendingMicRestoreState = pendingMicRestoreStateRef.current;
-
-      if (
-        pendingMicRestoreState?.shouldRestoreOnUndeafen &&
-        !ownVoiceState.serverMuted
-      ) {
-        nextVoiceState.micMuted = pendingMicRestoreState.previousMicMuted;
+      if (previousWasMicOpen && !ownVoiceState.serverMuted) {
+        nextVoiceState.micMuted = false;
       }
 
-      pendingMicRestoreStateRef.current = null;
+      wasMicOpenBeforeDeafen.current = false;
     }
 
     const rollbackVoiceState: TVoiceStateUpdate = {
@@ -190,7 +174,7 @@ const useVoiceControls = ({
         await startMicStream();
       }
     } catch (error) {
-      pendingMicRestoreStateRef.current = previousPendingMicRestoreState;
+      wasMicOpenBeforeDeafen.current = previousWasMicOpen;
       updateOwnVoiceState(rollbackVoiceState);
       voiceLogger.error('sound: toggle failed, rolled back', error, {
         soundMuted: nextSoundMuted

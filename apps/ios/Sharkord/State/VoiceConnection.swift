@@ -49,21 +49,34 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
     private var producer: Producer?
     private var microphone: RTCAudioTrack?
     private var consumers: [VoiceStreamKey: Consumer] = [:]
-    private var camera: RTCCameraVideoCapturer?
-    // held here, the capturer only keeps a weak reference to its delegate
-    private var cameraRotation: CameraRotation?
-    private var cameraTrack: RTCVideoTrack?
-    private var cameraProducer: Producer?
+    private struct CameraSession {
+        let capturer: RTCCameraVideoCapturer
+        // held here, the capturer only keeps a weak reference to its delegate
+        let rotation: CameraRotation
+        let track: RTCVideoTrack
+        let producer: Producer
+        // the camera filming now, which the reactions are played on
+        var device: AVCaptureDevice
+
+        func stop() {
+            producer.close()
+            capturer.stopCapture()
+        }
+    }
+
+    private struct ScreenSession {
+        let track: RTCVideoTrack
+        var producer: Producer?
+        let sink: ScreenFrameSink
+        // the share started again on vp8, see checkScreenEncoder
+        var isOnVP8 = false
+    }
+
+    private var cameraSession: CameraSession?
     private var cameraPosition = AVCaptureDevice.Position.front
     // a mac's cameras have no front or back, the one picked in voice settings is used instead
     private var cameraDeviceId: String?
-    // the camera filming now, which the reactions are played on
-    private var cameraDevice: AVCaptureDevice?
-    private var screenProducer: Producer?
-    private var screenTrack: RTCVideoTrack?
-    private var screenSink: ScreenFrameSink?
-    // the share started again on vp8, see checkScreenEncoder
-    private var screenOnVP8 = false
+    private var screenSession: ScreenSession?
     private var backgroundObserver: NSObjectProtocol?
     private var rtpCapabilities = "{}"
     private var sendVideoCodec: String?
@@ -229,13 +242,8 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
 
     func stopCamera(ownUserId: Int) async {
         await onQueueValue {
-            self.cameraProducer?.close()
-            self.cameraProducer = nil
-            self.camera?.stopCapture()
-            self.camera = nil
-            self.cameraRotation = nil
-            self.cameraTrack = nil
-            self.cameraDevice = nil
+            self.cameraSession?.stop()
+            self.cameraSession = nil
         }
 
         await onVideo(VoiceStreamKey(kind: .video, remoteId: ownUserId), nil)
@@ -255,10 +263,8 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
 
     func stopScreenShare() async {
         await onQueueValue {
-            self.screenProducer?.close()
-            self.screenProducer = nil
-            self.screenTrack = nil
-            self.screenSink = nil
+            self.screenSession?.producer?.close()
+            self.screenSession = nil
         }
 
         let json = Data("{\"kind\":\"screen\"}".utf8)
@@ -274,7 +280,7 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
 
     func cameraEffects() async -> CameraEffects {
         await onQueueValue {
-            guard let device = self.cameraDevice else {
+            guard let device = self.cameraSession?.device else {
                 return CameraEffects(reactions: [], supportsCenterStage: false)
             }
 
@@ -287,22 +293,22 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
     // drawn into the video by the camera itself, so everyone in the call sees it
     func performReaction(_ reaction: AVCaptureReactionType) {
         queue.async {
-            self.cameraDevice?.performEffect(for: reaction)
+            self.cameraSession?.device.performEffect(for: reaction)
         }
     }
 
     func flipCamera() {
         queue.async {
-            guard let camera = self.camera else {
+            guard let camera = self.cameraSession else {
                 return
             }
 
             self.cameraPosition = self.cameraPosition == .front ? .back : .front
 
             if let device = self.captureDevice() {
-                self.cameraRotation?.follow(device.position)
-                Self.startCapture(camera, device: device)
-                self.cameraDevice = device
+                camera.rotation.follow(device.position)
+                Self.startCapture(camera.capturer, device: device)
+                self.cameraSession?.device = device
             }
         }
     }
@@ -310,7 +316,7 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
     // whether the call is filming with this camera, to tell when the one that just went away was
     func isFilming(with uniqueID: String) async -> Bool {
         await onQueueValue {
-            self.cameraDevice?.uniqueID == uniqueID
+            self.cameraSession?.device.uniqueID == uniqueID
         }
     }
 
@@ -319,12 +325,12 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
         queue.async {
             self.cameraDeviceId = uniqueID
 
-            guard let camera = self.camera, let device = self.captureDevice(), device != self.cameraDevice else {
+            guard let camera = self.cameraSession, let device = self.captureDevice(), device != camera.device else {
                 return
             }
 
-            Self.startCapture(camera, device: device)
-            self.cameraDevice = device
+            Self.startCapture(camera.capturer, device: device)
+            self.cameraSession?.device = device
         }
     }
 
@@ -380,16 +386,10 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
             self.consumers.values.forEach { $0.close() }
             self.consumers = [:]
             self.producer?.close()
-            self.cameraProducer?.close()
-            self.camera?.stopCapture()
-            self.camera = nil
-            self.cameraRotation = nil
-            self.cameraTrack = nil
-            self.cameraProducer = nil
-            self.screenProducer?.close()
-            self.screenProducer = nil
-            self.screenTrack = nil
-            self.screenSink = nil
+            self.cameraSession?.stop()
+            self.cameraSession = nil
+            self.screenSession?.producer?.close()
+            self.screenSession = nil
             self.backgroundObserver.map(NotificationCenter.default.removeObserver)
             self.backgroundObserver = nil
             self.sendTransport?.close()
@@ -542,7 +542,7 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
             throw VoiceError(message: "Join a voice channel before sharing your screen.")
         }
 
-        screenProducer?.close()
+        screenSession?.producer?.close()
 
         let source = factory.videoSource(forScreenCast: true)
         let capturer = RTCVideoCapturer(delegate: source)
@@ -558,10 +558,7 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
 
         let sink = ScreenFrameSink(source: source, capturer: capturer)
 
-        screenTrack = track
-        screenProducer = producer
-        screenSink = sink
-        screenOnVP8 = false
+        screenSession = ScreenSession(track: track, producer: producer, sink: sink)
 
         return sink
     }
@@ -572,7 +569,7 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
     // whose frames keep coming while none get encoded starts again on vp8, encoded in software,
     // for as long as it lasts. phones that keep encoding are left on h264
     private func checkScreenEncoder() {
-        guard !screenOnVP8, let before = screenProgress() else {
+        guard screenSession?.isOnVP8 == false, let before = screenProgress() else {
             return
         }
 
@@ -590,17 +587,17 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
     }
 
     private func screenProgress() -> (producer: Producer, pushed: Int, encoded: Int)? {
-        guard let screenProducer, let screenSink else {
+        guard let screenSession, let producer = screenSession.producer else {
             return nil
         }
 
-        let outbound = Self.entries(in: screenProducer.stats).first { $0["type"] as? String == "outbound-rtp" }
+        let outbound = Self.entries(in: producer.stats).first { $0["type"] as? String == "outbound-rtp" }
 
         guard let encoded = outbound?["framesEncoded"] as? Int else {
             return nil
         }
 
-        return (screenProducer, screenSink.framesPushed, encoded)
+        return (producer, screenSession.sink.framesPushed, encoded)
     }
 
     // the same track again, so the frames keep flowing in. the server swaps it in for the old
@@ -610,23 +607,23 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
             mimeType == "video/vp8"
         }
 
-        guard let sendTransport, let screenTrack, let vp8 else {
+        guard let sendTransport, let track = screenSession?.track, let vp8 else {
             return
         }
 
-        screenProducer?.close()
-        screenProducer = try? sendTransport.createProducer(
-            for: screenTrack,
+        screenSession?.producer?.close()
+        screenSession?.producer = try? sendTransport.createProducer(
+            for: track,
             encodings: nil,
             codecOptions: nil,
             codec: vp8,
             appData: "{\"kind\":\"screen\"}"
         )
-        screenOnVP8 = true
+        screenSession?.isOnVP8 = true
     }
 
     private func produceCamera(ownUserId: Int) throws {
-        guard let sendTransport, cameraProducer == nil else {
+        guard let sendTransport, cameraSession == nil else {
             return
         }
 
@@ -640,7 +637,6 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
         let track = factory.videoTrack(with: source, trackId: "camera")
 
         Self.startCapture(capturer, device: device)
-        cameraDevice = device
 
         // one h264 stream, not the web's three vp8 layers: this webrtc build encoded none of
         // them, so the picture showed here and reached nobody. the kind travels in appData,
@@ -660,10 +656,7 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
             throw sendSignaler?.produceError ?? error
         }
 
-        camera = capturer
-        cameraRotation = rotation
-        cameraTrack = track
-        cameraProducer = producer
+        cameraSession = CameraSession(capturer: capturer, rotation: rotation, track: track, producer: producer, device: device)
 
         let onVideo = onVideo
         let box = VideoTrackBox(track: track)

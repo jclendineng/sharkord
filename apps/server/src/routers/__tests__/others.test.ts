@@ -519,6 +519,19 @@ describe('others router', () => {
     ).rejects.toThrow('Too many requests. Please try again shortly.');
   });
 
+  test('should refuse a gif as the server icon', async () => {
+    const { caller, mockedToken } = await initTest();
+    const file = new File(['GIF89a animation'], 'moving.gif', {
+      type: 'image/gif'
+    });
+    const uploadResponse = await uploadFile(file, mockedToken);
+    const { id } = (await uploadResponse.json()) as TTempFile;
+
+    await expect(caller.others.changeLogo({ fileId: id })).rejects.toThrow(
+      "GIFs can't be used as an avatar or server icon."
+    );
+  });
+
   test('should change logo', async () => {
     const { caller } = await initTest(1);
 

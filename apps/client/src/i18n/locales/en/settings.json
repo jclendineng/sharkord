@@ -613,6 +613,7 @@
   "hotkeysSaved": "Hotkey settings saved",
   "failedSaveHotkeys": "Failed to save hotkey settings",
   "hotkeysBridgeFailed": "Not found, stopped trying",
+  "hotkeysBridgeReplaced": "In use by another tab",
   "hotkeysBridgeRetry": "Try to connect",
   "deleteAccountTab": "Delete Account",
   "deleteAccountTitle": "Delete Account",

@@ -2,7 +2,7 @@ import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../../db';
 import { loginLinks } from '../../db/schema';
-import { answerLoginLink } from '../../helpers/login-links';
+import { answerLoginLink, isLoginCodeExpired } from '../../helpers/login-links';
 import { invariant } from '../../utils/invariant';
 import { protectedProcedure } from '../../utils/trpc';
 
@@ -24,7 +24,7 @@ const approveLoginLinkRoute = protectedProcedure
       message: 'That sign in code is gone. Show a new one.'
     });
 
-    invariant(link.expiresAt >= Date.now(), {
+    invariant(!isLoginCodeExpired(link), {
       code: 'BAD_REQUEST',
       message: 'That sign in code has run out. Show a new one.'
     });

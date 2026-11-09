@@ -19,6 +19,7 @@ import {
   hasVisibleChannelsInCategorySelector,
   hiddenPluginComponentsSelector,
   infoSelector,
+  isAutoConnectingSelector,
   isOwnUserOwnerSelector,
   ownUserRolesSelector,
   ownVoiceUserSelector,
@@ -40,6 +41,8 @@ import {
 } from './selectors';
 
 export const useIsConnected = () => useSelector(connectedSelector);
+
+export const useIsAutoConnecting = () => useSelector(isAutoConnectingSelector);
 
 export const useIsReconnecting = () => useSelector(reconnectingSelector);
 

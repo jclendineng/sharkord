@@ -6,6 +6,7 @@ import { login } from '../../__tests__/helpers';
 import { TEST_SECRET_TOKEN } from '../../__tests__/seed';
 import { tdb, testsBaseUrl } from '../../__tests__/setup';
 import { config } from '../../config';
+import { createUser } from '../../db/mutations/users';
 import { getChannelsReadStatesForUser } from '../../db/queries/channels';
 import {
   channelReadStates,
@@ -231,6 +232,26 @@ describe('/login', () => {
 
     expect(data).toHaveProperty('errors');
     expect(data.errors).toHaveProperty('identity', 'Invalid credentials');
+  });
+
+  // past the route's check, as an invite that runs out while the password is being hashed
+  test('should not spend an invite that ran out before the account was written', async () => {
+    await tdb.insert(invites).values({
+      code: 'RANOUTINVITE',
+      creatorId: 1,
+      maxUses: null,
+      uses: 0,
+      expiresAt: Date.now() - 1000,
+      createdAt: Date.now()
+    });
+
+    await expect(
+      createUser({
+        identity: 'latecomer',
+        hashedPassword: 'unused',
+        inviteCode: 'RANOUTINVITE'
+      })
+    ).rejects.toThrow('This invite code is no longer valid');
   });
 
   test('should allow registration with valid invite when allowNewUsers is false', async () => {

@@ -36,19 +36,16 @@ import {
 } from './plugins/actions';
 import {
   connectedSelector,
+  connectionSelector,
   infoSelector,
   isChannelStaleSelector,
   serverSnapshotSelector
 } from './selectors';
 import { serverSliceActions } from './slice';
 import { SoundType, type TDisconnectInfo, type TServerSnapshot } from './types';
-import { rejoinVoiceAfterReconnect } from './voice/actions';
+import { holdVoiceForRejoin, rejoinVoiceAfterReconnect } from './voice/actions';
 
 let unsubscribeFromServer: (() => void) | null = null;
-
-export const setConnected = (status: boolean) => {
-  store.dispatch(serverSliceActions.setConnected(status));
-};
 
 export const resetServerState = () => {
   store.dispatch(serverSliceActions.resetState());
@@ -76,31 +73,50 @@ export const setActiveFullscreenPluginId = (pluginId: string | undefined) => {
   store.dispatch(serverSliceActions.setActiveFullscreenPluginId(pluginId));
 };
 
-export const connect = async () => {
-  const state = store.getState();
-  const info = infoSelector(state);
-
-  if (!info) {
-    throw new Error('Failed to fetch server info');
+export const finishConnecting = () => {
+  if (connectionSelector(store.getState()).kind === 'connecting') {
+    store.dispatch(serverSliceActions.setDisconnectInfo(undefined));
   }
+};
 
-  const { serverId } = info;
+export const connect = async (options?: { auto?: boolean }) => {
+  store.dispatch(serverSliceActions.setConnecting(!!options?.auto));
 
-  const host = getHostFromServer();
-  const trpc = await connectToTRPC(host);
+  try {
+    const state = store.getState();
+    const info = infoSelector(state);
 
-  const { hasPassword, handshakeHash } = await trpc.others.handshake.query();
+    if (!info) {
+      throw new Error('Failed to fetch server info');
+    }
 
-  if (hasPassword) {
-    // show password prompt
-    openDialog(Dialog.SERVER_PASSWORD, { handshakeHash, serverId });
-    return;
-  }
+    const { serverId } = info;
 
-  const { showWelcomeDialog } = await joinServer(handshakeHash);
+    const host = getHostFromServer();
+    const trpc = await connectToTRPC(host);
 
-  if (showWelcomeDialog) {
-    openDialog(Dialog.WELCOME_PROFILE_SETUP);
+    const { hasPassword, handshakeHash } = await trpc.others.handshake.query();
+
+    if (hasPassword) {
+      store.dispatch(serverSliceActions.setNeedsServerPassword());
+      // show password prompt
+      openDialog(Dialog.SERVER_PASSWORD, { handshakeHash, serverId });
+      return;
+    }
+
+    const { showWelcomeDialog } = await joinServer(handshakeHash);
+
+    if (showWelcomeDialog) {
+      openDialog(Dialog.WELCOME_PROFILE_SETUP);
+    }
+  } catch (error) {
+    // an automatic one is finished by its caller, whose clean up of the saved login has to
+    // land before the connect screen shows
+    if (!options?.auto) {
+      finishConnecting();
+    }
+
+    throw error;
   }
 };
 
@@ -207,25 +223,26 @@ export const disconnectFromServer = () => {
   unsubscribeFromServer?.();
 };
 
-const RECONNECT_DELAYS_MS = [1_000, 2_000, 4_000, 8_000, 8_000];
+const MAX_RECONNECT_DELAY_MS = 30_000;
 
-let reconnectAttempt = 0;
+// the first retry is immediate, a dropped socket usually comes straight back, only repeated
+// failures back off. the same schedule as the apps'
+const getReconnectDelay = (attempt: number) =>
+  attempt === 1
+    ? 0
+    : Math.min(1_000 * 2 ** (attempt - 2), MAX_RECONNECT_DELAY_MS);
+
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-let reconnectDisconnectInfo: TDisconnectInfo | undefined;
+let runWaitingReconnect: (() => Promise<void>) | null = null;
 
 export const cancelReconnect = () => {
   if (reconnectTimer) {
     clearTimeout(reconnectTimer);
     reconnectTimer = null;
   }
-
-  reconnectAttempt = 0;
-  reconnectDisconnectInfo = undefined;
 };
 
-const abandonReconnect = () => {
-  const info = reconnectDisconnectInfo;
-
+const abandonReconnect = (info: TDisconnectInfo) => {
   cleanup();
   setDisconnectInfo(info);
   playSound(SoundType.SERVER_DISCONNECTED);
@@ -252,31 +269,27 @@ export const isAuthFailure = (error: unknown) => {
 export const reconnectToServer = (info: TDisconnectInfo) => {
   if (reconnectTimer) return;
 
-  const state = store.getState();
+  const connection = connectionSelector(store.getState());
 
-  if (reconnectAttempt === 0 && !connectedSelector(state)) {
-    setConnected(false);
+  // a socket that never finished joining has nothing to go back to
+  if (connection.kind !== 'connected' && connection.kind !== 'reconnecting') {
     cleanup();
 
     return;
   }
 
-  setConnected(false);
-  store.dispatch(serverSliceActions.markLoadedChannelsStale());
-
-  reconnectDisconnectInfo = info;
-
-  const delay = RECONNECT_DELAYS_MS[reconnectAttempt];
-
-  if (delay === undefined) {
-    abandonReconnect();
-    return;
+  if (connection.kind === 'connected') {
+    holdVoiceForRejoin();
   }
 
-  reconnectAttempt += 1;
+  store.dispatch(serverSliceActions.markLoadedChannelsStale());
+
+  const attempt =
+    connection.kind === 'reconnecting' ? connection.attempt + 1 : 1;
+  const delay = getReconnectDelay(attempt);
 
   pushVoiceDebugEvent('ws', 'reconnect scheduled', {
-    attempt: reconnectAttempt,
+    attempt,
     delay,
     code: info.code,
     reason: info.reason
@@ -284,26 +297,20 @@ export const reconnectToServer = (info: TDisconnectInfo) => {
 
   store.dispatch(
     serverSliceActions.setReconnect({
-      attempt: reconnectAttempt,
-      maxAttempts: RECONNECT_DELAYS_MS.length,
+      attempt,
       nextAttemptAt: Date.now() + delay
     })
   );
 
-  reconnectTimer = setTimeout(async () => {
+  runWaitingReconnect = async () => {
     reconnectTimer = null;
+    runWaitingReconnect = null;
 
     store.dispatch(
-      serverSliceActions.setReconnect({
-        attempt: reconnectAttempt,
-        maxAttempts: RECONNECT_DELAYS_MS.length,
-        nextAttemptAt: null
-      })
+      serverSliceActions.setReconnect({ attempt, nextAttemptAt: null })
     );
 
     try {
-      // connect() opens the password dialog instead of joining when the server asks for one,
-      // so reconnecting stays true until setInitialData clears it
       await connect();
       cancelReconnect();
 
@@ -318,13 +325,24 @@ export const reconnectToServer = (info: TDisconnectInfo) => {
       });
 
       if (isAuthFailure(error)) {
-        abandonReconnect();
+        abandonReconnect(info);
         return;
       }
 
       reconnectToServer(info);
     }
-  }, delay);
+  };
+
+  reconnectTimer = setTimeout(runWaitingReconnect, delay);
+};
+
+// back in the foreground or back online is the moment to try without waiting out the delay,
+// as the apps do when they become active
+export const retryReconnectNow = () => {
+  if (!reconnectTimer || !runWaitingReconnect) return;
+
+  clearTimeout(reconnectTimer);
+  runWaitingReconnect();
 };
 
 export const jumpToMessage = (target: TMessageJumpToTarget) => {

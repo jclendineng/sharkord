@@ -89,8 +89,27 @@ export type TVoiceReaction = {
   emoji: string;
 };
 
-export type TReconnectState = {
-  attempt: number;
-  maxAttempts: number;
-  nextAttemptAt: number | null;
-};
+// where this tab's connection to the server stands, the same states as the apps' Phase. a page
+// restored from its snapshot shows the server inert while joining runs
+export type TConnectionState =
+  | { kind: 'signedOut'; disconnectInfo?: TDisconnectInfo }
+  | { kind: 'connecting'; auto: boolean }
+  | { kind: 'restoring' }
+  | {
+      kind: 'needsServerPassword';
+      resumesFrom: 'signIn' | 'reconnect' | 'restore';
+    }
+  | { kind: 'connected' }
+  | {
+      kind: 'reconnecting';
+      attempt: number;
+      nextAttemptAt: number | null;
+    };
+
+export type TVoiceSession =
+  | { phase: 'idle' }
+  | { phase: 'joining' | 'connecting' | 'inCall'; channelId: number }
+  // the connection dropped and took the call with it, joined again once it is back
+  | { phase: 'awaitingRejoin' | 'rejoinReady'; channelId: number }
+  // this account joined from another device, which took the seat. a banner offers it back
+  | { phase: 'takenOver'; channelId: number };

@@ -44,25 +44,6 @@ const ReconnectingOverlay = memo(() => {
           </p>
         </div>
 
-        <p className="text-xs text-muted-foreground">
-          {t('reconnectingAttempt', {
-            attempt: reconnect.attempt,
-            total: reconnect.maxAttempts
-          })}
-        </p>
-
-        <div
-          className="h-1 w-full overflow-hidden rounded-full bg-muted"
-          role="presentation"
-        >
-          <div
-            className="h-full bg-yellow-500 transition-[width] duration-500 ease-out"
-            style={{
-              width: `${(reconnect.attempt / reconnect.maxAttempts) * 100}%`
-            }}
-          />
-        </div>
-
         <p className="text-xs text-muted-foreground">{t('reconnectingHint')}</p>
 
         <Button variant="ghost" size="sm" onClick={handleAbort}>

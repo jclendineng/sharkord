@@ -72,7 +72,7 @@ struct MessageListView<Header: View>: View {
                     await scrollToFocused(proxy)
                 }
                 .overlay(alignment: .bottomTrailing) {
-                    if isAwayFromBottom, !store.hasNewer {
+                    if isAwayFromBottom, !store.isDetached {
                         JumpToBottomButton(action: scrollToBottom)
                         .padding(12)
                         .popTransition()
@@ -98,13 +98,13 @@ struct MessageListView<Header: View>: View {
         .animation(.snappy(duration: 0.25), value: store.unreadMarker)
         // the list is a window around an older message, a way back to the newest
         .overlay(alignment: .bottom) {
-            if store.hasNewer {
+            if store.isDetached {
                 JumpToPresentBar(action: returnToPresent)
                     .padding(.bottom, 8)
                     .slideTransition(from: .bottom)
             }
         }
-        .animation(.snappy(duration: 0.25), value: store.hasNewer)
+        .animation(.snappy(duration: 0.25), value: store.isDetached)
     }
 
     private var messageList: some View {
@@ -201,7 +201,7 @@ struct MessageListView<Header: View>: View {
 
             return geometry.contentSize.height + geometry.contentInsets.bottom - geometry.contentOffset.y - geometry.containerSize.height
         } action: { _, distance in
-            if isPinnedToBottom, distance > 1, store.focusedMessageId == nil, !store.hasNewer {
+            if isPinnedToBottom, distance > 1, store.focusedMessageId == nil, !store.isDetached {
                 scrollPosition.scrollTo(edge: .bottom)
             }
         }
@@ -512,8 +512,7 @@ struct MessageListView<Header: View>: View {
     }
 
     private func reply(to message: Message) {
-        store.editing = nil
-        store.replyingTo = message
+        store.composerMode = .replying(message)
     }
 
     private func showMenuSheet(_ sheet: MessageMenuSheet) {

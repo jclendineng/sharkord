@@ -5,6 +5,8 @@ struct VoiceUserState: Codable, Hashable {
     var soundMuted: Bool
     var webcamEnabled: Bool
     var sharingScreen: Bool
+    // missing from a server without moderator mutes
+    var serverMuted: Bool?
 }
 
 // keyed by user id, sent as strings since it is a JSON object

@@ -86,6 +86,7 @@ const Profile = memo(() => {
       <div className="flex flex-wrap items-start gap-4">
         <ImagePicker
           label={t('avatarLabel')}
+          refusesGif
           className="h-32 w-32 rounded-full"
           currentUrl={getFileUrl(ownPublicUser.avatar)}
           draft={values.avatar}

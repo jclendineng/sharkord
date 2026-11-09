@@ -1,12 +1,14 @@
 import type { EventPayloads } from '@sharkord/plugin-sdk';
 import {
+  type TJoinedMessage,
   ChannelPermission,
   DEFAULT_MESSAGES_LIMIT,
   MESSAGE_MAX_LENGTH,
   Permission,
-  REACTION_EMOJI_MAX_LENGTH
+  REACTION_EMOJI_MAX_LENGTH,
+  ServerEvents
 } from '@sharkord/shared';
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, spyOn, test } from 'bun:test';
 import { and, eq } from 'drizzle-orm';
 import { initTest, sendMessage, uploadFile } from '../../__tests__/helpers';
 import { tdb } from '../../__tests__/setup';
@@ -22,6 +24,7 @@ import {
   stickers
 } from '../../db/schema';
 import { eventBus } from '../../plugins/event-bus';
+import { pubsub } from '../../utils/pubsub';
 
 describe('messages router', () => {
   test('should throw when user lacks permissions (edit - not own message)', async () => {
@@ -2743,6 +2746,30 @@ describe('messages router', () => {
       expect(seen[0]!.replyToMessageId).toBe(1);
       expect(seen[0]!.fileIds).toEqual([]);
     });
+  });
+});
+
+describe('messages.send client nonce', () => {
+  test('should echo the nonce on the live message so the sender can match it', async () => {
+    const { caller } = await initTest();
+    const published = new Promise<TJoinedMessage>((resolve) => {
+      spyOn(pubsub, 'publishFor').mockImplementation(((
+        _userIds: unknown,
+        event: ServerEvents,
+        payload: TJoinedMessage
+      ) => {
+        if (event === ServerEvents.NEW_MESSAGE) resolve(payload);
+      }) as typeof pubsub.publishFor);
+    });
+
+    await caller.messages.send({
+      channelId: 1,
+      content: '<p>hello</p>',
+      files: [],
+      clientNonce: 'a-nonce'
+    });
+
+    expect((await published).clientNonce).toBe('a-nonce');
   });
 });
 

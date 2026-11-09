@@ -42,6 +42,30 @@ describe('friends', () => {
     expect((await one.friends.get()).friends).toEqual([2]);
   });
 
+  test('should accept a request once when two accepts come together', async () => {
+    const { caller: asker } = await initTest(1);
+    const { caller: asked } = await initTest(2);
+
+    await asker.friends.request({ userId: 2 });
+
+    const results = await Promise.allSettled([
+      asked.friends.accept({ userId: 1 }),
+      asked.friends.accept({ userId: 1 })
+    ]);
+
+    expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+  });
+
+  test('should not let the one who asked accept their own request', async () => {
+    const { caller: asker } = await initTest(1);
+
+    await asker.friends.request({ userId: 2 });
+
+    await expect(asker.friends.accept({ userId: 2 })).rejects.toThrow(
+      'There is no friend request from them.'
+    );
+  });
+
   test('should change nothing when the same request is sent twice', async () => {
     const { caller } = await initTest(1);
 

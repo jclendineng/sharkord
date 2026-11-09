@@ -14,7 +14,7 @@ struct ConnectView: View {
         // waiting for the device showing the qr code to approve
         case link(ServerListStore.LinkLogin)
         // showing a qr code for a device already signed in to scan and approve
-        case requestCode
+        case requestCode(AuthAPI.LoginRequest?)
     }
 
     private enum Intent: Equatable {
@@ -43,7 +43,6 @@ struct ConnectView: View {
     @State private var isScannerPresented = false
     private let hasCamera = AVCaptureDevice.default(for: .video) != nil
     @State private var isCheckingServer = false
-    @State private var loginRequest: AuthAPI.LoginRequest?
     // a new code asked for after the last one ran out or was declined
     @State private var requestAttempt = 0
 
@@ -82,7 +81,7 @@ struct ConnectView: View {
                 .slideTransition(from: .trailing)
             }
         }
-        .animation(.snappy(duration: 0.3), value: step)
+        .animation(.snappy(duration: 0.3), value: animatedStep)
         .transparentWindowBar()
         .onAppear(perform: resumeSignIn)
         // handed over by hand: on a mac a sheet's background is worked out before it inherits
@@ -348,6 +347,17 @@ struct ConnectView: View {
             errorText
 
             AuthButton(title: "Create Account", isEnabled: canSubmit, isWorking: isConnecting, action: signIn)
+
+            HStack(spacing: 4) {
+                Text("Already have an account?")
+                    .foregroundStyle(Theme.muted)
+
+                Button("Log In", action: switchToLogin)
+                    .foregroundStyle(Theme.link)
+                    .buttonStyle(.plain)
+            }
+            .font(.footnote)
+            .frame(maxWidth: .infinity)
         } else if serverInfo?.allowNewUsers != true && inviteCode == nil {
             Text("\(serverInfo?.name ?? "This server") only takes new members with an invite. Paste the link you were sent above, or log in if you already have an account.")
                 .font(.subheadline)
@@ -437,15 +447,15 @@ struct ConnectView: View {
     // signing in again to a server whose session ended skips straight to its login card
     private func resumeSignIn() {
         // a sign in code scanned with the camera app goes straight to waiting for approval
-        if let login = servers.pendingLinkLogin {
-            servers.pendingLinkLogin = nil
+        if case .linkLogin(let login) = servers.pendingSignIn {
+            servers.pendingSignIn = nil
             step = .link(login)
             return
         }
 
         // an invite link that opened the app goes straight to making an account with it
-        if let link = servers.pendingInviteLink {
-            servers.pendingInviteLink = nil
+        if case .invite(let link) = servers.pendingSignIn {
+            servers.pendingSignIn = nil
             serverURL = link
             checkServer(for: .register)
             return
@@ -502,20 +512,35 @@ struct ConnectView: View {
         case .link:
             step = .welcome
         case .requestCode:
-            loginRequest = nil
             step = .login
         }
     }
 
+    private var loginRequest: AuthAPI.LoginRequest? {
+        if case .requestCode(let request) = step {
+            return request
+        }
+
+        return nil
+    }
+
+    // the qr code arriving is not a move to another step
+    private var animatedStep: Step {
+        if case .requestCode = step {
+            return .requestCode(nil)
+        }
+
+        return step
+    }
+
     private func showRequestCode() {
         session.errorMessage = nil
-        loginRequest = nil
-        step = .requestCode
+        step = .requestCode(nil)
     }
 
     private func retryRequestCode() {
         session.errorMessage = nil
-        loginRequest = nil
+        step = .requestCode(nil)
         requestAttempt += 1
     }
 
@@ -546,7 +571,11 @@ struct ConnectView: View {
         do {
             let request = try await AuthAPI.startLoginRequest(address)
 
-            loginRequest = request
+            guard case .requestCode = step else {
+                return
+            }
+
+            step = .requestCode(request)
             await session.signIn(address: address, loginRequest: request)
         } catch is CancellationError {
             return

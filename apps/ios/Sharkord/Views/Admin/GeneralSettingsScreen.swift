@@ -20,6 +20,12 @@ struct GeneralSettingsScreen: View {
     // picked or removed but not saved yet, the server's icon stays until save
     @State private var pendingLogo: PendingLogo?
     @State private var isReadingLogo = false
+    @State private var croppingLogo: CroppingLogo?
+
+    private struct CroppingLogo: Identifiable {
+        let id = UUID()
+        let image: PlatformImage
+    }
 
     private enum PendingLogo {
         case replace(Data, PlatformImage)
@@ -289,6 +295,10 @@ struct GeneralSettingsScreen: View {
                 readLogo(item)
             }
         }
+        .sheet(item: $croppingLogo) { logo in
+            IconCropSheet(image: logo.image, onUse: useCroppedLogo)
+                .appSheet()
+        }
     }
 
     // what the icon will be once saved
@@ -473,11 +483,13 @@ struct GeneralSettingsScreen: View {
 
         Task {
             do {
+                try item.refuseGIF()
+
                 guard let data = try await item.loadTransferable(type: Data.self), let image = PlatformImage(data: data) else {
                     throw AuthAPI.RequestError(message: "Could not read that picture.")
                 }
 
-                pendingLogo = .replace(data, image)
+                croppingLogo = CroppingLogo(image: image)
             } catch {
                 errorMessage = error.localizedDescription
             }
@@ -485,6 +497,10 @@ struct GeneralSettingsScreen: View {
             logoItem = nil
             isReadingLogo = false
         }
+    }
+
+    private func useCroppedLogo(_ data: Data, _ image: PlatformImage) {
+        pendingLogo = .replace(data, image)
     }
 
     private func removeLogo() {

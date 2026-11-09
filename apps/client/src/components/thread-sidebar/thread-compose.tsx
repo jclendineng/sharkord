@@ -2,6 +2,11 @@ import {
   MessageCompose,
   type TMessageComposeHandle
 } from '@/components/message-compose';
+import {
+  addPendingMessage,
+  removePendingMessage,
+  settlePendingMessage
+} from '@/features/server/messages/actions';
 import { SoundType } from '@/features/server/types';
 import { playSound } from '@/helpers/sounds';
 import type { LocalStorageKey } from '@/helpers/storage';
@@ -10,6 +15,8 @@ import { getTRPCClient } from '@/lib/trpc';
 import type { TReplyTarget } from '@/types';
 import type { TJoinedPublicUser } from '@sharkord/shared';
 import {
+  getPlainTextFromHtml,
+  getRandomString,
   getTrpcError,
   prepareMessageHtml,
   type TJoinedMessage
@@ -69,19 +76,56 @@ const ThreadCompose = memo(
         sendTypingSignal.cancel();
 
         const trpc = getTRPCClient();
+        const content = prepareMessageHtml(message);
+        const clientNonce = getRandomString(24);
+        const isCommand = getPlainTextFromHtml(content).trim().startsWith('/');
+        // text alone shows at once, the same as in a channel
+        const pendingId =
+          files.length === 0 && !isCommand
+            ? addPendingMessage({
+                channelId,
+                content,
+                clientNonce,
+                replyTo: replyingToMessage,
+                parentMessageId
+              })
+            : undefined;
+
+        if (pendingId !== undefined) {
+          setNewMessage('');
+          onCancelReply?.();
+        }
 
         try {
-          await trpc.messages.send.mutate({
-            content: prepareMessageHtml(message),
+          const messageId = await trpc.messages.send.mutate({
+            content,
             channelId,
             files: files.map((f) => f.id),
             parentMessageId,
-            replyToMessageId: replyingToMessage?.id
+            replyToMessageId: replyingToMessage?.id,
+            clientNonce
           });
 
           playSound(SoundType.MESSAGE_SENT);
+
+          if (pendingId !== undefined) {
+            settlePendingMessage(
+              channelId,
+              pendingId,
+              messageId,
+              parentMessageId
+            );
+
+            return true;
+          }
         } catch (error) {
           toast.error(getTrpcError(error, t('failedSendReply')));
+
+          if (pendingId !== undefined) {
+            removePendingMessage(channelId, pendingId, parentMessageId);
+            setNewMessage(message);
+          }
+
           return false;
         }
 
@@ -93,7 +137,7 @@ const ThreadCompose = memo(
         channelId,
         sendTypingSignal,
         parentMessageId,
-        replyingToMessage?.id,
+        replyingToMessage,
         onCancelReply,
         t
       ]

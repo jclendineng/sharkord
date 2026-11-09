@@ -3,8 +3,14 @@ import { setSelectedChannelId } from '@/features/server/channels/actions';
 import { useChannelsMap } from '@/features/server/channels/hooks';
 import { selectedChannelIdSelector } from '@/features/server/channels/selectors';
 import { useDmsOpen, useFirstTextChannelId } from '@/features/server/hooks';
-import { setVoiceMoveTargetChannelId } from '@/features/server/voice/actions';
-import { useVoiceMoveTargetChannelId } from '@/features/server/voice/hooks';
+import {
+  endVoiceSession,
+  setVoiceMoveTargetChannelId
+} from '@/features/server/voice/actions';
+import {
+  useVoiceMoveTargetChannelId,
+  useVoiceSession
+} from '@/features/server/voice/hooks';
 import { store } from '@/features/store';
 import {
   getLocalStorageItem,
@@ -109,6 +115,7 @@ const useOpenFirstChannel = () => {
 const useFollowVoiceMove = () => {
   const selectChannel = useSelectChannel();
   const voiceMoveTargetChannelId = useVoiceMoveTargetChannelId();
+  const voiceSession = useVoiceSession();
 
   useEffect(() => {
     if (voiceMoveTargetChannelId === undefined) return;
@@ -116,6 +123,14 @@ const useFollowVoiceMove = () => {
     setVoiceMoveTargetChannelId(undefined);
     selectChannel(voiceMoveTargetChannelId);
   }, [voiceMoveTargetChannelId, selectChannel]);
+
+  // a call coming back after a dropped connection doesn't move the view, as in the apps
+  useEffect(() => {
+    if (voiceSession.phase !== 'rejoinReady') return;
+
+    endVoiceSession();
+    selectChannel(voiceSession.channelId, { keepsView: true });
+  }, [voiceSession, selectChannel]);
 };
 
 export {

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { config } from '../../config';
+import { getLoginCodeStatus } from '../../helpers/login-links';
 import { getLoginRequestByToken } from '../../helpers/login-requests';
 import { invariant } from '../../utils/invariant';
 import { protectedProcedure, rateLimitedProcedure } from '../../utils/trpc';
@@ -23,7 +24,7 @@ const getLoginRequestRoute = rateLimitedProcedure(protectedProcedure, {
       os: request.requestOs,
       device: request.requestDevice,
       createdAt: request.createdAt,
-      status: request.expiresAt < Date.now() ? 'expired' : request.status
+      status: getLoginCodeStatus(request)
     };
   });
 

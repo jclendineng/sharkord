@@ -881,8 +881,9 @@ const loginLinks = sqliteTable(
       .references(() => users.id, { onDelete: 'cascade' }),
     secretHash: text('secret_hash').notNull(),
     claimKeyHash: text('claim_key_hash'),
-    // waiting, claimed, approved or denied
-    status: text('status').notNull(),
+    status: text('status', {
+      enum: ['waiting', 'claimed', 'approved', 'denied']
+    }).notNull(),
     claimedOs: text('claimed_os'),
     claimedDevice: text('claimed_device'),
     claimedIp: text('claimed_ip'),
@@ -905,8 +906,9 @@ const loginRequests = sqliteTable(
     userId: integer('user_id').references(() => users.id, {
       onDelete: 'cascade'
     }),
-    // waiting, approved or denied
-    status: text('status').notNull(),
+    status: text('status', {
+      enum: ['waiting', 'approved', 'denied']
+    }).notNull(),
     requestOs: text('request_os'),
     requestDevice: text('request_device'),
     requestIp: text('request_ip'),

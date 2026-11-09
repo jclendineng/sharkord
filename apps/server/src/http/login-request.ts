@@ -5,6 +5,7 @@ import { config } from '../config';
 import { db } from '../db';
 import { users } from '../db/schema';
 import { getWsInfo } from '../helpers/get-ws-info';
+import { isLoginCodeExpired } from '../helpers/login-links';
 import {
   createLoginRequest,
   deleteLoginRequest,
@@ -67,7 +68,7 @@ const loginRequestRouteHandler = async (
 
   const request = await getLoginRequestByPollKey(data.id, data.pollKey);
 
-  if (!request || request.expiresAt < Date.now()) {
+  if (!request || isLoginCodeExpired(request)) {
     throw new HttpValidationError(
       'id',
       'This sign in code has run out. Show a new one.'

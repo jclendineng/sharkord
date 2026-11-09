@@ -78,6 +78,26 @@ test('a channel full of media opens at the bottom and stays there', async ({
     })
     .toBeLessThanOrEqual(BOTTOM_THRESHOLD);
 
+  // the growth this guards against only comes with the media, a check made before it has
+  // loaded passes whatever the view is about to do
+  await expect
+    .poll(
+      () =>
+        container.evaluate((element) => {
+          const target = element as unknown as {
+            querySelectorAll: (selector: string) => Iterable<{
+              complete: boolean;
+            }>;
+          };
+
+          return Array.from(target.querySelectorAll('img')).every(
+            (image) => image.complete
+          );
+        }),
+      { timeout: 30_000 }
+    )
+    .toBe(true);
+
   await waitForStableScroll(container);
 
   expect((await readScroll(container)).fromBottom).toBeLessThanOrEqual(

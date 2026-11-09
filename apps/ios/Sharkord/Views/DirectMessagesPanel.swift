@@ -192,10 +192,17 @@ private struct ConversationRow: View {
     @State private var menuAnchor = UnitPoint.center
     // mute was picked in the menu, its lengths open once the menu has gone: two sheets closing
     // at once brought the menu back for a moment
-    @State private var wantsMute = false
-    @State private var isMutePresented = false
-    @State private var wantsProfile = false
-    @State private var isProfilePresented = false
+    @State private var wantedSheet: RowSheet?
+    @State private var shownSheet: RowSheet?
+
+    private enum RowSheet: String, Identifiable {
+        case mute
+        case profile
+
+        var id: String {
+            rawValue
+        }
+    }
 
     var body: some View {
         // plain gestures, as the channel rows: a recognised long press cancels the tap, where a
@@ -223,22 +230,24 @@ private struct ConversationRow: View {
                     .environment(session)
                     .environment(servers)
             }
-            .sheet(isPresented: $isMutePresented) {
-                MuteDurationSheet(
-                    title: "Mute this conversation",
-                    subtitle: "@\(user?.name ?? "Unknown")",
-                    channelIds: [conversation.channelId]
-                )
-                    .environment(session)
-                    .environment(servers)
-                    .appSheet()
-            }
-            .sheet(isPresented: $isProfilePresented) {
-                if let user {
-                    MemberProfileSheet(user: user, onMessage: openFromProfile)
+            .sheet(item: $shownSheet) { sheet in
+                switch sheet {
+                case .mute:
+                    MuteDurationSheet(
+                        title: "Mute this conversation",
+                        subtitle: "@\(user?.name ?? "Unknown")",
+                        channelIds: [conversation.channelId]
+                    )
                         .environment(session)
                         .environment(servers)
-                        .appSheet(addsClose: true)
+                        .appSheet()
+                case .profile:
+                    if let user {
+                        MemberProfileSheet(user: user, onMessage: openFromProfile)
+                            .environment(session)
+                            .environment(servers)
+                            .appSheet(addsClose: true)
+                    }
                 }
             }
     }
@@ -248,29 +257,22 @@ private struct ConversationRow: View {
     }
 
     private func requestMute() {
-        wantsMute = true
+        wantedSheet = .mute
         isActionsPresented = false
     }
 
     private func requestProfile() {
-        wantsProfile = true
+        wantedSheet = .profile
         isActionsPresented = false
     }
 
     private func showWantedSheet() {
-        if wantsMute {
-            wantsMute = false
-            isMutePresented = true
-        }
-
-        if wantsProfile {
-            wantsProfile = false
-            isProfilePresented = true
-        }
+        shownSheet = wantedSheet
+        wantedSheet = nil
     }
 
     private func openFromProfile() {
-        isProfilePresented = false
+        shownSheet = nil
         onOpen()
     }
 

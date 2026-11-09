@@ -2,6 +2,7 @@ import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../../db';
 import { loginLinks } from '../../db/schema';
+import { getLoginCodeStatus } from '../../helpers/login-links';
 import { invariant } from '../../utils/invariant';
 import { protectedProcedure } from '../../utils/trpc';
 
@@ -31,7 +32,7 @@ const getLoginLinkRoute = protectedProcedure
 
     return {
       ...link,
-      status: link.expiresAt < Date.now() ? 'expired' : link.status
+      status: getLoginCodeStatus(link)
     };
   });
 

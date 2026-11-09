@@ -611,6 +611,7 @@
   "hotkeysSaved": "Nastavení klávesových zkratek uloženo",
   "failedSaveHotkeys": "Nepodařilo se uložit nastavení klávesových zkratek",
   "hotkeysBridgeFailed": "Nenalezeno, přestalo se zkoušet",
+  "hotkeysBridgeReplaced": "Používá jiná karta",
   "hotkeysBridgeRetry": "Zkusit připojit",
   "deleteAccountTab": "Smazat účet",
   "deleteAccountTitle": "Smazat účet",

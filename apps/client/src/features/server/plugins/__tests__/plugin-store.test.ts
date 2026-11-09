@@ -13,7 +13,7 @@ const SLICES = {
   pluginsMetadata: [],
   ownUserId: 1,
   selectedChannelId: 1,
-  currentVoiceChannelId: undefined,
+  voiceSession: { phase: 'idle' },
   ownVoiceState: {
     micMuted: false,
     soundMuted: false,

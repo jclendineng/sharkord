@@ -22,8 +22,17 @@ export const selectedChannelTypeSelector = createSelector(
     channels.find((channel) => channel.id === selectedChannelId)?.type
 );
 
-export const currentVoiceChannelIdSelector = (state: IRootState) =>
-  state.server.currentVoiceChannelId;
+// the call this tab is in or on its way into. one waiting out a dropped connection isn't one
+export const currentVoiceChannelIdSelector = (state: IRootState) => {
+  const session = state.server.voiceSession;
+
+  if (session.phase === 'idle') return undefined;
+  if (session.phase === 'awaitingRejoin') return undefined;
+  if (session.phase === 'rejoinReady') return undefined;
+  if (session.phase === 'takenOver') return undefined;
+
+  return session.channelId;
+};
 
 export const channelPermissionsSelector = (state: IRootState) =>
   state.server.channelPermissions;

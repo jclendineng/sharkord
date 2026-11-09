@@ -1,9 +1,11 @@
 import { useCurrentVoiceChannelId } from '@/features/server/channels/hooks';
 import { useWebRtcSimulcastEnabled } from '@/features/server/hooks';
-import { SoundType } from '@/features/server/types';
+import { SoundType, type TVoiceSession } from '@/features/server/types';
+import { setVoiceInCall } from '@/features/server/voice/actions';
 import {
   useIncomingVideoOff,
-  useOwnVoiceState
+  useOwnVoiceState,
+  useVoiceSession
 } from '@/features/server/voice/hooks';
 import {
   clampMicrophoneDecibels,
@@ -105,9 +107,18 @@ export type { AudioVideoRefs };
 enum ConnectionStatus {
   DISCONNECTED = 'disconnected',
   CONNECTING = 'connecting',
-  CONNECTED = 'connected',
-  FAILED = 'failed'
+  CONNECTED = 'connected'
 }
+
+const CONNECTION_STATUS: Record<TVoiceSession['phase'], ConnectionStatus> = {
+  idle: ConnectionStatus.DISCONNECTED,
+  awaitingRejoin: ConnectionStatus.DISCONNECTED,
+  rejoinReady: ConnectionStatus.DISCONNECTED,
+  takenOver: ConnectionStatus.DISCONNECTED,
+  joining: ConnectionStatus.CONNECTING,
+  connecting: ConnectionStatus.CONNECTING,
+  inCall: ConnectionStatus.CONNECTED
+};
 
 export type TVoiceProvider = {
   loading: boolean;
@@ -189,10 +200,9 @@ type TVoiceProviderProps = {
 };
 
 const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
-  const [loading, setLoading] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>(
-    ConnectionStatus.DISCONNECTED
-  );
+  const voiceSession = useVoiceSession();
+  const connectionStatus = CONNECTION_STATUS[voiceSession.phase];
+  const loading = voiceSession.phase === 'connecting';
   const routerRtpCapabilities = useRef<RtpCapabilities | null>(null);
   const deviceRtpCapabilities = useRef<RtpCapabilities | null>(null);
   const audioVideoRefsMap = useRef<Map<TRefsKey, AudioVideoRefs>>(new Map());
@@ -1291,8 +1301,6 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     clearExternalStreams();
     cleanupTransports();
     deviceRtpCapabilities.current = null;
-
-    setConnectionStatus(ConnectionStatus.DISCONNECTED);
   }, [
     stopMonitoring,
     resetStats,
@@ -1316,9 +1324,6 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
       cleanup();
 
       try {
-        setLoading(true);
-        setConnectionStatus(ConnectionStatus.CONNECTING);
-
         routerRtpCapabilities.current = incomingRouterRtpCapabilities;
 
         const device = new Device();
@@ -1347,15 +1352,11 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
         await startMicStream();
 
         startMonitoring(producerTransport.current, consumerTransport.current);
-        setConnectionStatus(ConnectionStatus.CONNECTED);
-        setLoading(false);
+        setVoiceInCall(channelId);
         playSound(SoundType.OWN_USER_JOINED_VOICE_CHANNEL);
       } catch (error) {
         voiceLogger.error('session: init failed', error, { channelId });
         cleanup();
-
-        setConnectionStatus(ConnectionStatus.FAILED);
-        setLoading(false);
 
         throw error;
       }
@@ -1419,8 +1420,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     clearRemoteUserStreamsForUser,
     rtpCapabilitiesRef: deviceRtpCapabilities,
     isVoiceSessionActive:
-      connectionStatus === ConnectionStatus.CONNECTING ||
-      connectionStatus === ConnectionStatus.CONNECTED
+      voiceSession.phase === 'connecting' || voiceSession.phase === 'inCall'
   });
 
   const previousConnectionStatus = useRef(connectionStatus);

@@ -76,15 +76,16 @@ type TPluginCapabilityRequirement = {
 };
 
 class PluginManager {
-  private loadedPlugins = new Map<string, PluginModule>();
-  // the manifest of every loaded plugin, so publishing metadata does not have to
+  // the manifest is kept with each loaded plugin, so publishing metadata does not have to
   // re-read and re-parse every manifest.json off disk
-  private loadedManifests = new Map<string, TPluginManifest>();
+  private loaded = new Map<
+    string,
+    { module: PluginModule; manifest: TPluginManifest }
+  >();
   private loadErrors = new Map<string, string>();
-  private pluginsWithUi = new Set<string>();
 
-  // what each plugin declared its slots need, from ctx.ui.enable(). a slot that
-  // is not in here is public
+  // what each plugin with a ui declared its slots need, from ctx.ui.enable(). a slot
+  // that is not in here is public
   private componentRequirements = new Map<string, TPluginSlotRequirements>();
 
   private installing = new Set<string>();
@@ -268,7 +269,7 @@ class PluginManager {
     const allCommands: TCommandsMapByPlugin = {};
 
     for (const [pluginId, commands] of this.commandRegistry.getByPlugin()) {
-      const manifest = this.loadedManifests.get(pluginId);
+      const manifest = this.loaded.get(pluginId)?.manifest;
 
       allCommands[pluginId] = Array.from(commands.values()).map(
         ({ name, description, args }) => ({
@@ -317,7 +318,7 @@ class PluginManager {
     method: TPluginHttpMethod,
     routePath: string
   ) => {
-    if (!this.loadedPlugins.has(pluginId)) return undefined;
+    if (!this.loaded.has(pluginId)) return undefined;
     if (!this.stateStore.isEnabled(pluginId)) return undefined;
 
     return this.httpRouteRegistry.get(pluginId, method, routePath);
@@ -332,17 +333,17 @@ class PluginManager {
   };
 
   public getPluginIdsWithComponents = (): string[] =>
-    Array.from(this.loadedPlugins.keys()).filter((pluginId) =>
-      this.pluginsWithUi.has(pluginId)
+    Array.from(this.loaded.keys()).filter((pluginId) =>
+      this.componentRequirements.has(pluginId)
     );
 
   // the only thing a command chip needs off the manifest, and it is on the hot
   // path of every command sent in chat
   public getPluginLogo = (pluginId: string): string | undefined =>
-    this.loadedManifests.get(pluginId)?.logo;
+    this.loaded.get(pluginId)?.manifest.logo;
 
   public getActivePluginMetadata = (): TPluginMetadata[] =>
-    Array.from(this.loadedManifests.entries()).map(([pluginId, manifest]) => ({
+    Array.from(this.loaded.entries()).map(([pluginId, { manifest }]) => ({
       pluginId,
       name: manifest.name,
       description: manifest.description,
@@ -551,7 +552,7 @@ class PluginManager {
   };
 
   public unloadPlugins = async () => {
-    for (const pluginId of Array.from(this.loadedPlugins.keys())) {
+    for (const pluginId of Array.from(this.loaded.keys())) {
       try {
         await this.unload(pluginId);
       } catch (error) {
@@ -579,11 +580,11 @@ class PluginManager {
 
     await this.stateStore.setEnabled(pluginId, enabled);
 
-    if (wasEnabled && !enabled && this.loadedPlugins.has(pluginId)) {
+    if (wasEnabled && !enabled && this.loaded.has(pluginId)) {
       await this.unload(pluginId);
     }
 
-    if (!wasEnabled && enabled && !this.loadedPlugins.has(pluginId)) {
+    if (!wasEnabled && enabled && !this.loaded.has(pluginId)) {
       await this.load(pluginId);
     }
   };
@@ -594,10 +595,8 @@ class PluginManager {
     requirements?: TPluginSlotRequirements
   ) => {
     if (enabled) {
-      this.pluginsWithUi.add(pluginId);
       this.componentRequirements.set(pluginId, requirements ?? {});
     } else {
-      this.pluginsWithUi.delete(pluginId);
       this.componentRequirements.delete(pluginId);
     }
 
@@ -740,8 +739,7 @@ class PluginManager {
 
       await this.stateStore.setLoadedVersion(pluginId, manifest.version);
 
-      this.loadedPlugins.set(pluginId, mod);
-      this.loadedManifests.set(pluginId, manifest);
+      this.loaded.set(pluginId, { module: mod, manifest });
       this.loadErrors.delete(pluginId);
 
       this.pluginLogger.log(
@@ -800,14 +798,12 @@ class PluginManager {
     this.settingsManager.unload(pluginId);
     this.hooksManager.unload(pluginId);
     this.httpRouteRegistry.unload(pluginId);
-    this.pluginsWithUi.delete(pluginId);
     this.componentRequirements.delete(pluginId);
-    this.loadedManifests.delete(pluginId);
-    this.loadedPlugins.delete(pluginId);
+    this.loaded.delete(pluginId);
   };
 
   public unload = async (pluginId: string) => {
-    const pluginModule = this.loadedPlugins.get(pluginId);
+    const pluginModule = this.loaded.get(pluginId)?.module;
     const pluginPath = getPluginPath(pluginId);
 
     if (!pluginModule) {

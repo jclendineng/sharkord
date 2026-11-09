@@ -16,7 +16,8 @@ import {
   voiceChannelAudioExternalStreamsSelector,
   voiceChannelExternalStreamsListSelector,
   voiceMoveTargetChannelIdSelector,
-  voiceReactionsSelector
+  voiceReactionsSelector,
+  voiceSessionSelector
 } from './selectors';
 
 export const useVoiceChannelExternalStreamsList = (channelId: number) =>
@@ -83,3 +84,5 @@ export const useSpeakingState = (userId: number) => {
 
   return { isActivelySpeaking, speakingEffectClass };
 };
+
+export const useVoiceSession = () => useSelector(voiceSessionSelector);

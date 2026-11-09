@@ -20,6 +20,7 @@ import type { TReplyTarget } from '@/types';
 import {
   ChannelPermission,
   getPlainTextFromHtml,
+  getRandomString,
   getTrpcError,
   prepareMessageHtml,
   TestId,
@@ -144,9 +145,10 @@ const TextChannel = memo(({ channelId, onClose }: TChannelProps) => {
       // text alone shows at once and the box empties for the next message. files have nothing
       // to draw until the server saved them, and a command comes back as something else
       const isCommand = getPlainTextFromHtml(content).trim().startsWith('/');
+      const clientNonce = getRandomString(24);
       const pendingId =
         files.length === 0 && !isCommand
-          ? addPendingMessage({ channelId, content, replyTo })
+          ? addPendingMessage({ channelId, content, clientNonce, replyTo })
           : undefined;
 
       if (pendingId !== undefined) {
@@ -160,7 +162,8 @@ const TextChannel = memo(({ channelId, onClose }: TChannelProps) => {
           content,
           channelId,
           files: files.map((f) => f.id),
-          replyToMessageId: replyTo?.id
+          replyToMessageId: replyTo?.id,
+          clientNonce
         });
 
         playSound(SoundType.MESSAGE_SENT);

@@ -30,7 +30,8 @@ import { categories, channels, messages } from './schema';
 const publishMessage = async (
   messageId: number,
   channelId: number,
-  type: 'create' | 'update' | 'delete'
+  type: 'create' | 'update' | 'delete',
+  clientNonce?: string
 ) => {
   if (type === 'delete') {
     const affectedUserIds = await getAffectedOnlineUserIdsForChannel(
@@ -58,7 +59,7 @@ const publishMessage = async (
     ChannelPermission.VIEW_CHANNEL
   );
 
-  pubsub.publishFor(affectedUserIds, targetEvent, message);
+  pubsub.publishFor(affectedUserIds, targetEvent, { ...message, clientNonce });
 
   // thread replies should not increment the channel's unread count
   if (message.parentMessageId) return;

@@ -5,7 +5,13 @@ type THotkeyPhase = TPluginHotkeyPhase;
 
 type THotkeyMode = TPluginHotkeyMode;
 
-type THotkeyStatus = 'disconnected' | 'connecting' | 'connected' | 'failed';
+type THotkeyStatus =
+  | 'disconnected'
+  | 'connecting'
+  | 'connected'
+  | 'failed'
+  // another tab for this server took the bridge over, nothing retries until asked to
+  | 'replaced';
 
 type THotkeyCapabilities = {
   keyUp: boolean;

@@ -30,6 +30,8 @@ struct Message: Codable, Hashable, Identifiable {
     var pinned: Bool?
     var pinnedAt: Int?
     var pinnedBy: Int?
+    // on a live message, what it was sent with, so the sender can match its placeholder
+    var clientNonce: String?
     // the message this one answers, or nil when it was deleted since
     let replyTo: ReplyPreview?
 

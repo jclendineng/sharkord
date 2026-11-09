@@ -19,6 +19,16 @@ const matches = (value: string, expectedHash: string | null) => {
   return actual.length === expected.length && timingSafeEqual(actual, expected);
 };
 
+// one rule for both kinds of sign in code
+const isLoginCodeExpired = (code: { expiresAt: number }) =>
+  code.expiresAt < Date.now();
+
+// what a device is told about a code: past its time it reads as expired, whatever it got to
+const getLoginCodeStatus = <TStatus extends string>(code: {
+  expiresAt: number;
+  status: TStatus;
+}) => (isLoginCodeExpired(code) ? ('expired' as const) : code.status);
+
 // a new qr code for the caller's other device, any older ones of theirs gone with it. the
 // token is the link's id and its secret, only the secret's hash is kept
 const createLoginLink = async (userId: number) => {
@@ -59,7 +69,7 @@ const getLoginLinkByToken = async (token: string) => {
     .limit(1)
     .get();
 
-  if (!row || !matches(secret, row.secretHash) || row.expiresAt < Date.now()) {
+  if (!row || !matches(secret, row.secretHash) || isLoginCodeExpired(row)) {
     return undefined;
   }
 
@@ -114,7 +124,9 @@ export {
   claimLoginLink,
   createLoginLink,
   deleteLoginLink,
+  getLoginCodeStatus,
   getLoginLinkByToken,
   hash as hashLoginSecret,
+  isLoginCodeExpired,
   matches as matchesLoginLinkSecret
 };

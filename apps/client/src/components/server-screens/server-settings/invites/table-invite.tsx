@@ -6,7 +6,11 @@ import { useDateLocale } from '@/hooks/use-date-locale';
 import { getTRPCClient } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
 import type { TJoinedInvite } from '@sharkord/shared';
-import { getTrpcError } from '@sharkord/shared';
+import {
+  getTrpcError,
+  isInviteExpired,
+  isInviteUsedUp
+} from '@sharkord/shared';
 import {
   Badge,
   Button,
@@ -29,8 +33,8 @@ type TTableInviteProps = {
 const TableInvite = memo(({ invite, refetch }: TTableInviteProps) => {
   const { t } = useTranslation('settings');
   const dateLocale = useDateLocale();
-  const isExpired = invite.expiresAt && invite.expiresAt < Date.now();
-  const isMaxUsesReached = invite.maxUses && invite.uses >= invite.maxUses;
+  const isExpired = isInviteExpired(invite);
+  const isMaxUsesReached = isInviteUsedUp(invite);
   const isDeleted = !!invite.deletedAt;
 
   const handleCopyCode = useCallback(() => {

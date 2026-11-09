@@ -1,8 +1,12 @@
 import { setSelectedChannelId } from '@/features/server/channels/actions';
 import { useCurrentVoiceChannelId } from '@/features/server/channels/hooks';
-import { channelByIdSelector } from '@/features/server/channels/selectors';
+import {
+  channelByIdSelector,
+  currentVoiceChannelIdSelector
+} from '@/features/server/channels/selectors';
 import { joinVoice, leaveVoice } from '@/features/server/voice/actions';
 import { useVoice } from '@/features/server/voice/hooks';
+import { isVoiceJoiningSelector } from '@/features/server/voice/selectors';
 import { store } from '@/features/store';
 import { LocalStorageKey, setLocalStorageItem } from '@/helpers/storage';
 import { ChannelType } from '@sharkord/shared';
@@ -19,12 +23,25 @@ const useSelectChannel = () => {
   const currentVoiceChannelId = useCurrentVoiceChannelId();
 
   return useCallback(
-    async (channelId: number) => {
+    async (channelId: number, options?: { keepsView?: boolean }) => {
       const channel = channelByIdSelector(store.getState(), channelId);
 
       if (!channel) return;
 
-      setSelectedChannelId(channel.id);
+      const state = store.getState();
+
+      // a join under way takes no second one, and the view stays with the call it is joining
+      if (
+        channel.type === ChannelType.VOICE &&
+        channel.id !== currentVoiceChannelIdSelector(state) &&
+        isVoiceJoiningSelector(state)
+      ) {
+        return;
+      }
+
+      if (!options?.keepsView) {
+        setSelectedChannelId(channel.id);
+      }
 
       if (channel.type !== ChannelType.VOICE) {
         // persist selected channel for non-voice channels

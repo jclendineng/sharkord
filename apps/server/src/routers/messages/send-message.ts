@@ -51,6 +51,8 @@ const sendMessageRoute = rateLimitedProcedure(protectedProcedure, {
       files: z.array(z.string()).max(STORAGE_MAX_FILES_PER_MESSAGE).default([]),
       parentMessageId: z.number().optional(),
       replyToMessageId: z.number().optional(),
+      // echoed on the live message, so the sender's placeholder is matched to its own copy
+      clientNonce: z.string().min(1).max(64).optional(),
       // one of the server's stickers, the message's text can then be empty
       stickerId: z.number().optional()
     })
@@ -398,7 +400,7 @@ const sendMessageRoute = rateLimitedProcedure(protectedProcedure, {
 
     commandExecutor?.(message.id);
 
-    publishMessage(message.id, input.channelId, 'create');
+    publishMessage(message.id, input.channelId, 'create', input.clientNonce);
 
     if (input.parentMessageId) {
       publishReplyCount(input.parentMessageId, input.channelId);

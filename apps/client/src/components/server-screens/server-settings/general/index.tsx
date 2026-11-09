@@ -253,6 +253,8 @@ const General = memo(() => {
         currentUrl={getFileUrl(settings?.logo)}
         draft={values.logo}
         onChange={handleLogoChange}
+        cropsToSquare
+        refusesGif
       />
 
       <Group

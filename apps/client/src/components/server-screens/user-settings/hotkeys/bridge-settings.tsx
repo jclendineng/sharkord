@@ -12,7 +12,8 @@ const STATUS_VARIANTS = {
   connected: 'default',
   connecting: 'secondary',
   disconnected: 'outline',
-  failed: 'destructive'
+  failed: 'destructive',
+  replaced: 'outline'
 } as const satisfies Record<
   THotkeyStatus,
   'default' | 'secondary' | 'outline' | 'destructive'
@@ -31,7 +32,8 @@ const BridgeSettings = memo(({ values, onChange }: TBridgeSettingsProps) => {
     connected: t('hotkeysBridgeConnected'),
     connecting: t('hotkeysBridgeConnecting'),
     disconnected: t('hotkeysBridgeDisconnected'),
-    failed: t('hotkeysBridgeFailed')
+    failed: t('hotkeysBridgeFailed'),
+    replaced: t('hotkeysBridgeReplaced')
   };
 
   const handleEnabledChange = useCallback(

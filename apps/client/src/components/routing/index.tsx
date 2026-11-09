@@ -1,11 +1,8 @@
 import { ReconnectingOverlay } from '@/components/reconnecting-overlay';
-import {
-  useIsAppLoading,
-  useIsAutoConnecting,
-  useIsPluginsLoading
-} from '@/features/app/hooks';
+import { useIsAppLoading, useIsPluginsLoading } from '@/features/app/hooks';
 import {
   useDisconnectInfo,
+  useIsAutoConnecting,
   useIsConnected,
   useIsReconnecting,
   useIsRestoredFromSnapshot

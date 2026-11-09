@@ -620,6 +620,7 @@
   "hotkeysSaved": "Настройки горячих клавиш сохранены",
   "failedSaveHotkeys": "Не удалось сохранить настройки горячих клавиш",
   "hotkeysBridgeFailed": "Не найден, попытки прекращены",
+  "hotkeysBridgeReplaced": "Используется другой вкладкой",
   "hotkeysBridgeRetry": "Попробовать подключиться",
   "deleteAccountTab": "Удалить аккаунт",
   "deleteAccountTitle": "Удалить аккаунт",

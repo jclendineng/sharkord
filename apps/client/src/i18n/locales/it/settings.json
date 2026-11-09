@@ -611,6 +611,7 @@
   "hotkeysSaved": "Impostazioni delle scorciatoie salvate",
   "failedSaveHotkeys": "Impossibile salvare le impostazioni delle scorciatoie",
   "hotkeysBridgeFailed": "Non trovato, tentativi interrotti",
+  "hotkeysBridgeReplaced": "In uso da un'altra scheda",
   "hotkeysBridgeRetry": "Prova a connettere",
   "deleteAccountTab": "Elimina account",
   "deleteAccountTitle": "Elimina account",

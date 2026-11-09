@@ -6,7 +6,6 @@ import { cn } from '@/lib/utils';
 import { ChannelPermission, PluginSlot } from '@sharkord/shared';
 import { Button } from '@sharkord/ui';
 import {
-  AlertTriangle,
   Loader2,
   Monitor,
   MonitorOff,
@@ -48,12 +47,6 @@ const VoiceControl = memo(() => {
           icon: <Wifi className="h-4 w-4 text-green-600" />,
           text: t('voiceConnected'),
           color: 'text-green-600'
-        };
-      case 'failed':
-        return {
-          icon: <AlertTriangle className="h-4 w-4 text-red-500" />,
-          text: t('voiceFailed'),
-          color: 'text-red-500'
         };
       case 'disconnected':
       default:

@@ -1,8 +1,8 @@
-import { setIsAutoConnecting } from '@/features/app/actions';
 import { useIsAppLoading, useIsPluginsLoading } from '@/features/app/hooks';
 import {
   clearServerSnapshot,
   connect,
+  finishConnecting,
   isAuthFailure,
   resetServerState,
   restoreServerSnapshot,
@@ -72,10 +72,9 @@ const AutoLoginController = memo(() => {
 
     autoLoginAttempted.current = true;
 
-    setIsAutoConnecting(true);
     setSessionStorageItem(SessionStorageKey.TOKEN, token);
 
-    connect()
+    connect({ auto: true })
       .catch((error) => {
         if (restored) {
           resetServerState();
@@ -104,7 +103,7 @@ const AutoLoginController = memo(() => {
       .finally(() => {
         // reset auto-login attempt state so if the user logs out and back in they can try auto-login again
         autoLoginAttempted.current = false;
-        setIsAutoConnecting(false);
+        finishConnecting();
       });
   }, [
     isAppLoading,

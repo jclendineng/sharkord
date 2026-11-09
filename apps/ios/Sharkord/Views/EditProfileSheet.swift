@@ -209,6 +209,10 @@ struct EditProfileSheet: View {
     // the picker hands over data, the upload endpoint streams a file, so it goes through tmp
     private func upload(_ item: PhotosPickerItem, as kind: SessionStore.ProfileImage) {
         change(kind) {
+            if kind == .avatar {
+                try item.refuseGIF()
+            }
+
             guard let data = try await item.loadTransferable(type: Data.self) else {
                 throw AuthAPI.RequestError(message: "Could not read that picture.")
             }

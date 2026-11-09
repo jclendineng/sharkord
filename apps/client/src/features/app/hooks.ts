@@ -10,7 +10,6 @@ import {
   browserNotificationsForRepliesSelector,
   browserNotificationsSelector,
   hotkeysEnabledSelector,
-  isAutoConnectingSelector,
   isChannelMutedSelector,
   isShiftHeldSelector,
   loadingPluginsSelector,
@@ -29,8 +28,6 @@ import {
 } from './selectors';
 
 export const useIsAppLoading = () => useSelector(appLoadingSelector);
-
-export const useIsAutoConnecting = () => useSelector(isAutoConnectingSelector);
 
 export const useIsPluginsLoading = () => useSelector(loadingPluginsSelector);
 

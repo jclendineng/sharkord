@@ -2,8 +2,9 @@ import { usePickImage, type TPickedImage } from '@/hooks/use-pick-image';
 import { cn } from '@/lib/utils';
 import { Button, buttonVariants, Group } from '@sharkord/ui';
 import { Upload } from 'lucide-react';
-import { memo, useCallback, type ReactNode } from 'react';
+import { memo, useCallback, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { CropDialog } from './crop-dialog';
 
 type TImagePickerProps = {
   label: string;
@@ -14,6 +15,14 @@ type TImagePickerProps = {
   description?: string;
   className?: string;
   fallback?: ReactNode;
+  // framed to a square and saved small before it uploads
+  cropsToSquare?: boolean;
+  refusesGif?: boolean;
+};
+
+type TCropRequest = {
+  file: File;
+  resolve: (file: File | undefined) => void;
 };
 
 const ImagePicker = memo(
@@ -24,10 +33,33 @@ const ImagePicker = memo(
     onChange,
     description,
     className,
-    fallback
+    fallback,
+    cropsToSquare,
+    refusesGif
   }: TImagePickerProps) => {
     const { t } = useTranslation('common');
-    const pickImage = usePickImage();
+    const [cropRequest, setCropRequest] = useState<TCropRequest>();
+
+    const prepareCrop = useCallback(
+      (file: File) =>
+        new Promise<File | undefined>((resolve) => {
+          setCropRequest({ file, resolve });
+        }),
+      []
+    );
+
+    const pickImage = usePickImage({
+      prepare: cropsToSquare ? prepareCrop : undefined,
+      refusesGif
+    });
+
+    const handleCropDone = useCallback(
+      (file: File | undefined) => {
+        cropRequest?.resolve(file);
+        setCropRequest(undefined);
+      },
+      [cropRequest]
+    );
 
     const handlePick = useCallback(async () => {
       const picked = await pickImage();
@@ -82,6 +114,10 @@ const ImagePicker = memo(
             </div>
           </div>
         </div>
+
+        {cropRequest && (
+          <CropDialog file={cropRequest.file} onDone={handleCropDone} />
+        )}
 
         {previewUrl && (
           <div>

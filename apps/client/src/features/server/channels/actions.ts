@@ -33,9 +33,6 @@ export const setSelectedChannelId = (channelId: number | undefined) => {
   markChannelAsRead(channelId);
 };
 
-export const setCurrentVoiceChannelId = (channelId: number | undefined) =>
-  store.dispatch(serverSliceActions.setCurrentVoiceChannelId(channelId));
-
 export const addChannel = (channel: TChannel) => {
   store.dispatch(serverSliceActions.addChannel(channel));
 };

@@ -387,6 +387,26 @@ parameterized selectors do not evict each other. Rules:
 
 `bun run magic` applies here too.
 
+## Lifecycle state
+
+When two or more fields describe one lifecycle, they are one state. Two apps doing the same job
+must have the same states and the same behaviour, and when they differ the app is the reference
+unless the web is more correct.
+
+- **TypeScript:** a single discriminated union in one place (`TConnectionState`, `TVoiceSession`).
+  Data that only exists in one state lives inside that state. Transitions are reducers.
+- **Swift:** the same as an `enum` with associated values (`SessionStore.Phase`, `CallPhase`).
+- **Status columns:** declare the enum in the schema, and write through a helper that puts the
+  expected status in the `where` and checks `.returning()`. The route may check first to give a
+  better message, but the write is what decides (`answerLoginLink`, `acceptFriendRequest`).
+- **Single use tokens:** row existence and an atomic delete, like OIDC and password resets.
+- **Rules that depend on the time:** one pure function per rule in `packages/shared`
+  (`isPollClosed`, `isInviteExpired`), mirrored once in Swift.
+- **Async work:** set the busy state before the first `await`, and after each `await` check the
+  operation is still the current one.
+- **Exclusive UI:** one enum per view for sheets and modes.
+- **Don't convert** independent booleans, or anything with two states set in one place.
+
 ## After the feature/fix is done
 
 ### Translations

@@ -98,9 +98,7 @@ export const addMessages = (
   const threadReplies = messages.filter((m) => !!m.parentMessageId);
 
   if (isSubscriptionMessage) {
-    rootMessages.forEach((message) =>
-      replacePendingMessage(channelId, message)
-    );
+    messages.forEach((message) => replacePendingMessage(channelId, message));
   }
 
   if (rootMessages.length > 0) {
@@ -373,16 +371,23 @@ export const isPendingMessage = (message: TJoinedMessage) => message.id < 0;
 export const addPendingMessage = ({
   channelId,
   content,
-  replyTo
+  clientNonce,
+  replyTo,
+  parentMessageId
 }: {
   channelId: number;
   content: string;
+  clientNonce: string;
   replyTo?: TJoinedMessage;
+  parentMessageId?: number;
 }): number | undefined => {
   const state = store.getState();
   const ownUserId = ownUserIdSelector(state);
-  const existing = messagesMapSelector(state)[channelId];
-  const isDetached = isChannelDetachedSelector(state, channelId);
+  const existing = parentMessageId
+    ? threadMessagesMapSelector(state)[parentMessageId]
+    : messagesMapSelector(state)[channelId];
+  const isDetached =
+    !parentMessageId && isChannelDetachedSelector(state, channelId);
 
   // a channel not loaded, or showing an older window, has nowhere to put it
   if (!ownUserId || !existing || isDetached) {
@@ -397,12 +402,13 @@ export const addPendingMessage = ({
   const message: TJoinedMessage = {
     id,
     content,
+    clientNonce,
     userId: ownUserId,
     pluginId: null,
     webhookName: null,
     pluginComponents: null,
     channelId,
-    parentMessageId: null,
+    parentMessageId: parentMessageId ?? null,
     replyToMessageId: replyTo?.id ?? null,
     stickerId: null,
     editable: false,
@@ -429,6 +435,12 @@ export const addPendingMessage = ({
       : null
   };
 
+  if (parentMessageId) {
+    addThreadMessages(parentMessageId, [message]);
+
+    return id;
+  }
+
   store.dispatch(
     serverSliceActions.addMessages({ channelId, messages: [message] })
   );
@@ -436,39 +448,75 @@ export const addPendingMessage = ({
   return id;
 };
 
-export const removePendingMessage = (channelId: number, messageId: number) => {
+export const removePendingMessage = (
+  channelId: number,
+  messageId: number,
+  parentMessageId?: number
+) => {
+  if (parentMessageId) {
+    store.dispatch(
+      serverSliceActions.deleteThreadMessage({ parentMessageId, messageId })
+    );
+
+    return;
+  }
+
   store.dispatch(serverSliceActions.deleteMessage({ channelId, messageId }));
+};
+
+const getPendingSiblings = (channelId: number, parentMessageId?: number) => {
+  const state = store.getState();
+
+  if (parentMessageId) {
+    return threadMessagesMapSelector(state)[parentMessageId] ?? [];
+  }
+
+  return messagesByChannelIdSelector(state, channelId);
 };
 
 const PENDING_RELOAD_DELAY_MS = 10_000;
 
 // the server saved it but the live copy never came, lost as the socket dropped, which would
 // leave the placeholder for good. the newest page settles it
-const reloadIfStillPending = async (channelId: number, pendingId: number) => {
-  const state = store.getState();
-  const messages = messagesByChannelIdSelector(state, channelId);
+const reloadIfStillPending = async (
+  channelId: number,
+  pendingId: number,
+  parentMessageId?: number
+) => {
+  const siblings = getPendingSiblings(channelId, parentMessageId);
 
-  if (!messages.some((message) => message.id === pendingId)) {
+  if (!siblings.some((message) => message.id === pendingId)) {
     return;
   }
 
-  // a window of older messages has no place for the newest page
-  if (!isChannelDetachedSelector(state, channelId)) {
-    try {
-      const trpc = getTRPCClient();
+  try {
+    const trpc = getTRPCClient();
+    const cursor = null;
+    const limit = DEFAULT_MESSAGES_LIMIT;
+
+    if (parentMessageId) {
+      const { messages: page } = await trpc.messages.getThread.query({
+        parentMessageId,
+        cursor,
+        limit
+      });
+
+      addThreadMessages(parentMessageId, page);
+    } else if (!isChannelDetachedSelector(store.getState(), channelId)) {
+      // a window of older messages has no place for the newest page
       const { messages: page } = await trpc.messages.get.query({
         channelId,
-        cursor: null,
-        limit: DEFAULT_MESSAGES_LIMIT
+        cursor,
+        limit
       });
 
       addMessages(channelId, [...page].reverse());
-    } catch {
-      // no client during a reconnect, which fetches the channel again by itself
     }
+  } catch {
+    // no client during a reconnect, which fetches the channel again by itself
   }
 
-  removePendingMessage(channelId, pendingId);
+  removePendingMessage(channelId, pendingId, parentMessageId);
 };
 
 // the server said which message it saved: if it has already arrived, the placeholder goes now,
@@ -476,10 +524,10 @@ const reloadIfStillPending = async (channelId: number, pendingId: number) => {
 export const settlePendingMessage = (
   channelId: number,
   pendingId: number,
-  messageId: number | null
+  messageId: number | null,
+  parentMessageId?: number
 ) => {
-  const state = store.getState();
-  const messages = messagesByChannelIdSelector(state, channelId);
+  const messages = getPendingSiblings(channelId, parentMessageId);
   const pending = messages.find((message) => message.id === pendingId);
 
   if (!pending) {
@@ -489,36 +537,42 @@ export const settlePendingMessage = (
   const hasArrived = messages.some((message) => message.id === messageId);
 
   if (messageId === null || hasArrived) {
-    removePendingMessage(channelId, pendingId);
+    removePendingMessage(channelId, pendingId, parentMessageId);
 
     return;
   }
 
   setTimeout(
-    () => reloadIfStillPending(channelId, pendingId),
+    () => reloadIfStillPending(channelId, pendingId, parentMessageId),
     PENDING_RELOAD_DELAY_MS
   );
 };
 
-// your own message arriving live replaces the oldest placeholder in its channel
+// your own message arriving live replaces its placeholder, matched by the nonce it was sent
+// with. a copy without one, from a server or an app older than the nonce, takes the oldest
 const replacePendingMessage = (channelId: number, message: TJoinedMessage) => {
   const state = store.getState();
   const ownUserId = ownUserIdSelector(state);
 
-  if (message.userId !== ownUserId || message.parentMessageId) {
+  if (message.userId !== ownUserId) {
     return;
   }
 
-  const messages = messagesByChannelIdSelector(state, channelId);
+  const parentMessageId = message.parentMessageId ?? undefined;
+  const messages = getPendingSiblings(channelId, parentMessageId);
 
   if (messages.some((existing) => existing.id === message.id)) {
     return;
   }
 
-  const pending = messages.find(isPendingMessage);
+  const pending = messages.find(
+    (existing) =>
+      isPendingMessage(existing) &&
+      (!message.clientNonce || existing.clientNonce === message.clientNonce)
+  );
 
   if (pending) {
-    removePendingMessage(channelId, pending.id);
+    removePendingMessage(channelId, pending.id, parentMessageId);
   }
 };
 

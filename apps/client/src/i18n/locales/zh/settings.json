@@ -611,6 +611,7 @@
   "hotkeysSaved": "快捷键设置已保存",
   "failedSaveHotkeys": "保存快捷键设置失败",
   "hotkeysBridgeFailed": "未找到，已停止尝试",
+  "hotkeysBridgeReplaced": "正被其他标签页使用",
   "hotkeysBridgeRetry": "尝试连接",
   "deleteAccountTab": "删除账户",
   "deleteAccountTitle": "删除账户",
