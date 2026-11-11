@@ -224,7 +224,17 @@ since it is not a VoIP app). It sends one H.264 stream: three VP8 layers for sim
 tried, and the bundled WebRTC (m120) encoded no frames in any of them, so the picture reached
 nobody. Each frame is tagged with its rotation from the device orientation, read when the camera
 starts rather than taken as upright until the first turn. Apple's rotation coordinator answered
-0 degrees on an upright iPhone, so it is not used. Each video
+0 degrees on an upright iPhone, so it is not used.
+
+An iPhone's call screen stays upright, so it draws camera video the way FaceTime does there. Your
+own preview is fixed to the screen like a window (`RetaggingRenderer` hands its frames on at the
+upright phone's turn), mirrored for the front camera only: as the phone turns, the picture turns
+the other way inside it and stays upright, with nothing snapping. Anyone else's picture turns
+back by as much as the phone turns, with a short animation. What is sent stays upright to
+gravity, so the other end always sees you upright, wide when the phone is sideways. The call
+grid sizes each camera tile by its picture's shape and packs them in rows as large as fits
+without scrolling (`TileRows`), so a landscape camera on a portrait screen spans the width; a
+tile with no camera is 3:4. Each video
 tile reports how many pixels tall it is drawn, and the app asks `voice.setConsumerQuality` for the
 lowest layer that fills the tallest tile (up to 270 lines the low one, up to 540 the middle, above
 that auto). A screen share always asks for its sharpest. Leaving the app with someone else's video

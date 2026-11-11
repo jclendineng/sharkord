@@ -494,6 +494,11 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - Pressing a member, channel, category, conversation, voice user or server icon lights it at once with the same grey as a message, and its menu opens after the same short hold. They lit late, in a fainter grey, and took longer to open.
 - Holding someone's name or avatar in the chat opens only the message's actions. Letting go opened their profile over them.
 - A kicked or banned account goes to the sign in screen with the reason, as the web does. It sat on Reconnecting.
+- Camera video in a call stays upright as an iPhone turns, as in FaceTime.
+  - Your own preview turns smoothly inside its tile and ends up upright, the back camera no longer mirrored. It showed you on your side, and the back camera upside down.
+  - Someone else's video turns back as you turn the phone, so it stays upright to you.
+  - What you send stays upright, wide when the phone is sideways, instead of being cropped to a tall slice on the other end.
+- Camera tiles in a call take their picture's shape, so a landscape camera on a portrait screen spans the width instead of sitting letterboxed in a tall tile.
 - The largest text sizes no longer break the chat.
   - The message box keeps room to type in: its buttons grow taller with the text, not wider.
   - The emoji, GIF and sticker panel stops growing where the keyboard does, so its tabs and search fit.

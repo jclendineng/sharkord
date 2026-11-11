@@ -15,6 +15,8 @@ struct VoiceRoomScreen: View {
     @State private var focused: FocusTarget?
     // the room the tiles have between the header and the controls
     @State private var gridSize = CGSize.zero
+    // each camera's shape as its tile shows it, width over height, from its first frame
+    @State private var tileAspects: [Int: CGFloat] = [:]
 
     private var shownChannelId: Int? {
         session.currentVoiceChannelId
@@ -190,22 +192,47 @@ struct VoiceRoomScreen: View {
             }
     }
 
-    // everyone as big as the room allows, without scrolling: the column count that gives each
-    // tile the most room, the tiles centred in what is left over
+    // everyone as big as the room allows, without scrolling, each tile the shape of its camera:
+    // a landscape camera on a portrait screen spans the width instead of sitting letterboxed in a
+    // tall tile. the split into rows that gives the pictures the most room wins
+    // each tile carries its own participant, shape and height: a row looked up by position from
+    // the last layout read past the end when someone left, and crashed the app
     private var fittedGrid: some View {
-        let layout = TileLayout(count: participants.count, in: gridSize, spacing: Self.tileSpacing)
-        let columns = Array(repeating: GridItem(.fixed(layout.tileWidth), spacing: Self.tileSpacing), count: layout.columns)
+        let aspects = participants.map(tileAspect)
+        let layout = TileRows(aspects: aspects, in: gridSize, spacing: Self.tileSpacing)
+        let rows = zip(layout.rows, layout.heights).map { row, height in
+            row.map { PlacedTile(participant: participants[$0], aspect: aspects[$0], height: height) }
+        }
 
-        return LazyVGrid(columns: columns, spacing: Self.tileSpacing) {
-            ForEach(participants) { participant in
-                participantTile(participant)
+        return VStack(spacing: Self.tileSpacing) {
+            ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                HStack(spacing: Self.tileSpacing) {
+                    ForEach(row) { tile in
+                        participantTile(tile.participant, aspect: tile.aspect)
+                            .frame(width: tile.height * tile.aspect, height: tile.height)
+                    }
+                }
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // the space offered, never the tiles' own size: tiles overflowing for a moment as an ipad
+        // turned were measured as the space, and the grid kept that size, cut off by the screen
+        .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
         .onGeometryChange(for: CGSize.self, of: \.size) { size in
             gridSize = size
         }
         .padding(12)
+        .animation(Motion.standard, value: aspects)
+    }
+
+    // a tile with no camera, or one whose first frame has not arrived, is the usual tall one
+    private func tileAspect(_ participant: VoiceParticipant) -> CGFloat {
+        let hasVideo = session.videoTracks[VoiceStreamKey(kind: .video, remoteId: participant.userId)] != nil
+
+        guard hasVideo, let aspect = tileAspects[participant.userId] else {
+            return 3 / 4
+        }
+
+        return aspect
     }
 
     private static let tileSpacing: CGFloat = 10
@@ -214,12 +241,14 @@ struct VoiceRoomScreen: View {
     // keyboard have something to press. the camera flip inside it is a button of its own to a
     // finger, and an action here for voiceover, which reads the tile as one thing
     @ViewBuilder
-    private func participantTile(_ participant: VoiceParticipant, isCompact: Bool = false) -> some View {
+    private func participantTile(_ participant: VoiceParticipant, isCompact: Bool = false, aspect: CGFloat = 3 / 4) -> some View {
         let name = participant.user?.name ?? String(localized: "Unknown")
         let button = Button {
             setFocus(.person(participant.userId))
         } label: {
-            ParticipantTile(user: participant.user, state: participant.state, isCompact: isCompact)
+            ParticipantTile(user: participant.user, state: participant.state, isCompact: isCompact, aspect: aspect) { shown in
+                tileAspects[participant.userId] = shown
+            }
         }
         .buttonStyle(CallTileButtonStyle())
         .accessibilityLabel(participant.state.micMuted ? String(localized: "\(name), muted") : name)
@@ -372,6 +401,10 @@ private struct ParticipantTile: View {
     var fills = false
     // a thumbnail in the strip under one, too small for the name and the flip button
     var isCompact = false
+    // the tile's shape, width over height: the usual tall one, or its camera's in the fitted grid
+    var aspect: CGFloat = 3 / 4
+    // the camera's shape as shown, width over height, for the grid to size the tile by
+    var onAspect: ((CGFloat) -> Void)?
 
     @Environment(SessionStore.self) private var session
 
@@ -389,13 +422,13 @@ private struct ParticipantTile: View {
                 .opacity(0.35)
 
             if let track, let user {
-                VideoView(track: track, isMirrored: isOwn)
+                CameraVideo(track: track, isOwn: isOwn, onAspect: onAspect)
                     .reportsVideoSize(of: VoiceStreamKey(kind: .video, remoteId: user.id))
             } else {
                 AvatarView(user: user, size: isCompact ? 36 : 64)
             }
         }
-        .aspectRatio(fills ? nil : 3 / 4, contentMode: .fit)
+        .aspectRatio(fills ? nil : aspect, contentMode: .fit)
         .clipShape(.rect(cornerRadius: 14))
         .overlay {
             if let user, session.speakingUserIds.contains(user.id) {
@@ -448,6 +481,132 @@ private struct ParticipantTile: View {
     private func flipCamera() {
         session.flipCamera()
     }
+}
+
+// a camera's picture in its tile, drawn the way facetime draws it on a phone, whose screen stays
+// upright however the phone is held. pictures go out upright to gravity, a phone held sideways
+// sending a wide one, shown whole rather than cropped to a tall slice
+// - your own preview is fixed to the screen like a window: as the phone turns, the picture turns
+//   the other way inside it and ends up upright, and nothing snaps. the front camera's is
+//   mirrored, which that needs: unmirrored, a phone held sideways showed you upside down, and a
+//   mirrored back camera showed the room upside down. turned by gravity it lay on its side
+// - anyone else's picture turns the other way as the phone turns, so it stays upright to you
+private struct CameraVideo: View {
+    let track: VideoTrackBox
+    let isOwn: Bool
+    var onAspect: ((CGFloat) -> Void)?
+
+    @Environment(SessionStore.self) private var session
+
+    // the picture once turned upright, from its first frame
+    @State private var videoSize: CGSize?
+    // how far the phone is turned from upright, someone else's picture turned back by as much
+    @State private var turn = Angle.zero
+
+    private var isPhone: Bool {
+        #if os(iOS)
+        UIDevice.current.userInterfaceIdiom == .phone
+        #else
+        false
+        #endif
+    }
+
+    private var isSideways: Bool {
+        abs(turn.degrees) == 90
+    }
+
+    var body: some View {
+        GeometryReader { proxy in
+            let drawn = isSideways ? CGSize(width: proxy.size.height, height: proxy.size.width) : proxy.size
+
+            video(in: drawn)
+                .frame(width: drawn.width, height: drawn.height)
+                .rotationEffect(turn)
+                .frame(width: proxy.size.width, height: proxy.size.height)
+        }
+        .onChange(of: shownAspect) { _, aspect in
+            if let aspect {
+                onAspect?(aspect)
+            }
+        }
+        #if os(iOS)
+        .onReceive(NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification)) { _ in
+            followPhone()
+        }
+        .onAppear(perform: followPhone)
+        #endif
+    }
+
+    // the picture's shape as it stands on screen, someone else's turned with the phone
+    private var shownAspect: CGFloat? {
+        guard let videoSize, videoSize.width > 0, videoSize.height > 0 else {
+            return nil
+        }
+
+        let aspect = videoSize.width / videoSize.height
+
+        return isSideways ? 1 / aspect : aspect
+    }
+
+    @ViewBuilder
+    private func video(in size: CGSize) -> some View {
+        #if os(iOS)
+        if isOwn && isPhone {
+            // the camera's picture as a phone held upright takes it, whichever way it is held
+            VideoView(track: track, isMirrored: session.isUsingFrontCamera, drawnRotation: ._90, onVideoSize: takeVideoSize)
+        } else {
+            VideoView(track: track, contentMode: contentMode(in: size), isMirrored: isOwn, onVideoSize: takeVideoSize)
+        }
+        #else
+        VideoView(track: track, contentMode: contentMode(in: size), isMirrored: isOwn, onVideoSize: takeVideoSize)
+        #endif
+    }
+
+    // a picture the shape of where it is drawn fills it, one the other shape shows whole
+    private func contentMode(in size: CGSize) -> ContentMode {
+        guard !(isOwn && isPhone), let videoSize, size.width > 0, size.height > 0 else {
+            return .fill
+        }
+
+        let isWideVideo = videoSize.width > videoSize.height
+        let isWideFrame = size.width > size.height
+
+        return isWideVideo == isWideFrame ? .fill : .fit
+    }
+
+    private func takeVideoSize(_ size: CGSize) {
+        videoSize = size
+    }
+
+    #if os(iOS)
+    // the screen turns with the phone, so the picture turns back by as much, as facetime's does.
+    // your own preview needs none, being fixed to the screen. face up, face down and unknown say
+    // nothing, the last turn stays
+    private func followPhone() {
+        guard isPhone, !isOwn else {
+            return
+        }
+
+        let degrees: Double
+
+        switch UIDevice.current.orientation {
+        case .portrait:
+            degrees = 0
+        case .landscapeLeft:
+            degrees = 90
+        case .landscapeRight:
+            degrees = -90
+        case .portraitUpsideDown:
+            degrees = 180
+        default:
+            return
+        }
+
+        withAnimation(Motion.standard) {
+            turn = .degrees(degrees)
+        }
+    }
+    #endif
 }
 
 private struct ScreenShareTile: View {
@@ -693,25 +852,64 @@ private enum FocusTarget: Hashable {
 
 // how a call's 3:4 tiles fill a space: each column count is tried, and the one whose tiles come
 // out widest without running past the bottom wins
-private struct TileLayout {
-    let columns: Int
-    let tileWidth: CGFloat
+// tiles of different shapes in rows, as large as the space allows without scrolling. each row is
+// as tall as fills the width with its tiles side by side, and everything shrinks evenly when the
+// rows are too tall together. tried for every count per row, keeping the one that shows the most
+private struct PlacedTile: Identifiable {
+    let participant: VoiceParticipant
+    let aspect: CGFloat
+    let height: CGFloat
 
-    init(count: Int, in size: CGSize, spacing: CGFloat) {
-        var best = (columns: 1, width: CGFloat(0))
+    var id: Int {
+        participant.userId
+    }
+}
 
-        for columns in 1...max(count, 1) {
-            let rows = CGFloat((count + columns - 1) / columns)
-            let widthByRow = (size.width - spacing * CGFloat(columns - 1)) / CGFloat(columns)
-            let widthByHeight = (size.height - spacing * (rows - 1)) / rows * 3 / 4
-            let width = min(widthByRow, widthByHeight)
+private struct TileRows {
+    let rows: [[Int]]
+    let heights: [CGFloat]
 
-            if width > best.width {
-                best = (columns, width)
+    init(aspects: [CGFloat], in size: CGSize, spacing: CGFloat) {
+        var best: (rows: [[Int]], heights: [CGFloat], area: CGFloat) = ([], [], -1)
+
+        guard size.width > 0, size.height > 0, !aspects.isEmpty else {
+            let all = Array(aspects.indices)
+
+            rows = all.isEmpty ? [] : [all]
+            heights = all.isEmpty ? [] : [1]
+            return
+        }
+
+        for perRow in 1...aspects.count {
+            let rows = stride(from: 0, to: aspects.count, by: perRow).map { start in
+                Array(start..<min(start + perRow, aspects.count))
+            }
+
+            var heights = rows.map { row in
+                let widths = row.reduce(CGFloat(0)) { $0 + aspects[$1] }
+
+                return (size.width - spacing * CGFloat(row.count - 1)) / widths
+            }
+
+            let gaps = spacing * CGFloat(rows.count - 1)
+            let total = heights.reduce(0, +)
+
+            if total + gaps > size.height {
+                let scale = max(size.height - gaps, 0) / total
+
+                heights = heights.map { $0 * scale }
+            }
+
+            let area = zip(rows, heights).reduce(CGFloat(0)) { sum, pair in
+                sum + pair.0.reduce(CGFloat(0)) { $0 + pair.1 * pair.1 * aspects[$1] }
+            }
+
+            if area > best.area {
+                best = (rows, heights, area)
             }
         }
 
-        columns = best.columns
-        tileWidth = max(best.width, 1)
+        rows = best.rows
+        heights = best.heights
     }
 }

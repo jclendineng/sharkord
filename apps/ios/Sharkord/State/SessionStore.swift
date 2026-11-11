@@ -194,6 +194,9 @@ final class SessionStore {
     @ObservationIgnored private var wasMicOpenBeforeDeafen = false
     private(set) var isServerMuted = false
     private(set) var cameraEnabled = false
+    // the front camera's own preview is mirrored, the back camera's is not. a new call starts on
+    // the front one, as its connection does
+    private(set) var isUsingFrontCamera = true
     private(set) var isSharingScreen = false
     // webcams and screen shares in the current voice channel, the own camera under the own id
     private(set) var videoTracks: [VoiceStreamKey: VideoTrackBox] = [:]
@@ -1157,6 +1160,7 @@ final class SessionStore {
 
             mixer?.isMonitoring = settings.hearYourselfInCalls
             mixingDevice = mixer
+            isUsingFrontCamera = true
 
                 let connection = VoiceConnection(
                 audioOptions: audioOptions,
@@ -1478,6 +1482,7 @@ final class SessionStore {
         settings.cameraDeviceId = ids[(index + 1) % ids.count]
         voice?.useCamera(settings.cameraDeviceId)
         #else
+        isUsingFrontCamera.toggle()
         voice?.flipCamera()
         #endif
     }
