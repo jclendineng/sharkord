@@ -685,8 +685,10 @@ describe('/login', () => {
 
     expect(decoded).toHaveProperty('userId');
     expect(typeof decoded.userId).toBe('number');
-    expect(decoded).toHaveProperty('exp');
+    expect(decoded).toHaveProperty('sessionId');
     expect(decoded).toHaveProperty('iat');
+    // a session token lasts until its session ends, not until a date
+    expect(decoded).not.toHaveProperty('exp');
   });
 
   test('should assign default role to newly registered user', async () => {
