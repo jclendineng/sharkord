@@ -22,7 +22,7 @@ import {
   LocalStorageKey,
   setLocalStorageItemBool
 } from '@/helpers/storage';
-import { useSwipeGestures } from '@/hooks/use-swipe-gestures';
+import { useDrawerSwipe } from '@/hooks/use-drawer-swipe';
 import { cn } from '@/lib/utils';
 import { MobileDrawer } from '@/types';
 import { TestId, USER_MODERATION_PERMISSIONS } from '@sharkord/shared';
@@ -58,32 +58,14 @@ const ServerView = memo(() => {
     );
   }, [isDesktopRightSidebarOpen]);
 
-  const handleSwipeRight = useCallback(() => {
-    if (mobileDrawer) {
-      setMobileDrawer(undefined);
-      return;
-    }
-
-    setMobileDrawer(MobileDrawer.CHANNELS);
-  }, [mobileDrawer]);
-
-  const handleSwipeLeft = useCallback(() => {
-    if (mobileDrawer) {
-      setMobileDrawer(undefined);
-
-      return;
-    }
-
-    setMobileDrawer(MobileDrawer.MEMBERS);
-  }, [mobileDrawer]);
-
   const closeMobileDrawer = useCallback(() => {
     setMobileDrawer(undefined);
   }, []);
 
-  const swipeHandlers = useSwipeGestures({
-    onSwipeRight: handleSwipeRight,
-    onSwipeLeft: handleSwipeLeft
+  const swipeHandlers = useDrawerSwipe({
+    open: mobileDrawer,
+    onOpen: setMobileDrawer,
+    onClose: closeMobileDrawer
   });
 
   // a phone has no home screen worth landing on, so with nothing open, such as after signing in
@@ -162,7 +144,7 @@ const ServerView = memo(() => {
 
           <LeftSidebar
             className={cn(
-              'md:relative md:flex fixed inset-0 left-0 h-full z-40 md:z-0 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none',
+              'md:relative md:flex fixed inset-0 left-0 h-full z-40 md:z-0 transition-transform duration-300 ease-sheet motion-reduce:transition-none',
               isMobileMenuOpen
                 ? 'translate-x-0'
                 : '-translate-x-full md:translate-x-0'
@@ -182,6 +164,7 @@ const ServerView = memo(() => {
             className={cn(
               'fixed top-0 bottom-0 right-0 h-full z-40',
               'lg:relative lg:z-0',
+              'transition-transform duration-300 ease-sheet motion-reduce:transition-none lg:transition-[width] lg:duration-200 lg:ease-out',
               isMobileUsersOpen
                 ? 'translate-x-0 lg:translate-x-0'
                 : 'translate-x-full lg:translate-x-0'

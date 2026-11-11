@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AudioPlayer } from './audio-player';
 import { OverrideLayout } from './layout';
 import { LinkOverride } from './link';
@@ -8,10 +9,11 @@ type TAudioOverrideProps = {
 };
 
 const AudioOverride = memo(({ src }: TAudioOverrideProps) => {
+  const { t } = useTranslation('common');
   return (
     <OverrideLayout>
       <AudioPlayer url={src} />
-      <LinkOverride link={src} label="Open in new tab" />
+      <LinkOverride link={src} label={t('openInNewTab')} />
     </OverrideLayout>
   );
 });

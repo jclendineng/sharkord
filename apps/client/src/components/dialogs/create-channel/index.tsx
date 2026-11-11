@@ -89,6 +89,21 @@ const CreateChannelDialog = memo(
       }
     }, [name, categoryId, close, channelType]);
 
+    const selectTextChannel = useCallback(() => {
+      setChannelType(ChannelType.TEXT);
+    }, []);
+
+    const selectVoiceChannel = useCallback(() => {
+      setChannelType(ChannelType.VOICE);
+    }, []);
+
+    const onNameInput = useCallback(
+      (e: React.ChangeEvent<HTMLInputElement>) => {
+        setName(e.target.value);
+      },
+      []
+    );
+
     return (
       <Dialog open={isOpen}>
         <DialogContent onInteractOutside={close} close={close}>
@@ -102,7 +117,7 @@ const CreateChannelDialog = memo(
               description={t('textChannelDesc')}
               icon={<Hash className="h-6 w-6" />}
               isActive={channelType === ChannelType.TEXT}
-              onClick={() => setChannelType(ChannelType.TEXT)}
+              onClick={selectTextChannel}
             />
 
             <ChannelTypeItem
@@ -110,7 +125,7 @@ const CreateChannelDialog = memo(
               description={t('voiceChannelDesc')}
               icon={<Mic className="h-6 w-6" />}
               isActive={channelType === ChannelType.VOICE}
-              onClick={() => setChannelType(ChannelType.VOICE)}
+              onClick={selectVoiceChannel}
             />
           </Group>
 
@@ -119,7 +134,7 @@ const CreateChannelDialog = memo(
               <Input
                 placeholder={t('channelNamePlaceholder')}
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={onNameInput}
                 name="name"
                 error={errors.name}
                 resetError={setErrors}

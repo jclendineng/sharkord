@@ -151,5 +151,21 @@
   "rulesGiveExisting": "Dát ji všem současným členům",
   "rulesGiveExistingHelp": "Bez toho přijdou členové, kteří se připojili před pravidly, o kanály, které zavřete.",
   "blockedSection": "Blokovaní",
-  "unblockUser": "Odblokovat"
+  "unblockUser": "Odblokovat",
+  "voiceDebugTitle": "Diagnostika hlasu",
+  "voiceDebugCollecting": "shromažďování…",
+  "voiceDebugPaused": "pozastaveno",
+  "voiceDebugResume": "Pokračovat",
+  "voiceDebugPause": "Pozastavit",
+  "voiceDebugClearEvents": "Vymazat události",
+  "voiceDebugCopyReport": "Kopírovat hlášení",
+  "voiceDebugOverview": "Přehled",
+  "voiceDebugTransports": "Transporty",
+  "voiceDebugProducers": "Producenti",
+  "voiceDebugConsumers": "Konzumenti",
+  "voiceDebugEvents": "Události ({{count}})",
+  "voiceDebugRaw": "Nezpracovaná data",
+  "voiceDebugCopied": "Hlášení o hlasu zkopírováno",
+  "voiceDebugCopyFailed": "Hlášení se nepodařilo zkopírovat: {{error}}",
+  "voiceDebugNoEvents": "žádné události"
 }

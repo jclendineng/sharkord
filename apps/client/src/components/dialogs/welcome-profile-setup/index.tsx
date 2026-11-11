@@ -122,6 +122,23 @@ const WelcomeProfileSetupDialog = memo(
       }
     }, [close, ownPublicUser, setTrpcErrors, t, values.bio, values.name]);
 
+    // the remove button sits on the picture, whose own click opens the picker
+    const onBannerRemoveClick = useCallback(
+      (e: React.MouseEvent) => {
+        e.stopPropagation();
+        onBannerRemove();
+      },
+      [onBannerRemove]
+    );
+
+    const onAvatarRemoveClick = useCallback(
+      (e: React.MouseEvent) => {
+        e.stopPropagation();
+        onAvatarRemove();
+      },
+      [onAvatarRemove]
+    );
+
     if (!ownPublicUser) return null;
 
     const previewName = values.name.trim() || ownPublicUser.name;
@@ -174,10 +191,7 @@ const WelcomeProfileSetupDialog = memo(
                     size="sm"
                     className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
                     aria-label={t('common:removeImage')}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onBannerRemove();
-                    }}
+                    onClick={onBannerRemoveClick}
                   />
                 )}
               </button>
@@ -211,10 +225,7 @@ const WelcomeProfileSetupDialog = memo(
                       size="sm"
                       className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity"
                       aria-label={t('common:removeImage')}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onAvatarRemove();
-                      }}
+                      onClick={onAvatarRemoveClick}
                     />
                   )}
                 </button>

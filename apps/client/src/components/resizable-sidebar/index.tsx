@@ -13,6 +13,7 @@ type TResizableSidebarProps = {
   className?: string;
   children: ReactNode;
   'data-testid'?: string;
+  'data-drawer'?: string;
 };
 
 const ResizableSidebar = memo(

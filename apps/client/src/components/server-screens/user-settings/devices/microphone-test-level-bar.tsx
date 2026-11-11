@@ -6,7 +6,7 @@ import {
   microphoneDecibelsToPercent
 } from '@/helpers/audio-gate';
 import { Slider } from '@sharkord/ui';
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 
 type TMicrophoneTestLevelBarProps = {
   isTesting: boolean;
@@ -127,6 +127,13 @@ const MicrophoneTestLevelBar = memo(
     const noiseGateThresholdPercent =
       microphoneDecibelsToPercent(clampedThresholdDb);
 
+    const onThresholdSlide = useCallback(
+      ([value]: number[]) => {
+        onThresholdChange(value);
+      },
+      [onThresholdChange]
+    );
+
     return (
       <div className="space-y-2">
         <div className="relative h-3 w-full">
@@ -163,7 +170,7 @@ const MicrophoneTestLevelBar = memo(
               step={1}
               value={[clampedThresholdDb]}
               disabled={noiseGateControlsDisabled}
-              onValueChange={([value]) => onThresholdChange(value)}
+              onValueChange={onThresholdSlide}
             />
           )}
         </div>

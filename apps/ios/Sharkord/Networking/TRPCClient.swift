@@ -110,7 +110,7 @@ final class TRPCClient {
             do {
                 onData(try decoder.decode(DataFrame<Output>.self, from: frame).result.data)
             } catch {
-                print("[trpc] failed to decode \(path): \(error)")
+                Log.network.error("failed to decode \(path, privacy: .public): \(String(describing: error))")
             }
         }
 
@@ -279,7 +279,7 @@ final class TRPCClient {
             if pending[id] != nil {
                 resolve(id, with: .failure(trpcError))
             } else if subscriptions.removeValue(forKey: id) != nil {
-                print("[trpc] subscription \(id) failed: \(trpcError.message)")
+                Log.network.error("subscription \(id) failed: \(trpcError.message)")
             }
 
             return
@@ -305,7 +305,7 @@ final class TRPCClient {
         receiveTask?.cancel()
         keepAliveTask?.cancel()
 
-        let error = refusal ?? TRPCError(message: "Disconnected from the server.", code: nil)
+        let error = refusal ?? Self.closeError(for: reason)
 
         for timeout in timeouts.values {
             timeout.cancel()
@@ -320,6 +320,20 @@ final class TRPCClient {
         pending.removeAll()
         subscriptions.removeAll()
         onClose?(reason)
+    }
+
+    // the close code the server signs a refused token with, DisconnectCode.UNAUTHORIZED. the
+    // refusal it also sends can arrive after the close, or not at all
+    static let unauthorizedCloseCode = 4401
+
+    // a refused token fails what was waiting as unauthorized, so connect signs out rather
+    // than retrying the same token for good
+    private static func closeError(for reason: CloseReason) -> TRPCError {
+        if case .connectionLost(let code, _) = reason, code == unauthorizedCloseCode {
+            return TRPCError(message: String(localized: "Your session has ended. Sign in again."), code: "UNAUTHORIZED")
+        }
+
+        return TRPCError(message: String(localized: "Disconnected from the server."), code: nil)
     }
 
     private static let ping = Data("PING".utf8)

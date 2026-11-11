@@ -24,7 +24,7 @@ const ReconnectingOverlay = memo(() => {
       role="alertdialog"
       aria-modal="true"
       aria-live="polite"
-      className="fixed inset-0 z-40 flex items-center justify-center bg-background/40 backdrop-blur-sm"
+      className="fixed inset-0 z-40 flex items-center justify-center bg-background/40 backdrop-blur-sm reduce-transparency:bg-background/90 reduce-transparency:backdrop-blur-none"
     >
       <div className="flex w-full max-w-sm flex-col items-center gap-4 rounded-lg border border-border bg-background/95 p-6 text-center shadow-lg">
         <div className="flex size-12 items-center justify-center rounded-full bg-yellow-500/15">

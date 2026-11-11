@@ -136,7 +136,7 @@ struct ChannelsAdminScreen: View {
     private let isOnMac = Platform.isMac
 
     private func toggleReordering() {
-        withAnimation {
+        withAnimation(Motion.standard) {
             isReordering.toggle()
         }
     }

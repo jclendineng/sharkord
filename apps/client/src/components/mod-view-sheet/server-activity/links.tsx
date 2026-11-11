@@ -6,11 +6,14 @@ import { useModViewContext } from '../context';
 
 type TLinkCardProps = {
   url: string;
-  onOpen: () => void;
 };
 
-const LinkCard = memo(({ url, onOpen }: TLinkCardProps) => {
+const LinkCard = memo(({ url }: TLinkCardProps) => {
   const { t } = useTranslation('settings');
+
+  const onOpen = useCallback(() => {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }, [url]);
 
   const truncatedUrl = useMemo(() => {
     const maxLength = 50;
@@ -62,10 +65,6 @@ const Links = memo(() => {
   const { t } = useTranslation('settings');
   const { links } = useModViewContext();
 
-  const onOpenClick = useCallback((url: string) => {
-    window.open(url, '_blank', 'noopener,noreferrer');
-  }, []);
-
   return (
     <PaginatedList items={links} itemsPerPage={8} searchFilter={searchFilter}>
       <PaginatedList.Search
@@ -76,7 +75,7 @@ const Links = memo(() => {
         {t('noLinksFound')}
       </PaginatedList.Empty>
       <PaginatedList.List<string> className="flex flex-col gap-2">
-        {(url) => <LinkCard url={url} onOpen={() => onOpenClick(url)} />}
+        {(url) => <LinkCard url={url} />}
       </PaginatedList.List>
       <PaginatedList.Pagination className="mt-2" />
     </PaginatedList>

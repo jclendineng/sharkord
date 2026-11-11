@@ -28,11 +28,15 @@ const RoleItem = memo(
     const key = `role-${roleId}`;
     const isSelected = selectedKey === key;
 
+    const onSelect = useCallback(() => {
+      setSelectedKey(key);
+    }, [setSelectedKey, key]);
+
     if (!role) return null;
 
     return (
       <button
-        onClick={() => setSelectedKey(key)}
+        onClick={onSelect}
         className={cn(
           'flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent',
           {
@@ -64,11 +68,15 @@ const UserItem = memo(
     const key = `user-${userId}`;
     const isSelected = selectedKey === key;
 
+    const onSelect = useCallback(() => {
+      setSelectedKey(key);
+    }, [setSelectedKey, key]);
+
     if (!user) return null;
 
     return (
       <button
-        onClick={() => setSelectedKey(key)}
+        onClick={onSelect}
         className={cn(
           'flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent',
           {

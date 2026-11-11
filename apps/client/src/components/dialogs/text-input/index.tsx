@@ -22,7 +22,6 @@ type TTextInputDialogProps = TDialogBaseProps & {
   confirmLabel?: string;
   cancelLabel?: string;
   allowEmpty?: boolean;
-  isModalOpen: boolean;
   type?: 'text' | 'password';
 };
 
@@ -51,6 +50,13 @@ const TextInputDialog = memo(
       close();
     }, [onCancel, close]);
 
+    const onValueInput = useCallback(
+      (e: React.ChangeEvent<HTMLInputElement>) => {
+        setValue(e.target.value);
+      },
+      []
+    );
+
     return (
       <AlertDialog open={isOpen}>
         <AlertDialogContent>
@@ -63,7 +69,7 @@ const TextInputDialog = memo(
           <AutoFocus>
             <Input
               value={value}
-              onChange={(e) => setValue(e.target.value)}
+              onChange={onValueInput}
               onEnter={onSubmit}
               className="mt-2"
               type={type}

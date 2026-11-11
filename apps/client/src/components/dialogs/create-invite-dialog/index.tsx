@@ -61,6 +61,13 @@ const CreateInviteDialog = memo(
       }
     }, [close, refetch, setTrpcErrors, values, t]);
 
+    const onRoleSelect = useCallback(
+      (value: string) => {
+        onChange('roleId', Number(value));
+      },
+      [onChange]
+    );
+
     return (
       <Dialog open={isOpen}>
         <DialogContent onInteractOutside={close} close={close}>
@@ -87,7 +94,7 @@ const CreateInviteDialog = memo(
               description={t('assignRoleDesc')}
             >
               <Select
-                onValueChange={(value) => onChange('roleId', Number(value))}
+                onValueChange={onRoleSelect}
                 value={values.roleId.toString()}
               >
                 <SelectTrigger className="w-[230px]">

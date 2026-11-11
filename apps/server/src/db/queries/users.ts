@@ -303,7 +303,17 @@ const getUserByToken = async (token: string | undefined) => {
   try {
     if (!token) return undefined;
 
-    const decoded = jwt.verify(token, await getServerToken()) as TTokenPayload;
+    // a session's token is checked against its row below, which is what ends it, so the
+    // expiry the tokens of the past carried is ignored: devices left unopened for a week come
+    // back without signing in again. a token from before sessions has no row to check and
+    // still ends when it expires
+    const decoded = jwt.verify(token, await getServerToken(), {
+      ignoreExpiration: true
+    }) as TTokenPayload;
+
+    if (!decoded.sessionId && decoded.exp && decoded.exp * 1000 < Date.now()) {
+      return undefined;
+    }
 
     const user = await getUserById(decoded.userId);
 

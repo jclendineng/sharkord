@@ -3,31 +3,20 @@ import SwiftUI
 
 struct AttachmentView: View {
     let file: SharkordFile
+    // the message it is in, whose other pictures the viewer swipes on to
+    let message: Message
 
     @Environment(SessionStore.self) private var session
-    @Environment(ServerListStore.self) private var servers
-    @Environment(\.isShowingMessageActions) private var isShowingMessageActions
-
-    @State private var isViewerPresented = false
 
     var body: some View {
         if let address = session.address {
             let url = address.fileURL(file)
 
             if file.isImage {
-                Button(action: openViewer) {
+                MessageMediaButton(message: message, itemId: "\(message.id)-\(file.id)", label: file.originalName) {
                     AttachmentImage(file: file, url: url)
-                        .frame(maxWidth: 300, maxHeight: 300, alignment: .leading)
-                        .clipShape(.rect(cornerRadius: 8))
                 }
-                .buttonStyle(.plain)
-                // handed over by hand: on a mac a sheet's background is worked out before it inherits
-                // anything, so a sheet reading a store it was not given crashed on opening
-                .fullScreen(isPresented: $isViewerPresented) {
-                    ImageViewer(url: url)
-                        .environment(session)
-                        .environment(servers)
-                }
+                .frame(maxWidth: 300, maxHeight: 300, alignment: .leading)
             } else if file.isAudio {
                 AudioPlayerCard(file: file, url: url)
             } else {
@@ -35,13 +24,52 @@ struct AttachmentView: View {
             }
         }
     }
+}
 
-    private func openViewer() {
+// a picture in a message, an attachment or one shown from a link, that opens the media viewer
+// on itself with the message's other pictures a swipe away. the corners are the picture's
+// own: rounded on the box it sits in, a tall picture kept its square ones
+struct MessageMediaButton<Picture: View>: View {
+    let message: Message
+    let itemId: String
+    let label: String
+    @ViewBuilder let picture: Picture
+
+    @Environment(SessionStore.self) private var session
+    @Environment(ServerListStore.self) private var servers
+    @Environment(\.isShowingMessageActions) private var isShowingMessageActions
+
+    @Namespace private var zoom
+    @State private var viewing: MediaItem?
+
+    var body: some View {
+        Button(action: open) {
+            picture
+                .clipShape(.rect(cornerRadius: Radius.media))
+                .contentShape(.rect(cornerRadius: Radius.media))
+                .matchedTransitionSource(id: itemId, in: zoom)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
+        .accessibilityAddTraits(.isImage)
+        // handed over by hand: on a mac a sheet's background is worked out before it inherits
+        // anything, so a sheet reading a store it was not given crashed on opening
+        .fullScreen(item: $viewing) { item in
+            MediaViewer(items: message.viewerItems, startingAt: item)
+                #if os(iOS)
+                .navigationTransition(.zoom(sourceID: itemId, in: zoom))
+                #endif
+                .environment(session)
+                .environment(servers)
+        }
+    }
+
+    private func open() {
         guard !isShowingMessageActions else {
             return
         }
 
-        isViewerPresented = true
+        viewing = message.viewerItems.first { $0.id == itemId }
     }
 }
 
@@ -127,9 +155,9 @@ private struct FileCard: View {
             }
             .frame(maxWidth: 320)
             .background(Theme.listBackground)
-            .clipShape(.rect(cornerRadius: 8))
+            .clipShape(.rect(cornerRadius: Radius.media))
             .overlay {
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: Radius.media)
                     .stroke(Theme.deepBackground)
             }
             .contentShape(.rect)
@@ -137,51 +165,6 @@ private struct FileCard: View {
         .task(id: file.id) {
             thumbnail = await FileThumbnails.thumbnail(for: file, from: url)
         }
-    }
-}
-
-struct ImageViewer: View {
-    let url: URL
-
-    @Environment(\.dismiss) private var dismiss
-
-    @State private var scale: CGFloat = 1
-
-    var body: some View {
-        ZStack(alignment: .topTrailing) {
-            Color.black.ignoresSafeArea()
-
-            AsyncImage(url: url) { image in
-                image
-                    .resizable()
-                    .scaledToFit()
-                    .scaleEffect(scale)
-                    .gesture(
-                        MagnifyGesture()
-                            .onChanged { value in scale = max(1, value.magnification) }
-                            .onEnded { _ in withAnimation { scale = 1 } }
-                    )
-            } placeholder: {
-                ProgressView()
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-            HStack {
-                ShareLink(item: url) {
-                    Image(systemName: "square.and.arrow.up")
-                }
-
-                Button("Close", systemImage: "xmark", action: close)
-                    .labelStyle(.iconOnly)
-            }
-            .font(.title3.weight(.semibold))
-            .foregroundStyle(.white)
-            .padding()
-        }
-    }
-
-    private func close() {
-        dismiss()
     }
 }
 

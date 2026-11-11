@@ -17,8 +17,9 @@ const soundRows: SoundType[] = getSoundTypes();
 const SoundsDialog = memo(({ isOpen, close }: TDialogBaseProps) => {
   const { t } = useTranslation('dialogs');
 
-  const onPlay = useCallback((type: SoundType) => {
-    playSound(type);
+  // the sounds are drawn in a loop, so each button carries its sound and they share a handler
+  const onPlay = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    playSound(e.currentTarget.dataset.sound as SoundType);
   }, []);
 
   return (
@@ -47,7 +48,8 @@ const SoundsDialog = memo(({ isOpen, close }: TDialogBaseProps) => {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => onPlay(sound)}
+                      data-sound={sound}
+                      onClick={onPlay}
                     >
                       {t('playSound')}
                     </Button>

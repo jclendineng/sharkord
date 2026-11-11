@@ -136,8 +136,9 @@ struct AttachmentPanel: View {
             return
         }
 
-        PHPhotoLibrary.shared().presentLimitedLibraryPicker(from: presenter) { _ in
-            Task {
+        // sendable: Photos may call it off the main thread, where a main actor closure crashes
+        PHPhotoLibrary.shared().presentLimitedLibraryPicker(from: presenter) { @Sendable [library] _ in
+            Task { @MainActor in
                 await library.load()
             }
         }
@@ -217,7 +218,7 @@ private struct PhotoGrid: View, Equatable {
                             .foregroundStyle(.white)
                             .padding(.horizontal, 18)
                             .padding(.vertical, 10)
-                            .background(Theme.blurple, in: .rect(cornerRadius: 10))
+                            .background(Theme.blurple, in: .rect(cornerRadius: Radius.control))
                     }
                     .buttonStyle(.plain)
                 }
@@ -253,8 +254,8 @@ private struct PhotoGrid: View, Equatable {
                     .foregroundStyle(Theme.header)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 8)
-                    .background(Theme.inputBackground, in: .rect(cornerRadius: 10))
-                    .contentShape(.rect(cornerRadius: 10))
+                    .background(Theme.inputBackground, in: .rect(cornerRadius: Radius.control))
+                    .contentShape(.rect(cornerRadius: Radius.control))
             }
                 .buttonStyle(.plain)
         }
@@ -275,7 +276,7 @@ private struct PhotoGrid: View, Equatable {
             }
             .onEnded { value in
                 if model.isDragging {
-                    model.release(predicted: value.predictedEndTranslation.height)
+                    model.release(predicted: value.predictedEndTranslation.height, velocity: value.velocity.height)
                 }
             }
     }
@@ -440,6 +441,19 @@ private struct AssetCell: View {
         return String(format: "%d:%02d", seconds / 60, seconds % 60)
     }
 
+    // what it is and when it was taken, the only things that tell one tile from the next
+    private var accessibilityLabel: String {
+        let kind = asset.mediaType == .video ? String(localized: "Video") : String(localized: "Photo")
+
+        guard let date = asset.creationDate else {
+            return kind
+        }
+
+        let taken = date.formatted(date: .abbreviated, time: .shortened)
+
+        return "\(kind), \(taken)"
+    }
+
     var body: some View {
         Color.clear
             .aspectRatio(1, contentMode: .fit)
@@ -476,7 +490,13 @@ private struct AssetCell: View {
                 }
             }
             .contentShape(.rect)
+            // a tap rather than a button: a button under the grid's drag fired when a drag of
+            // the panel ended on the tile it began on. said to voiceover as the button it is
             .onTapGesture(perform: onTap)
+            .accessibilityElement()
+            .accessibilityLabel(accessibilityLabel)
+            .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+            .accessibilityAction(.default, onTap)
             .task(id: asset.localIdentifier) {
                 image = await library.thumbnail(for: asset, size: CGSize(width: 100 * displayScale, height: 100 * displayScale))
             }
@@ -487,10 +507,32 @@ private struct NoAccessView: View {
     @Environment(\.openURL) private var openURL
 
     var body: some View {
+        // with the symbol where there is room for it, without at the keyboard's height or a
+        // large text size, and scrolling when even that is too tall
+        ViewThatFits(in: .vertical) {
+            message(showsSymbol: true)
+            message(showsSymbol: false)
+
+            ScrollView {
+                message(showsSymbol: false)
+            }
+            .scrollIndicators(.hidden)
+        }
+        .padding(.horizontal, 24)
+        // clear of the grabber above and the bar floating over the bottom, which covered
+        // half of the button
+        .padding(.top, 34)
+        .padding(.bottom, 96)
+    }
+
+    private func message(showsSymbol: Bool) -> some View {
         VStack(spacing: 14) {
-            Image(systemName: "photo.badge.exclamationmark")
-                .font(.system(size: 40))
-                .foregroundStyle(Theme.muted)
+            if showsSymbol {
+                Image(systemName: "photo.badge.exclamationmark")
+                    .font(.largeTitle)
+                    .foregroundStyle(Theme.muted)
+                    .accessibilityHidden(true)
+            }
 
             Text("Sharkord can't see your photos. Allow access in \(SystemSettings.name), or pick one with Photos below.")
                 .font(.subheadline)
@@ -503,11 +545,11 @@ private struct NoAccessView: View {
                     .foregroundStyle(.white)
                     .padding(.horizontal, 22)
                     .padding(.vertical, 12)
-                    .background(Theme.blurple, in: .rect(cornerRadius: 12))
+                    .background(Theme.blurple, in: .rect(cornerRadius: Radius.control))
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, 24)
+        .frame(maxWidth: .infinity)
     }
 
     private func openSettings() {
@@ -674,7 +716,7 @@ final class AttachPanelModel {
         isSearching = false
         self.kind = kind
 
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
+        withAnimation(Motion.panel) {
             isOpen = true
         }
     }
@@ -708,7 +750,7 @@ final class AttachPanelModel {
             isHandingOff = true
         }
 
-        withAnimation(.easeOut(duration: 0.18)) {
+        withAnimation(Motion.fade) {
             isCoveredByKeyboard = true
         }
     }
@@ -741,15 +783,22 @@ final class AttachPanelModel {
         withTransaction(transaction, change)
     }
 
-    // slides away, the composer coming down with it in the same motion
-    func close() {
+    // slides away, the composer coming down with it in the same motion. let go on a flick down
+    // it carries on at the finger's speed, where easing out from rest left a seam between the
+    // drag and the slide
+    func close(velocity: CGFloat = 0) {
         isPickerOpen = false
 
         guard isOpen else {
             return
         }
 
-        withAnimation(.easeOut(duration: 0.25)) {
+        let remaining = max(Self.restingHeight - slideOffset, 1)
+        let animation: Animation = velocity > 0
+            ? .interpolatingSpring(duration: 0.3, bounce: 0, initialVelocity: min(velocity / remaining, 20))
+            : .easeOut(duration: 0.25)
+
+        withAnimation(animation) {
             isOpen = false
             dragOffset = 0
             settledHeight = Self.restingHeight
@@ -764,7 +813,7 @@ final class AttachPanelModel {
             return
         }
 
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
+        withAnimation(Motion.panel) {
             isSearching = true
             settledHeight = expandedHeight
             dragOffset = 0
@@ -808,7 +857,7 @@ final class AttachPanelModel {
     // one swipe moves one step: from full height a swipe down lands at the resting height, from
     // the resting height it slides down and away. otherwise it settles at whichever height is
     // nearest to where the fling would have carried it
-    func release(predicted translation: CGFloat) {
+    func release(predicted translation: CGFloat, velocity: CGFloat = 0) {
         guard isOpen else {
             return
         }
@@ -819,7 +868,7 @@ final class AttachPanelModel {
         let target = stops.min { abs($0 - projected) < abs($1 - projected) } ?? Self.restingHeight
 
         if target == 0 {
-            close()
+            close(velocity: velocity)
             return
         }
 

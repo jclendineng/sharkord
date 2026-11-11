@@ -9,9 +9,13 @@ struct ComposerView: View {
     let store: ChannelMessagesStore
 
     @Environment(SessionStore.self) private var session
-    // the input row's buttons, 44 points at the default text size and growing with it beside the
-    // field's first line
+    // the input row's buttons, 44 points at the default text size and growing taller with it
+    // beside the field's first line. only taller: as wide as they are tall, three of them at the
+    // largest text sizes were wider than the phone and the field between them closed up
     @ScaledMetric(relativeTo: .body) private var rowHeight: CGFloat = 44
+    private static var buttonWidth: CGFloat { 44 }
+    // as large as a glyph gets inside a button that wide
+    private static var largestGlyphSize: DynamicTypeSize { .accessibility1 }
 
     // picked mentions are runs in it, made into real ones when it is sent
     @State private var field = AttributedString()
@@ -127,7 +131,7 @@ struct ComposerView: View {
                 }
             }
         }
-        .animation(.snappy(duration: 0.18), value: store.attachPanel.isPickerOpen)
+        .animation(Motion.quick, value: store.attachPanel.isPickerOpen)
         .modifier(PanelSlide(model: store.attachPanel))
         // runs on behind the keyboard, whose rounded top corners would otherwise show the
         // window's black
@@ -351,6 +355,8 @@ struct ComposerView: View {
 
             if recorder.isRecording {
                 RecordingBar(recorder: recorder, onCancel: cancelRecording, onSend: sendRecording)
+                    .dynamicTypeSize(...Self.largestGlyphSize)
+                    .cappedGlyphLargeContent()
             } else {
                 inputRow
             }
@@ -389,10 +395,12 @@ struct ComposerView: View {
                 } label: {
                     Image(systemName: "plus")
                         .font(.body.weight(.semibold))
+                        .dynamicTypeSize(...Self.largestGlyphSize)
+                        .cappedGlyphLargeContent()
                         .foregroundStyle(Theme.text)
                         .frame(width: 38, height: 38)
                         .background(Theme.inputBackground, in: .circle)
-                        .frame(width: rowHeight, height: rowHeight)
+                        .frame(width: Self.buttonWidth, height: rowHeight)
                         .contentShape(.rect)
                         .hoverPop()
                 }
@@ -405,11 +413,13 @@ struct ComposerView: View {
                 Button(action: toggleAttachPanel) {
                     Image(systemName: "plus")
                         .font(.body.weight(.semibold))
+                        .dynamicTypeSize(...Self.largestGlyphSize)
+                        .cappedGlyphLargeContent()
                         .rotationEffect(.degrees(showsCloseAttachments ? 45 : 0))
                         .foregroundStyle(Theme.text)
                         .frame(width: 38, height: 38)
                         .background(Theme.inputBackground, in: .circle)
-                        .frame(width: rowHeight, height: rowHeight)
+                        .frame(width: Self.buttonWidth, height: rowHeight)
                         .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
@@ -457,8 +467,10 @@ struct ComposerView: View {
                         )
                         .labelStyle(.iconOnly)
                         .font(.title3)
+                        .dynamicTypeSize(...Self.largestGlyphSize)
+                        .cappedGlyphLargeContent()
                         .foregroundStyle(Theme.muted)
-                        .frame(width: rowHeight, height: rowHeight)
+                        .frame(width: Self.buttonWidth, height: rowHeight)
                         .contentShape(.rect)
                     }
                 }
@@ -468,8 +480,10 @@ struct ComposerView: View {
                         Label("Voice Message", systemImage: "mic.fill")
                             .labelStyle(.iconOnly)
                             .font(.title3)
+                            .dynamicTypeSize(...Self.largestGlyphSize)
+                            .cappedGlyphLargeContent()
                             .foregroundStyle(Theme.muted)
-                            .frame(width: rowHeight, height: rowHeight)
+                            .frame(width: Self.buttonWidth, height: rowHeight)
                             .contentShape(.rect)
                     }
                         .contentShape(.rect)
@@ -484,17 +498,19 @@ struct ComposerView: View {
                     Label("Send", systemImage: store.editing == nil ? "paperplane.fill" : "checkmark")
                         .labelStyle(.iconOnly)
                         .font(.body)
+                        .dynamicTypeSize(...Self.largestGlyphSize)
+                        .cappedGlyphLargeContent()
                         .foregroundStyle(.white)
                         .frame(width: 38, height: 38)
                         .background(Theme.blurple, in: .circle)
-                        .frame(width: rowHeight, height: rowHeight)
+                        .frame(width: Self.buttonWidth, height: rowHeight)
                         .contentShape(.circle)
                 }
                     .contentShape(.rect)
                     .popTransition()
             }
         }
-        .animation(.snappy(duration: 0.2), value: canSend)
+        .animation(Motion.quick, value: canSend)
     }
 
     // a voice message is a file, so it needs uploads, and there is nothing to record over text
@@ -677,7 +693,7 @@ struct ComposerView: View {
             }
             .onEnded { value in
                 if store.attachPanel.isDragging {
-                    store.attachPanel.release(predicted: value.predictedEndTranslation.height)
+                    store.attachPanel.release(predicted: value.predictedEndTranslation.height, velocity: value.velocity.height)
                 }
             }
     }
@@ -1081,7 +1097,7 @@ private struct PictureChip: View {
             .resizable()
             .scaledToFill()
             .frame(width: 60, height: 60)
-            .clipShape(.rect(cornerRadius: 8))
+            .clipShape(.rect(cornerRadius: Radius.media))
             .overlay {
                 switch state {
                 case .uploading:
@@ -1289,7 +1305,7 @@ private struct TypingIndicator: View {
                 .transition(.opacity)
             }
         }
-        .animation(.easeInOut(duration: 0.2), value: text == nil)
+        .animation(Motion.fade, value: text == nil)
     }
 }
 
@@ -1366,7 +1382,7 @@ private struct FunEmojiButton: View {
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .animation(.spring(response: 0.25, dampingFraction: 1), value: isHovered)
+        .animation(Motion.press, value: isHovered)
         .onHover(perform: setHovered)
         .accessibilityLabel("Emoji")
     }

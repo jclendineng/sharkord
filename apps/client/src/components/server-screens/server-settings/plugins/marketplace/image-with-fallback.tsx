@@ -22,6 +22,10 @@ const ImageWithFallback = ({
     setHasError(true);
   }, []);
 
+  const handleLoad = useCallback(() => {
+    setHasError(false);
+  }, []);
+
   if (hasError) {
     return (
       <div
@@ -41,7 +45,7 @@ const ImageWithFallback = ({
       alt={alt}
       className={className}
       onError={handleError}
-      onLoad={() => setHasError(false)}
+      onLoad={handleLoad}
       onClick={onClick}
     />
   );

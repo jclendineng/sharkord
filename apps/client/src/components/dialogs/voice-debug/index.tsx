@@ -17,6 +17,7 @@ import {
   TabsTrigger
 } from '@sharkord/ui';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { TDialogBaseProps } from '../types';
 import { computeRates, formatTime } from './helpers';
@@ -31,7 +32,10 @@ import {
 
 const REFRESH_MS = 1000;
 
+// the dialog is translated, the stats in it are not: they are webrtc's own names, which the
+// copied report is read against
 const VoiceDebugDialog = memo(({ isOpen, close }: TDialogBaseProps) => {
+  const { t } = useTranslation('dialogs');
   const [snapshot, setSnapshot] = useState<TVoiceDebugSnapshot | undefined>(
     undefined
   );
@@ -85,11 +89,11 @@ const VoiceDebugDialog = memo(({ isOpen, close }: TDialogBaseProps) => {
   const handleCopy = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(json);
-      toast.success('Voice debug report copied');
+      toast.success(t('voiceDebugCopied'));
     } catch (error) {
-      toast.error(`Could not copy the report: ${String(error)}`);
+      toast.error(t('voiceDebugCopyFailed', { error: String(error) }));
     }
-  }, [json]);
+  }, [json, t]);
 
   const handleTogglePause = useCallback(() => {
     setPaused((current) => !current);
@@ -105,20 +109,22 @@ const VoiceDebugDialog = memo(({ isOpen, close }: TDialogBaseProps) => {
       <DialogContent className="flex h-[90vh] w-[95vw] max-w-[95vw] min-w-[95vw] flex-col">
         <DialogHeader>
           <DialogTitle className="flex flex-wrap items-center gap-3 pr-6">
-            <span>Voice diagnostics</span>
+            <span>{t('voiceDebugTitle')}</span>
             <span className="font-mono text-xs font-normal text-muted-foreground">
-              {snapshot ? formatTime(snapshot.capturedAt) : 'collecting…'}
-              {paused ? ' · paused' : ''}
+              {snapshot
+                ? formatTime(snapshot.capturedAt)
+                : t('voiceDebugCollecting')}
+              {paused && ` · ${t('voiceDebugPaused')}`}
             </span>
             <span className="ml-auto flex flex-wrap gap-2">
               <Button size="sm" variant="outline" onClick={handleTogglePause}>
-                {paused ? 'Resume' : 'Pause'}
+                {paused ? t('voiceDebugResume') : t('voiceDebugPause')}
               </Button>
               <Button size="sm" variant="outline" onClick={handleClearEvents}>
-                Clear events
+                {t('voiceDebugClearEvents')}
               </Button>
               <Button size="sm" onClick={handleCopy}>
-                Copy report
+                {t('voiceDebugCopyReport')}
               </Button>
             </span>
           </DialogTitle>
@@ -129,18 +135,28 @@ const VoiceDebugDialog = memo(({ isOpen, close }: TDialogBaseProps) => {
           className="flex min-h-0 min-w-0 flex-1 flex-col"
         >
           <TabsList className="w-fit max-w-full flex-wrap">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="transports">Transports</TabsTrigger>
-            <TabsTrigger value="producers">Producers</TabsTrigger>
-            <TabsTrigger value="consumers">Consumers</TabsTrigger>
-            <TabsTrigger value="events">Events ({events.length})</TabsTrigger>
-            <TabsTrigger value="raw">Raw</TabsTrigger>
+            <TabsTrigger value="overview">
+              {t('voiceDebugOverview')}
+            </TabsTrigger>
+            <TabsTrigger value="transports">
+              {t('voiceDebugTransports')}
+            </TabsTrigger>
+            <TabsTrigger value="producers">
+              {t('voiceDebugProducers')}
+            </TabsTrigger>
+            <TabsTrigger value="consumers">
+              {t('voiceDebugConsumers')}
+            </TabsTrigger>
+            <TabsTrigger value="events">
+              {t('voiceDebugEvents', { count: events.length })}
+            </TabsTrigger>
+            <TabsTrigger value="raw">{t('voiceDebugRaw')}</TabsTrigger>
           </TabsList>
 
           <div className="min-h-0 min-w-0 flex-1 overflow-y-auto pr-2">
             {!snapshot && (
               <p className="font-mono text-[11px] text-muted-foreground">
-                collecting…
+                {t('voiceDebugCollecting')}
               </p>
             )}
             {!!snapshot && (

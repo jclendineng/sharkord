@@ -120,11 +120,29 @@ enum Platform {
 }
 
 // a mac taps through a force touch trackpad, the only part of it that can, and only while a
-// finger is on it. it has one kind of tap, so they are all the same there
+// finger is on it. it has one kind of tap, so they are all the same there. a phone's are kept
+// rather than made for each tap: a new one has to wake the engine first and its tap landed a
+// beat after what it was for
 enum Haptics {
+    #if os(iOS)
+    private static let lightImpact = UIImpactFeedbackGenerator(style: .light)
+    private static let mediumImpact = UIImpactFeedbackGenerator(style: .medium)
+    private static let selectionChange = UISelectionFeedbackGenerator()
+    private static let notification = UINotificationFeedbackGenerator()
+    #endif
+
+    // a finger has landed on something a hold will answer with a tap, so the engine is awake
+    // by the time the hold is recognized
+    static func prepare() {
+        #if os(iOS)
+        mediumImpact.prepare()
+        #endif
+    }
+
     static func light() {
         #if os(iOS)
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        lightImpact.impactOccurred()
+        lightImpact.prepare()
         #else
         tapTrackpad()
         #endif
@@ -132,7 +150,7 @@ enum Haptics {
 
     static func medium() {
         #if os(iOS)
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        mediumImpact.impactOccurred()
         #else
         tapTrackpad()
         #endif
@@ -140,7 +158,8 @@ enum Haptics {
 
     static func selection() {
         #if os(iOS)
-        UISelectionFeedbackGenerator().selectionChanged()
+        selectionChange.selectionChanged()
+        selectionChange.prepare()
         #else
         tapTrackpad()
         #endif
@@ -148,7 +167,7 @@ enum Haptics {
 
     static func success() {
         #if os(iOS)
-        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        notification.notificationOccurred(.success)
         #else
         tapTrackpad()
         #endif

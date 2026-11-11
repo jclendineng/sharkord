@@ -9,7 +9,7 @@ import {
 } from '@sharkord/ui';
 import { Router, Volume2, VolumeX } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type TUserContextMenuProps = {
@@ -74,6 +74,13 @@ const StreamContextMenu = (props: TStreamContextMenuProps) => {
     );
   }, [props]);
 
+  const onVolumeSlide = useCallback(
+    ([value]: number[]) => {
+      setVolume(value ?? 0);
+    },
+    [setVolume]
+  );
+
   return (
     <ContextMenu>
       <ContextMenuTrigger>{props.children}</ContextMenuTrigger>
@@ -97,7 +104,7 @@ const StreamContextMenu = (props: TStreamContextMenuProps) => {
 
           <Slider
             value={[volume]}
-            onValueChange={([val]) => setVolume(val ?? 0)}
+            onValueChange={onVolumeSlide}
             min={0}
             max={100}
             step={1}

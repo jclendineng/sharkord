@@ -190,7 +190,7 @@ nonisolated final class VoiceConnection: @unchecked Sendable {
                 try self.addConsumer(key, consumed)
             }
         } catch {
-            print("[voice] could not consume \(key): \(error)")
+            Log.voice.error("could not consume \(String(describing: key), privacy: .public): \(String(describing: error))")
         }
     }
 
@@ -917,7 +917,7 @@ nonisolated private final class TransportSignaler: SendTransportDelegate, Receiv
             do {
                 _ = try await signal(path, json)
             } catch {
-                print("[voice] \(path) failed: \(error)")
+                Log.voice.error("\(path, privacy: .public) failed: \(String(describing: error))")
             }
         }
     }

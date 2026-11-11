@@ -1,8 +1,9 @@
 import type { IRootState } from '@/features/store';
 import { createCachedSelector } from 're-reselect';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const DEFAULT_ARRAY: any[] = [];
+// one empty list for every channel without messages, so a selector hands back the same
+// reference each time. never[] fits a list of any kind and nothing can be put in it
+const DEFAULT_ARRAY: never[] = [];
 
 export const messagesMapSelector = (state: IRootState) =>
   state.server.messagesMap;

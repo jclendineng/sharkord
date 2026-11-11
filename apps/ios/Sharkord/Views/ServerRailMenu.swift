@@ -49,7 +49,7 @@ struct ServerRailMenu: View {
     private func show() {
         PointerMenus.opened(menuId, close: close)
 
-        withAnimation(.spring(response: 0.22, dampingFraction: 1)) {
+        withAnimation(Motion.press) {
             isShown = true
         }
     }

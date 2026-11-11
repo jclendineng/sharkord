@@ -81,7 +81,7 @@ struct ConnectView: View {
                 .slideTransition(from: .trailing)
             }
         }
-        .animation(.snappy(duration: 0.3), value: animatedStep)
+        .animation(Motion.standard, value: animatedStep)
         .transparentWindowBar()
         .onAppear(perform: resumeSignIn)
         // handed over by hand: on a mac a sheet's background is worked out before it inherits
@@ -123,7 +123,7 @@ struct ConnectView: View {
                     .frame(width: 96, height: 96)
 
                 Text("WELCOME TO SHARKORD")
-                    .font(.system(size: 30, weight: .black).width(.expanded))
+                    .font(.system(.title, weight: .black).width(.expanded))
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
                     .minimumScaleFactor(0.6)
@@ -771,7 +771,7 @@ private struct AuthButton: View {
             .font(.headline)
             .foregroundStyle(.white.opacity(isEnabled ? 1 : 0.6))
             .frame(maxWidth: .infinity, minHeight: 50)
-            .background(Theme.blurple.opacity(isEnabled ? 1 : 0.5), in: .rect(cornerRadius: 12))
+            .background(Theme.blurple.opacity(isEnabled ? 1 : 0.5), in: .rect(cornerRadius: Radius.control))
         }
         .buttonStyle(.plain)
         .disabled(!isEnabled || isWorking)

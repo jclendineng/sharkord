@@ -295,7 +295,7 @@ private struct SearchTabBar: View {
                 }
                 .scrollIndicators(.never)
                 .onChange(of: selection) { _, tab in
-                    withAnimation(.smooth(duration: 0.3)) {
+                    withAnimation(Motion.standard) {
                         proxy.scrollTo(tab, anchor: .center)
                     }
                 }
@@ -350,7 +350,7 @@ private struct SearchTabBar: View {
     }
 
     private func select(_ tab: SearchTab) {
-        withAnimation(.smooth(duration: 0.3)) {
+        withAnimation(Motion.standard) {
             selection = tab
         }
     }
@@ -552,7 +552,7 @@ private struct RecentPage: View {
     }
 
     private func showMedia() {
-        withAnimation(.smooth(duration: 0.3)) {
+        withAnimation(Motion.standard) {
             model.tab = .media
         }
     }
@@ -897,10 +897,12 @@ private struct MediaGrid: View {
 
     private func save(from url: URL) {
         Task {
-            if await PhotoSaver.save(from: url) {
+            let outcome = await PhotoSaver.save(from: url)
+
+            if outcome == .saved {
                 Haptics.success()
             } else {
-                session.showError(AuthAPI.RequestError(message: "This picture could not be saved to Photos."))
+                session.showError(AuthAPI.RequestError(message: outcome.message))
             }
         }
     }
@@ -1018,9 +1020,10 @@ struct PinnedMessageRow: View {
                     }
 
                     ForEach(message.mediaImages, id: \.url) { media in
+                        // the picture's own corners: rounded on its box, a tall one kept square ones
                         AnimatedImage(url: URL(string: media.url), maxPointSize: 240, contentMode: .fit, sizesToImage: true)
+                            .clipShape(.rect(cornerRadius: Radius.media))
                             .frame(maxWidth: 220, maxHeight: 240, alignment: .leading)
-                            .clipShape(.rect(cornerRadius: 8))
                     }
 
                     ForEach(message.linkPreviews, id: \.url) { preview in
@@ -1028,7 +1031,7 @@ struct PinnedMessageRow: View {
                     }
 
                     ForEach(message.files) { file in
-                        AttachmentView(file: file)
+                        AttachmentView(file: file, message: message)
                     }
                 }
 

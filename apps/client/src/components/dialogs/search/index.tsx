@@ -39,6 +39,13 @@ const SearchDialog = memo(({ isOpen, close }: TSearchDialogProps) => {
     [close]
   );
 
+  const onQueryInput = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setQuery(event.target.value);
+    },
+    [setQuery]
+  );
+
   return (
     <Dialog open={isOpen}>
       <DialogContent
@@ -53,7 +60,7 @@ const SearchDialog = memo(({ isOpen, close }: TSearchDialogProps) => {
             <div className="mt-3">
               <Input
                 value={query}
-                onChange={(event) => setQuery(event.target.value)}
+                onChange={onQueryInput}
                 placeholder={t('searchPlaceholder')}
                 data-testid={TestId.SEARCH_INPUT}
                 autoFocus

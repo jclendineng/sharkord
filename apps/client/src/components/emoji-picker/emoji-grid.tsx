@@ -14,10 +14,14 @@ type TEmojiButtonProps = {
 const EmojiButton = memo(({ emoji, onSelect }: TEmojiButtonProps) => {
   const useImage = shouldUseFallbackImage(emoji);
 
+  const onClick = useCallback(() => {
+    onSelect(emoji);
+  }, [onSelect, emoji]);
+
   return (
     <button
       type="button"
-      onClick={() => onSelect(emoji)}
+      onClick={onClick}
       className="w-8 h-8 flex items-center justify-center hover:bg-accent rounded-md transition-colors cursor-pointer"
       title={`:${emoji.shortcodes[0]}:`}
     >

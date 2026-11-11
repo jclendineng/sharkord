@@ -151,5 +151,21 @@
   "rulesGiveExisting": "Dárselo a todos los que ya están",
   "rulesGiveExistingHelp": "Sin esto, los miembros que se unieron antes de las reglas pierden los canales que cierres.",
   "blockedSection": "Bloqueados",
-  "unblockUser": "Desbloquear"
+  "unblockUser": "Desbloquear",
+  "voiceDebugTitle": "Diagnóstico de voz",
+  "voiceDebugCollecting": "recopilando…",
+  "voiceDebugPaused": "en pausa",
+  "voiceDebugResume": "Reanudar",
+  "voiceDebugPause": "Pausar",
+  "voiceDebugClearEvents": "Borrar eventos",
+  "voiceDebugCopyReport": "Copiar informe",
+  "voiceDebugOverview": "Resumen",
+  "voiceDebugTransports": "Transportes",
+  "voiceDebugProducers": "Productores",
+  "voiceDebugConsumers": "Consumidores",
+  "voiceDebugEvents": "Eventos ({{count}})",
+  "voiceDebugRaw": "Sin procesar",
+  "voiceDebugCopied": "Informe de voz copiado",
+  "voiceDebugCopyFailed": "No se pudo copiar el informe: {{error}}",
+  "voiceDebugNoEvents": "sin eventos"
 }

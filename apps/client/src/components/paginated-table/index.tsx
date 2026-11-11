@@ -76,6 +76,29 @@ const PaginatedTableComponent = <T,>({
     return pages;
   }, [currentPage, totalPages]);
 
+  const onSearchInput = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      handleSearchChange(e.target.value);
+    },
+    [handleSearchChange]
+  );
+
+  const onPreviousPage = useCallback(() => {
+    handlePageChange(currentPage - 1);
+  }, [handlePageChange, currentPage]);
+
+  const onNextPage = useCallback(() => {
+    handlePageChange(currentPage + 1);
+  }, [handlePageChange, currentPage]);
+
+  // the page buttons are drawn in a loop, so each carries its number and they share a handler
+  const onPageClick = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      handlePageChange(Number(e.currentTarget.dataset.page));
+    },
+    [handlePageChange]
+  );
+
   return (
     <div className="space-y-4">
       <div className="relative">
@@ -83,7 +106,7 @@ const PaginatedTableComponent = <T,>({
         <Input
           placeholder={searchPlaceholder}
           value={searchTerm}
-          onChange={(e) => handleSearchChange(e.target.value)}
+          onChange={onSearchInput}
           className="pl-9"
         />
       </div>
@@ -130,7 +153,7 @@ const PaginatedTableComponent = <T,>({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handlePageChange(currentPage - 1)}
+              onClick={onPreviousPage}
               disabled={currentPage === 1}
             >
               <ChevronLeft className="h-4 w-4" />
@@ -141,7 +164,8 @@ const PaginatedTableComponent = <T,>({
                 key={pageNum}
                 variant={currentPage === pageNum ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => handlePageChange(pageNum)}
+                data-page={pageNum}
+                onClick={onPageClick}
                 className="min-w-8"
               >
                 {pageNum}
@@ -151,7 +175,7 @@ const PaginatedTableComponent = <T,>({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handlePageChange(currentPage + 1)}
+              onClick={onNextPage}
               disabled={currentPage === totalPages}
             >
               <ChevronRight className="h-4 w-4" />

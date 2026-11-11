@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@sharkord/ui';
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 
 type TResolutionFpsControlProps = {
   resolution: string;
@@ -25,6 +25,13 @@ const ResolutionFpsControl = memo(
     onFramerateChange,
     disabled
   }: TResolutionFpsControlProps) => {
+    const onFramerateSelect = useCallback(
+      (value: string) => {
+        onFramerateChange(+value);
+      },
+      [onFramerateChange]
+    );
+
     return (
       <div className="flex items-center gap-2">
         <Label content="Resolution">
@@ -53,7 +60,7 @@ const ResolutionFpsControl = memo(
         <Label content="Framerate">
           <Select
             value={framerate.toString()}
-            onValueChange={(value) => onFramerateChange(+value)}
+            onValueChange={onFramerateSelect}
             disabled={disabled}
           >
             <SelectTrigger className="w-[160px]">

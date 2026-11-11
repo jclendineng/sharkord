@@ -147,7 +147,7 @@ struct RolesScreen: View {
     }
 
     private func toggleReordering() {
-        withAnimation {
+        withAnimation(Motion.standard) {
             isReordering.toggle()
         }
     }

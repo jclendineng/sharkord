@@ -2,9 +2,9 @@ import {
   getPlainTextFromHtml,
   type TDirectMessageConversation
 } from '@sharkord/shared';
-import { TRPCError } from '@trpc/server';
 import { and, eq, inArray, max, or, sql } from 'drizzle-orm';
 import { db } from '..';
+import { invariant } from '../../utils/invariant';
 import {
   channels,
   directMessageClosures,
@@ -305,21 +305,17 @@ const assertDmChannel = async (
 
   const settings = await getSettings();
 
-  if (!settings.directMessagesEnabled) {
-    throw new TRPCError({
-      code: 'FORBIDDEN',
-      message: 'Direct messages are disabled on this server'
-    });
-  }
+  invariant(settings.directMessagesEnabled, {
+    code: 'FORBIDDEN',
+    message: 'Direct messages are disabled on this server'
+  });
 
   const isParticipant = await isUserDmParticipant(channelId, userId);
 
-  if (!isParticipant) {
-    throw new TRPCError({
-      code: 'FORBIDDEN',
-      message: 'You are not a participant in this DM channel'
-    });
-  }
+  invariant(isParticipant, {
+    code: 'FORBIDDEN',
+    message: 'You are not a participant in this DM channel'
+  });
 
   return true;
 };

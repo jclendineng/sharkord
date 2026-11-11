@@ -9,6 +9,16 @@ struct VoiceUserState: Codable, Hashable {
     var serverMuted: Bool?
 }
 
+// someone in a voice channel. the user is missing until their profile has arrived, the id the
+// server sent is always there
+struct VoiceParticipant: Identifiable {
+    let userId: Int
+    let user: PublicUser?
+    let state: VoiceUserState
+
+    var id: Int { userId }
+}
+
 // keyed by user id, sent as strings since it is a JSON object
 struct VoiceChannelUsers: Decodable {
     let users: [String: VoiceUserState]

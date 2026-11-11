@@ -125,30 +125,32 @@ const createDirectMediaMetadata = (
   };
 };
 
+// any shape of preview, its fields read only through the normalizers, which check their types
 const createOpenGraphMetadata = (
-  preview: TGenericObject,
+  preview: object,
   url: string
 ): TMessageOpenGraphMetadata | undefined => {
+  const fields = preview as TGenericObject;
   const title =
-    normalizeOptionalString(preview.title) ??
-    normalizeOptionalString(preview.ogTitle);
+    normalizeOptionalString(fields.title) ??
+    normalizeOptionalString(fields.ogTitle);
 
   const siteName =
-    normalizeOptionalString(preview.siteName) ??
-    normalizeOptionalString(preview.ogSiteName);
+    normalizeOptionalString(fields.siteName) ??
+    normalizeOptionalString(fields.ogSiteName);
 
   const description =
-    normalizeOptionalString(preview.description) ??
-    normalizeOptionalString(preview.ogDescription);
+    normalizeOptionalString(fields.description) ??
+    normalizeOptionalString(fields.ogDescription);
 
   const mediaType =
-    normalizeOptionalString(preview.mediaType) ??
-    normalizeOptionalString(preview.ogType) ??
+    normalizeOptionalString(fields.mediaType) ??
+    normalizeOptionalString(fields.ogType) ??
     'website';
 
-  const images = normalizeUrlList(url, preview.images ?? preview.ogImage);
-  const videos = normalizeUrlList(url, preview.videos ?? preview.ogVideo);
-  const favicons = normalizeUrlList(url, preview.favicons ?? preview.favicon);
+  const images = normalizeUrlList(url, fields.images ?? fields.ogImage);
+  const videos = normalizeUrlList(url, fields.videos ?? fields.ogVideo);
+  const favicons = normalizeUrlList(url, fields.favicons ?? fields.favicon);
 
   const hasRenderableContent =
     !!title ||

@@ -201,7 +201,7 @@ private struct RailItem<Content: View>: View {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         .onHover(perform: setHovered)
         .animation(.snappy, value: isSelected)
-        .animation(.snappy(duration: 0.2), value: isHovered)
+        .animation(Motion.quick, value: isHovered)
     }
 
     private var accessibilityValue: String {

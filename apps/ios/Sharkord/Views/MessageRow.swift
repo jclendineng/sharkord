@@ -81,6 +81,7 @@ struct MessageRow: View {
         .simultaneousGesture(LongPressGesture(minimumDuration: 0.3).onEnded(longPressed))
         #if os(iOS)
         .gesture(PressTracker(isPressed: $isFingerDown))
+        .onChange(of: isFingerDown, prepareHaptic)
         #endif
         .onSecondaryClick(perform: onSecondaryClick)
         .opacity(isPending ? 0.55 : 1)
@@ -129,9 +130,16 @@ struct MessageRow: View {
                 }
 
                 ForEach(message.mediaImages, id: \.url) { media in
-                    AnimatedImage(url: URL(string: media.url), maxPointSize: 300, contentMode: .fit, sizesToImage: true)
+                    if let url = URL(string: media.url) {
+                        MessageMediaButton(
+                            message: message,
+                            itemId: MediaItem.linkId(messageId: message.id, url: url),
+                            label: media.title ?? String(localized: "Image")
+                        ) {
+                            AnimatedImage(url: url, maxPointSize: 300, contentMode: .fit, sizesToImage: true)
+                        }
                         .frame(maxWidth: 280, maxHeight: 320, alignment: .leading)
-                        .clipShape(.rect(cornerRadius: 8))
+                    }
                 }
 
                 ForEach(message.linkPreviews, id: \.url) { preview in
@@ -149,7 +157,7 @@ struct MessageRow: View {
                 }
 
                 ForEach(message.files) { file in
-                    AttachmentView(file: file)
+                    AttachmentView(file: file, message: message)
                 }
 
                 if !message.reactions.isEmpty {
@@ -214,6 +222,13 @@ struct MessageRow: View {
         }
 
         isHovered = hovered
+    }
+
+    // the hold's tap is ready by the time the hold is recognized
+    private func prepareHaptic(_: Bool, _ isDown: Bool) {
+        if isDown {
+            Haptics.prepare()
+        }
     }
 
     private func longPressed(_: Bool) {

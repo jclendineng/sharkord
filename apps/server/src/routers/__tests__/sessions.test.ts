@@ -1,6 +1,7 @@
-import { DisconnectCode } from '@sharkord/shared';
+import { DisconnectCode, sha256 } from '@sharkord/shared';
 import { describe, expect, test } from 'bun:test';
 import { eq } from 'drizzle-orm';
+import jwt from 'jsonwebtoken';
 import { createMockContext } from '../../__tests__/context';
 import {
   createFakeSocket,
@@ -10,14 +11,18 @@ import {
   login,
   testPushKey
 } from '../../__tests__/helpers';
+import { TEST_SECRET_TOKEN } from '../../__tests__/seed';
 import { tdb } from '../../__tests__/setup';
 import { getUserByToken } from '../../db/queries/users';
 import { pushDevices, sessions } from '../../db/schema';
 import { getTokenSessionId } from '../../helpers/session-token';
-import { SESSION_TOKEN_TTL_MS } from '../../helpers/sessions';
 import { trackUserSocket } from '../../utils/wss';
 
 const DEVICE_TOKEN = 'a'.repeat(64);
+const DAY_SECONDS = 24 * 60 * 60;
+const DAY_MS = DAY_SECONDS * 1000;
+
+const nowSeconds = () => Math.floor(Date.now() / 1000);
 
 describe('sessions router', () => {
   test('should start a session when signing in with a password', async () => {
@@ -55,18 +60,68 @@ describe('sessions router', () => {
     expect(list.find(({ id }) => id === otherDeviceId)?.isCurrent).toBe(false);
   });
 
-  test('should leave out sessions idle for longer than a token lives', async () => {
+  test('should keep listing and accepting a session nobody has used for months', async () => {
     const { caller } = await getSessionCaller(1);
-    const { sessionId: staleId } = await getSessionCaller(1);
+    const { token: idleToken, sessionId: idleId } = await getSessionCaller(1);
 
     await tdb
       .update(sessions)
-      .set({ lastActiveAt: Date.now() - SESSION_TOKEN_TTL_MS - 1000 })
-      .where(eq(sessions.id, staleId));
+      .set({ lastActiveAt: Date.now() - 90 * DAY_MS })
+      .where(eq(sessions.id, idleId));
 
     const list = await caller.sessions.getAll();
 
-    expect(list.map(({ id }) => id)).not.toContain(staleId);
+    expect(list.map(({ id }) => id)).toContain(idleId);
+    expect((await getUserByToken(idleToken))?.id).toBe(1);
+  });
+
+  test('should issue session tokens that do not expire', async () => {
+    const { token } = await getSessionCaller(1);
+    const payload = jwt.decode(token) as { exp?: number };
+
+    expect(payload.exp).toBeUndefined();
+  });
+
+  test('should accept an expired token while its session exists', async () => {
+    const { sessionId } = await getSessionCaller(1);
+    const expired = jwt.sign(
+      {
+        userId: 1,
+        tokenVersion: 0,
+        sessionId,
+        exp: nowSeconds() - DAY_SECONDS
+      },
+      await sha256(TEST_SECRET_TOKEN)
+    );
+
+    expect((await getUserByToken(expired))?.id).toBe(1);
+  });
+
+  test('should refuse an expired token once its session has been signed out', async () => {
+    const { caller } = await getSessionCaller(1);
+    const { sessionId } = await getSessionCaller(1);
+    const expired = jwt.sign(
+      {
+        userId: 1,
+        tokenVersion: 0,
+        sessionId,
+        exp: nowSeconds() - DAY_SECONDS
+      },
+      await sha256(TEST_SECRET_TOKEN)
+    );
+
+    await caller.sessions.revoke({ sessionId });
+
+    expect(await getUserByToken(expired)).toBeUndefined();
+  });
+
+  test('should refuse an expired token from before sessions existed', async () => {
+    const expired = jwt.sign(
+      { userId: 1, tokenVersion: 0, exp: nowSeconds() - DAY_SECONDS },
+      await sha256(TEST_SECRET_TOKEN)
+    );
+
+    expect(await getUserByToken(expired)).toBeUndefined();
   });
 
   test('should sign out another device, refuse its token and close its socket', async () => {

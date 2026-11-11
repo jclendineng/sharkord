@@ -85,7 +85,7 @@ struct LinkPreviewCard: View {
                             image
                                 .resizable()
                                 .scaledToFit()
-                                .clipShape(.rect(cornerRadius: 8, style: .continuous))
+                                .clipShape(.rect(cornerRadius: Radius.media, style: .continuous))
                                 .frame(maxWidth: .infinity, maxHeight: 180, alignment: .leading)
                         case .failure:
                             EmptyView()
@@ -93,7 +93,7 @@ struct LinkPreviewCard: View {
                             Theme.deepBackground
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 180)
-                                .clipShape(.rect(cornerRadius: 8, style: .continuous))
+                                .clipShape(.rect(cornerRadius: Radius.media, style: .continuous))
                         }
                     }
                 }

@@ -1,4 +1,5 @@
 import { PencilIcon } from 'lucide-react';
+import { useCallback } from 'react';
 import { HexColorPicker } from 'react-colorful';
 import { cn } from '../lib/utils';
 import { Button } from './button';
@@ -18,6 +19,17 @@ const ColorPicker = ({
   defaultValue = '#FFFFFF',
   error
 }: TColorPickerProps) => {
+  const onInput = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      onChange?.(e.target.value);
+    },
+    [onChange]
+  );
+
+  const onReset = useCallback(() => {
+    onChange?.(defaultValue);
+  }, [onChange, defaultValue]);
+
   return (
     <div className="flex flex-col">
       <Popover>
@@ -39,12 +51,8 @@ const ColorPicker = ({
         </PopoverTrigger>
         <PopoverContent className="flex flex-col gap-2 w-fit h-fit p-2 rounded-2xl">
           <HexColorPicker color={value} onChange={onChange} />
-          <Input value={value} onChange={(e) => onChange?.(e.target.value)} />
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => onChange?.(defaultValue)}
-          >
+          <Input value={value} onChange={onInput} />
+          <Button size="sm" variant="ghost" onClick={onReset}>
             Reset
           </Button>
         </PopoverContent>

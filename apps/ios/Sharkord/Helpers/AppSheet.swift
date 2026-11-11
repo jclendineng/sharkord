@@ -160,6 +160,28 @@ private struct MacDismissLock: ViewModifier {
 private struct SheetCloseButton: View {
     let action: () -> Void
 
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "xmark")
+                .font(.system(size: 17, weight: .medium))
+                .foregroundStyle(.tint)
+                .frame(width: 44, height: 44)
+        }
+        .buttonStyle(.plain)
+        .floatingGlassCircle()
+        .contentShape(.circle)
+        .accessibilityLabel("Close")
+    }
+}
+
+extension View {
+    // a round button floating over content: a sheet's close, the chat's way back to the bottom
+    func floatingGlassCircle() -> some View {
+        modifier(FloatingGlassCircle())
+    }
+}
+
+private struct FloatingGlassCircle: ViewModifier {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     // plain glass on a mac and an ipad: the interactive kind takes a pointer's press for its own
@@ -177,22 +199,14 @@ private struct SheetCloseButton: View {
         return .regular.interactive()
     }
 
-    var body: some View {
-        Button(action: action) {
-            Image(systemName: "xmark")
-                .font(.system(size: 17, weight: .medium))
-                .foregroundStyle(.tint)
-                .frame(width: 44, height: 44)
-        }
-        .buttonStyle(.plain)
-        .background {
-            if reduceTransparency {
-                Circle()
-                    .fill(Theme.floatingBackground)
+    func body(content: Content) -> some View {
+        content
+            .background {
+                if reduceTransparency {
+                    Circle()
+                        .fill(Theme.floatingBackground)
+                }
             }
-        }
-        .glassEffect(glass, in: .circle)
-        .contentShape(.circle)
-        .accessibilityLabel("Close")
+            .glassEffect(glass, in: .circle)
     }
 }

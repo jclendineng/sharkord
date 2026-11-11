@@ -23,6 +23,8 @@ struct MessageListView<Header: View>: View {
     @Environment(\.openThreadPanel) private var openThreadPanel
     // opened once the actions sheet has finished going, pushed under it the two moved at once
     @State private var threadAfterActions: Message?
+    // asked about once the actions sheet has gone, another presentation cannot start before
+    @State private var deleteAfterActions: Message?
 
     // consecutive messages from the same author inside this window share one header
     private static var groupingWindow: Int { 7 * 60 * 1000 }
@@ -71,6 +73,14 @@ struct MessageListView<Header: View>: View {
                     openPendingThread()
                     await scrollToFocused(proxy)
                 }
+                // the conversation fades into the bar above it and the message box below, both
+                // its own color, where it used to be cut off along their edge
+                .overlay(alignment: .top) {
+                    EdgeFade(edge: .top)
+                }
+                .overlay(alignment: .bottom) {
+                    EdgeFade(edge: .bottom)
+                }
                 .overlay(alignment: .bottomTrailing) {
                     if isAwayFromBottom, !store.isDetached {
                         JumpToBottomButton(action: scrollToBottom)
@@ -78,7 +88,7 @@ struct MessageListView<Header: View>: View {
                         .popTransition()
                     }
                 }
-                .animation(.snappy(duration: 0.2), value: isAwayFromBottom)
+                .animation(Motion.quick, value: isAwayFromBottom)
         }
         .task {
             try? await Task.sleep(for: .milliseconds(450))
@@ -95,7 +105,7 @@ struct MessageListView<Header: View>: View {
                 .slideTransition(from: .top)
             }
         }
-        .animation(.snappy(duration: 0.25), value: store.unreadMarker)
+        .animation(Motion.quick, value: store.unreadMarker)
         // the list is a window around an older message, a way back to the newest
         .overlay(alignment: .bottom) {
             if store.isDetached {
@@ -104,7 +114,7 @@ struct MessageListView<Header: View>: View {
                     .slideTransition(from: .bottom)
             }
         }
-        .animation(.snappy(duration: 0.25), value: store.isDetached)
+        .animation(Motion.quick, value: store.isDetached)
     }
 
     private var messageList: some View {
@@ -230,8 +240,10 @@ struct MessageListView<Header: View>: View {
         }
         .scrollDismissesKeyboard(.interactively)
         // like the keyboard: a swipe down on the conversation drags the attachment panel with
-        // it while the conversation scrolls, a tap puts it away
-        .simultaneousGesture(attachPanelDrag)
+        // it while the conversation scrolls, a tap puts it away. the drag is on only while the
+        // panel is open: always on, it took every sideways swipe over the messages, and the
+        // system's swipe back never started there
+        .simultaneousGesture(attachPanelDrag, isEnabled: store.attachPanel.isOpen)
         .simultaneousGesture(TapGesture().onEnded(closeAttachPanel))
         .background(Theme.chatBackground)
         .overlay {
@@ -251,7 +263,7 @@ struct MessageListView<Header: View>: View {
         .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }) { frame in
             listFrame = frame
         }
-        .actionsPresentation(item: $actionsMessage, anchor: menuAnchor, onDismiss: openThreadAfterActions) { message in
+        .actionsPresentation(item: $actionsMessage, anchor: menuAnchor, onDismiss: continueAfterActions) { message in
             MessageActionsSheet(
                 message: message,
                 store: store,
@@ -366,7 +378,7 @@ struct MessageListView<Header: View>: View {
             return
         }
 
-        withAnimation(.smooth(duration: 0.3)) {
+        withAnimation(Motion.standard) {
             proxy.scrollTo(messageId, anchor: anchor)
         }
 
@@ -376,12 +388,12 @@ struct MessageListView<Header: View>: View {
             return endHighlight()
         }
 
-        withAnimation(.smooth(duration: 0.3)) {
+        withAnimation(Motion.standard) {
             proxy.scrollTo(messageId, anchor: anchor)
         }
 
         for strength in [1, 0.45, 1] {
-            withAnimation(.easeInOut(duration: 0.3)) {
+            withAnimation(Motion.standard) {
                 highlightStrength = strength
             }
 
@@ -426,7 +438,7 @@ struct MessageListView<Header: View>: View {
     }
 
     private func scrollToBottom() {
-        withAnimation(.smooth(duration: 0.35)) {
+        withAnimation(Motion.standard) {
             scrollPosition.scrollTo(edge: .bottom)
         }
     }
@@ -482,7 +494,7 @@ struct MessageListView<Header: View>: View {
             }
             .onEnded { value in
                 if store.attachPanel.isDragging {
-                    store.attachPanel.release(predicted: value.predictedEndTranslation.height)
+                    store.attachPanel.release(predicted: value.predictedEndTranslation.height, velocity: value.velocity.height)
                 }
             }
     }
@@ -519,12 +531,12 @@ struct MessageListView<Header: View>: View {
         menuSheet = sheet
     }
 
+    // the actions sheet has to finish closing before another presentation can start. told
+    // by the sheet itself that it has: a wait guessed at its length was wrong whenever the
+    // sheet took longer to go
     private func confirmDelete(_ message: Message) {
-        // the actions sheet has to finish closing before another presentation can start
-        Task {
-            try? await Task.sleep(for: .milliseconds(350))
-            deletingMessage = message
-        }
+        deleteAfterActions = message
+        actionsMessage = nil
     }
 
     private func delete(_ message: Message) {
@@ -559,7 +571,14 @@ struct MessageListView<Header: View>: View {
         }
     }
 
-    private func openThreadAfterActions() {
+    private func continueAfterActions() {
+        if let message = deleteAfterActions {
+            deleteAfterActions = nil
+            deletingMessage = message
+
+            return
+        }
+
         guard let message = threadAfterActions else {
             return
         }
@@ -817,12 +836,29 @@ private struct NewMessagesDivider: View {
     }
 }
 
-// the round button over the bottom right corner once the conversation is scrolled well up
+// the conversation's last few points fading into what it scrolls under, in the chat's color
+private struct EdgeFade: View {
+    let edge: VerticalEdge
+
+    var body: some View {
+        LinearGradient(
+            colors: [Theme.chatBackground, Theme.chatBackground.opacity(0)],
+            startPoint: edge == .top ? .top : .bottom,
+            endPoint: edge == .top ? .bottom : .top
+        )
+        .frame(height: 12)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
+// the round button over the bottom right corner once the conversation is scrolled well up.
+// glass like the system's own floating buttons, the messages showing through as they pass
 private struct JumpToBottomButton: View {
     let action: () -> Void
 
-    // the whole tile inside the button, not just the arrow: a tap beside the arrow went through
-    // to the message under it
+    // the whole circle inside the button, not just the arrow: a tap beside the arrow went
+    // through to the message under it
     var body: some View {
         Button(action: action) {
             Label("Jump to Bottom", systemImage: "arrow.down")
@@ -830,15 +866,10 @@ private struct JumpToBottomButton: View {
                 .font(.body.weight(.semibold))
                 .foregroundStyle(Theme.text)
                 .frame(width: 44, height: 44)
-                .background(Theme.listBackground, in: .rect(cornerRadius: 12))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Theme.divider, lineWidth: 1)
-                }
-                .contentShape(.rect(cornerRadius: 12))
+                .contentShape(.circle)
         }
-        .shadow(color: .black.opacity(0.3), radius: 6, y: 2)
         .buttonStyle(.plain)
+        .floatingGlassCircle()
     }
 }
 

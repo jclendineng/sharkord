@@ -22,6 +22,10 @@ import { VoiceAudioStreams } from '../channel-view/voice/voice-audio-streams';
 import { PluginSlotRenderer } from '../plugin-slot-renderer';
 import { StatsPopover } from './stats-popover';
 
+const onDisconnectClick = () => {
+  leaveVoice({ reason: 'user_disconnect_button' });
+};
+
 const VoiceControl = memo(() => {
   const { t } = useTranslation('sidebar');
   const voiceChannelId = useCurrentVoiceChannelId();
@@ -82,11 +86,7 @@ const VoiceControl = memo(() => {
         </StatsPopover>
 
         <div className="flex items-center justify-between px-2 py-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => leaveVoice({ reason: 'user_disconnect_button' })}
-          >
+          <Button variant="outline" size="sm" onClick={onDisconnectClick}>
             <PhoneOff className="h-3.5 w-3.5 mr-1.5" />
             {t('disconnectVoice')}
           </Button>

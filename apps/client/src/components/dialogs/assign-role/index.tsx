@@ -28,8 +28,8 @@ import { toast } from 'sonner';
 import type { TDialogBaseProps } from '../types';
 
 type TAssignRoleDialogProps = TDialogBaseProps & {
-  user: TJoinedUser;
-  refetch: () => Promise<void>;
+  user: Pick<TJoinedUser, 'id' | 'name' | 'roleIds'>;
+  refetch: () => void | Promise<void>;
 };
 
 const AssignRoleDialog = memo(
@@ -73,6 +73,10 @@ const AssignRoleDialog = memo(
       }
     }, [user.id, selectedRoleId, close, refetch, t]);
 
+    const onRoleSelect = useCallback((value: string) => {
+      setSelectedRoleId(Number(value));
+    }, []);
+
     return (
       <AlertDialog open={isOpen}>
         <AlertDialogContent>
@@ -98,7 +102,7 @@ const AssignRoleDialog = memo(
           <div className="flex flex-col gap-4">
             <Group label={t('roleLabel')}>
               <Select
-                onValueChange={(value) => setSelectedRoleId(Number(value))}
+                onValueChange={onRoleSelect}
                 value={selectedRoleId.toString()}
                 disabled={availableRoles.length === 0}
               >

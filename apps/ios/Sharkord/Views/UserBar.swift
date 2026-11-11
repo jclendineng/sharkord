@@ -6,6 +6,7 @@ struct UserBar: View {
 
     @Environment(ServerListStore.self) private var servers
     @Environment(SessionStore.self) private var session
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     @State private var isProfilePresented = false
     @State private var isUnreadsPresented = false
@@ -57,10 +58,13 @@ struct UserBar: View {
 
                     VStack(alignment: .leading, spacing: 1) {
                         HStack(spacing: 4) {
+                            // a second line at the largest text sizes, where one line beside
+                            // the avatar and the bell holds only a few letters
                             Text(session.ownUser?.name ?? session.displayName)
                                 .font(isCompact ? .subheadline.weight(.semibold) : .headline)
                                 .foregroundStyle(Theme.header)
-                                .lineLimit(1)
+                                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+                                .multilineTextAlignment(.leading)
 
                             Image(systemName: "chevron.down")
                                 .font(.caption.bold())

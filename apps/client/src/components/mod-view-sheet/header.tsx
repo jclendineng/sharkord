@@ -192,6 +192,26 @@ const Header = memo(() => {
     }
   }, [user.id, t]);
 
+  const onBanToggle = useCallback(() => {
+    if (user.banned) {
+      onUnban();
+    } else {
+      onBan();
+    }
+  }, [user.banned, onUnban, onBan]);
+
+  const onDeleteClick = useCallback(() => {
+    openDialog(Dialog.DELETE_USER, {
+      user,
+      refetch,
+      onDelete: () => setModViewOpen(false)
+    });
+  }, [user, refetch]);
+
+  const onAssignRoleClick = useCallback(() => {
+    openDialog(Dialog.ASSIGN_ROLE, { user, refetch });
+  }, [user, refetch]);
+
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-3">
@@ -217,7 +237,7 @@ const Header = memo(() => {
             data-testid={TestId.MOD_VIEW_BAN}
             variant="outline"
             size="sm"
-            onClick={() => (user.banned ? onUnban() : onBan())}
+            onClick={onBanToggle}
             disabled={isOwnUser || isDeletedUser}
           >
             <Gavel className="h-4 w-4" />
@@ -228,13 +248,7 @@ const Header = memo(() => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() =>
-              openDialog(Dialog.DELETE_USER, {
-                user,
-                refetch,
-                onDelete: () => setModViewOpen(false)
-              })
-            }
+            onClick={onDeleteClick}
             disabled={isOwnUser || isDeletedUser}
           >
             <Trash className="h-4 w-4" />
@@ -266,7 +280,7 @@ const Header = memo(() => {
             size="sm"
             className="h-6 px-2 text-xs"
             disabled={isDeletedUser}
-            onClick={() => openDialog(Dialog.ASSIGN_ROLE, { user, refetch })}
+            onClick={onAssignRoleClick}
           >
             <Plus className="h-3 w-3" />
             {t('modViewAssignRoleBtn')}

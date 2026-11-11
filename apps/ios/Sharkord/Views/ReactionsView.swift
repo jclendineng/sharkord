@@ -60,7 +60,7 @@ struct ReactionsView: View {
             }
         }
         .padding(.top, 2)
-        .animation(.snappy(duration: 0.2), value: groups.map(\.userIds.count))
+        .animation(Motion.quick, value: groups.map(\.userIds.count))
         // handed over by hand: on a mac a sheet's background is worked out before it inherits
         // anything, so a sheet reading a store it was not given crashed on opening
         .sheet(isPresented: $isPickerPresented) {

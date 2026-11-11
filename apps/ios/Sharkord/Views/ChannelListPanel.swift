@@ -188,6 +188,9 @@ private struct CategoryHeader: View {
     @State private var wantedSheet: WantedSheet?
     @State private var shownSheet: WantedSheet?
 
+    // grows with the heading beside it
+    @ScaledMetric(relativeTo: .caption) private var chevronSize = 9.0
+
     // what the menu asked for, opened once it has gone
     private enum WantedSheet: String, Identifiable {
         case mute
@@ -291,7 +294,7 @@ private struct CategoryHeader: View {
     private var label: some View {
         HStack(spacing: 4) {
             Image(systemName: "chevron.down")
-                .font(.system(size: 9, weight: .bold))
+                .font(.system(size: chevronSize, weight: .bold))
                 .rotationEffect(.degrees(isCollapsed ? -90 : 0))
 
             Text(title.uppercased())
@@ -304,7 +307,7 @@ private struct CategoryHeader: View {
         .padding(.vertical, 4)
         .padding(.horizontal, 4)
         .background(isHighlighted ? Theme.panelSelected : .clear, in: .rect(cornerRadius: 6))
-        .animation(isHighlighted ? nil : .easeOut(duration: 0.15), value: isHighlighted)
+        .animation(isHighlighted ? nil : Motion.fade, value: isHighlighted)
         // the gap above stays out of the highlight, and out of reach of a press
         .padding(.top, 14)
         .contentShape(.rect)
@@ -347,6 +350,12 @@ private struct ChannelRow: View {
     let unreadCount: Int
     let isSelected: Bool
 
+    // the symbol and its lock grow with the name beside them
+    @ScaledMetric(relativeTo: .body) private var iconSize = 18.0
+    @ScaledMetric(relativeTo: .body) private var iconWidth = 24.0
+    @ScaledMetric(relativeTo: .body) private var lockSize = 8.0
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     private var isMuted: Bool {
         session.isMuted(channel.id)
     }
@@ -374,7 +383,7 @@ private struct ChannelRow: View {
         label
             .background(isHighlighted ? Theme.panelSelected : .clear, in: .rect(cornerRadius: 6))
             // on at once under the finger, a quick fade as it lets go
-            .animation(isHighlighted ? nil : .easeOut(duration: 0.15), value: isHighlighted)
+            .animation(isHighlighted ? nil : Motion.fade, value: isHighlighted)
             .onHover(perform: setHovered)
             .onTapGesture(perform: open)
             .keyboardActivatable(perform: open)
@@ -503,21 +512,24 @@ private struct ChannelRow: View {
         HStack(spacing: 8) {
             // discord's: the channel's own symbol with a small lock on it when it is private
             Image(systemName: icon)
-                .font(.system(size: 18, weight: .medium))
-                .frame(width: 24)
+                .font(.system(size: iconSize, weight: .medium))
+                .frame(width: iconWidth)
                 .overlay(alignment: .topTrailing) {
                     if channel.private {
+                        // clear of the symbol's own corner: on the speaker's waves it read as
+                        // part of the glyph
                         Image(systemName: "lock.fill")
-                            .font(.system(size: 8, weight: .bold))
+                            .font(.system(size: lockSize, weight: .bold))
                             .padding(1.5)
                             .background(Theme.panelBackground, in: .circle)
-                            .offset(x: 2, y: -2)
+                            .offset(x: 4, y: -4)
                     }
                 }
 
+            // a second line at the largest text sizes, where one holds only a few letters
             Text(channel.name)
                 .font(.body.weight(isUnread ? .semibold : .medium))
-                .lineLimit(1)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
 
             Spacer()
 
@@ -559,7 +571,7 @@ private struct VoiceParticipants: View {
     // discord's hidden names: just the faces, side by side under the channel
     private var faces: some View {
         HStack(spacing: 4) {
-            ForEach(session.voiceParticipants(in: channelId), id: \.user?.id) { participant in
+            ForEach(session.voiceParticipants(in: channelId), id: \.userId) { participant in
                 AvatarView(user: participant.user, size: 22)
                     .overlay {
                         if participant.user.map({ session.speakingUserIds.contains($0.id) }) == true {
@@ -575,7 +587,7 @@ private struct VoiceParticipants: View {
     }
 
     private var rows: some View {
-        ForEach(session.voiceParticipants(in: channelId), id: \.user?.id) { participant in
+        ForEach(session.voiceParticipants(in: channelId), id: \.userId) { participant in
             VoiceParticipantRow(user: participant.user, state: participant.state, channelId: channelId)
         }
     }
@@ -612,7 +624,7 @@ private struct VoiceParticipantRow: View {
     var body: some View {
         label
             .background(isHighlighted ? Theme.panelSelected : .clear, in: .rect(cornerRadius: 6))
-            .animation(isHighlighted ? nil : .easeOut(duration: 0.15), value: isHighlighted)
+            .animation(isHighlighted ? nil : Motion.fade, value: isHighlighted)
             .padding(.leading, 32)
             .onHover(perform: setHovered)
             .onTapGesture(perform: showProfile)

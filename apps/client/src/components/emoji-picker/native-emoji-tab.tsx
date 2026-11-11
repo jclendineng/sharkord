@@ -23,32 +23,43 @@ const CategoryBar = memo(
     activeCategory,
     onCategorySelect,
     hasRecentEmojis
-  }: TCategoryBarProps) => (
-    <div className="flex gap-1 px-3 py-2 border-b bg-muted/30">
-      {EMOJI_CATEGORIES.map((category) => {
-        if (category.id === 'recent' && !hasRecentEmojis) {
-          return null;
-        }
+  }: TCategoryBarProps) => {
+    // the categories are drawn in a loop, so each carries its id and they share a handler
+    const onCategoryClick = useCallback(
+      (e: React.MouseEvent<HTMLButtonElement>) => {
+        onCategorySelect(e.currentTarget.dataset.category as EmojiCategoryId);
+      },
+      [onCategorySelect]
+    );
 
-        return (
-          <button
-            key={category.id}
-            type="button"
-            onClick={() => onCategorySelect(category.id)}
-            className={cn(
-              'w-7 h-7 flex items-center justify-center rounded-md text-base transition-colors cursor-pointer',
-              activeCategory === category.id
-                ? 'bg-accent text-accent-foreground'
-                : 'hover:bg-accent/50'
-            )}
-            title={category.label}
-          >
-            {category.icon}
-          </button>
-        );
-      })}
-    </div>
-  )
+    return (
+      <div className="flex gap-1 px-3 py-2 border-b bg-muted/30">
+        {EMOJI_CATEGORIES.map((category) => {
+          if (category.id === 'recent' && !hasRecentEmojis) {
+            return null;
+          }
+
+          return (
+            <button
+              key={category.id}
+              type="button"
+              data-category={category.id}
+              onClick={onCategoryClick}
+              className={cn(
+                'w-7 h-7 flex items-center justify-center rounded-md text-base transition-colors cursor-pointer',
+                activeCategory === category.id
+                  ? 'bg-accent text-accent-foreground'
+                  : 'hover:bg-accent/50'
+              )}
+              title={category.label}
+            >
+              {category.icon}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
 );
 
 type TNativeEmojiTabProps = {

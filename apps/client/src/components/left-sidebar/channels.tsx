@@ -50,6 +50,11 @@ import { useChannelDragPreview } from './use-sidebar-dnd';
 import { VoiceUser } from './voice-user';
 import { Waveform } from './waveform';
 
+// a right click on someone in the channel opens their menu, not the channel's as well
+const stopPropagation = (e: React.SyntheticEvent) => {
+  e.stopPropagation();
+};
+
 type TVoiceProps = Omit<TItemWrapperProps, 'children'> & {
   channel: TChannel;
 };
@@ -145,10 +150,7 @@ const Voice = memo(
           )}
         </ItemWrapper>
         {channel.type === 'VOICE' && (
-          <div
-            className="ml-6 space-y-1 mt-1"
-            onContextMenu={(e) => e.stopPropagation()}
-          >
+          <div className="ml-6 space-y-1 mt-1" onContextMenu={stopPropagation}>
             {users.map((user) => (
               <VoiceUser
                 key={user.id}

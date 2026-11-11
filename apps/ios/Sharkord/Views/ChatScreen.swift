@@ -66,6 +66,23 @@ struct ChatScreen: View {
             && hasRoomForMembers
     }
 
+    // what a phone's bar has left for the name once its buttons are in: the back button and
+    // the margins, then each icon on the right. never under the old fixed slot, which cut a
+    // name short with room to spare beside it
+    private var compactTitleWidth: CGFloat {
+        var icons: CGFloat = 2
+
+        if canShowMembers {
+            icons += 1
+        }
+
+        if canShowThreadPanel, session.supports(.threadsList) {
+            icons += 1
+        }
+
+        return max(ChatTitle.minimumWidth, chatWidth - 130 - icons * 44)
+    }
+
     private var conversation: some View {
         MessageListView(store: store) {
             ChannelWelcome(title: title, isDirectMessage: channel?.isDm == true, partner: partner)
@@ -119,7 +136,7 @@ struct ChatScreen: View {
                 threadParent = nil
             }
         }
-        .animation(.easeOut(duration: 0.12), value: showsMemberList)
+        .animation(Motion.fade, value: showsMemberList)
         // a mac click in the chat puts the panel away and still opens what it landed on, a
         // person's profile or a link, where the catcher below would take the click for itself
         .simultaneousGesture(
@@ -151,7 +168,7 @@ struct ChatScreen: View {
                         .hidden()
                 }
             }
-            .animation(.snappy(duration: 0.18), value: dropdown)
+            .animation(Motion.quick, value: dropdown)
         }
         .onChange(of: dropdown != nil) { _, isOpen in
             servers.isChatDropdownOpen = isOpen
@@ -191,7 +208,8 @@ struct ChatScreen: View {
                     title: title,
                     partner: partner,
                     isDirectMessage: channel?.isDm == true,
-                    group: session.group(for: channelId)
+                    group: session.group(for: channelId),
+                    compactWidth: compactTitleWidth
                 )
                 // the link laid over the title rather than around it: an item that is only a link
                 // is drawn by the mac's bar as a button showing nothing but its first icon
@@ -564,9 +582,9 @@ private struct ChatDropdownPanel: View {
             .frame(maxWidth: width)
             .frame(maxHeight: maxHeight)
             .background(Theme.deepBackground)
-            .clipShape(.rect(cornerRadius: 12, style: .continuous))
+            .clipShape(.rect(cornerRadius: Radius.card, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
                     .strokeBorder(Theme.panelEdge, lineWidth: 1)
             }
             .shadow(color: .black.opacity(0.12), radius: 8, y: 3)
@@ -764,6 +782,10 @@ private struct ChatTitle: View {
     let partner: PublicUser?
     let isDirectMessage: Bool
     var group: GroupInfo?
+    // the room a phone's bar has for it, worked out by the screen that knows its buttons
+    var compactWidth = ChatTitle.minimumWidth
+
+    static var minimumWidth: CGFloat { 160 }
 
     @Environment(SessionStore.self) private var session
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -774,7 +796,7 @@ private struct ChatTitle: View {
             return 220
         }
 
-        return 160
+        return compactWidth
     }
 
     private var subtitle: String {

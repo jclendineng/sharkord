@@ -90,8 +90,6 @@ export const connect = async (options?: { auto?: boolean }) => {
       throw new Error('Failed to fetch server info');
     }
 
-    const { serverId } = info;
-
     const host = getHostFromServer();
     const trpc = await connectToTRPC(host);
 
@@ -100,7 +98,7 @@ export const connect = async (options?: { auto?: boolean }) => {
     if (hasPassword) {
       store.dispatch(serverSliceActions.setNeedsServerPassword());
       // show password prompt
-      openDialog(Dialog.SERVER_PASSWORD, { handshakeHash, serverId });
+      openDialog(Dialog.SERVER_PASSWORD, { handshakeHash });
       return;
     }
 

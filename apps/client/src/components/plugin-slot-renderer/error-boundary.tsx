@@ -6,7 +6,7 @@ import {
   PopoverTrigger
 } from '@sharkord/ui';
 import { Bug } from 'lucide-react';
-import { type ErrorInfo, type ReactNode } from 'react';
+import { memo, useCallback, type ErrorInfo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
@@ -29,6 +29,34 @@ const copyErrorDetails = (
 
   toast.success(copiedMessage);
 };
+
+type TCopyErrorDetailsProps = {
+  error: Error;
+};
+
+// its own component so the handler has an error to close over: the boundary's fallback is
+// drawn from a function, where a hook cannot be called
+const CopyErrorDetails = memo(({ error }: TCopyErrorDetailsProps) => {
+  const { t } = useTranslation();
+
+  const onCopy = useCallback(() => {
+    copyErrorDetails(
+      error,
+      t('errorDetailsCopied'),
+      t('errorLabel'),
+      t('stackLabel')
+    );
+  }, [error, t]);
+
+  return (
+    <span
+      className="text-red-500 underline text-xs cursor-pointer"
+      onClick={onCopy}
+    >
+      {t('copyDetails')}
+    </span>
+  );
+});
 
 const ErrorBoundary = ({
   children,
@@ -66,19 +94,7 @@ const ErrorBoundary = ({
                 </summary>
 
                 <div>
-                  <span
-                    className="text-red-500 underline text-xs cursor-pointer"
-                    onClick={() => {
-                      copyErrorDetails(
-                        error,
-                        t('errorDetailsCopied'),
-                        t('errorLabel'),
-                        t('stackLabel')
-                      );
-                    }}
-                  >
-                    {t('copyDetails')}
-                  </span>
+                  <CopyErrorDetails error={error} />
 
                   <pre className="text-xs text-red-500 overflow-auto max-h-48">
                     {error.message}

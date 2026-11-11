@@ -51,9 +51,9 @@ struct SearchDropdownCard: View {
                 .frame(width: Self.width)
                 .frame(maxHeight: min(Self.maxHeight, proxy.size.height - top - 12))
                 .background(Theme.deepBackground)
-                .clipShape(.rect(cornerRadius: 12, style: .continuous))
+                .clipShape(.rect(cornerRadius: Radius.card, style: .continuous))
                 .overlay {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
                         .strokeBorder(Theme.panelEdge, lineWidth: 1)
                 }
                 .shadow(color: .black.opacity(0.12), radius: 8, y: 3)

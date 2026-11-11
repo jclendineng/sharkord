@@ -151,5 +151,21 @@
   "rulesGiveExisting": "Assegnalo a tutti i membri attuali",
   "rulesGiveExistingHelp": "Senza questo, i membri entrati prima delle regole perdono i canali che chiudi.",
   "blockedSection": "Bloccati",
-  "unblockUser": "Sblocca"
+  "unblockUser": "Sblocca",
+  "voiceDebugTitle": "Diagnostica vocale",
+  "voiceDebugCollecting": "raccolta…",
+  "voiceDebugPaused": "in pausa",
+  "voiceDebugResume": "Riprendi",
+  "voiceDebugPause": "Pausa",
+  "voiceDebugClearEvents": "Cancella eventi",
+  "voiceDebugCopyReport": "Copia rapporto",
+  "voiceDebugOverview": "Panoramica",
+  "voiceDebugTransports": "Trasporti",
+  "voiceDebugProducers": "Produttori",
+  "voiceDebugConsumers": "Consumatori",
+  "voiceDebugEvents": "Eventi ({{count}})",
+  "voiceDebugRaw": "Grezzo",
+  "voiceDebugCopied": "Rapporto vocale copiato",
+  "voiceDebugCopyFailed": "Impossibile copiare il rapporto: {{error}}",
+  "voiceDebugNoEvents": "nessun evento"
 }

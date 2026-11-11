@@ -9,6 +9,7 @@ import { useUsers } from '@/features/server/users/hooks';
 import { LocalStorageKey } from '@/helpers/storage';
 import { getTRPCClient } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
+import { MobileDrawer } from '@/types';
 import {
   DELETED_USER_IDENTITY_AND_NAME,
   PluginSlot,
@@ -133,6 +134,7 @@ const RightSidebar = memo(
         edge="left"
         isOpen={isOpen}
         className={cn('h-full', className)}
+        data-drawer={MobileDrawer.MEMBERS}
       >
         <div className="flex h-12 items-center justify-between gap-2 border-b border-border px-4">
           <h3 className="text-sm font-semibold text-foreground">

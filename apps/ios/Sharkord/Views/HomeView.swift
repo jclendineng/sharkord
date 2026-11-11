@@ -111,7 +111,7 @@ struct HomeView: View {
                     .environment(session)
             }
         }
-        .animation(.snappy(duration: 0.2), value: servers.railMenu?.server.id)
+        .animation(Motion.quick, value: servers.railMenu?.server.id)
         .overlay {
             if let dropdown = servers.searchDropdown {
                 SearchDropdownCard(dropdown: dropdown)
@@ -278,10 +278,11 @@ struct HomeView: View {
                     // padding, so a pushed page's own background still reaches the card's edge
                     .safeAreaPadding(.bottom, 16)
                     .background(Theme.chatBackground)
-                    // a swipe in from the card's edge goes back. the system's own loses it to a
-                    // screen that pages sideways, channel info's tabs among them
+                    // a mac has no swipe back of its own for a pointer, so a drag in from the
+                    // card's edge goes back there. an ipad uses the system's, which follows the
+                    // finger and, through PagedTabs, works over channel info's tabs too
                     .overlay(alignment: .leading) {
-                        if !path.isEmpty {
+                        if !path.isEmpty && Platform.isMac {
                             Color.clear
                                 .frame(width: 22)
                                 .contentShape(.rect)
@@ -828,7 +829,7 @@ private struct ChatHandle: View {
             .background(Theme.panelControl, in: .capsule)
             .shadow(color: .black.opacity(0.45), radius: 8)
             .opacity(isShown ? 1 : 0)
-            .animation(.easeOut(duration: 0.15), value: isShown)
+            .animation(Motion.fade, value: isShown)
             .frame(width: Self.width, height: 96)
             .contentShape(.rect)
             .onHover(perform: setHovered)

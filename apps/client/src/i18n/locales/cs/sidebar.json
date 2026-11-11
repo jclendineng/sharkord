@@ -58,7 +58,7 @@
   "gpuEncoder": "GPU ({{encoder}})",
   "cpuEncoder": "CPU ({{encoder}})",
   "unknownEncoder": "Neznámý ({{encoder}})",
-  "membersHeader": "Členové — {{count}}",
+  "membersHeader": "Členové · {{count}}",
   "membersEveryone": "Zobrazit všechny",
   "membersThisChannel": "Jen tento kanál",
   "openDirectMessages": "Otevřít přímé zprávy",

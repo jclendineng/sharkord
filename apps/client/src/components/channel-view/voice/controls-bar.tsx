@@ -71,7 +71,7 @@ const ControlsBar = memo(({ channelId }: TControlsBarProps) => {
         className={cn(
           'flex items-center pointer-events-auto p-1.5',
           'gap-2 rounded border shadow-xl',
-          'bg-card border-border/50 backdrop-blur-md'
+          'bg-card border-border/50 backdrop-blur-md reduce-transparency:backdrop-blur-none'
         )}
       >
         <ControlToggleButton

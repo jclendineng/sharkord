@@ -22,8 +22,9 @@ import { toast } from 'sonner';
 import type { TDialogBaseProps } from '../types';
 
 type TDeleteUserDialogProps = TDialogBaseProps & {
-  user: TJoinedUser;
-  refetch: () => Promise<void>;
+  // only what it shows and acts on, so the members table and the mod view can both open it
+  user: Pick<TJoinedUser, 'id' | 'name'>;
+  refetch?: () => void | Promise<void>;
   onDelete?: () => void;
 };
 
@@ -58,7 +59,7 @@ const DeleteUserDialog = memo(
         toast.success(t('userDeletedSuccess'));
 
         close();
-        refetch();
+        refetch?.();
         onDelete?.();
       } catch (error) {
         toast.error(getTrpcError(error, t('failedDeleteUser')));
@@ -77,10 +78,7 @@ const DeleteUserDialog = memo(
           </AlertDialogHeader>
           <div className="flex flex-col gap-4">
             <Group label={t('wipeAllDataLabel')}>
-              <Switch
-                checked={wipe}
-                onCheckedChange={(checked) => setWipe(checked)}
-              />
+              <Switch checked={wipe} onCheckedChange={setWipe} />
             </Group>
 
             {wipe ? (

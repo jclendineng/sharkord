@@ -8,12 +8,17 @@ const availableChannelPermissions = Object.values(ChannelPermission);
 type TChannelPermissionItemProps = {
   permission: ChannelPermission;
   enabled: boolean;
-  onChange: (enabled: boolean) => void;
+  onToggle: (permission: ChannelPermission) => void;
 };
 
 const ChannelPermissionItem = memo(
-  ({ permission, enabled, onChange }: TChannelPermissionItemProps) => {
+  ({ permission, enabled, onToggle }: TChannelPermissionItemProps) => {
     const { t } = useTranslation('permissions');
+
+    const onChange = useCallback(() => {
+      onToggle(permission);
+    }, [onToggle, permission]);
+
     return (
       <div className="flex items-center justify-between">
         <div className="flex flex-col">
@@ -62,7 +67,7 @@ const ChannelPermissionList = memo(
               key={permission}
               permission={permission}
               enabled={permissionsMap.get(permission) ?? false}
-              onChange={() => handleToggle(permission)}
+              onToggle={handleToggle}
             />
           ))}
         </div>

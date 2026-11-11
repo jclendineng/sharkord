@@ -151,5 +151,21 @@
   "rulesGiveExisting": "Le donner à tous les membres actuels",
   "rulesGiveExistingHelp": "Sans cela, les membres arrivés avant les règles perdent les salons que vous fermez.",
   "blockedSection": "Bloqués",
-  "unblockUser": "Débloquer"
+  "unblockUser": "Débloquer",
+  "voiceDebugTitle": "Diagnostic vocal",
+  "voiceDebugCollecting": "collecte…",
+  "voiceDebugPaused": "en pause",
+  "voiceDebugResume": "Reprendre",
+  "voiceDebugPause": "Pause",
+  "voiceDebugClearEvents": "Effacer les événements",
+  "voiceDebugCopyReport": "Copier le rapport",
+  "voiceDebugOverview": "Vue d’ensemble",
+  "voiceDebugTransports": "Transports",
+  "voiceDebugProducers": "Producteurs",
+  "voiceDebugConsumers": "Consommateurs",
+  "voiceDebugEvents": "Événements ({{count}})",
+  "voiceDebugRaw": "Brut",
+  "voiceDebugCopied": "Rapport vocal copié",
+  "voiceDebugCopyFailed": "Impossible de copier le rapport : {{error}}",
+  "voiceDebugNoEvents": "aucun événement"
 }

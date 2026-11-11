@@ -25,6 +25,16 @@ struct DeleteMessageConfirmation: View {
         message.userId.flatMap { session.usersById[$0] }
     }
 
+    // the text as the chat shows it: a message that is only the link to a gif or a picture
+    // shows the picture there, the link would only repeat it
+    private var shownContent: String? {
+        guard let content = message.content, !content.isEmpty, !message.isMediaLinkOnly else {
+            return nil
+        }
+
+        return content
+    }
+
     var body: some View {
         ZStack {
             Color.black.opacity(isShown ? 0.6 : 0)
@@ -57,27 +67,16 @@ struct DeleteMessageConfirmation: View {
                                 .foregroundStyle(Theme.muted)
                         }
 
-                        if let content = message.content, !content.isEmpty {
+                        if let content = shownContent {
                             MessageContentView(html: content)
                                 .fixedSize(horizontal: false, vertical: true)
                                 .onGeometryChange(for: CGFloat.self, of: \.size.height) { contentHeight = $0 }
                                 .frame(height: min(contentHeight, Self.previewLimit), alignment: .top)
                                 .clipped()
                                 .mask(previewMask)
-                        } else if let poll = message.poll {
-                            Label {
-                                Text(poll.question)
-                                    .lineLimit(3)
-                            } icon: {
-                                Image(systemName: "text.alignleft")
-                            }
-                            .font(.subheadline)
-                            .foregroundStyle(Theme.text)
-                        } else if !message.files.isEmpty {
-                            Label(message.files.count == 1 ? "1 attachment" : "\(message.files.count) attachments", systemImage: "paperclip")
-                                .font(.subheadline)
-                                .foregroundStyle(Theme.muted)
                         }
+
+                        DeletePreviewItems(message: message)
                     }
 
                     Spacer(minLength: 0)
@@ -91,7 +90,7 @@ struct DeleteMessageConfirmation: View {
                             .font(.headline)
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity, minHeight: 46)
-                            .background(Theme.blurple, in: .rect(cornerRadius: 10))
+                            .background(Theme.blurple, in: .rect(cornerRadius: Radius.control))
                     }
 
                     Button(action: cancel) {
@@ -99,7 +98,7 @@ struct DeleteMessageConfirmation: View {
                             .font(.headline)
                             .foregroundStyle(Theme.header)
                             .frame(maxWidth: .infinity, minHeight: 46)
-                            .background(Theme.inputBackground, in: .rect(cornerRadius: 10))
+                            .background(Theme.inputBackground, in: .rect(cornerRadius: Radius.control))
                     }
                 }
                 .buttonStyle(.plain)
@@ -117,7 +116,7 @@ struct DeleteMessageConfirmation: View {
     }
 
     private func show() {
-        withAnimation(.spring(response: 0.25, dampingFraction: 1)) {
+        withAnimation(Motion.press) {
             isShown = true
         }
     }
@@ -138,5 +137,109 @@ struct DeleteMessageConfirmation: View {
         withTransaction(transaction) {
             dismiss()
         }
+    }
+}
+
+// everything else the message holds, so it is recognisable before it goes: the sticker, the
+// pictures and videos as a row of thumbnails, every other file by its name, and the poll
+private struct DeletePreviewItems: View {
+    let message: Message
+
+    @Environment(SessionStore.self) private var session
+
+    private static let thumbnailSize: CGFloat = 56
+    private static let maxThumbnails = 4
+    private static let maxFiles = 3
+
+    // pictures and videos the chat draws as media, attached first and then shown from links
+    private var visualURLs: [(id: String, url: URL, isVideo: Bool)] {
+        var items: [(id: String, url: URL, isVideo: Bool)] = []
+
+        if let address = session.address {
+            for file in message.files where file.isImage || file.isVideo {
+                items.append((id: "file-\(file.id)", url: address.fileURL(file), isVideo: file.isVideo))
+            }
+        }
+
+        for media in message.mediaImages {
+            if let url = URL(string: media.url) {
+                items.append((id: media.url, url: url, isVideo: false))
+            }
+        }
+
+        return items
+    }
+
+    private var otherFiles: [SharkordFile] {
+        message.files.filter { !$0.isImage && !$0.isVideo }
+    }
+
+    var body: some View {
+        let visuals = visualURLs
+        let files = otherFiles
+
+        if let sticker = message.sticker {
+            AnimatedImage(url: session.address?.fileURL(sticker.file), maxPointSize: 80, contentMode: .fit)
+                .frame(width: 80, height: 80)
+        }
+
+        if !visuals.isEmpty {
+            HStack(spacing: 6) {
+                ForEach(visuals.prefix(Self.maxThumbnails), id: \.id) { item in
+                    thumbnail(item.url, isVideo: item.isVideo)
+                }
+
+                if visuals.count > Self.maxThumbnails {
+                    Text("+\(visuals.count - Self.maxThumbnails)")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.muted)
+                }
+            }
+        }
+
+        ForEach(files.prefix(Self.maxFiles)) { file in
+            Label {
+                Text(file.originalName)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            } icon: {
+                Image(systemName: file.symbol)
+                    .foregroundStyle(Theme.accentText)
+            }
+            .font(.subheadline)
+            .foregroundStyle(Theme.text)
+        }
+
+        if files.count > Self.maxFiles {
+            Text(files.count - Self.maxFiles == 1 ? "1 more file" : "\(files.count - Self.maxFiles) more files")
+                .font(.footnote)
+                .foregroundStyle(Theme.muted)
+        }
+
+        if let poll = message.poll {
+            Label {
+                Text(poll.question)
+                    .lineLimit(3)
+            } icon: {
+                Image(systemName: "text.alignleft")
+            }
+            .font(.subheadline)
+            .foregroundStyle(Theme.text)
+        }
+    }
+
+    @ViewBuilder
+    private func thumbnail(_ url: URL, isVideo: Bool) -> some View {
+        Group {
+            if isVideo {
+                VideoThumbnail(url: url)
+            } else {
+                AnimatedImage(url: url, maxPointSize: Self.thumbnailSize, contentMode: .fill)
+            }
+        }
+        .frame(width: Self.thumbnailSize, height: Self.thumbnailSize)
+        .background(Theme.inputBackground)
+        .clipShape(.rect(cornerRadius: Radius.media))
+        .accessibilityHidden(true)
     }
 }

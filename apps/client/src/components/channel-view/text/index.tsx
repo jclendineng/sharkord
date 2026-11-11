@@ -230,7 +230,7 @@ const TextChannel = memo(({ channelId, onClose }: TChannelProps) => {
     <>
       {fetching && (
         <div className="absolute top-0 left-0 right-0 h-12 z-10 flex items-center justify-center">
-          <div className="flex items-center gap-2 bg-background/80 backdrop-blur-sm border border-border rounded-full px-4 py-2 shadow-lg">
+          <div className="flex items-center gap-2 bg-background/80 backdrop-blur-sm reduce-transparency:bg-background reduce-transparency:backdrop-blur-none border border-border rounded-full px-4 py-2 shadow-lg">
             <Spinner size="xs" />
             <span className="text-sm text-muted-foreground">
               Fetching older messages...

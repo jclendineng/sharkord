@@ -140,6 +140,10 @@ const StatsPopover = memo(({ children }: StatsPopoverProps) => {
     openDialog(Dialog.VOICE_DEBUG);
   }, []);
 
+  const toggleSimulcastLayers = useCallback(() => {
+    setShowSimulcastLayers((show) => !show);
+  }, []);
+
   return (
     <Popover>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
@@ -295,7 +299,7 @@ const StatsPopover = memo(({ children }: StatsPopoverProps) => {
                     <button
                       className="text-left hover:underline"
                       type="button"
-                      onClick={() => setShowSimulcastLayers((show) => !show)}
+                      onClick={toggleSimulcastLayers}
                     >
                       <StatsLabelValue
                         text={t('simulcastLayers', {

@@ -785,6 +785,12 @@
     },
     "They can't message you or send you a friend request, and their messages are folded away for you. A friendship with them ends. They aren't told.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "They can’t message you or send you a friend request, and their messages are folded away for you. A friendship with them ends. They aren’t told."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -2073,6 +2079,12 @@
     },
     "%lld uses aren't listed: from before Sharkord kept who joined, or an account deleted since.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld uses aren’t listed: from before Sharkord kept who joined, or an account deleted since."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -2717,6 +2729,12 @@
     },
     "1 use isn't listed: from before Sharkord kept who joined, or an account deleted since.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 use isn’t listed: from before Sharkord kept who joined, or an account deleted since."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -2901,6 +2919,12 @@
     },
     "A member's own settings win over their roles.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A member’s own settings win over their roles."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -5753,6 +5777,12 @@
     },
     "Attachments aren't forwarded, only the text.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attachments aren’t forwarded, only the text."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -5891,6 +5921,12 @@
     },
     "Automatic uses a headset's mic whenever one is plugged in.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatic uses a headset’s mic whenever one is plugged in."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -6811,6 +6847,12 @@
     },
     "Can't use the camera": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Can’t use the camera"
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -8513,6 +8555,12 @@
     },
     "Contact goes to this server's admins. Report a Problem is for the app itself.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contact goes to this server’s admins. Report a Problem is for the app itself."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -8881,6 +8929,12 @@
     },
     "Couldn't Open File": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn’t Open File"
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -8927,6 +8981,12 @@
     },
     "Couldn't load messages": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn’t load messages"
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -8973,6 +9033,12 @@
     },
     "Couldn't load settings": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn’t load settings"
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -9019,6 +9085,12 @@
     },
     "Couldn't load storage": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn’t load storage"
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -9065,6 +9137,12 @@
     },
     "Couldn't load the plugin list. %@": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn’t load the plugin list. %@"
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -9111,6 +9189,12 @@
     },
     "Couldn't load threads. The server may need updating to list them.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn’t load threads. The server may need updating to list them."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -9157,6 +9241,12 @@
     },
     "Couldn't reach a Sharkord server there. Check the address and try again.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn’t reach a Sharkord server there. Check the address and try again."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -13297,6 +13387,12 @@
     },
     "For the strongest noise suppression, turn on Voice Isolation. It is Apple's own and runs on this device.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For the strongest noise suppression, turn on Voice Isolation. It is Apple’s own and runs on this device."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -13760,6 +13856,12 @@
     },
     "GIFs aren't set up on this server. An admin can add a Klipy API key in Server Settings, under Overview.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GIFs aren’t set up on this server. An admin can add a Klipy API key in Server Settings, under Overview."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -15416,6 +15518,12 @@
     },
     "It scanned your code and will be signed in to %@ as you. Only approve a device you're holding.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It scanned your code and will be signed in to %@ as you. Only approve a device you’re holding."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -15462,6 +15570,12 @@
     },
     "It will be signed in to %@ as you. Only approve a device you're holding, never one a stranger shows you.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It will be signed in to %@ as you. Only approve a device you’re holding, never one a stranger shows you."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -15508,6 +15622,12 @@
     },
     "Its channels are deleted with it. This can't be undone.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Its channels are deleted with it. This can’t be undone."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -15600,6 +15720,12 @@
     },
     "Its messages are deleted with it. This can't be undone.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Its messages are deleted with it. This can’t be undone."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -16843,6 +16969,12 @@
     },
     "Let's Check": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Let’s Check"
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -16889,6 +17021,12 @@
     },
     "Lets previews load from addresses on the server's own network, like a home server's other apps. Only with members you trust, anyone could make the server load pages only it can reach. Also previewPrivateNetwork under [links] in config.ini.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lets previews load from addresses on the server’s own network, like a home server’s other apps. Only with members you trust, anyone could make the server load pages only it can reach. Also previewPrivateNetwork under [links] in config.ini."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -18914,6 +19052,12 @@
     },
     "Mentions and replies to you that you haven't read show up here.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mentions and replies to you that you haven’t read show up here."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -20742,6 +20886,12 @@
     },
     "No one's here yet!": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No one’s here yet!"
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -21432,6 +21582,12 @@
     },
     "Not what you're looking for? Browse your photo library for that perfect picture.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not what you’re looking for? Browse your photo library for that perfect picture."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -21754,6 +21910,12 @@
     },
     "Notifications reach devices through the app's relay, which only sees them encrypted. Off, this server sends no push notifications. The same switch is relayEnabled under [push] in config.ini.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications reach devices through the app’s relay, which only sees them encrypted. Off, this server sends no push notifications. The same switch is relayEnabled under [push] in config.ini."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -22076,6 +22238,12 @@
     },
     "On the other device, open Sharkord and tap Scan a QR Code, or point its camera at this code. You'll approve it here before it's signed in.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On the other device, open Sharkord and tap Scan a QR Code, or point its camera at this code. You’ll approve it here before it’s signed in."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -22858,6 +23026,12 @@
     },
     "Otherwise their messages stay, shown as from a deleted user. This can't be undone.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otherwise their messages stay, shown as from a deleted user. This can’t be undone."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -23778,6 +23952,12 @@
     },
     "Pick a username and a password of at least 4 characters. You'll use them to log in.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick a username and a password of at least 4 characters. You’ll use them to log in."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -24286,6 +24466,12 @@
     },
     "Preview Links on the Server's Network": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preview Links on the Server’s Network"
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -26494,6 +26680,12 @@
     },
     "Reporting isn't set up": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reporting isn’t set up"
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -29117,6 +29309,12 @@
     "Sharkord": {},
     "Sharkord can't see your photos. Allow access in %@, or pick one with Photos below.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sharkord can’t see your photos. Allow access in %@, or pick one with Photos below."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -30727,6 +30925,12 @@
     },
     "System follows this device's light or dark setting. Calls and sign in stay dark either way.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System follows this device’s light or dark setting. Calls and sign in stay dark either way."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -30911,6 +31115,12 @@
     },
     "Talk once they've joined.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Talk once they’ve joined."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -31279,6 +31489,12 @@
     },
     "That code doesn't hold a server address.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That code doesn’t hold a server address."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -31325,6 +31541,12 @@
     },
     "That code is for another server. Scan it from that server's settings.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That code is for another server. Scan it from that server’s settings."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -31371,6 +31593,12 @@
     },
     "That doesn't look like a server address.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That doesn’t look like a server address."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -31417,6 +31645,12 @@
     },
     "That isn't a Sharkord sign in code.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That isn’t a Sharkord sign in code."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -31555,6 +31789,12 @@
     },
     "The quota isn't a hard limit: an upload is written first and the rule applies after, so keep more disk free than the quota. 0 per member means unlimited, a role can override it in Roles.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The quota isn’t a hard limit: an upload is written first and the rule applies after, so keep more disk free than the quota. 0 per member means unlimited, a role can override it in Roles."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -31693,6 +31933,12 @@
     },
     "These are the devices signed in to your account on %@. Sign out of any you don't recognize, and change your password if you think someone else has it.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "These are the devices signed in to your account on %@. Sign out of any you don’t recognize, and change your password if you think someone else has it."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -31785,6 +32031,12 @@
     },
     "This can't be undone.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This can’t be undone."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -32061,6 +32313,12 @@
     },
     "This plugin doesn't offer anything people use directly.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This plugin doesn’t offer anything people use directly."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -32199,6 +32457,12 @@
     },
     "This server's admins haven't added an address for reports yet. They can add one in Server Settings, under Overview.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This server’s admins haven’t added an address for reports yet. They can add one in Server Settings, under Overview."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -32705,6 +32969,12 @@
     },
     "Turning uploads off doesn't touch files already uploaded.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turning uploads off doesn’t touch files already uploaded."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -32797,6 +33067,12 @@
     },
     "Turns on searching Freesound for soundboard sounds. Get a free key at freesound.org/apiv2/apply, it's the client secret. Searches go through this server, so the key stays private.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turns on searching Freesound for soundboard sounds. Get a free key at freesound.org/apiv2/apply, it’s the client secret. Searches go through this server, so the key stays private."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -34729,6 +35005,12 @@
     },
     "Voice Isolation is on. Apple's own suppression already cleans your mic, so Standard adds little.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voice Isolation is on. Apple’s own suppression already cleans your mic, so Standard adds little."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -35282,6 +35564,12 @@
     },
     "What's on your mind?": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What’s on your mind?"
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -35834,6 +36122,12 @@
     },
     "You don't have an invite link yet. Choose how long it lasts and how many times it can be used, then create one.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You don’t have an invite link yet. Choose how long it lasts and how many times it can be used, then create one."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -35880,6 +36174,12 @@
     },
     "You won't get push notifications": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You won’t get push notifications"
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -35926,6 +36226,12 @@
     },
     "You won't see it again unless someone adds you back.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You won’t see it again unless someone adds you back."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -35972,6 +36278,12 @@
     },
     "You'll appear offline, but still have full access": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You’ll appear offline, but still have full access"
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -36018,6 +36330,12 @@
     },
     "You're all caught up": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You’re all caught up"
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -36064,6 +36382,12 @@
     },
     "You're sharing your screen": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You’re sharing your screen"
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -36110,6 +36434,12 @@
     },
     "You're viewing older messages": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You’re viewing older messages"
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -36156,6 +36486,12 @@
     },
     "You've given Sharkord access to a select number of photos and videos.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You’ve given Sharkord access to a select number of photos and videos."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -36202,6 +36538,12 @@
     },
     "Your account is removed from this server and your messages stay as Deleted User. This can't be undone.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your account is removed from this server and your messages stay as Deleted User. This can’t be undone."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -36248,6 +36590,12 @@
     },
     "Your account, messages, reactions and uploads are removed from this server. This can't be undone.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your account, messages, reactions and uploads are removed from this server. This can’t be undone."
+          }
+        },
         "cs": {
           "stringUnit": {
             "state": "translated",
@@ -36894,6 +37242,12 @@
     },
     "GIFs can't be used here." : {
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GIFs can’t be used here."
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -37118,6 +37472,656 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "缩放"
+          }
+        }
+      }
+    },
+    "Sharkord can't add to your photos. Allow it in %@.": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sharkord nemůže přidávat do vašich fotek. Povolte to v %@."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sharkord no puede añadir a tus fotos. Permítelo en %@."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sharkord ne peut pas ajouter à vos photos. Autorisez-le dans %@."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sharkord non può aggiungere alle tue foto. Consentilo in %@."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Sharkord não pode adicionar às suas fotos. Permita em %@."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sharkord не может добавлять в ваши фото. Разрешите это в %@."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sharkord 无法添加到你的照片。请在%@中允许。"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sharkord can’t add to your photos. Allow it in %@."
+          }
+        }
+      }
+    },
+    "Saved to Photos": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uloženo do Fotek"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guardado en Fotos"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enregistré dans Photos"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salvato in Foto"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salvo em Fotos"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сохранено в Фото"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已存储到照片"
+          }
+        }
+      }
+    },
+    "This picture could not be saved to Photos.": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tento obrázek se nepodařilo uložit do Fotek."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo guardar esta imagen en Fotos."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cette image n’a pas pu être enregistrée dans Photos."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile salvare questa immagine in Foto."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível salvar esta imagem em Fotos."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось сохранить это изображение в Фото."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法将此图片存储到照片。"
+          }
+        }
+      }
+    },
+    "Photo": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotka"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photo"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фото"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "照片"
+          }
+        }
+      }
+    },
+    "Video": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vídeo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vidéo"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vídeo"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Видео"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "视频"
+          }
+        }
+      }
+    },
+    "Image": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obrázek"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imagen"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Image"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Immagine"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imagem"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Изображение"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "图片"
+          }
+        }
+      }
+    },
+    "%@, muted": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, ztlumeno"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, en silencio"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, micro coupé"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, microfono disattivato"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, sem som"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, микрофон выключен"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@，已静音"
+          }
+        }
+      }
+    },
+    "Shows them larger": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zobrazí je větší"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los muestra más grande"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’affiche en plus grand"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Li mostra più grandi"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra em tamanho maior"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показывает крупнее"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "放大显示"
+          }
+        }
+      }
+    },
+    "Shows it larger": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zobrazí větší"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lo muestra más grande"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’affiche en plus grand"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lo mostra più grande"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra em tamanho maior"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показывает крупнее"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "放大显示"
+          }
+        }
+      }
+    },
+    "Someone": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Někdo"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alguien"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quelqu’un"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Qualcuno"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alguém"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кто-то"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "有人"
+          }
+        }
+      }
+    },
+    "1 more file": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 další soubor"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 archivo más"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 autre fichier"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 altro file"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mais 1 arquivo"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ещё 1 файл"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "另外 1 个文件"
+          }
+        }
+      }
+    },
+    "%lld more files": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Další soubory: %lld"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld archivos más"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld autres fichiers"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Altri %lld file"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mais %lld arquivos"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ещё файлов: %lld"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "另外 %lld 个文件"
+          }
+        }
+      }
+    },
+    "Your session has ended. Sign in again.": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše relace skončila. Přihlaste se znovu."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu sesión ha terminado. Inicia sesión de nuevo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Votre session a pris fin. Reconnectez-vous."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La sessione è terminata. Accedi di nuovo."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sua sessão terminou. Entre novamente."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сеанс завершён. Войдите снова."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你的会话已结束。请重新登录。"
+          }
+        }
+      }
+    },
+    "Disconnected from the server.": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odpojeno od serveru."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desconectado del servidor."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Déconnecté du serveur."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnesso dal server."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desconectado do servidor."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Соединение с сервером разорвано."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已与服务器断开连接。"
           }
         }
       }

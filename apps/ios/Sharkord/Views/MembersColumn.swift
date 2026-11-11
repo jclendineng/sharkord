@@ -33,6 +33,8 @@ struct MembersColumn: View {
     }
 
     @Environment(SessionStore.self) private var session
+    // the column's text follows the text size set on an ipad as well as the window's width
+    @ScaledMetric(relativeTo: .subheadline) private var textScale = 1.0
 
     // who can see a private channel, nil for a public one, which everyone can
     @State private var channelMemberIds: Set<Int>?
@@ -65,7 +67,7 @@ struct MembersColumn: View {
             LazyVStack(alignment: .leading, spacing: 2) {
                 ForEach(sections, id: \.title) { section in
                     Text("\(section.title.uppercased()) · \(section.users.count)")
-                        .font(.system(size: Self.detailSize * scale, weight: .semibold))
+                        .font(.system(size: Self.detailSize * scale * textScale, weight: .semibold))
                         .foregroundStyle(Theme.muted)
                         .padding(.horizontal, 10)
                         .padding(.top, 16)
@@ -113,6 +115,8 @@ private struct MemberColumnRow: View {
     let scale: CGFloat
 
     @Environment(SessionStore.self) private var session
+    // as the column's headings do
+    @ScaledMetric(relativeTo: .subheadline) private var textScale = 1.0
     @Environment(ServerListStore.self) private var servers
 
     @State private var isProfilePresented = false
@@ -131,13 +135,13 @@ private struct MemberColumnRow: View {
 
                 VStack(alignment: .leading, spacing: 1) {
                     Text(user.name)
-                        .font(.system(size: MembersColumn.nameSize * scale, weight: .medium))
+                        .font(.system(size: MembersColumn.nameSize * scale * textScale, weight: .medium))
                         .foregroundStyle(session.nameColor(for: user))
                         .lineLimit(1)
 
                     if let customStatus = user.customStatus, !customStatus.isEmpty {
                         Text(customStatus)
-                            .font(.system(size: MembersColumn.detailSize * scale))
+                            .font(.system(size: MembersColumn.detailSize * scale * textScale))
                             .foregroundStyle(Theme.muted)
                             .lineLimit(1)
                     }

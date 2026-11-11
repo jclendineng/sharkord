@@ -8,7 +8,7 @@ import {
   CardTitle
 } from '@sharkord/ui';
 import { Bug, RefreshCw } from 'lucide-react';
-import { memo, type ReactNode, useEffect, useState } from 'react';
+import { memo, type ReactNode, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type TGlobalErrorBoundaryProps = {
@@ -51,9 +51,19 @@ const GlobalErrorFallback = memo(
       };
     }, [copied]);
 
+    const onReload = useCallback(() => {
+      reset();
+      window.location.reload();
+    }, [reset]);
+
+    const onCopyDetails = useCallback(() => {
+      copyErrorDetails(error, t('errorLabel'), t('stackLabel'));
+      setCopied(true);
+    }, [error, t]);
+
     return (
       <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-6 py-10">
-        <Card className="relative z-10 w-full max-w-2xl border-border/70 bg-card/95 shadow-2xl backdrop-blur">
+        <Card className="relative z-10 w-full max-w-2xl border-border/70 bg-card/95 shadow-2xl backdrop-blur reduce-transparency:bg-card reduce-transparency:backdrop-blur-none">
           <CardHeader className="space-y-4 text-center sm:text-left">
             <div className="space-y-2">
               <CardTitle className="text-2xl tracking-tight">
@@ -67,13 +77,7 @@ const GlobalErrorFallback = memo(
 
           <CardContent className="space-y-6">
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Button
-                className="sm:w-auto"
-                onClick={() => {
-                  reset();
-                  window.location.reload();
-                }}
-              >
+              <Button className="sm:w-auto" onClick={onReload}>
                 <RefreshCw className="h-4 w-4" />
                 {t('reloadApp')}
               </Button>
@@ -92,10 +96,7 @@ const GlobalErrorFallback = memo(
               <Button
                 variant="outline"
                 className="sm:w-auto"
-                onClick={() => {
-                  copyErrorDetails(error, t('errorLabel'), t('stackLabel'));
-                  setCopied(true);
-                }}
+                onClick={onCopyDetails}
               >
                 {copied ? t('copied') : t('copyDetails')}
               </Button>

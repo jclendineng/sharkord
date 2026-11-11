@@ -62,9 +62,9 @@ struct PollView: View {
             }
             .padding(14)
             .frame(maxWidth: 420, alignment: .leading)
-            .background(Theme.listBackground, in: .rect(cornerRadius: 12))
+            .background(Theme.listBackground, in: .rect(cornerRadius: Radius.card))
             .overlay {
-                RoundedRectangle(cornerRadius: 12).stroke(Theme.divider, lineWidth: 1)
+                RoundedRectangle(cornerRadius: Radius.card).stroke(Theme.divider, lineWidth: 1)
             }
         }
     }

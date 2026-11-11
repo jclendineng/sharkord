@@ -207,7 +207,7 @@ nonisolated final class MixingAudioDevice: NSObject, RTCAudioDevice, @unchecked 
             #endif
             try setUpEngine()
         } catch {
-            print("[voice] mixing audio device could not start: \(error)")
+            Log.voice.error("mixing audio device could not start: \(String(describing: error))")
             return false
         }
 
@@ -334,7 +334,7 @@ nonisolated final class MixingAudioDevice: NSObject, RTCAudioDevice, @unchecked 
         do {
             try setUpEngine()
         } catch {
-            print("[voice] mixing audio device could not follow the new mic: \(error)")
+            Log.voice.error("mixing audio device could not follow the new mic: \(String(describing: error))")
             return
         }
 
@@ -439,7 +439,7 @@ nonisolated final class MixingAudioDevice: NSObject, RTCAudioDevice, @unchecked 
             action?()
             return true
         } catch {
-            print("[voice] mixing audio engine failed to start: \(error)")
+            Log.voice.error("mixing audio engine failed to start: \(String(describing: error))")
             return false
         }
     }

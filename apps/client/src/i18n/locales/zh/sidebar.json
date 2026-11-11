@@ -58,7 +58,7 @@
   "gpuEncoder": "GPU ({{encoder}})",
   "cpuEncoder": "CPU ({{encoder}})",
   "unknownEncoder": "未知 ({{encoder}})",
-  "membersHeader": "成员 — {{count}}",
+  "membersHeader": "成员 · {{count}}",
   "membersEveryone": "显示所有人",
   "membersThisChannel": "仅此频道",
   "openDirectMessages": "打开私信",

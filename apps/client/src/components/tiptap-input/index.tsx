@@ -3,6 +3,7 @@ import { useReferenceableChannels } from '@/features/server/hooks';
 import { useRoles } from '@/features/server/roles/hooks';
 import { useFilteredUsers } from '@/features/server/users/hooks';
 import { TestId, type TCommandInfo } from '@sharkord/shared';
+import type { AnyExtension } from '@tiptap/core';
 import Emoji, { gitHubEmojis } from '@tiptap/extension-emoji';
 import Link from '@tiptap/extension-link';
 import { EditorContent, useEditor } from '@tiptap/react';
@@ -96,7 +97,7 @@ const TiptapInput = memo(
     const channels = useReferenceableChannels();
 
     const extensions = useMemo(() => {
-      const exts = [
+      const exts: AnyExtension[] = [
         StarterKit.configure({
           hardBreak: {
             HTMLAttributes: {
@@ -144,8 +145,7 @@ const TiptapInput = memo(
           SlashCommands.configure({
             commands,
             suggestion: CommandSuggestion
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          }) as any
+          })
         );
       }
 
@@ -253,10 +253,15 @@ const TiptapInput = memo(
     // keep commands storage in sync with plugin commands from the store
     useEffect(() => {
       if (editor && commands) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const storage = editor.storage as any;
-        if (storage[COMMANDS_STORAGE_KEY]) {
-          storage[COMMANDS_STORAGE_KEY].commands = commands;
+        // the slash commands extension's own storage, there only when a plugin added commands
+        const storage = editor.storage as unknown as Record<
+          string,
+          { commands: TCommandInfo[] } | undefined
+        >;
+        const commandsStorage = storage[COMMANDS_STORAGE_KEY];
+
+        if (commandsStorage) {
+          commandsStorage.commands = commands;
         }
       }
     }, [editor, commands]);

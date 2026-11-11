@@ -1,10 +1,9 @@
 import type { Dialog } from '@/components/dialogs/dialogs';
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { TGenericObject } from '@sharkord/shared';
 
 export type TDialogState = {
   openDialog: Dialog | undefined;
-  props: TGenericObject;
+  props: Record<string, unknown>;
   isOpen: boolean;
   closing: boolean;
 };
@@ -23,10 +22,10 @@ export const dialogSlice = createSlice({
     resetDialogs: () => initialState,
     openDialog: (
       state,
-      action: PayloadAction<{ dialog: Dialog; props?: TGenericObject }>
+      action: PayloadAction<{ dialog: Dialog; props?: object }>
     ) => {
       state.openDialog = action.payload.dialog;
-      state.props = action.payload.props || {};
+      state.props = { ...action.payload.props };
       state.isOpen = true;
     },
     closeDialogs: (state) => {

@@ -1,4 +1,4 @@
-import { and, desc, eq, gt } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { db } from '..';
 import { sessions } from '../schema';
 
@@ -10,8 +10,8 @@ const getSession = async (sessionId: string, userId: number) =>
     .limit(1)
     .get();
 
-// a session idle for longer than its token lives cannot be used any more, so it is left out
-const getActiveSessions = async (userId: number, activeSince: number) =>
+// every device still signed in, most recently used first
+const getActiveSessions = async (userId: number) =>
   db
     .select({
       id: sessions.id,
@@ -25,9 +25,7 @@ const getActiveSessions = async (userId: number, activeSince: number) =>
       lastActiveAt: sessions.lastActiveAt
     })
     .from(sessions)
-    .where(
-      and(eq(sessions.userId, userId), gt(sessions.lastActiveAt, activeSince))
-    )
+    .where(eq(sessions.userId, userId))
     .orderBy(desc(sessions.lastActiveAt));
 
 export { getActiveSessions, getSession };

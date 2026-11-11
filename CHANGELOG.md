@@ -283,6 +283,17 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 ### Changed
 
+- One picture viewer everywhere, with real zooming.
+  - iPhone, iPad and Mac: a picture in a message, attached or shown from a link, opens the same viewer a channel's media does, with the message's other pictures a swipe away.
+  - A picture zooms about the point between two fingers, pans while zoomed, zooms in and out on a double tap and closes with a pull down. It used to snap back the moment the fingers lifted.
+  - Web: the viewer takes fingers as well as a mouse, with pinch, pan, double tap and a drag down to close. The wheel zooms about the pointer, and the viewer is a dialog to a screen reader, with focus kept inside it.
+- The web's phone drawers follow the finger: the channels and the members slide with a sideways drag and go the way they were heading on release. The members drawer now slides like the channels one.
+- The chat's way back to the bottom is a round glass button, and the conversation fades into the bar above it and the message box below.
+- Call tiles are buttons: they dim under the finger, and VoiceOver reads who is on them and can flip the camera.
+- On an iPad, swiping back from a pushed screen in the chat is the system's swipe, which follows the finger. It starts over the messages too, and over channel info's tabs from their first tab.
+- Closing the attachment panel with a flick carries on at the finger's speed.
+- Filled buttons share one corner radius across the apps.
+- Held at the largest text sizes, the message box's buttons show large in the middle of the screen, as the system's own bars do.
 - Every package is on its latest release.
   - Server: mediasoup 3.31 and Bun 1.4.4, in the image and in CI.
   - Web: Vite 8, i18next 26, lucide 1 and react-day-picker 10.
@@ -387,6 +398,17 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 #### Server and web client
 
+- A sign in lasts until it is signed out, ended from the devices list or ended by a password change. Devices left unopened for a week were signed out, and come back signed in once the server is updated.
+- An app whose session was ended shows the sign in screen, where it sat on Reconnecting for good.
+- On a phone or tablet, the web's small buttons can be hit: any button under 44 pixels gets a hit area that size without moving the layout.
+- The web follows Reduce Transparency and Increase Contrast: blurred surfaces turn solid, and borders and secondary text get stronger.
+- A picture shown from a link has rounded corners on the web, as in the apps.
+- Copying a picture's link on the web says it failed when the browser refused, where it always said copied.
+- Upload limits on the web are said in your language: too many attachments, a file too large, and file sharing off in direct messages.
+- A clickable avatar on the web can be reached and pressed from the keyboard.
+- A picture shown from a link on the web has a placeholder while it loads, where a message of pictures showed as blank space.
+- The web's voice diagnostics dialog and its open in new tab links are in your language.
+- Dialogs on the web are checked for the props they need, which caught a server password prompt handed an id it never used.
 - A new server icon is framed to a square and saved small before it uploads, instead of going up at full size.
 - GIFs can no longer be set as an avatar or server icon. Ones already set stay, and banners can still be GIFs.
 - The web client says when your voice moved to another device and offers to take it back, as the apps do.
@@ -466,6 +488,22 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - Debug output leaves secrets out, the plugin marketplace fetch has a timeout and size cap, an SSO avatar is fetched from the address that was checked, and uploads no longer report where the file sits on the server.
 
 #### iOS app
+
+- The largest text sizes no longer break the chat.
+  - The message box keeps room to type in: its buttons grow taller with the text, not wider.
+  - The emoji, GIF and sticker panel stops growing where the keyboard does, so its tabs and search fit.
+  - Channel names take a second line, and the channel symbols, the lock and the category arrows grow with the text. Your name in the user bar takes a second line too.
+- With Photos access denied, Open Settings in the attachment panel is no longer half hidden under the Photos and Files bar.
+- A tall picture in a message has rounded corners on every side, where only its box had them.
+- Two people in a voice channel whose profiles had not loaded yet were drawn as one.
+- Saving a picture says when the app is not allowed to add to Photos, and a second save's message is no longer cut short by the first.
+- Saving a picture to Photos no longer crashes once access is allowed, and neither does coming back from picking which photos the app can see.
+- The delete confirmation shows everything the message holds: its text, a sticker, its pictures and videos as thumbnails, its other files by name, and its poll. A GIF or picture sent as a link showed only its address, and attachments were only counted.
+- Delete on a message asks once its menu has closed, and Message on a profile opens the conversation once the profile has. Both waited a fixed moment and were sometimes dropped.
+- A private voice channel's lock no longer sits on the speaker symbol.
+- A channel name in the chat's top bar uses the room the bar has before it is cut short.
+- A long press's tap lands with the menu, not after it.
+- English text uses typographic apostrophes.
 
 - The account card opened from an invite link has a way to log in for someone who already has an account.
 - A moderator's mute now holds in the app: the microphone closes and can't be reopened until the moderator lifts it.

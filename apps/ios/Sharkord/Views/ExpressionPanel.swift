@@ -52,6 +52,9 @@ struct ExpressionPanel: View {
         } bar: {
             EmptyView()
         }
+        // in the keyboard's place, and like the keyboard it stops growing with the text size:
+        // past this the tabs, the search box and the headings no longer fit a phone's width
+        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
         .environment(model)
     }
 }
@@ -85,9 +88,9 @@ struct ExpressionPicker: View {
         }
         .frame(width: 480, height: Self.height)
         .background(Theme.deepBackground)
-        .clipShape(.rect(cornerRadius: 12, style: .continuous))
+        .clipShape(.rect(cornerRadius: Radius.card, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: Radius.card, style: .continuous)
                 .strokeBorder(Theme.panelEdge, lineWidth: 1)
         }
         .shadow(color: .black.opacity(0.12), radius: 8, y: 3)
@@ -108,7 +111,7 @@ private struct TabPicker: View {
         HStack(spacing: 4) {
             ForEach(ExpressionPanel.Tab.shown(in: session)) { tab in
                 TabButton(tab: tab, isSelected: tab == selection, pill: pill) {
-                    withAnimation(.snappy(duration: 0.2)) {
+                    withAnimation(Motion.quick) {
                         selection = tab
                     }
                 }
@@ -129,6 +132,8 @@ private struct TabButton: View {
         Button(action: action) {
             Text(tab.rawValue)
                 .font(.subheadline.weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
                 .foregroundStyle(isSelected ? Theme.header : Theme.muted)
                 .frame(maxWidth: .infinity, minHeight: 34)
                 .hoverHighlight(cornerRadius: 10)
@@ -518,8 +523,8 @@ private struct GifTab: View {
                             AnimatedImage(url: URL(string: gif.previewUrl), maxPointSize: 200)
                                 .aspectRatio(gif.width / max(gif.height, 1), contentMode: .fit)
                                 .background(Theme.inputBackground)
-                                .clipShape(.rect(cornerRadius: 8, style: .continuous))
-                                .hoverBrighten(cornerRadius: 8)
+                                .clipShape(.rect(cornerRadius: Radius.media, style: .continuous))
+                                .hoverBrighten(cornerRadius: Radius.media)
                         }
                         .buttonStyle(.plain)
                         .onAppear {
@@ -633,8 +638,8 @@ private struct CategoryTile: View {
             }
             .frame(height: 92)
             .background(Theme.inputBackground)
-            .clipShape(.rect(cornerRadius: 8, style: .continuous))
-            .hoverBrighten(cornerRadius: 8)
+            .clipShape(.rect(cornerRadius: Radius.media, style: .continuous))
+            .hoverBrighten(cornerRadius: Radius.media)
         }
         .buttonStyle(.plain)
     }

@@ -7,6 +7,7 @@ import {
 } from '@/features/server/hooks';
 import { LocalStorageKey } from '@/helpers/storage';
 import { cn } from '@/lib/utils';
+import { MobileDrawer } from '@/types';
 import { TestId } from '@sharkord/shared';
 import { memo } from 'react';
 import { Categories } from './categories';
@@ -26,6 +27,10 @@ import { VoiceTakenOverBanner } from './voice-taken-over-banner';
 const MIN_WIDTH = 200;
 const MAX_WIDTH = 400;
 const DEFAULT_WIDTH = 288; // w-72 = 288px
+
+const deselectChannel = () => {
+  setSelectedChannelId(undefined);
+};
 
 type TLeftSidebarProps = {
   className?: string;
@@ -49,11 +54,12 @@ const LeftSidebar = memo(({ className }: TLeftSidebarProps) => {
       edge="right"
       className={cn('h-full', className)}
       data-testid={TestId.LEFT_SIDEBAR}
+      data-drawer={MobileDrawer.CHANNELS}
     >
       <div className="flex w-full justify-between h-12 items-center border-b border-border px-4">
         <h2
           className="font-semibold text-foreground truncate cursor-pointer"
-          onClick={() => setSelectedChannelId(undefined)}
+          onClick={deselectChannel}
           data-testid={TestId.LEFT_SIDEBAR_SERVER_NAME}
         >
           {serverName}

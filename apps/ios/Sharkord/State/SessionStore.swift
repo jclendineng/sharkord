@@ -1073,10 +1073,12 @@ final class SessionStore {
         }
     }
 
-    func voiceParticipants(in channelId: Int) -> [(user: PublicUser?, state: VoiceUserState)] {
+    // keyed by the id the server sent: someone whose profile has not arrived has no user yet,
+    // and two of them keyed by the user's id were one row to a list
+    func voiceParticipants(in channelId: Int) -> [VoiceParticipant] {
         (voiceUsers[channelId] ?? [:])
             .sorted { $0.key < $1.key }
-            .map { (usersById[$0.key], $0.value) }
+            .map { VoiceParticipant(userId: $0.key, user: usersById[$0.key], state: $0.value) }
     }
 
     func joinVoice(_ channelId: Int) async {
@@ -2344,7 +2346,7 @@ final class SessionStore {
                 try await client.mutation("voice.setConsumerQuality", input: input)
             } catch {
                 // a sender of one layer has none to pick, nothing to tell anyone about
-                print("[voice] could not set the quality of \(key): \(error)")
+                Log.voice.error("could not set the quality of \(String(describing: key), privacy: .public): \(String(describing: error))")
             }
         }
     }
@@ -2903,6 +2905,10 @@ final class SessionStore {
         switch reason {
         case .closedByClient:
             return
+        // the server refused the token: a week unopened, signed out elsewhere or a password
+        // change. retrying it only ever showed reconnecting, so it signs in again instead
+        case .connectionLost(let code, _) where code == TRPCClient.unauthorizedCloseCode:
+            signOut(message: String(localized: "Your session has ended. Sign in again."))
         case .serverRequestedReconnect, .connectionLost:
             scheduleReconnect()
         }

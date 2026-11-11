@@ -154,6 +154,80 @@ const Storage = memo(() => {
     [onChange]
   );
 
+  const onStorageUploadEnabledChange = useCallback(
+    (checked: boolean) => onChange('storageUploadEnabled', checked),
+    [onChange]
+  );
+  const onStorageFileSharingInDirectMessagesChange = useCallback(
+    (checked: boolean) =>
+      onChange('storageFileSharingInDirectMessages', checked),
+    [onChange]
+  );
+  const onStorageQuotaChange = useCallback(
+    (value: number) => onChange('storageQuota', value),
+    [onChange]
+  );
+  const onStorageUploadMaxFileSizeChange = useCallback(
+    (value: number) => onChange('storageUploadMaxFileSize', value),
+    [onChange]
+  );
+  const onStorageMaxAvatarSizeChange = useCallback(
+    (value: number) => onChange('storageMaxAvatarSize', value),
+    [onChange]
+  );
+  const onStorageMaxBannerSizeChange = useCallback(
+    (value: number) => onChange('storageMaxBannerSize', value),
+    [onChange]
+  );
+  const onStorageSpaceQuotaByUserChange = useCallback(
+    (value: number) => onChange('storageSpaceQuotaByUser', value),
+    [onChange]
+  );
+  const onStorageOverflowActionChange = useCallback(
+    (value: string) =>
+      onChange('storageOverflowAction', value as StorageOverflowAction),
+    [onChange]
+  );
+  const onStorageImageOptimizationEnabledChange = useCallback(
+    (checked: boolean) => onChange('storageImageOptimizationEnabled', checked),
+    [onChange]
+  );
+
+  // the preset buttons are drawn in a loop, so each carries its value and they share a handler
+  const onMaxFilesPerMessagePresetClick = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      onChange(
+        'storageMaxFilesPerMessage',
+        Number(e.currentTarget.dataset.value)
+      );
+    },
+    [onChange]
+  );
+
+  const onSignedUrlsTtlPresetClick = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      onChange(
+        'storageSignedUrlsTtlSeconds',
+        Number(e.currentTarget.dataset.value)
+      );
+    },
+    [onChange]
+  );
+
+  const onImageOptimizationQualitySliderChange = useCallback(
+    (sliderValues: number[]) => {
+      onChange(
+        'storageImageOptimizationQuality',
+        clamp(
+          Math.round(sliderValues[0]),
+          STORAGE_MIN_IMAGE_OPTIMIZATION_QUALITY,
+          STORAGE_MAX_IMAGE_OPTIMIZATION_QUALITY
+        )
+      );
+    },
+    [onChange]
+  );
+
   if (loading) {
     return <LoadingCard className="h-[600px]" />;
   }
@@ -167,9 +241,7 @@ const Storage = memo(() => {
       <Group label={t('allowUploadsLabel')} description={t('allowUploadsDesc')}>
         <Switch
           checked={!!values.storageUploadEnabled}
-          onCheckedChange={(checked) =>
-            onChange('storageUploadEnabled', checked)
-          }
+          onCheckedChange={onStorageUploadEnabledChange}
         />
       </Group>
 
@@ -179,9 +251,7 @@ const Storage = memo(() => {
       >
         <Switch
           checked={!!values.storageFileSharingInDirectMessages}
-          onCheckedChange={(checked) =>
-            onChange('storageFileSharingInDirectMessages', checked)
-          }
+          onCheckedChange={onStorageFileSharingInDirectMessagesChange}
           disabled={!values.storageUploadEnabled}
         />
       </Group>
@@ -196,7 +266,7 @@ const Storage = memo(() => {
           max={STORAGE_MAX_QUOTA}
           min={STORAGE_MIN_QUOTA}
           disabled={!values.storageUploadEnabled}
-          onChange={(value) => onChange('storageQuota', value)}
+          onChange={onStorageQuotaChange}
           preview={
             <>
               {labels.storageQuota.value} {labels.storageQuota.unit}
@@ -212,7 +282,7 @@ const Storage = memo(() => {
           max={STORAGE_MAX_FILE_SIZE}
           min={STORAGE_MIN_FILE_SIZE}
           disabled={!values.storageUploadEnabled}
-          onChange={(value) => onChange('storageUploadMaxFileSize', value)}
+          onChange={onStorageUploadMaxFileSizeChange}
           preview={
             <>
               {labels.storageUploadMaxFileSize.value}{' '}
@@ -232,7 +302,7 @@ const Storage = memo(() => {
           max={STORAGE_MAX_AVATAR_SIZE}
           min={STORAGE_MIN_FILE_SIZE}
           disabled={!values.storageUploadEnabled}
-          onChange={(value) => onChange('storageMaxAvatarSize', value)}
+          onChange={onStorageMaxAvatarSizeChange}
           preview={
             <>
               {labels.storageMaxAvatarSize.value}{' '}
@@ -252,7 +322,7 @@ const Storage = memo(() => {
           max={STORAGE_MAX_BANNER_SIZE}
           min={STORAGE_MIN_FILE_SIZE}
           disabled={!values.storageUploadEnabled}
-          onChange={(value) => onChange('storageMaxBannerSize', value)}
+          onChange={onStorageMaxBannerSizeChange}
           preview={
             <>
               {labels.storageMaxBannerSize.value}{' '}
@@ -269,7 +339,7 @@ const Storage = memo(() => {
           max={STORAGE_MAX_QUOTA_PER_USER}
           min={STORAGE_MIN_QUOTA_PER_USER}
           disabled={!values.storageUploadEnabled}
-          onChange={(value) => onChange('storageSpaceQuotaByUser', value)}
+          onChange={onStorageSpaceQuotaByUserChange}
           preview={
             Number(values.storageSpaceQuotaByUser) === 0 ? (
               t('unlimitedLabel')
@@ -311,9 +381,8 @@ const Storage = memo(() => {
                 size="sm"
                 variant="outline"
                 disabled={!values.storageUploadEnabled}
-                onClick={() =>
-                  onChange('storageMaxFilesPerMessage', preset.value)
-                }
+                data-value={preset.value}
+                onClick={onMaxFilesPerMessagePresetClick}
               >
                 {preset.label}
               </Button>
@@ -327,9 +396,7 @@ const Storage = memo(() => {
         description={t('overflowActionDesc')}
       >
         <Select
-          onValueChange={(value) =>
-            onChange('storageOverflowAction', value as StorageOverflowAction)
-          }
+          onValueChange={onStorageOverflowActionChange}
           value={values.storageOverflowAction}
           disabled={!values.storageUploadEnabled}
         >
@@ -355,9 +422,7 @@ const Storage = memo(() => {
       >
         <Switch
           checked={!!values.storageImageOptimizationEnabled}
-          onCheckedChange={(checked) =>
-            onChange('storageImageOptimizationEnabled', checked)
-          }
+          onCheckedChange={onStorageImageOptimizationEnabledChange}
           disabled={!values.storageUploadEnabled}
         />
       </Group>
@@ -373,16 +438,7 @@ const Storage = memo(() => {
               !values.storageUploadEnabled ||
               !values.storageImageOptimizationEnabled
             }
-            onValueChange={(sliderValues) =>
-              onChange(
-                'storageImageOptimizationQuality',
-                clamp(
-                  Math.round(sliderValues[0]),
-                  STORAGE_MIN_IMAGE_OPTIMIZATION_QUALITY,
-                  STORAGE_MAX_IMAGE_OPTIMIZATION_QUALITY
-                )
-              )
-            }
+            onValueChange={onImageOptimizationQualitySliderChange}
             rightSlot={
               <span className="text-sm">
                 {values.storageImageOptimizationQuality}%
@@ -436,9 +492,8 @@ const Storage = memo(() => {
                 key={preset.value}
                 size="sm"
                 variant="outline"
-                onClick={() =>
-                  onChange('storageSignedUrlsTtlSeconds', preset.value)
-                }
+                data-value={preset.value}
+                onClick={onSignedUrlsTtlPresetClick}
               >
                 {preset.label}
               </Button>

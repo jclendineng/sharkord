@@ -1,5 +1,5 @@
 import { getErrorMessage, type TPluginHookResult } from '@sharkord/shared';
-import { TRPCError } from '@trpc/server';
+import { invariant } from '../utils/invariant';
 import { pluginLogger } from './plugin-logger';
 
 // a reject reason is written by a plugin and shown to a user, so it is capped
@@ -23,7 +23,7 @@ const runHook = async <TPayload extends object, TUpdate extends object>({
   payload,
   normalize,
   reject = (message: string): never => {
-    throw new TRPCError({ code: 'BAD_REQUEST', message });
+    invariant(false, message);
   }
 }: TRunHookOptions<TPayload, TUpdate>): Promise<TPayload> => {
   let current = payload;

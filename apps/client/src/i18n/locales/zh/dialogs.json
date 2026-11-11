@@ -151,5 +151,21 @@
   "rulesGiveExisting": "授予所有现有成员",
   "rulesGiveExistingHelp": "否则，在规则之前加入的成员将失去你关闭的频道。",
   "blockedSection": "已屏蔽",
-  "unblockUser": "取消屏蔽"
+  "unblockUser": "取消屏蔽",
+  "voiceDebugTitle": "语音诊断",
+  "voiceDebugCollecting": "正在收集…",
+  "voiceDebugPaused": "已暂停",
+  "voiceDebugResume": "继续",
+  "voiceDebugPause": "暂停",
+  "voiceDebugClearEvents": "清除事件",
+  "voiceDebugCopyReport": "复制报告",
+  "voiceDebugOverview": "概览",
+  "voiceDebugTransports": "传输",
+  "voiceDebugProducers": "生产者",
+  "voiceDebugConsumers": "消费者",
+  "voiceDebugEvents": "事件（{{count}}）",
+  "voiceDebugRaw": "原始数据",
+  "voiceDebugCopied": "已复制语音调试报告",
+  "voiceDebugCopyFailed": "无法复制报告：{{error}}",
+  "voiceDebugNoEvents": "没有事件"
 }

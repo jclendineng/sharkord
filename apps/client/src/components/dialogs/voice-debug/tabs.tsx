@@ -4,6 +4,7 @@ import type {
 } from '@/helpers/voice-debug';
 import { cn } from '@sharkord/ui';
 import { memo, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { formatTime, statsByType } from './helpers';
 import { Fields, Pill, Section, StatGroup } from './parts';
 
@@ -128,6 +129,7 @@ const EventRow = memo(({ event }: { event: TVoiceDebugEvent }) => (
 ));
 
 const EventsTab = memo(({ events }: { events: TVoiceDebugEvent[] }) => {
+  const { t } = useTranslation('dialogs');
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -137,7 +139,9 @@ const EventsTab = memo(({ events }: { events: TVoiceDebugEvent[] }) => {
   return (
     <div className="space-y-0.5">
       {!events.length && (
-        <p className="font-mono text-[11px] text-muted-foreground">no events</p>
+        <p className="font-mono text-[11px] text-muted-foreground">
+          {t('voiceDebugNoEvents')}
+        </p>
       )}
       {events.map((event) => (
         <EventRow key={event.id} event={event} />

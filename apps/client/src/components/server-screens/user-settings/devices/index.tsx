@@ -102,6 +102,82 @@ const Devices = memo(() => {
     (checked: boolean) => onChange('muteStreamAudio', checked),
     [onChange]
   );
+  const onPlaybackIdChange = useCallback(
+    (value: string) => onChange('playbackId', value),
+    [onChange]
+  );
+  const onMicrophoneIdChange = useCallback(
+    (value: string) => onChange('microphoneId', value),
+    [onChange]
+  );
+  const onNoiseSuppressionChange = useCallback(
+    (value: string) => onChange('noiseSuppression', value as NoiseSuppression),
+    [onChange]
+  );
+  const onEchoCancellationChange = useCallback(
+    (checked: boolean) => onChange('echoCancellation', checked),
+    [onChange]
+  );
+  const onAutoGainControlChange = useCallback(
+    (checked: boolean) => onChange('autoGainControl', checked),
+    [onChange]
+  );
+  const onNoiseGateEnabledChange = useCallback(
+    (checked: boolean) => onChange('noiseGateEnabled', checked),
+    [onChange]
+  );
+  const onNoiseGateThresholdDbChange = useCallback(
+    (value: number) => onChange('noiseGateThresholdDb', value),
+    [onChange]
+  );
+  const onWebcamIdChange = useCallback(
+    (value: string) => onChange('webcamId', value),
+    [onChange]
+  );
+  const onWebcamFramerateChange = useCallback(
+    (value: number) => onChange('webcamFramerate', value),
+    [onChange]
+  );
+  const onWebcamResolutionChange = useCallback(
+    (value: string) => onChange('webcamResolution', value as Resolution),
+    [onChange]
+  );
+  const onMirrorOwnVideoChange = useCallback(
+    (checked: boolean) => onChange('mirrorOwnVideo', checked),
+    [onChange]
+  );
+  const onSimulcastEnabledChange = useCallback(
+    (checked: boolean) => onChange('simulcastEnabled', checked),
+    [onChange]
+  );
+  const onScreenFramerateChange = useCallback(
+    (value: number) => onChange('screenFramerate', value),
+    [onChange]
+  );
+  const onScreenResolutionChange = useCallback(
+    (value: string) => onChange('screenResolution', value as Resolution),
+    [onChange]
+  );
+  const onScreenCodecChange = useCallback(
+    (value: string) => onChange('screenCodec', value as VideoCodec),
+    [onChange]
+  );
+  const onScreenCursorChange = useCallback(
+    (value: string) => onChange('screenCursor', value as ScreenCursor),
+    [onChange]
+  );
+  const onScreenBitrateChange = useCallback(
+    ([value]: number[]) => onChange('screenBitrate', value),
+    [onChange]
+  );
+  const onRestrictOwnAudioChange = useCallback(
+    (checked: boolean) => onChange('restrictOwnAudio', checked),
+    [onChange]
+  );
+  const onSuppressLocalAudioPlaybackChange = useCallback(
+    (checked: boolean) => onChange('suppressLocalAudioPlayback', checked),
+    [onChange]
+  );
   const noiseGateWorkletAvailability = useSyncExternalStore(
     subscribeNoiseGateWorkletAvailability,
     getNoiseGateWorkletAvailabilitySnapshot,
@@ -290,7 +366,7 @@ const Devices = memo(() => {
       <div className="space-y-6">
         <Group label={t('playbackLabel')}>
           <Select
-            onValueChange={(value) => onChange('playbackId', value)}
+            onValueChange={onPlaybackIdChange}
             value={values.playbackId}
             disabled={playbackDevices.length === 0}
           >
@@ -354,7 +430,7 @@ const Devices = memo(() => {
 
         <Group label={t('microphoneLabel')}>
           <Select
-            onValueChange={(value) => onChange('microphoneId', value)}
+            onValueChange={onMicrophoneIdChange}
             value={values.microphoneId}
             disabled={inputDevices.length === 0}
           >
@@ -382,9 +458,7 @@ const Devices = memo(() => {
           >
             <Select
               value={values.noiseSuppression}
-              onValueChange={(value) =>
-                onChange('noiseSuppression', value as NoiseSuppression)
-              }
+              onValueChange={onNoiseSuppressionChange}
             >
               <SelectTrigger className="w-92">
                 <SelectValue />
@@ -412,18 +486,14 @@ const Devices = memo(() => {
             <Group label={t('echoCancellationLabel')}>
               <Switch
                 checked={!!values.echoCancellation}
-                onCheckedChange={(checked) =>
-                  onChange('echoCancellation', checked)
-                }
+                onCheckedChange={onEchoCancellationChange}
               />
             </Group>
 
             <Group label={t('autoGainControlLabel')}>
               <Switch
                 checked={!!values.autoGainControl}
-                onCheckedChange={(checked) =>
-                  onChange('autoGainControl', checked)
-                }
+                onCheckedChange={onAutoGainControlChange}
               />
             </Group>
 
@@ -431,9 +501,7 @@ const Devices = memo(() => {
               <Switch
                 checked={values.noiseGateEnabled}
                 disabled={!isNoiseGateAvailable}
-                onCheckedChange={(checked) =>
-                  onChange('noiseGateEnabled', checked)
-                }
+                onCheckedChange={onNoiseGateEnabledChange}
               />
             </Group>
           </div>
@@ -461,16 +529,13 @@ const Devices = memo(() => {
             {!isTesting ? (
               <Button
                 variant="secondary"
-                onClick={() => void startMicrophoneTest()}
+                onClick={startMicrophoneTest}
                 disabled={permissionState === 'denied' || !hasMicrophones}
               >
                 {t('startTestBtn')}
               </Button>
             ) : (
-              <Button
-                variant="secondary"
-                onClick={() => void stopMicrophoneTest()}
-              >
+              <Button variant="secondary" onClick={stopMicrophoneTest}>
                 {t('stopTestBtn')}
               </Button>
             )}
@@ -487,9 +552,7 @@ const Devices = memo(() => {
             noiseGateEnabled={values.noiseGateEnabled}
             noiseGateControlsDisabled={!isNoiseGateAvailable}
             noiseGateThresholdDb={values.noiseGateThresholdDb}
-            onThresholdChange={(value) =>
-              onChange('noiseGateThresholdDb', value)
-            }
+            onThresholdChange={onNoiseGateThresholdDbChange}
             getAudioLevelSnapshot={getAudioLevelSnapshot}
           />
 
@@ -509,10 +572,7 @@ const Devices = memo(() => {
       <div className="space-y-6">
         <Group label={t('webcamLabel')}>
           <div className="space-y-4">
-            <Select
-              onValueChange={(value) => onChange('webcamId', value)}
-              value={values.webcamId}
-            >
+            <Select onValueChange={onWebcamIdChange} value={values.webcamId}>
               <SelectTrigger className="w-full max-w-96">
                 <SelectValue placeholder={t('webcamPlaceholder')} />
               </SelectTrigger>
@@ -548,10 +608,7 @@ const Devices = memo(() => {
 
               {!isVideoTesting && !isVideoStarting && (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <Button
-                    variant="secondary"
-                    onClick={() => void startWebcamTest()}
-                  >
+                  <Button variant="secondary" onClick={startWebcamTest}>
                     {t('startVideoPreviewBtn')}
                   </Button>
                 </div>
@@ -587,18 +644,14 @@ const Devices = memo(() => {
             <ResolutionFpsControl
               framerate={values.webcamFramerate}
               resolution={values.webcamResolution}
-              onFramerateChange={(value) => onChange('webcamFramerate', value)}
-              onResolutionChange={(value) =>
-                onChange('webcamResolution', value as Resolution)
-              }
+              onFramerateChange={onWebcamFramerateChange}
+              onResolutionChange={onWebcamResolutionChange}
             />
 
             <Group label={t('mirrorOwnVideoLabel')}>
               <Switch
                 checked={!!values.mirrorOwnVideo}
-                onCheckedChange={(checked) =>
-                  onChange('mirrorOwnVideo', checked)
-                }
+                onCheckedChange={onMirrorOwnVideoChange}
               />
             </Group>
           </div>
@@ -619,7 +672,7 @@ const Devices = memo(() => {
           <Switch
             checked={!!values.simulcastEnabled}
             disabled={!settings?.webRtcSimulcastEnabled}
-            onCheckedChange={(checked) => onChange('simulcastEnabled', checked)}
+            onCheckedChange={onSimulcastEnabledChange}
           />
         </Group>
         <Group label={t('screenSharingLabel')}>
@@ -627,18 +680,14 @@ const Devices = memo(() => {
             <ResolutionFpsControl
               framerate={values.screenFramerate}
               resolution={values.screenResolution}
-              onFramerateChange={(value) => onChange('screenFramerate', value)}
-              onResolutionChange={(value) =>
-                onChange('screenResolution', value as Resolution)
-              }
+              onFramerateChange={onScreenFramerateChange}
+              onResolutionChange={onScreenResolutionChange}
             />
 
             <div className="ml-2">
               <Select
                 value={values.screenCodec ?? VideoCodec.AUTO}
-                onValueChange={(value) =>
-                  onChange('screenCodec', value as VideoCodec)
-                }
+                onValueChange={onScreenCodecChange}
               >
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder={t('selectCodecPlaceholder')} />
@@ -659,9 +708,7 @@ const Devices = memo(() => {
           <Group label={t('screenCursorLabel')}>
             <Select
               value={values.screenCursor ?? ScreenCursor.ALWAYS}
-              onValueChange={(value) =>
-                onChange('screenCursor', value as ScreenCursor)
-              }
+              onValueChange={onScreenCursorChange}
             >
               <SelectTrigger className="w-40">
                 <SelectValue />
@@ -691,7 +738,7 @@ const Devices = memo(() => {
               max={maxBitrate}
               step={100}
               value={[values.screenBitrate ?? DEFAULT_BITRATE]}
-              onValueChange={([value]) => onChange('screenBitrate', value)}
+              onValueChange={onScreenBitrateChange}
               rightSlot={
                 <span className="text-sm text-muted-foreground w-20 text-right">
                   {filesize((values.screenBitrate ?? DEFAULT_BITRATE) * 125, {
@@ -711,9 +758,7 @@ const Devices = memo(() => {
               <Switch
                 checked={!!values.restrictOwnAudio}
                 disabled={!isRestrictOwnAudioSupported}
-                onCheckedChange={(checked) =>
-                  onChange('restrictOwnAudio', checked)
-                }
+                onCheckedChange={onRestrictOwnAudioChange}
               />
             ) : (
               <RestrictOwnAudioAlert
@@ -730,9 +775,7 @@ const Devices = memo(() => {
               <Switch
                 checked={!!values.suppressLocalAudioPlayback}
                 disabled={!isSuppressLocalAudioPlaybackSupported}
-                onCheckedChange={(checked) =>
-                  onChange('suppressLocalAudioPlayback', checked)
-                }
+                onCheckedChange={onSuppressLocalAudioPlaybackChange}
               />
             ) : (
               <SuppressLocalAudioPlaybackAlert

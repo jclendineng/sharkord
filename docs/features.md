@@ -85,8 +85,11 @@ Routes `notifications.getChannelSettings` and `notifications.setChannelSetting`,
 
 ## Devices
 
-Every sign in is a session. Settings, Devices lists them with where and when they were last
-used, and can sign one out or all the others. Routes `sessions.getAll`, `sessions.revoke`,
+Every sign in is a session, and it lasts until it is ended: signed out on the device, signed
+out from another device's list, or ended by a password change. A device nobody opens for months
+is still signed in. Settings, Devices lists them with where and when they were last used, and
+can sign one out or all the others. A device whose session was ended goes to the sign in screen
+the next time it connects. Routes `sessions.getAll`, `sessions.revoke`,
 `sessions.revokeOthers`, `sessions.refreshToken`, table `sessions`.
 
 ## Status
@@ -195,7 +198,12 @@ included, and `messages.search` returns who posted each file it finds.
 
 Media in a channel's tabs opens a full screen viewer, as in Discord: swipe between pictures and
 videos, a strip of the channel's media along the bottom, and a menu to save to Photos, share,
-open in the browser or jump to the message. Files, links and pins jump to their message too:
+open in the browser or jump to the message. A picture in a message, attached or shown from a
+link, opens the same viewer on itself with the message's other pictures a swipe away. In the
+viewer a picture zooms about the point between two fingers, pans while zoomed and zooms in
+and out on a double tap, and a pull down closes it. The web's viewer does the same with a
+mouse, a trackpad or fingers: the wheel zooms about the pointer, and Escape or a drag down
+closes it. Files, links and pins jump to their message too:
 the chat loads the messages around it (`messages.get` with `targetMessageId`), scrolls to it
 and lights it up, with a Jump to Present bar while it shows older messages. A link to anywhere
 other than the servers you are signed in to asks first ("Leaving Sharkord"), with a box to trust

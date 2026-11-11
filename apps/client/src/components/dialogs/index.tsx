@@ -1,6 +1,11 @@
 import { closeDialogs } from '@/features/dialogs/actions';
 import { useDialogInfo } from '@/features/dialogs/hooks';
-import { createElement, memo } from 'react';
+import {
+  createElement,
+  memo,
+  type ComponentProps,
+  type ComponentType
+} from 'react';
 import { AssignRoleDialog } from './assign-role';
 import { ConfirmActionDialog } from './confirm-action';
 import { CreateCategoryDialog } from './create-category';
@@ -17,11 +22,11 @@ import { SearchDialog } from './search';
 import { ServerPasswordDialog } from './server-password';
 import { SoundsDialog } from './sounds';
 import { TextInputDialog } from './text-input';
+import type { TDialogBaseProps } from './types';
 import { VoiceDebugDialog } from './voice-debug';
 import { WelcomeProfileSetupDialog } from './welcome-profile-setup';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const DialogsMap: any = {
+const DialogsMap = {
   [Dialog.CONFIRM_ACTION]: ConfirmActionDialog,
   [Dialog.CREATE_CHANNEL]: CreateChannelDialog,
   [Dialog.TEXT_INPUT]: TextInputDialog,
@@ -39,16 +44,29 @@ const DialogsMap: any = {
   [Dialog.GROUP_DM]: GroupDmDialog,
   [Dialog.FRIENDS]: FriendsDialog,
   [Dialog.RULES_SETUP]: RulesSetupDialog
-};
+} satisfies Record<Dialog, ComponentType<never>>;
+
+// what a dialog takes on top of being open and closing, which the provider hands it
+export type TDialogProps<D extends Dialog> = Omit<
+  ComponentProps<(typeof DialogsMap)[D]>,
+  keyof TDialogBaseProps
+>;
+
+// the store holds the props of whichever dialog is open, checked against that dialog where
+// openDialog was called
+type TOpenDialogComponent = ComponentType<
+  TDialogBaseProps & Record<string, unknown>
+>;
 
 const DialogsProvider = memo(() => {
   const { isOpen, openDialog, props, closing } = useDialogInfo();
 
-  if (!openDialog || !DialogsMap[openDialog]) return null;
+  if (!openDialog) return null;
 
   const realIsOpen = isOpen && !closing;
+  const component = DialogsMap[openDialog] as TOpenDialogComponent;
 
-  return createElement(DialogsMap[openDialog], {
+  return createElement(component, {
     ...props,
     isOpen: realIsOpen,
     close: closeDialogs

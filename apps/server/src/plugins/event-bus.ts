@@ -7,8 +7,12 @@ type Handler<E extends ServerEvent> = (
   payload: EventPayloads[E]
 ) => void | Promise<void>;
 
+// a handler for any one event: its payload is never anything a caller could pass blind, so a
+// handler has to be looked up by its event before it is called
+type TStoredHandler = (payload: never) => void | Promise<void>;
+
 class EventBus {
-  private handlers = new Map<string, Map<ServerEvent, Set<Handler<any>>>>();
+  private handlers = new Map<string, Map<ServerEvent, Set<TStoredHandler>>>();
 
   public register = <E extends ServerEvent>(
     pluginId: string,
@@ -88,7 +92,8 @@ class EventBus {
     for (const pluginEvents of this.handlers.values()) {
       const eventHandlers = pluginEvents.get(event);
 
-      if (eventHandlers) handlers.push(...eventHandlers);
+      // stored under this event, so each one takes this event's payload
+      if (eventHandlers) handlers.push(...(eventHandlers as Set<Handler<E>>));
     }
 
     return this.run(event, payload, handlers);
@@ -101,7 +106,9 @@ class EventBus {
   ) => {
     const eventHandlers = this.handlers.get(pluginId)?.get(event);
 
-    return this.run(event, payload, Array.from(eventHandlers ?? []));
+    const forEvent = eventHandlers as Set<Handler<E>> | undefined;
+
+    return this.run(event, payload, Array.from(forEvent ?? []));
   };
 
   public clear = () => {

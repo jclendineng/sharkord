@@ -1,10 +1,19 @@
+import type { TDialogProps } from '@/components/dialogs';
 import { Dialog } from '@/components/dialogs/dialogs';
-import type { TGenericObject } from '@sharkord/shared';
 import { store } from '../store';
 import { dialogInfoSelector } from './selectors';
 import { dialogSliceActions } from './slice';
 
-export const openDialog = (dialog: Dialog, props?: TGenericObject) => {
+// a dialog that needs props can only be opened with them
+type TOpenDialogArgs<D extends Dialog> =
+  Record<string, never> extends TDialogProps<D>
+    ? [props?: TDialogProps<D>]
+    : [props: TDialogProps<D>];
+
+export const openDialog = <D extends Dialog>(
+  dialog: D,
+  ...[props]: TOpenDialogArgs<D>
+) => {
   store.dispatch(dialogSliceActions.openDialog({ dialog, props }));
 };
 
@@ -98,7 +107,7 @@ export const requestTextInput = async ({
       cancelLabel,
       allowEmpty,
       type,
-      onConfirm: (text: string) => {
+      onConfirm: (text: string | undefined) => {
         if (autoClose) {
           closeDialogs();
         }

@@ -220,13 +220,20 @@ const isTrustedProxyAddress = (
   return trustedProxies.some((entry) => matchesProxyEntry(address, entry));
 };
 
+// the ws library keeps the socket on a field its types leave out, a bun socket on another
+type TSocketHolder = {
+  _socket?: { remoteAddress?: unknown };
+  socket?: { remoteAddress?: unknown };
+};
+
 const getSocketIp = (
-  ws: any | undefined,
+  ws: object | undefined,
   req: http.IncomingMessage | undefined
 ): string | undefined => {
+  const holder = ws as TSocketHolder | undefined;
   const socketCandidates = [
-    ws?._socket?.remoteAddress,
-    ws?.socket?.remoteAddress,
+    holder?._socket?.remoteAddress,
+    holder?.socket?.remoteAddress,
     req?.socket?.remoteAddress
   ].filter((v): v is string => typeof v === 'string' && v.length > 0);
 
@@ -251,7 +258,7 @@ const warnAboutUntrustedProxy = (
 };
 
 const getWsIp = (
-  ws: any | undefined,
+  ws: object | undefined,
   req: http.IncomingMessage | undefined
 ): string | undefined => {
   const socketIp = getSocketIp(ws, req);
@@ -267,7 +274,7 @@ const getWsIp = (
 };
 
 const getWsInfo = (
-  ws: any | undefined,
+  ws: object | undefined,
   req: http.IncomingMessage | undefined
 ): TConnectionInfo | undefined => {
   if (!ws && !req) return undefined;

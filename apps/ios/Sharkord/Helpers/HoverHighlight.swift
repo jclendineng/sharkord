@@ -29,7 +29,7 @@ private struct HoverPop: ViewModifier {
     func body(content: Content) -> some View {
         content
             .scaleEffect(isHovered && !reduceMotion ? scale : 1)
-            .animation(.spring(response: 0.25, dampingFraction: 1), value: isHovered)
+            .animation(Motion.press, value: isHovered)
             .onHover(perform: setHovered)
     }
 

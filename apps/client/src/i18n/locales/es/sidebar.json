@@ -58,7 +58,7 @@
   "gpuEncoder": "GPU ({{encoder}})",
   "cpuEncoder": "CPU ({{encoder}})",
   "unknownEncoder": "Desconocido ({{encoder}})",
-  "membersHeader": "Miembros — {{count}}",
+  "membersHeader": "Miembros · {{count}}",
   "membersEveryone": "Mostrar a todos",
   "membersThisChannel": "Solo este canal",
   "openDirectMessages": "Abrir mensajes directos",

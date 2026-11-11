@@ -8,13 +8,17 @@ const availablePermissions = Object.values(EPermission);
 type TPermissionProps = {
   permission: EPermission;
   enabled: boolean;
-  onChange: (enabled: boolean) => void;
+  onToggle: (permission: EPermission) => void;
   disabled?: boolean;
 };
 
 const Permission = memo(
-  ({ permission, enabled, onChange, disabled }: TPermissionProps) => {
+  ({ permission, enabled, onToggle, disabled }: TPermissionProps) => {
     const { t } = useTranslation('permissions');
+
+    const onChange = useCallback(() => {
+      onToggle(permission);
+    }, [onToggle, permission]);
 
     return (
       <div className="flex items-center justify-between">
@@ -65,7 +69,7 @@ const PermissionList = memo(
               key={permission}
               permission={permission}
               enabled={permissions.includes(permission)}
-              onChange={() => onTogglePermission(permission)}
+              onToggle={onTogglePermission}
               disabled={disabled}
             />
           ))}

@@ -213,6 +213,30 @@ framework (`PushToTalk`), which sees a modifier held on its own even while typin
 picks the input and output device; Automatic uses a headset's or USB mic whenever
 one is plugged in, kept to on every route change (`AudioInputPreference`).
 
+## Pictures
+
+One viewer shows every picture: `MediaViewer`, opened from a channel's media and, through
+`MessageMediaButton`, from an attachment or a linked picture in a message, which hands it the
+message's pictures (`Message.viewerItems`). `ZoomableView` wraps each page in the system's own
+scroll view (`UIScrollView` on iPhone and iPad, `NSScrollView` on a Mac), which does the zoom
+about the fingers, the pan with momentum and the double tap. Unzoomed it has nothing to
+scroll, so a swipe goes on to the pages and a pull down to the zoom transition's own close.
+
+## Motion and corners
+
+`Helpers/Motion.swift` names the app's few speeds by what moves (`quick`, `standard`, `panel`,
+`fade`, `press`) and the corners that have to match across screens (`Radius`). A gesture's own
+follow through, tuned against the finger, keeps its numbers beside the gesture. Background
+failures go to the system log through `Helpers/Log.swift`, not `print`.
+
+## Swiping back
+
+Pushed screens use the system's swipe back, which follows the finger. A screen that pages
+sideways (`PagedTabs`, channel info's tabs) hands the swipe to the system on its first page and
+keeps it for paging on the others (`PagerSwipeBack`). On an iPad the chat card sits away from
+the screen's edge, where only the system's content swipe reaches. A Mac has a drag in from the
+card's edge instead, since a pointer has no swipe back of its own.
+
 ## Appearance
 
 Every colour comes from `Helpers/Theme.swift`, where each one has a light and a dark value and a

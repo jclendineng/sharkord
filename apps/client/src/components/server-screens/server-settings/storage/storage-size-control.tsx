@@ -40,6 +40,21 @@ const StorageSizeControl = memo(
       [onChange, min, max]
     );
 
+    const onSliderChange = useCallback(
+      (values: number[]) => {
+        onChange(clamp(values[0], min, max));
+      },
+      [onChange, min, max]
+    );
+
+    // the presets are drawn in a loop, so each carries its value and they share a handler
+    const onPresetClick = useCallback(
+      (e: React.MouseEvent<HTMLButtonElement>) => {
+        onChange(Number(e.currentTarget.dataset.value));
+      },
+      [onChange]
+    );
+
     return (
       <div className="max-w-150 space-y-2">
         <Slider
@@ -48,7 +63,7 @@ const StorageSizeControl = memo(
           min={min}
           step={FILE_SIZE_STEP}
           disabled={disabled}
-          onValueChange={(values) => onChange(clamp(values[0], min, max))}
+          onValueChange={onSliderChange}
           rightSlot={<span className="text-sm">{preview}</span>}
         />
 
@@ -72,7 +87,8 @@ const StorageSizeControl = memo(
                 size="sm"
                 variant="outline"
                 disabled={disabled}
-                onClick={() => onChange(preset.value)}
+                data-value={preset.value}
+                onClick={onPresetClick}
               >
                 {preset.label}
               </Button>

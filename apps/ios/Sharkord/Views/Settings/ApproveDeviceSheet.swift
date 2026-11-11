@@ -115,7 +115,7 @@ struct ApproveDeviceSheet: View {
                     .font(.headline)
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity, minHeight: 50)
-                    .background(Theme.blurple, in: .rect(cornerRadius: 12))
+                    .background(Theme.blurple, in: .rect(cornerRadius: Radius.control))
             }
             .buttonStyle(.plain)
             .disabled(isAnswering)
@@ -125,7 +125,7 @@ struct ApproveDeviceSheet: View {
                     .font(.headline)
                     .foregroundStyle(Theme.redText)
                     .frame(maxWidth: .infinity, minHeight: 50)
-                    .background(Theme.listBackground, in: .rect(cornerRadius: 12))
+                    .background(Theme.listBackground, in: .rect(cornerRadius: Radius.control))
             }
             .buttonStyle(.plain)
             .disabled(isAnswering)

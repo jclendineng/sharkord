@@ -9,7 +9,7 @@ import {
   Input
 } from '@sharkord/ui';
 import { Plus } from 'lucide-react';
-import { memo, useMemo } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const MAX_USERS = 100;
@@ -40,6 +40,21 @@ const SearchUserDropdown = memo(
       };
     }, [usersToStartDm, query]);
 
+    const onQueryInput = useCallback(
+      (e: React.ChangeEvent<HTMLInputElement>) => {
+        setQuery(e.target.value);
+      },
+      [setQuery]
+    );
+
+    // the people are drawn in a loop, so each row carries its id and they share a handler
+    const onUserClick = useCallback(
+      (e: React.MouseEvent<HTMLDivElement>) => {
+        onStartDm(Number(e.currentTarget.dataset.userId));
+      },
+      [onStartDm]
+    );
+
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -58,7 +73,7 @@ const SearchUserDropdown = memo(
             <AutoFocus>
               <Input
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={onQueryInput}
                 placeholder={t('searchUser')}
               />
             </AutoFocus>
@@ -69,7 +84,11 @@ const SearchUserDropdown = memo(
             </div>
           )}
           {allUsers.map((user) => (
-            <DropdownMenuItem key={user.id} onClick={() => onStartDm(user.id)}>
+            <DropdownMenuItem
+              key={user.id}
+              data-user-id={user.id}
+              onClick={onUserClick}
+            >
               <div className="flex items-center gap-2">
                 <UserAvatar
                   userId={user.id}

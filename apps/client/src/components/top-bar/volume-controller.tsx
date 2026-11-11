@@ -15,7 +15,7 @@ import {
   Tooltip
 } from '@sharkord/ui';
 import { Headphones, Monitor, Volume2, VolumeX } from 'lucide-react';
-import { memo, useMemo } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type AudioStreamControlProps = {
@@ -49,6 +49,17 @@ const AudioStreamControl = memo(
     const volume = getVolume(volumeKey);
     const isMuted = volume === 0;
 
+    const onMuteClick = useCallback(() => {
+      toggleMute(volumeKey);
+    }, [toggleMute, volumeKey]);
+
+    const onVolumeSlide = useCallback(
+      (values: number[]) => {
+        setVolume(volumeKey, values[0] || 0);
+      },
+      [setVolume, volumeKey]
+    );
+
     return (
       <div className="flex items-center gap-3 py-2">
         <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -69,7 +80,7 @@ const AudioStreamControl = memo(
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => toggleMute(volumeKey)}
+            onClick={onMuteClick}
             className="h-6 w-6 p-0"
           >
             {isMuted ? (
@@ -82,7 +93,7 @@ const AudioStreamControl = memo(
           <div className="w-24">
             <Slider
               value={[volume]}
-              onValueChange={(values) => setVolume(volumeKey, values[0] || 0)}
+              onValueChange={onVolumeSlide}
               min={0}
               max={100}
               step={1}

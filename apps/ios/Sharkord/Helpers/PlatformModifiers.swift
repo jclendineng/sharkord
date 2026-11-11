@@ -230,6 +230,16 @@ extension View {
         #endif
     }
 
+    // a glyph that stops growing with the text size, in a bar that has no room for more, shows
+    // large in the middle of the screen while it is held, as the system's own bars do
+    func cappedGlyphLargeContent() -> some View {
+        #if os(iOS)
+        accessibilityShowsLargeContentViewer()
+        #else
+        self
+        #endif
+    }
+
     // a phone's borderless button, for the app's own panels. not set for the whole window: it
     // reached every toolbar too, and stripped the bar's own spacing from its buttons
     func phoneButtons() -> some View {

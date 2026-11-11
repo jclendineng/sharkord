@@ -5,7 +5,7 @@ import { getRenderedUsername } from '@/helpers/get-rendered-username';
 import { cn } from '@/lib/utils';
 import { getAvatarGradient, UserStatus } from '@sharkord/shared';
 import { Avatar, AvatarFallback, AvatarImage } from '@sharkord/ui';
-import { memo, useMemo } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import { UserPopover } from '../user-popover';
 import { UserStatusBadge } from '../user-status';
 
@@ -34,10 +34,29 @@ const UserAvatar = memo(
       return { backgroundImage: `linear-gradient(135deg, ${from}, ${to})` };
     }, [userId, profileColor]);
 
+    // an avatar that does something on a click is a button to a keyboard and a screen
+    // reader as well, not only to a pointer
+    const onKeyDown = useCallback(
+      (e: React.KeyboardEvent) => {
+        if (!onClick) return;
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+
+        e.preventDefault();
+        onClick();
+      },
+      [onClick]
+    );
+
     if (!user) return null;
 
     const content = (
-      <div className="relative size-fit" onClick={onClick}>
+      <div
+        className="relative size-fit"
+        onClick={onClick}
+        onKeyDown={onKeyDown}
+        role={onClick ? 'button' : undefined}
+        tabIndex={onClick ? 0 : undefined}
+      >
         <Avatar className={cn('size-8 bg-muted', className)}>
           <AvatarImage
             src={getFileUrl(user.avatar)}

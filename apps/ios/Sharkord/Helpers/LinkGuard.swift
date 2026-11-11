@@ -172,7 +172,7 @@ private struct LeavingCard: View {
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 13)
-                            .background(Theme.blurple, in: .rect(cornerRadius: 10))
+                            .background(Theme.blurple, in: .rect(cornerRadius: Radius.control))
                     }
 
                     Button(action: goBack) {
@@ -181,7 +181,7 @@ private struct LeavingCard: View {
                             .foregroundStyle(Theme.header)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 13)
-                            .background(Theme.listBackground, in: .rect(cornerRadius: 10))
+                            .background(Theme.listBackground, in: .rect(cornerRadius: Radius.control))
                     }
                 }
                 .buttonStyle(.plain)

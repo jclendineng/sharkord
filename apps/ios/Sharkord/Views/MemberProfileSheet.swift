@@ -12,6 +12,8 @@ struct MemberProfileSheet: View {
     // who made the invite they signed up with, for people who manage invites
     @State private var inviterName: String?
     @State private var isConfirmingBlock = false
+    // the message button was what closed it, the conversation opens once it has gone
+    @State private var messagesAfterClosing = false
 
     private var isBlocked: Bool {
         session.isBlocked(user.id)
@@ -143,6 +145,7 @@ struct MemberProfileSheet: View {
         .task {
             await loadInviter()
         }
+        .onDisappear(perform: messageAfterClosing)
         .sheetDetents([.large])
         .presentationDragIndicator(.visible)
         .presentationBackground(Theme.deepBackground)
@@ -192,7 +195,7 @@ struct MemberProfileSheet: View {
             .font(.body.weight(.semibold))
             .foregroundStyle(filled ? .white : Theme.header)
             .frame(maxWidth: .infinity, minHeight: 46)
-            .background(filled ? Theme.blurple : Theme.listBackground, in: .rect(cornerRadius: 10))
+            .background(filled ? Theme.blurple : Theme.listBackground, in: .rect(cornerRadius: Radius.control))
     }
 
     private func confirmBlock() {
@@ -228,12 +231,19 @@ struct MemberProfileSheet: View {
     }
 
     private func message() {
+        messagesAfterClosing = true
         dismiss()
+    }
 
-        Task {
-            try? await Task.sleep(for: .milliseconds(350))
-            onMessage()
+    // told by the sheet itself that it has gone: a wait guessed at its length dropped the
+    // navigation whenever the sheet took longer to close
+    private func messageAfterClosing() {
+        guard messagesAfterClosing else {
+            return
         }
+
+        messagesAfterClosing = false
+        onMessage()
     }
 }
 

@@ -22,6 +22,14 @@ import { Dialog } from '../dialogs/dialogs';
 import { Protect } from '../protect';
 import { ServerScreen } from '../server-screens/screens';
 
+const openCreateCategory = () => {
+  openDialog(Dialog.CREATE_CATEGORY);
+};
+
+const openServerSettings = () => {
+  openServerScreen(ServerScreen.SERVER_SETTINGS);
+};
+
 const ServerDropdownMenu = memo(() => {
   const { t } = useTranslation('sidebar');
   const serverSettingsPermissions = useMemo(
@@ -66,7 +74,7 @@ const ServerDropdownMenu = memo(() => {
         <Protect permission={Permission.MANAGE_CATEGORIES}>
           <DropdownMenuItem
             data-testid={TestId.SERVER_MENU_ADD_CATEGORY}
-            onClick={() => openDialog(Dialog.CREATE_CATEGORY)}
+            onClick={openCreateCategory}
           >
             {t('addCategory')}
           </DropdownMenuItem>
@@ -74,7 +82,7 @@ const ServerDropdownMenu = memo(() => {
         <Protect permission={serverSettingsPermissions}>
           <DropdownMenuItem
             data-testid={TestId.SERVER_MENU_SERVER_SETTINGS}
-            onClick={() => openServerScreen(ServerScreen.SERVER_SETTINGS)}
+            onClick={openServerSettings}
           >
             {t('serverSettings')}
           </DropdownMenuItem>

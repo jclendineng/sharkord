@@ -39,8 +39,7 @@ const LogLine = memo(({ log }: TLogLineProps) => {
 
 const usePluginLogs = (pluginId: string) => {
   const [logs, setLogs] = useState<TLogEntry[]>([]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const subRef = useRef<any>(null);
+  const subRef = useRef<{ unsubscribe: () => void } | null>(null);
 
   useEffect(() => {
     const trpc = getTRPCClient();

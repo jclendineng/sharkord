@@ -83,7 +83,7 @@ struct ProfileScreen: View {
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
-                            .background(Theme.blurple, in: .rect(cornerRadius: 10))
+                            .background(Theme.blurple, in: .rect(cornerRadius: Radius.control))
                     }
                     .buttonStyle(.plain)
 

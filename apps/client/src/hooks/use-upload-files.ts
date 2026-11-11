@@ -76,7 +76,7 @@ const useUploadFiles = (
 
       if (remainingSlots <= 0) {
         toast.warning(
-          `Maximum attachments reached (${maxFilesPerMessage} per message).`
+          t('maxAttachmentsReached', { count: maxFilesPerMessage })
         );
         return [];
       }
@@ -84,14 +84,12 @@ const useUploadFiles = (
       if (filesToUpload.length > remainingSlots) {
         const discardedCount = filesToUpload.length - remainingSlots;
 
-        toast.warning(
-          `${discardedCount} file${discardedCount > 1 ? 's were' : ' was'} ignored due to the per-message attachment limit.`
-        );
+        toast.warning(t('attachmentsIgnored', { count: discardedCount }));
       }
 
       return filesToUpload.slice(0, remainingSlots);
     },
-    [settings?.storageMaxFilesPerMessage]
+    [settings?.storageMaxFilesPerMessage, t]
   );
 
   const removeFile = useCallback((id: string) => {
@@ -140,9 +138,7 @@ const useUploadFiles = (
     }
 
     if (!canShareFilesInDirectMessages) {
-      toast.warning(
-        'File sharing in direct messages is disabled on this server.'
-      );
+      toast.warning(t('dmFileSharingDisabled'));
 
       return false;
     }
@@ -183,7 +179,7 @@ const useUploadFiles = (
 
       for (const file of allowed) {
         if (file.size > maxFileSize) {
-          toast.error(`"${file.name}" exceeds the maximum file size limit.`);
+          toast.error(t('fileExceedsMaxSize', { name: file.name }));
         } else {
           withinLimit.push(file);
         }
@@ -299,7 +295,7 @@ const useUploadFiles = (
       loadedPerFileRef.current = {};
       totalLoadedRef.current = 0;
     },
-    [takeAllowedFiles, settings?.storageUploadMaxFileSize]
+    [takeAllowedFiles, settings?.storageUploadMaxFileSize, t]
   );
 
   const onFileDialogChange = useCallback(

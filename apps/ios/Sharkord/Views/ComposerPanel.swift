@@ -81,7 +81,7 @@ struct ComposerPanel<Content: View, Bar: View>: View {
                 model.drag(value.translation.height)
             }
             .onEnded { value in
-                model.release(predicted: value.predictedEndTranslation.height)
+                model.release(predicted: value.predictedEndTranslation.height, velocity: value.velocity.height)
             }
     }
 }

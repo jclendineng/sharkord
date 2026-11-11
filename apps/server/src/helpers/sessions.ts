@@ -9,19 +9,14 @@ import { enqueueLoginNotification } from '../queues/push-notifications';
 import type { TConnectionInfo } from '../types';
 import { disconnectSessions } from '../utils/wss';
 
-// a token lives this long after it was issued or last refreshed, so a session nobody opens
-// for a week ends on its own
-const SESSION_TOKEN_TTL_SECONDS = 7 * 24 * 60 * 60;
-const SESSION_TOKEN_TTL_MS = SESSION_TOKEN_TTL_SECONDS * 1000;
-
+// no expiry: a session lasts until it is signed out, ended from the devices list or ended by a
+// password change, which deletes its row or bumps the token version. a week's expiry signed
+// out every device nobody had opened in that time, and the apps only showed reconnecting
 const signSessionToken = async (
   userId: number,
   tokenVersion: number,
   sessionId: string
-) =>
-  jwt.sign({ userId, tokenVersion, sessionId }, await getServerToken(), {
-    expiresIn: `${SESSION_TOKEN_TTL_SECONDS}s`
-  });
+) => jwt.sign({ userId, tokenVersion, sessionId }, await getServerToken());
 
 // every sign in goes through here, password and oidc alike
 const createSessionToken = async (
@@ -91,6 +86,5 @@ export {
   createSessionToken,
   revokeOtherSessions,
   revokeSession,
-  SESSION_TOKEN_TTL_MS,
   signSessionToken
 };

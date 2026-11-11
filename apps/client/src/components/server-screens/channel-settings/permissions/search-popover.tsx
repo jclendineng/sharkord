@@ -13,7 +13,7 @@ import {
   TabsTrigger
 } from '@sharkord/ui';
 import { Plus, Search } from 'lucide-react';
-import { memo, useMemo, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TChannelPermissionType } from './types';
 
@@ -52,6 +52,32 @@ const SearchPopover = memo(
       [users, searchQuery, ignoreUserIds]
     );
 
+    const onTabChange = useCallback((value: string) => {
+      setActiveTab(value as TChannelPermissionType);
+    }, []);
+
+    const onSearchInput = useCallback(
+      (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchQuery(e.target.value);
+      },
+      []
+    );
+
+    // the rows are drawn in a loop, so each carries its id and a kind shares one handler
+    const onRoleClick = useCallback(
+      (e: React.MouseEvent<HTMLButtonElement>) => {
+        onSelect('role', Number(e.currentTarget.dataset.id));
+      },
+      [onSelect]
+    );
+
+    const onUserClick = useCallback(
+      (e: React.MouseEvent<HTMLButtonElement>) => {
+        onSelect('user', Number(e.currentTarget.dataset.id));
+      },
+      [onSelect]
+    );
+
     return (
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
@@ -60,10 +86,7 @@ const SearchPopover = memo(
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-80 p-0" align="end">
-          <Tabs
-            value={activeTab}
-            onValueChange={(v) => setActiveTab(v as TChannelPermissionType)}
-          >
+          <Tabs value={activeTab} onValueChange={onTabChange}>
             <div className="p-3 pb-0">
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -74,7 +97,7 @@ const SearchPopover = memo(
                       : t('searchPermissionsUsersPlaceholder')
                   }
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={onSearchInput}
                   className="pl-8"
                 />
               </div>
@@ -98,7 +121,8 @@ const SearchPopover = memo(
                   {filteredRoles.map((role) => (
                     <button
                       key={role.id}
-                      onClick={() => onSelect('role', role.id)}
+                      data-id={role.id}
+                      onClick={onRoleClick}
                       className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent"
                     >
                       <div
@@ -122,7 +146,8 @@ const SearchPopover = memo(
                   {filteredUsers.map((user) => (
                     <button
                       key={user.id}
-                      onClick={() => onSelect('user', user.id)}
+                      data-id={user.id}
+                      onClick={onUserClick}
                       className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent"
                     >
                       <UserAvatar userId={user.id} />

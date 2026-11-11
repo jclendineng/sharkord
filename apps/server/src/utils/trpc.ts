@@ -5,7 +5,7 @@ import {
   type TLocale,
   type TUser
 } from '@sharkord/shared';
-import { initTRPC, TRPCError } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import { observable, type Observable } from '@trpc/server/observable';
 import chalk from 'chalk';
 import type WebSocket from 'ws';
@@ -163,12 +163,12 @@ const rateLimitedProcedure = (
       logger.debug(
         `${chalk.dim('[Rate Limiter tRPC]')} ${options.logLabel} rate limited for key "${key}"`
       );
-
-      throw new TRPCError({
-        code: 'TOO_MANY_REQUESTS',
-        message: 'Too many requests. Please try again shortly.'
-      });
     }
+
+    invariant(rateLimit.allowed, {
+      code: 'TOO_MANY_REQUESTS',
+      message: 'Too many requests. Please try again shortly.'
+    });
 
     return next();
   });

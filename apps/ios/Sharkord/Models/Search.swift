@@ -65,7 +65,7 @@ enum MediaItem: Identifiable {
         case .file(let file):
             return file.id
         case .link(let url, let messageId, _, _):
-            return "\(messageId)-\(url.absoluteString)"
+            return Self.linkId(messageId: messageId, url: url)
         }
     }
 
@@ -96,12 +96,34 @@ enum MediaItem: Identifiable {
         }
     }
 
+    // the id of a picture shown from a link, worked out the same way where it is drawn
+    static func linkId(messageId: Int, url: URL) -> String {
+        "\(messageId)-\(url.absoluteString)"
+    }
+
     var isVideo: Bool {
         if case .file(let file) = self {
             return file.file.isVideo
         }
 
         return false
+    }
+}
+
+extension Message {
+    // its pictures as the media viewer takes them, attachments first and then the ones shown
+    // from links, the order they are drawn in
+    var viewerItems: [MediaItem] {
+        let attached = files.filter(\.isImage).map { file in
+            MediaItem.file(
+                SearchFile(file: file, messageId: id, channelId: channelId, userId: userId, channelName: "", messageCreatedAt: createdAt)
+            )
+        }
+        let linked = mediaImages.compactMap { media in
+            URL(string: media.url).map { MediaItem.link(url: $0, messageId: id, channelId: channelId, createdAt: createdAt) }
+        }
+
+        return attached + linked
     }
 }
 

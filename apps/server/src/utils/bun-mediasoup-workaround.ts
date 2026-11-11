@@ -4,7 +4,7 @@
  * On Windows, Bun's `child_process.spawn()` creates broken stdio pipe handles
  * for fd indices >= 3 (oven-sh/bun#11044). The Socket objects look correct
  * (they extend Duplex with .write/.on/.destroy) but the underlying handle has
- * fd=-1 and never connects — so data written to stdio[3] is silently dropped
+ * fd=-1 and never connects, so data written to stdio[3] is silently dropped
  * and data never arrives from stdio[4].
  *
  * mediasoup relies on exactly these two extra pipes (fd 3 = producer channel,
@@ -17,6 +17,7 @@
  * `Bun.connect({fd})`.
  */
 
+import type { SpawnOptions } from 'node:child_process';
 import { EventEmitter } from 'node:events';
 import { Readable } from 'node:stream';
 import { logger } from '../logger.js';
@@ -38,18 +39,46 @@ let patched = false;
  * For the **consumer** (read) side this emits `'data'` events with Buffers.
  * For the **producer** (write) side this provides a `.write()` method.
  * Both emit `'end'` / `'error'` and support `.destroy()` /
- * `.removeAllListeners()` — the full surface area mediasoup's Channel needs.
+ * `.removeAllListeners()`, the full surface area mediasoup's Channel needs.
  */
-function createBunPipeSocket(
-  fd: number,
-  mode: 'read' | 'write'
-): EventEmitter & {
+// the socket bun hands back for a pipe, as much of it as is used here
+type TBunPipeSocket = {
+  write: (chunk: Buffer | Uint8Array) => number;
+  flush: () => void;
+  end: () => void;
+};
+
+// Bun.connect with the undocumented fd option, which its types leave out
+type TBunFdConnect = (options: {
+  fd: number;
+  socket: {
+    open: (socket: TBunPipeSocket) => void;
+    data: (socket: TBunPipeSocket, data: Uint8Array) => void;
+    close: () => void;
+    error: (socket: TBunPipeSocket, err: Error) => void;
+    drain: () => void;
+  };
+}) => Promise<unknown>;
+
+// a bun subprocess spawned with five pipes, the last two arriving as raw fd numbers
+type TBunWorkerProcess = {
+  pid: number;
+  stdout: ReadableStream<Uint8Array> | null;
+  stderr: ReadableStream<Uint8Array> | null;
+  stdio: unknown[];
+  kill: (signal?: string) => void;
+  exited: Promise<number>;
+};
+
+type TPipeSocket = EventEmitter & {
   write: (chunk: Buffer | Uint8Array, encoding?: string) => boolean;
   destroy: () => void;
   readable: boolean;
   writable: boolean;
   readableFlowing: boolean | null;
-} {
+};
+
+function createBunPipeSocket(fd: number, mode: 'read' | 'write'): TPipeSocket {
   const emitter = new EventEmitter() as EventEmitter & {
     write: (chunk: Buffer | Uint8Array, encoding?: string) => boolean;
     destroy: () => void;
@@ -58,8 +87,7 @@ function createBunPipeSocket(
     readableFlowing: boolean | null;
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let bunSocket: any = null;
+  let bunSocket: TBunPipeSocket | null = null;
   let destroyed = false;
 
   emitter.readable = mode === 'read';
@@ -76,7 +104,7 @@ function createBunPipeSocket(
       return false;
     }
     if (!bunSocket) {
-      // In practice this never happens — Bun.connect resolves before the
+      // In practice this never happens: Bun.connect resolves before the
       // first IPC write (which waits for the async WORKER_RUNNING event).
       logger.warn('[bun-mediasoup-fix] write() called before Bun socket ready');
       callback?.(new Error('Socket not ready'));
@@ -109,14 +137,15 @@ function createBunPipeSocket(
   // almost immediately (same tick in practice).
   // NOTE: `fd` is an undocumented Bun.connect option suggested by Jarred
   // (Bun creator) as a workaround for oven-sh/bun#11044.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (Bun.connect as any)({
+  const connectToFd = Bun.connect as unknown as TBunFdConnect;
+
+  connectToFd({
     fd,
     socket: {
-      open(socket: any) {
+      open(socket) {
         bunSocket = socket;
       },
-      data(_socket: any, data: Uint8Array) {
+      data(_socket, data) {
         if (mode === 'read' && !destroyed) {
           emitter.emit('data', Buffer.from(data));
         }
@@ -126,7 +155,7 @@ function createBunPipeSocket(
           emitter.emit('end');
         }
       },
-      error(_socket: any, err: Error) {
+      error(_socket, err) {
         if (!destroyed) {
           emitter.emit('error', err);
         }
@@ -179,14 +208,12 @@ function pumpBunStreamToReadable(
  * Wraps a Bun Subprocess into a ChildProcess-compatible EventEmitter that
  * mediasoup's WorkerImpl can use transparently.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function wrapBunSubprocess(bunChild: any): EventEmitter {
+function wrapBunSubprocess(bunChild: TBunWorkerProcess): EventEmitter {
   const wrapper = new EventEmitter() as EventEmitter & {
     pid: number;
     stdout: Readable;
     stderr: Readable;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    stdio: any[];
+    stdio: Array<Readable | TPipeSocket | null>;
     kill: (signal?: string) => void;
   };
 
@@ -200,7 +227,7 @@ function wrapBunSubprocess(bunChild: any): EventEmitter {
   wrapper.stdout = stdoutReadable;
   wrapper.stderr = stderrReadable;
 
-  // Extra stdio pipes — Bun gives us raw fd numbers
+  // Extra stdio pipes: Bun gives us raw fd numbers
   const producerFd = bunChild.stdio[3];
   const consumerFd = bunChild.stdio[4];
 
@@ -218,8 +245,8 @@ function wrapBunSubprocess(bunChild: any): EventEmitter {
     null, // stdin  (ignored)
     stdoutReadable, // stdout
     stderrReadable, // stderr
-    producerSocket, // fd 3 — write TO worker
-    consumerSocket // fd 4 — read FROM worker
+    producerSocket, // fd 3, write TO worker
+    consumerSocket // fd 4, read FROM worker
   ];
 
   // kill()
@@ -254,7 +281,7 @@ function wrapBunSubprocess(bunChild: any): EventEmitter {
 
 /**
  * Monkey-patches `child_process.spawn` so that when mediasoup spawns its
- * worker binary, we use `Bun.spawn()` instead — which correctly supports
+ * worker binary, we use `Bun.spawn()` instead, which correctly supports
  * extra stdio pipe handles on Windows.
  *
  * Call this BEFORE `mediasoup.createWorker()`.
@@ -269,8 +296,7 @@ export function patchSpawnForMediasoup(): void {
   cp.spawn = function patchedSpawn(
     command: string,
     args?: string[],
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    options?: any
+    options?: SpawnOptions
   ) {
     // Only intercept mediasoup-worker spawns (5-element stdio array)
     const isMediasoupWorker =
@@ -287,8 +313,7 @@ export function patchSpawnForMediasoup(): void {
       '[bun-mediasoup-workaround] Intercepting spawn of mediasoup-worker with Bun.spawn()'
     );
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const bunSpawnOptions: any = {
+    const bunSpawnOptions: Record<string, unknown> = {
       stdio: ['ignore', 'pipe', 'pipe', 'pipe', 'pipe'],
       env: options?.env || process.env
     };
@@ -305,9 +330,13 @@ export function patchSpawnForMediasoup(): void {
     if (typeof options?.gid === 'number') {
       bunSpawnOptions.gid = options.gid;
     }
-    const bunChild = Bun.spawn([command, ...(args || [])], bunSpawnOptions);
+    // five pipes, two past what bun's types describe, which is the point of this workaround
+    const bunChild = Bun.spawn(
+      [command, ...(args || [])],
+      bunSpawnOptions as Parameters<typeof Bun.spawn>[1]
+    );
 
-    return wrapBunSubprocess(bunChild);
+    return wrapBunSubprocess(bunChild as unknown as TBunWorkerProcess);
   };
 
   patched = true;

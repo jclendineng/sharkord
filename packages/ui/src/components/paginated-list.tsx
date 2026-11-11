@@ -297,6 +297,22 @@ const PaginatedListPagination = memo(
       return pages;
     }, [currentPage, totalPages, maxVisiblePages]);
 
+    const onFirstPage = useCallback(() => {
+      setPage(1);
+    }, [setPage]);
+
+    const onLastPage = useCallback(() => {
+      setPage(totalPages);
+    }, [setPage, totalPages]);
+
+    // the page buttons are drawn in a loop, so each carries its number and they share a handler
+    const onPageClick = useCallback(
+      (e: React.MouseEvent<HTMLButtonElement>) => {
+        setPage(Number(e.currentTarget.dataset.page));
+      },
+      [setPage]
+    );
+
     if (!alwaysShow && totalPages <= 1) {
       return null;
     }
@@ -307,7 +323,7 @@ const PaginatedListPagination = memo(
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => setPage(1)}
+          onClick={onFirstPage}
           disabled={currentPage === 1}
           title="First page"
         >
@@ -320,7 +336,8 @@ const PaginatedListPagination = memo(
             type="button"
             variant={page === currentPage ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setPage(page)}
+            data-page={page}
+            onClick={onPageClick}
             className="min-w-8"
           >
             {page}
@@ -331,7 +348,7 @@ const PaginatedListPagination = memo(
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => setPage(totalPages)}
+          onClick={onLastPage}
           disabled={currentPage === totalPages}
           title="Last page"
         >

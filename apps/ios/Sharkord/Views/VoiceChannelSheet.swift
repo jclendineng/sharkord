@@ -21,7 +21,7 @@ struct VoiceChannelSheet: View {
     // in, so they come once it is in, or as soon as it is pulled up before that
     @State private var buildsSettings = false
 
-    private var participants: [(user: PublicUser?, state: VoiceUserState)] {
+    private var participants: [VoiceParticipant] {
         session.voiceParticipants(in: channel.id)
     }
 
@@ -165,7 +165,7 @@ struct VoiceChannelSheet: View {
             .frame(maxWidth: .infinity)
         } else {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 88), spacing: 12)], spacing: 16) {
-                ForEach(participants, id: \.user?.id) { participant in
+                ForEach(participants, id: \.userId) { participant in
                     ParticipantBadge(user: participant.user, state: participant.state)
                 }
             }
@@ -603,7 +603,7 @@ private struct QuickTile: View {
     }
 
     private func toggle() {
-        withAnimation(.snappy(duration: 0.2)) {
+        withAnimation(Motion.quick) {
             isOn.toggle()
         }
     }

@@ -24,7 +24,7 @@ struct VoiceRoomScreen: View {
         shownChannelId.flatMap { session.channel($0)?.name } ?? String(localized: "Voice")
     }
 
-    private var participants: [(user: PublicUser?, state: VoiceUserState)] {
+    private var participants: [VoiceParticipant] {
         shownChannelId.map { session.voiceParticipants(in: $0) } ?? []
     }
 
@@ -39,7 +39,7 @@ struct VoiceRoomScreen: View {
     // the grid
     private var shownFocus: FocusTarget? {
         switch focused {
-        case .person(let userId) where participants.contains(where: { $0.user?.id == userId }):
+        case .person(let userId) where participants.contains(where: { $0.userId == userId }):
             focused
         case .screen(let userId) where screenShares.contains(where: { $0.key.remoteId == userId }):
             focused
@@ -48,7 +48,7 @@ struct VoiceRoomScreen: View {
         }
     }
 
-    private var alone: (user: PublicUser?, state: VoiceUserState)? {
+    private var alone: VoiceParticipant? {
         guard participants.count == 1, screenShares.isEmpty, !session.isSharingScreen else {
             return nil
         }
@@ -134,21 +134,13 @@ struct VoiceRoomScreen: View {
             ScrollView(.horizontal) {
                 HStack(spacing: 8) {
                     ForEach(screenShares.filter { target != .screen($0.key.remoteId) }, id: \.key) { share in
-                        ScreenShareTile(userId: share.key.remoteId, track: share.track)
+                        screenShareTile(share)
                             .frame(height: 112)
-                            .onTapGesture {
-                                setFocus(.screen(share.key.remoteId))
-                            }
                     }
 
-                    ForEach(participants.filter { target != .person($0.user?.id ?? -1) }, id: \.user?.id) { participant in
-                        ParticipantTile(user: participant.user, state: participant.state, isCompact: true)
+                    ForEach(participants.filter { target != .person($0.userId) }) { participant in
+                        participantTile(participant, isCompact: true)
                             .frame(width: 84)
-                            .onTapGesture {
-                                if let userId = participant.user?.id {
-                                    setFocus(.person(userId))
-                                }
-                            }
                     }
                 }
             }
@@ -162,7 +154,7 @@ struct VoiceRoomScreen: View {
     private func focusedTile(_ target: FocusTarget) -> some View {
         switch target {
         case .person(let userId):
-            if let participant = participants.first(where: { $0.user?.id == userId }) {
+            if let participant = participants.first(where: { $0.userId == userId }) {
                 ParticipantTile(user: participant.user, state: participant.state, fills: true)
             }
         case .screen(let userId):
@@ -181,20 +173,17 @@ struct VoiceRoomScreen: View {
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 10)
-                            .background(Theme.blurple, in: .rect(cornerRadius: 12))
+                            .background(Theme.blurple, in: .rect(cornerRadius: Radius.control))
                     }
 
-                    ForEach(screenShares, id: \.key) { share in
-                        ScreenShareTile(userId: share.key.remoteId, track: share.track)
-                            .onTapGesture {
-                                setFocus(.screen(share.key.remoteId))
-                            }
-                    }
+                    ForEach(screenShares, id: \.key, content: screenShareTile)
 
                     // as many columns as fit: two halves of a landscape ipad made each tile taller than
                     // the screen
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 150, maximum: 240), spacing: 10)], spacing: 10) {
-                        ForEach(participants, id: \.user?.id, content: participantTile)
+                        ForEach(participants) { participant in
+                            participantTile(participant)
+                        }
                     }
                 }
                 .padding(12)
@@ -208,7 +197,9 @@ struct VoiceRoomScreen: View {
         let columns = Array(repeating: GridItem(.fixed(layout.tileWidth), spacing: Self.tileSpacing), count: layout.columns)
 
         return LazyVGrid(columns: columns, spacing: Self.tileSpacing) {
-            ForEach(participants, id: \.user?.id, content: participantTile)
+            ForEach(participants) { participant in
+                participantTile(participant)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onGeometryChange(for: CGSize.self, of: \.size) { size in
@@ -219,17 +210,43 @@ struct VoiceRoomScreen: View {
 
     private static let tileSpacing: CGFloat = 10
 
-    private func participantTile(_ participant: (user: PublicUser?, state: VoiceUserState)) -> some View {
-        ParticipantTile(user: participant.user, state: participant.state)
-            .onTapGesture {
-                if let userId = participant.user?.id {
-                    setFocus(.person(userId))
-                }
-            }
+    // a button rather than a tap on the tile: it dims under the finger, and voiceover and a
+    // keyboard have something to press. the camera flip inside it is a button of its own to a
+    // finger, and an action here for voiceover, which reads the tile as one thing
+    @ViewBuilder
+    private func participantTile(_ participant: VoiceParticipant, isCompact: Bool = false) -> some View {
+        let name = participant.user?.name ?? String(localized: "Unknown")
+        let button = Button {
+            setFocus(.person(participant.userId))
+        } label: {
+            ParticipantTile(user: participant.user, state: participant.state, isCompact: isCompact)
+        }
+        .buttonStyle(CallTileButtonStyle())
+        .accessibilityLabel(participant.state.micMuted ? String(localized: "\(name), muted") : name)
+        .accessibilityHint("Shows them larger")
+
+        if participant.userId == session.ownUserId && session.cameraEnabled {
+            button.accessibilityAction(named: "Flip Camera", session.flipCamera)
+        } else {
+            button
+        }
+    }
+
+    private func screenShareTile(_ share: (key: VoiceStreamKey, track: VideoTrackBox)) -> some View {
+        let name = session.usersById[share.key.remoteId]?.name ?? String(localized: "Someone")
+
+        return Button {
+            setFocus(.screen(share.key.remoteId))
+        } label: {
+            ScreenShareTile(userId: share.key.remoteId, track: share.track)
+        }
+        .buttonStyle(CallTileButtonStyle())
+        .accessibilityLabel("\(name)'s screen")
+        .accessibilityHint("Shows it larger")
     }
 
     private func setFocus(_ target: FocusTarget?) {
-        withAnimation(.snappy(duration: 0.3)) {
+        withAnimation(Motion.standard) {
             focused = target
         }
     }
@@ -317,7 +334,7 @@ struct VoiceRoomScreen: View {
     }
 
     private func toggleReactionBar() {
-        withAnimation(.smooth(duration: 0.25)) {
+        withAnimation(Motion.standard) {
             isReactionBarShown.toggle()
         }
     }
@@ -336,6 +353,15 @@ struct VoiceRoomScreen: View {
         Task {
             await session.leaveVoiceAfterClosing()
         }
+    }
+}
+
+// a tile in the call answering the finger as it lands, not once it has lifted
+private struct CallTileButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .opacity(configuration.isPressed ? 0.8 : 1)
+            .animation(Motion.fade, value: configuration.isPressed)
     }
 }
 
@@ -377,7 +403,7 @@ private struct ParticipantTile: View {
                     .strokeBorder(Theme.green, lineWidth: 3)
             }
         }
-        .animation(.easeOut(duration: 0.15), value: user.map { session.speakingUserIds.contains($0.id) })
+        .animation(Motion.fade, value: user.map { session.speakingUserIds.contains($0.id) })
         .overlay {
             if let user {
                 FloatingReactions(reactions: session.voiceReactions[user.id] ?? [])

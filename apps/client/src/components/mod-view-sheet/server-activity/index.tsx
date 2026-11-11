@@ -1,12 +1,24 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@sharkord/ui';
 import { Activity, File, Link, MessageSquareText } from 'lucide-react';
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ModViewScreen, useModViewContext } from '../context';
 
 const ServerActivity = memo(() => {
   const { t } = useTranslation('settings');
   const { files, messages, links, setView } = useModViewContext();
+
+  const showMessages = useCallback(() => {
+    setView(ModViewScreen.MESSAGES);
+  }, [setView]);
+
+  const showLinks = useCallback(() => {
+    setView(ModViewScreen.LINKS);
+  }, [setView]);
+
+  const showFiles = useCallback(() => {
+    setView(ModViewScreen.FILES);
+  }, [setView]);
 
   return (
     <Card>
@@ -19,7 +31,7 @@ const ServerActivity = memo(() => {
       <CardContent className="space-y-2">
         <div
           className="flex items-center justify-between py-1.5 px-1 hover:bg-muted/30 rounded cursor-pointer"
-          onClick={() => setView(ModViewScreen.MESSAGES)}
+          onClick={showMessages}
         >
           <div className="flex items-center gap-3">
             <MessageSquareText className="h-4 w-4 text-muted-foreground" />
@@ -32,7 +44,7 @@ const ServerActivity = memo(() => {
 
         <div
           className="flex items-center justify-between py-1.5 px-1 hover:bg-muted/30 rounded cursor-pointer"
-          onClick={() => setView(ModViewScreen.LINKS)}
+          onClick={showLinks}
         >
           <div className="flex items-center gap-3">
             <Link className="h-4 w-4 text-muted-foreground" />
@@ -43,7 +55,7 @@ const ServerActivity = memo(() => {
 
         <div
           className="flex items-center justify-between py-1.5 px-1 hover:bg-muted/30 rounded cursor-pointer"
-          onClick={() => setView(ModViewScreen.FILES)}
+          onClick={showFiles}
         >
           <div className="flex items-center gap-3">
             <File className="h-4 w-4 text-muted-foreground" />

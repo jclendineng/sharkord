@@ -66,9 +66,7 @@ export enum ActivityLogType {
 export type TActivityLogDetailsMap = {
   [ActivityLogType.SERVER_STARTED]: {};
   [ActivityLogType.EDIT_SERVER_SETTINGS]: {
-    values: Partial<{
-      [K in keyof TSettings]: any;
-    }>;
+    values: Partial<TSettings>;
   };
   // -------------------- USERS --------------------
   // the "By" fields are absent when a plugin acted, since it is not a user

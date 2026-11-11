@@ -10,7 +10,6 @@ import {
   UserStatus,
   type TConnectionParams
 } from '@sharkord/shared';
-import { TRPCError } from '@trpc/server';
 import {
   applyWSSHandler,
   type CreateWSSContextFnOptions
@@ -223,7 +222,7 @@ const createContext = async ({
 
   const throwValidationError = (field: string, message: string) => {
     // this mimics the zod validation error format
-    throw new TRPCError({
+    invariant(false, {
       code: 'BAD_REQUEST',
       message: JSON.stringify([
         {

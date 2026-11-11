@@ -218,7 +218,7 @@ private struct ConversationRow: View {
             .hoverBrighten(cornerRadius: 16)
             .contentShape(.rect(cornerRadius: 16))
             .scaleEffect(isPressed ? 0.97 : 1)
-            .animation(.snappy(duration: 0.2), value: isPressed)
+            .animation(Motion.quick, value: isPressed)
             .onTapGesture(perform: onOpen)
             .keyboardActivatable(cornerRadius: 16, perform: onOpen)
             .onLongPressGesture(minimumDuration: 0.3, perform: showActions, onPressingChanged: setPressed)

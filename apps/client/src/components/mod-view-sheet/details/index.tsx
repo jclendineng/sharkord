@@ -22,7 +22,7 @@ import {
   KeyRound,
   Network
 } from 'lucide-react';
-import { memo, useState } from 'react';
+import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useModViewContext } from '../context';
 
@@ -38,6 +38,10 @@ const Row = memo(
   ({ icon, label, value, details, hidden = false }: TRowProps) => {
     const { t } = useTranslation('settings');
     const [visible, setVisible] = useState(!hidden);
+
+    const toggleVisible = useCallback(() => {
+      setVisible((shown) => !shown);
+    }, []);
 
     let valContent = (
       <span className="text-sm text-muted-foreground truncate max-w-[160px]">
@@ -59,7 +63,7 @@ const Row = memo(
         {hidden && (
           <IconButton
             role="button"
-            onClick={() => setVisible(!visible)}
+            onClick={toggleVisible}
             className="text-muted-foreground inline-flex h-6 w-6 items-center justify-center rounded bg-transparent hover:bg-accent hover:text-foreground cursor-pointer transition-colors"
             icon={visible ? EyeClosed : Eye}
             aria-label={visible ? t('hideValue') : t('showValue')}

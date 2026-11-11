@@ -7,16 +7,24 @@ import SwiftUI
 // rest of the channel's media in a strip along the bottom
 struct MediaViewer: View {
     let items: [MediaItem]
-    let onJump: (MediaItem) -> Void
+    // left out when it was opened from the message itself
+    let onJump: ((MediaItem) -> Void)?
 
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
 
     @State private var selection: String
-    @State private var savedMessage: String?
+    @State private var toast: Toast?
 
-    init(items: [MediaItem], startingAt item: MediaItem, onJump: @escaping (MediaItem) -> Void) {
+    // what a save came to, each one its own so a second save's message is not taken down by
+    // the first one's timer
+    private struct Toast: Equatable {
+        let id = UUID()
+        let message: String
+    }
+
+    init(items: [MediaItem], startingAt item: MediaItem, onJump: ((MediaItem) -> Void)? = nil) {
         self.items = items
         self.onJump = onJump
         _selection = State(initialValue: item.id)
@@ -36,21 +44,38 @@ struct MediaViewer: View {
                 MediaPage(item: item, url: url(for: item))
             }
 
-            ThumbnailStrip(items: items, selection: $selection, url: url(for:))
+            // one picture has nothing to pick between
+            if items.count > 1 {
+                ThumbnailStrip(items: items, selection: $selection, url: url(for:))
+            }
         }
         .background(Color.black.ignoresSafeArea())
         .overlay {
-            if let savedMessage {
-                Text(savedMessage)
+            if let toast {
+                Text(toast.message)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
-                    .background(.black.opacity(0.75), in: .capsule)
+                    .background(.black.opacity(0.75), in: .rect(cornerRadius: Radius.card))
+                    .padding(.horizontal, 24)
                     .transition(.opacity)
             }
         }
-        .animation(.easeOut(duration: 0.2), value: savedMessage)
+        .animation(Motion.fade, value: toast)
+        .task(id: toast) {
+            guard toast != nil else {
+                return
+            }
+
+            // cancelled when another message takes its place, which then gets its own time
+            guard (try? await Task.sleep(for: .seconds(2.5))) != nil else {
+                return
+            }
+
+            toast = nil
+        }
     }
 
     private var topBar: some View {
@@ -82,7 +107,9 @@ struct MediaViewer: View {
                         }
                     }
 
-                    Button("Jump to Message", systemImage: "arrow.uturn.left.circle", action: jump)
+                    if onJump != nil {
+                        Button("Jump to Message", systemImage: "arrow.uturn.left.circle", action: jump)
+                    }
                 } label: {
                     Image(systemName: "ellipsis")
                         .font(.title3.weight(.semibold))
@@ -113,7 +140,7 @@ struct MediaViewer: View {
         }
 
         dismiss()
-        onJump(current)
+        onJump?(current)
     }
 
     private func save() {
@@ -122,16 +149,13 @@ struct MediaViewer: View {
         }
 
         Task {
-            show(await PhotoSaver.save(from: url) ? "Saved to Photos" : "Couldn't save")
-        }
-    }
+            let outcome = await PhotoSaver.save(from: url)
 
-    private func show(_ message: String) {
-        savedMessage = message
+            if outcome == .saved {
+                Haptics.success()
+            }
 
-        Task {
-            try? await Task.sleep(for: .seconds(1.5))
-            savedMessage = nil
+            toast = Toast(message: outcome.message)
         }
     }
 }
@@ -139,12 +163,33 @@ struct MediaViewer: View {
 // a picture from the server or a link into the photo library, asking only for the right to add.
 // the media viewer's menu and a long press in the media grid both save through it
 enum PhotoSaver {
-    static func save(from url: URL) async -> Bool {
-        guard
-            await PHPhotoLibrary.requestAuthorization(for: .addOnly) == .authorized,
-            let (data, _) = try? await URLSession.shared.data(from: url)
-        else {
-            return false
+    enum Outcome {
+        case saved
+        // the app may not add to the library, which only the system's settings can change
+        case notAllowed
+        case failed
+
+        var message: String {
+            switch self {
+            case .saved:
+                String(localized: "Saved to Photos")
+            case .notAllowed:
+                String(localized: "Sharkord can't add to your photos. Allow it in \(SystemSettings.name).")
+            case .failed:
+                String(localized: "This picture could not be saved to Photos.")
+            }
+        }
+    }
+
+    // nonisolated: Photos runs the change block on a queue of its own, and a block that took
+    // the app's main actor isolation from here crashed the moment Photos called it
+    nonisolated static func save(from url: URL) async -> Outcome {
+        guard await PHPhotoLibrary.requestAuthorization(for: .addOnly) == .authorized else {
+            return .notAllowed
+        }
+
+        guard let (data, _) = try? await URLSession.shared.data(from: url) else {
+            return .failed
         }
 
         do {
@@ -152,19 +197,18 @@ enum PhotoSaver {
                 PHAssetCreationRequest.forAsset().addResource(with: .photo, data: data, options: nil)
             }
 
-            return true
+            return .saved
         } catch {
-            return false
+            return .failed
         }
     }
 }
 
-// one picture, which pinches to zoom, or a video that plays in place
+// one picture, which zooms and pans, or a video that plays in place
 private struct MediaPage: View {
     let item: MediaItem
     let url: URL?
 
-    @State private var scale: CGFloat = 1
     @State private var player: AVPlayer?
 
     var body: some View {
@@ -173,22 +217,10 @@ private struct MediaPage: View {
                 .onAppear(perform: makePlayer)
                 .onDisappear(perform: stop)
         } else {
-            AnimatedImage(url: url, maxPointSize: 1200, contentMode: .fit)
-                .scaleEffect(scale)
-                .gesture(zoom)
+            ZoomableView {
+                AnimatedImage(url: url, maxPointSize: 1200, contentMode: .fit)
+            }
         }
-    }
-
-    private var zoom: some Gesture {
-        MagnifyGesture()
-            .onChanged { value in
-                scale = max(1, value.magnification)
-            }
-            .onEnded { _ in
-                withAnimation(.smooth(duration: 0.25)) {
-                    scale = 1
-                }
-            }
     }
 
     private func makePlayer() {
@@ -234,7 +266,7 @@ private struct ThumbnailStrip: View {
                 proxy.scrollTo(selection, anchor: .center)
             }
             .onChange(of: selection) { _, id in
-                withAnimation(.smooth(duration: 0.25)) {
+                withAnimation(Motion.standard) {
                     proxy.scrollTo(id, anchor: .center)
                 }
             }
@@ -258,11 +290,11 @@ private struct ThumbnailStrip: View {
                 RoundedRectangle(cornerRadius: 6)
                     .stroke(.white, lineWidth: item.id == selection ? 2 : 0)
             }
-            .animation(.smooth(duration: 0.2), value: selection)
+            .animation(Motion.quick, value: selection)
     }
 
     private func select(_ item: MediaItem) {
-        withAnimation(.smooth(duration: 0.25)) {
+        withAnimation(Motion.standard) {
             selection = item.id
         }
     }
