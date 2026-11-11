@@ -1791,6 +1791,32 @@ describe('users router', () => {
     expect(secondTab.closes).toEqual([closed]);
   });
 
+  test('should save a long ban reason whole and close with what fits a close frame', async () => {
+    const socket = createFakeSocket();
+
+    const { caller } = await initTest(1, undefined, {
+      getUserWs: (userId) => (userId === 2 ? [socket] : [])
+    });
+
+    // emoji are four bytes each, so the cut has to land between characters, not inside one
+    const reason = '🔨'.repeat(40);
+
+    await caller.users.ban({ userId: 2, reason });
+
+    const [closed] = socket.closes;
+
+    expect(Buffer.byteLength(closed!.reason!)).toBe(120);
+    expect(reason.startsWith(closed!.reason!)).toBe(true);
+
+    const row = await tdb
+      .select({ banned: users.banned, banReason: users.banReason })
+      .from(users)
+      .where(eq(users.id, 2))
+      .get();
+
+    expect(row).toEqual({ banned: true, banReason: reason });
+  });
+
   test('should revoke every token a banned user held, so an unban does not revive them', async () => {
     const { tokenVersion } = (await tdb
       .select({ tokenVersion: users.tokenVersion })

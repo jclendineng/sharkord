@@ -17,6 +17,19 @@ type TUserSessions = {
   close: (code: DisconnectCode, reason?: string) => void;
 };
 
+// a close frame carries at most 123 bytes of reason and ws throws on more, which stopped a ban
+// before it was written. encodeInto never splits a character, so the cut is always valid text
+const MAX_CLOSE_REASON_BYTES = 123;
+
+const toCloseReason = (reason: string | undefined) => {
+  if (!reason) return reason;
+
+  const bytes = new Uint8Array(MAX_CLOSE_REASON_BYTES);
+  const { written } = new TextEncoder().encodeInto(reason, bytes);
+
+  return new TextDecoder().decode(bytes.subarray(0, written));
+};
+
 const serverUserSessions = (userId: number): TUserSessions => ({
   count: () => getUserWsCount(userId),
   close: (code, reason) => disconnectUser(userId, code, reason)
@@ -67,7 +80,7 @@ const banUser = async (
   const ipsToBan = banIps ? await getIpsToBan(userId, actorUserId) : [];
 
   // closed before the row changes, so a banned session cannot act in the gap
-  sessions.close(DisconnectCode.BANNED, reason);
+  sessions.close(DisconnectCode.BANNED, toCloseReason(reason));
 
   const now = Date.now();
 
@@ -147,7 +160,7 @@ const kickUser = async (
 
   await invalidateUserSessions(userId);
 
-  sessions.close(DisconnectCode.KICKED, reason);
+  sessions.close(DisconnectCode.KICKED, toCloseReason(reason));
 
   eventBus.emit('user:kicked', {
     userId,

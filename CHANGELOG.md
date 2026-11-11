@@ -398,7 +398,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 #### Server and web client
 
-- Kicking and banning work again. Both failed with "First argument must be a valid error code number" and a ban was never saved, since Bun 1.4.4 refuses the close codes the server sent.
+- Kicking and banning work again. Both failed with "First argument must be a valid error code number" and a ban was never saved, since Bun 1.4.4 refuses the close codes the server sent. A reason over 123 bytes failed the same way, and is now shortened for the kicked person's screen while the ban keeps it whole.
 - A sign in lasts until it is signed out, ended from the devices list or ended by a password change. Devices left unopened for a week were signed out, and come back signed in once the server is updated.
 - An app whose session was ended shows the sign in screen, where it sat on Reconnecting for good.
 - On a phone or tablet, the web's small buttons can be hit: any button under 44 pixels gets a hit area that size without moving the layout.

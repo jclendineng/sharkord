@@ -321,7 +321,9 @@ const handleSocketClose = async (ws: WebSocket) => {
 
 const createWsServer = async (server: http.Server) => {
   return new Promise<WebSocketServer>((resolve) => {
-    wss = new WebSocketServer({ server });
+    // bun's ws from 1.4.4 takes ws's 100 MiB default, where it used to cap at 16 MiB. a socket
+    // can send before it signs in, so the old cap is kept
+    wss = new WebSocketServer({ server, maxPayload: 16 * 1024 * 1024 });
 
     wss.on('connection', (ws) => {
       try {
