@@ -35,11 +35,11 @@ export enum MessageNodeType {
 
 export enum DisconnectCode {
   UNEXPECTED = 1006,
-  KICKED = 40000,
-  BANNED = 40001,
-  SERVER_SHUTDOWN = 40002,
-  // in the 4000 to 4999 range the websocket spec leaves to applications, which the ones above
-  // predate
+  // application codes must sit in 4000 to 4999: bun's ws from 1.4.4 throws on anything
+  // outside the spec's ranges, which made kicks and bans fail before they were written
+  KICKED = 4100,
+  BANNED = 4101,
+  SERVER_SHUTDOWN = 4102,
   UNAUTHORIZED = 4401
 }
 
