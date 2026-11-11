@@ -2909,6 +2909,16 @@ final class SessionStore {
         // change. retrying it only ever showed reconnecting, so it signs in again instead
         case .connectionLost(let code, _) where code == TRPCClient.unauthorizedCloseCode:
             signOut(message: String(localized: "Your session has ended. Sign in again."))
+        // the token went with the kick, so a reconnect could only be refused, and the reason
+        // would never be seen. the web shows the same on its disconnected screen
+        case .connectionLost(let code, let reason) where code == TRPCClient.kickedCloseCode:
+            signOut(message: reason.isEmpty
+                ? String(localized: "You were kicked from the server.")
+                : String(localized: "You were kicked from the server: \(reason)"))
+        case .connectionLost(let code, let reason) where code == TRPCClient.bannedCloseCode:
+            signOut(message: reason.isEmpty
+                ? String(localized: "You were banned from the server.")
+                : String(localized: "You were banned from the server: \(reason)"))
         case .serverRequestedReconnect, .connectionLost:
             scheduleReconnect()
         }

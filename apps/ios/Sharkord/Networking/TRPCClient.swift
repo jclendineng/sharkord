@@ -325,6 +325,9 @@ final class TRPCClient {
     // the close code the server signs a refused token with, DisconnectCode.UNAUTHORIZED. the
     // refusal it also sends can arrive after the close, or not at all
     static let unauthorizedCloseCode = 4401
+    // DisconnectCode.KICKED and BANNED, sent with the moderator's reason
+    static let kickedCloseCode = 4100
+    static let bannedCloseCode = 4101
 
     // a refused token fails what was waiting as unauthorized, so connect signs out rather
     // than retrying the same token for good

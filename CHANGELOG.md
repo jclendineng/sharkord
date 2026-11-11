@@ -491,6 +491,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 #### iOS app
 
 - Holding someone's name or avatar in the chat opens only the message's actions. Letting go opened their profile over them.
+- A kicked or banned account goes to the sign in screen with the reason, as the web does. It sat on Reconnecting.
 - The largest text sizes no longer break the chat.
   - The message box keeps room to type in: its buttons grow taller with the text, not wider.
   - The emoji, GIF and sticker panel stops growing where the keyboard does, so its tabs and search fit.
