@@ -25,6 +25,9 @@ struct MessageRow: View {
     @State private var isProfilePresented = false
     // the finger on the row, lit as it is held so the press has something to show for it
     @State private var isFingerDown = false
+    // the avatar and name are buttons, which still fire when the finger lifts after a hold has
+    // opened the message actions, and opened the profile over them
+    @State private var isHoldingForActions = false
 
     // let go the moment the menu takes over from the press
     private var isPressed: Bool {
@@ -82,6 +85,7 @@ struct MessageRow: View {
         #if os(iOS)
         .gesture(PressTracker(isPressed: $isFingerDown))
         .onChange(of: isFingerDown, prepareHaptic)
+        .onChange(of: isFingerDown, forgetHold)
         #endif
         .onSecondaryClick(perform: onSecondaryClick)
         .opacity(isPending ? 0.55 : 1)
@@ -212,6 +216,11 @@ struct MessageRow: View {
     // the popover hangs off the avatar, the name opens the same one. the chat's inbox or pins
     // go away for it, which a click on a button never told
     private func showProfile() {
+        guard !isHoldingForActions else {
+            isHoldingForActions = false
+            return
+        }
+
         servers.chatDropdownDismissals += 1
         isProfilePresented = true
     }
@@ -231,7 +240,16 @@ struct MessageRow: View {
         }
     }
 
+    // a hold on the text rather than the name leaves no button to take the flag, so every new
+    // press starts without one
+    private func forgetHold(_: Bool, _ isDown: Bool) {
+        if isDown {
+            isHoldingForActions = false
+        }
+    }
+
     private func longPressed(_: Bool) {
+        isHoldingForActions = true
         Haptics.medium()
         onLongPress()
     }
