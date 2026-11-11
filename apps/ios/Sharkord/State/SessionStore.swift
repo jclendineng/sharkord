@@ -64,6 +64,8 @@ final class SessionStore {
     private(set) var toastMessage: String?
     // someone a menu asked to block, asked about over the whole window once the menu has gone
     var userAwaitingBlock: PublicUser?
+    // a kick or ban a member menu asked for, confirmed the same way
+    var moderationAwaiting: PendingModeration?
 
     @ObservationIgnored private var toastTask: Task<Void, Never>?
 
@@ -1683,6 +1685,33 @@ final class SessionStore {
 
     func isBlocked(_ userId: Int) -> Bool {
         friendLists.blocked.contains(userId)
+    }
+
+    // from the members screen and from a member's menu. an empty reason is sent as none, which
+    // the kicked person's screen words as no reason given
+    func kick(userId: Int, reason: String) async throws {
+        struct KickInput: Encodable {
+            let userId: Int
+            let reason: String?
+        }
+
+        try await perform("users.kick", KickInput(userId: userId, reason: Self.moderationReason(reason)))
+    }
+
+    func ban(userId: Int, reason: String, banIps: Bool) async throws {
+        struct BanInput: Encodable {
+            let userId: Int
+            let reason: String?
+            let banIps: Bool
+        }
+
+        try await perform("users.ban", BanInput(userId: userId, reason: Self.moderationReason(reason), banIps: banIps))
+    }
+
+    private static func moderationReason(_ reason: String) -> String? {
+        let trimmed = reason.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        return trimmed.isEmpty ? nil : trimmed
     }
 
     // request, accept, remove, block or unblock, then the list as the server has it

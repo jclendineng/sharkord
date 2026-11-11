@@ -205,12 +205,12 @@ private struct ConversationRow: View {
     }
 
     var body: some View {
-        // plain gestures, as the channel rows: a recognised long press cancels the tap, where a
-        // link still fires when the finger lifts after one
+        // plain gestures, as the channel rows, where a link still fires when the finger lifts
+        // after a hold
         // the card gives a little under the finger straight away, so the press feels fluid
         label
             .padding(12)
-            .background(isPressed ? Theme.panelSelected : Theme.listBackground, in: .rect(cornerRadius: 16, style: .continuous))
+            .background(isPressed ? Theme.hover : Theme.listBackground, in: .rect(cornerRadius: 16, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .stroke(Theme.divider, lineWidth: 1)
@@ -219,9 +219,9 @@ private struct ConversationRow: View {
             .contentShape(.rect(cornerRadius: 16))
             .scaleEffect(isPressed ? 0.97 : 1)
             .animation(Motion.quick, value: isPressed)
-            .onTapGesture(perform: onOpen)
+            .onTapOrHold(tap: onOpen, hold: showActions)
+            .tracksPress($isPressed)
             .keyboardActivatable(cornerRadius: 16, perform: onOpen)
-            .onLongPressGesture(minimumDuration: 0.3, perform: showActions, onPressingChanged: setPressed)
             .onSecondaryClick(perform: showActionsAtPointer)
             .accessibilityAddTraits(.isButton)
             .accessibilityAction(named: "More Options", showActions)
@@ -250,10 +250,6 @@ private struct ConversationRow: View {
                     }
                 }
             }
-    }
-
-    private func setPressed(_ pressed: Bool) {
-        isPressed = pressed
     }
 
     private func requestMute() {

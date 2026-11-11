@@ -153,13 +153,19 @@ private struct RailItem<Content: View>: View {
 
     // discord's under a mac pointer: the circle squares off and a short pill shows
     @State private var isHovered = false
+    // a finger on it does the same at once, before a tap switches or a hold opens the menu
+    @State private var isPressed = false
+
+    private var isLit: Bool {
+        isHovered || isPressed
+    }
 
     private var pillHeight: CGFloat? {
         if isSelected {
             return 40
         }
 
-        if isHovered {
+        if isLit {
             return 20
         }
 
@@ -170,7 +176,7 @@ private struct RailItem<Content: View>: View {
         Button(action: action) {
             content
                 .frame(width: 48, height: 48)
-                .clipShape(.rect(cornerRadius: isSelected || isHovered ? 16 : 24))
+                .clipShape(.rect(cornerRadius: isSelected || isLit ? 16 : 24))
                 .overlay(alignment: .bottomTrailing) {
                     if badge > 0 {
                         Text(badge > 99 ? "99+" : "\(badge)")
@@ -200,8 +206,10 @@ private struct RailItem<Content: View>: View {
         .accessibilityValue(accessibilityValue)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         .onHover(perform: setHovered)
+        .tracksPress($isPressed)
+        .onChange(of: isPressed, prepareHaptic)
         .animation(.snappy, value: isSelected)
-        .animation(Motion.quick, value: isHovered)
+        .animation(Motion.quick, value: isLit)
     }
 
     private var accessibilityValue: String {
@@ -214,6 +222,13 @@ private struct RailItem<Content: View>: View {
 
     private func setHovered(_ hovered: Bool) {
         isHovered = hovered
+    }
+
+    // the hold's tap is ready by the time the menu opens
+    private func prepareHaptic(_: Bool, _ isDown: Bool) {
+        if isDown {
+            Haptics.prepare()
+        }
     }
 }
 

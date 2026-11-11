@@ -126,6 +126,7 @@ struct HomeView: View {
         }
         .animation(.snappy, value: session.toastMessage)
         .modifier(BlockConfirmation(session: session))
+        .modifier(ModerationConfirmation(session: session))
         #if os(macOS)
         .overlay {
             if servers.isCallPresented, let voiceSession = servers.voiceSession {
@@ -892,5 +893,55 @@ private struct BlockConfirmation: ViewModifier {
         Task {
             await session.changeFriendship("block", with: user.id)
         }
+    }
+}
+
+// the kick or ban a member menu asked for, with the members screen's reason sheet. asked here
+// for the same reason as a block, the menu is gone by then
+private struct ModerationConfirmation: ViewModifier {
+    @Bindable var session: SessionStore
+
+    @State private var reason = ""
+    @State private var banIps = false
+
+    func body(content: Content) -> some View {
+        content.sheet(item: $session.moderationAwaiting, onDismiss: reset) { pending in
+            ConfirmModeration(
+                action: pending.action,
+                name: pending.user.name,
+                reason: $reason,
+                wipe: .constant(false),
+                banIps: $banIps
+            ) {
+                perform(pending)
+            }
+            .environment(session)
+            .appSheet()
+        }
+    }
+
+    private func perform(_ pending: PendingModeration) {
+        let reason = reason
+        let banIps = banIps
+
+        Task {
+            do {
+                switch pending.action {
+                case .kick:
+                    try await session.kick(userId: pending.user.id, reason: reason)
+                case .ban:
+                    try await session.ban(userId: pending.user.id, reason: reason, banIps: banIps)
+                case .delete:
+                    break
+                }
+            } catch {
+                session.showError(error)
+            }
+        }
+    }
+
+    private func reset() {
+        reason = ""
+        banIps = false
     }
 }

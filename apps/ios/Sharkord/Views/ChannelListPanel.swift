@@ -206,9 +206,9 @@ private struct CategoryHeader: View {
         // plain gestures, as a channel row has, so a long press does not also collapse it
         label
             .onHover(perform: setHovered)
-            .onTapGesture(perform: onToggle)
+            .onTapOrHold(tap: onToggle, hold: showActions)
+            .tracksPress($isPressed)
             .keyboardActivatable(perform: onToggle)
-            .onLongPressGesture(minimumDuration: 0.3, perform: showActions, onPressingChanged: setPressed)
             .onSecondaryClick(perform: showActionsAtPointer)
             // the chevron read as "Go Down" on its own
             .accessibilityElement(children: .ignore)
@@ -286,7 +286,8 @@ private struct CategoryHeader: View {
 
     // pressed or under the pointer, as a channel row is, and on a mac while its menu is beside it
     private var isHighlighted: Bool {
-        isPressed || isHovered || (isOnMac && isActionsPresented)
+        // the pinned section has no menu, a press there only collapses it
+        (isPressed && category != nil) || isHovered || (isOnMac && isActionsPresented)
     }
 
     private let isOnMac = Platform.isMac
@@ -306,16 +307,11 @@ private struct CategoryHeader: View {
         .foregroundStyle(isHighlighted ? Theme.header : Theme.muted)
         .padding(.vertical, 4)
         .padding(.horizontal, 4)
-        .background(isHighlighted ? Theme.panelSelected : .clear, in: .rect(cornerRadius: 6))
+        .background(isHighlighted ? Theme.hover : .clear, in: .rect(cornerRadius: 6))
         .animation(isHighlighted ? nil : Motion.fade, value: isHighlighted)
         // the gap above stays out of the highlight, and out of reach of a press
         .padding(.top, 14)
         .contentShape(.rect)
-    }
-
-    private func setPressed(_ pressed: Bool) {
-        // the pinned section has no menu, a press there only collapses it
-        isPressed = pressed && category != nil
     }
 
     private func setHovered(_ hovered: Bool) {
@@ -378,16 +374,16 @@ private struct ChannelRow: View {
     }
 
     var body: some View {
-        // plain gestures rather than a link or button: a recognised long press cancels the
-        // tap, where a button still fires when the finger lifts after one
+        // plain gestures rather than a link or button, which still fires when the finger lifts
+        // after a hold
         label
-            .background(isHighlighted ? Theme.panelSelected : .clear, in: .rect(cornerRadius: 6))
+            .background(isHighlighted ? Theme.hover : .clear, in: .rect(cornerRadius: 6))
             // on at once under the finger, a quick fade as it lets go
             .animation(isHighlighted ? nil : Motion.fade, value: isHighlighted)
             .onHover(perform: setHovered)
-            .onTapGesture(perform: open)
+            .onTapOrHold(tap: open, hold: showActions)
+            .tracksPress($isPressed)
             .keyboardActivatable(perform: open)
-            .onLongPressGesture(minimumDuration: 0.3, perform: showActions, onPressingChanged: setPressed)
             .onSecondaryClick(perform: showActionsAtPointer)
             // one element read as a whole: the symbol, lock and bold unread weight say nothing
             // to voiceover on their own
@@ -443,10 +439,6 @@ private struct ChannelRow: View {
     }
 
     private let isOnMac = Platform.isMac
-
-    private func setPressed(_ pressed: Bool) {
-        isPressed = pressed
-    }
 
     private func setHovered(_ hovered: Bool) {
         isHovered = hovered
@@ -623,13 +615,13 @@ private struct VoiceParticipantRow: View {
 
     var body: some View {
         label
-            .background(isHighlighted ? Theme.panelSelected : .clear, in: .rect(cornerRadius: 6))
+            .background(isHighlighted ? Theme.hover : .clear, in: .rect(cornerRadius: 6))
             .animation(isHighlighted ? nil : Motion.fade, value: isHighlighted)
             .padding(.leading, 32)
             .onHover(perform: setHovered)
-            .onTapGesture(perform: showProfile)
+            .onTapOrHold(tap: showProfile, hold: showMenu)
+            .tracksPress($isPressed)
             .keyboardActivatable(perform: showProfile)
-            .onLongPressGesture(minimumDuration: 0.3, perform: showMenu, onPressingChanged: setPressed)
             .onSecondaryClick(perform: showMenuAtPointer)
             .accessibilityAddTraits(.isButton)
             .accessibilityAction(named: "More Options", showMenu)
@@ -687,10 +679,6 @@ private struct VoiceParticipantRow: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
         .contentShape(.rect)
-    }
-
-    private func setPressed(_ pressed: Bool) {
-        isPressed = pressed
     }
 
     private func setHovered(_ hovered: Bool) {

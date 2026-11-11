@@ -2,7 +2,7 @@ import SwiftUI
 
 // discord's menu on a member, a right click on a mac and a long press elsewhere: their profile,
 // a mention in the message box, a direct message, the note on their profile, and for someone
-// who manages roles, which roles they hold
+// who manages roles, which roles they hold, and a kick or ban for a moderator
 struct MemberActionsSheet: View {
     let user: PublicUser
     // the chat a mention goes into, none where there is no chat behind the list
@@ -37,6 +37,21 @@ struct MemberActionsSheet: View {
         return session.channelSections
             .flatMap(\.channels)
             .filter { $0.type == .voice && $0.id != voiceChannelId }
+    }
+
+    // the server refuses a kick of someone with no open session, so it is offered only to
+    // someone online. who outranks whom is left to the server, which says so in a toast
+    private var canKick: Bool {
+        guard !isSelf, user.banned != true, session.can(.kickMembers) else {
+            return false
+        }
+
+        return user.status.map { $0 != .offline } ?? false
+    }
+
+    // an unban is on the members screen, beside the ban's reason
+    private var canBan: Bool {
+        !isSelf && user.banned != true && session.can(.banMembers)
     }
 
     private var canManageRoles: Bool {
@@ -93,6 +108,18 @@ struct MemberActionsSheet: View {
                             }
                         } else {
                             roleRows
+                        }
+                    }
+                }
+
+                if canKick || canBan {
+                    ActionGroup {
+                        if canKick {
+                            ActionRow(title: "Kick", systemImage: "person.fill.xmark", tint: Theme.red, action: kick)
+                        }
+
+                        if canBan {
+                            ActionRow(title: "Ban", systemImage: "hammer.fill", tint: Theme.red, action: ban)
                         }
                     }
                 }
@@ -165,6 +192,16 @@ struct MemberActionsSheet: View {
     private func block() {
         close()
         session.userAwaitingBlock = user
+    }
+
+    private func kick() {
+        close()
+        session.moderationAwaiting = PendingModeration(user: user, action: .kick)
+    }
+
+    private func ban() {
+        close()
+        session.moderationAwaiting = PendingModeration(user: user, action: .ban)
     }
 
     private func unblock() {

@@ -693,14 +693,18 @@ private struct MemberRow: View {
     @State private var pendingAction: MenuAction?
     @State private var isProfilePresented = false
     @State private var isHovered = false
+    // lit as soon as a finger lands, as a message is, instead of only once the menu opens
+    @State private var isPressed = false
 
     var body: some View {
         content
-            .background(isHovered || isMenuPresented ? Theme.hover : .clear, in: .rect(cornerRadius: 6))
+            .background(isHovered || isPressed || isMenuPresented ? Theme.hover : .clear, in: .rect(cornerRadius: 6))
             .padding(.horizontal, 6)
             .onHover(perform: setHovered)
+            .tracksPress($isPressed)
+            .onChange(of: isPressed, prepareHaptic)
             // discord's menu on a member: a long press on a touch screen, a right click on a mac
-            .onLongPressGesture(minimumDuration: 0.3, perform: showMenu)
+            .onTapOrHold(tap: onOpen, hold: showMenu)
             .onSecondaryClick(perform: showMenuAtPointer)
             .accessibilityAction(named: "More Options", showMenu)
             .actionsPresentation(isPresented: $isMenuPresented, anchor: menuAnchor, onDismiss: runPendingAction) {
@@ -721,8 +725,16 @@ private struct MemberRow: View {
     }
 
     private func showMenu() {
+        Haptics.medium()
         menuAnchor = .center
         isMenuPresented = true
+    }
+
+    // the hold's tap is ready by the time the menu opens
+    private func prepareHaptic(_: Bool, _ isDown: Bool) {
+        if isDown {
+            Haptics.prepare()
+        }
     }
 
     private func showMenuAtPointer(_ click: SecondaryClick) {
@@ -767,8 +779,7 @@ private struct MemberRow: View {
         }
     }
 
-    // plain gestures rather than a button: a recognised long press cancels the tap, where a
-    // button still fires when the finger lifts after one
+    // plain gestures rather than a button, which still fires when the finger lifts after a hold
     private var content: some View {
         Group {
             HStack(spacing: 14) {
@@ -794,7 +805,6 @@ private struct MemberRow: View {
             .padding(.vertical, 7)
             .contentShape(.rect)
         }
-        .onTapGesture(perform: onOpen)
         .keyboardActivatable(perform: onOpen)
         .accessibilityAddTraits(.isButton)
     }

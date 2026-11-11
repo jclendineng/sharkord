@@ -108,14 +108,6 @@ private struct MemberRow: View {
 }
 
 private struct MemberDetail: View {
-    enum Action: Identifiable {
-        case kick
-        case ban
-        case delete
-
-        var id: Self { self }
-    }
-
     let user: AdminUser
     let roles: [Role]
     let onChange: () -> Void
@@ -125,7 +117,7 @@ private struct MemberDetail: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var roleIds: Set<Int> = []
-    @State private var pending: Action?
+    @State private var pending: ModerationAction?
     @State private var reason = ""
     @State private var wipe = false
     @State private var banIps = false
@@ -314,32 +306,18 @@ private struct MemberDetail: View {
         }
     }
 
-    private func perform(_ action: Action) {
-        struct ReasonInput: Encodable {
-            let userId: Int
-            let reason: String?
-        }
-
+    private func perform(_ action: ModerationAction) {
         struct DeleteInput: Encodable {
             let userId: Int
             let wipe: Bool
         }
 
-        struct BanInput: Encodable {
-            let userId: Int
-            let reason: String?
-            let banIps: Bool
-        }
-
-        let trimmed = reason.trimmingCharacters(in: .whitespacesAndNewlines)
-        let input = ReasonInput(userId: user.id, reason: trimmed.isEmpty ? nil : trimmed)
-
         run {
             switch action {
             case .kick:
-                try await session.perform("users.kick", input)
+                try await session.kick(userId: user.id, reason: reason)
             case .ban:
-                try await session.perform("users.ban", BanInput(userId: user.id, reason: input.reason, banIps: banIps))
+                try await session.ban(userId: user.id, reason: reason, banIps: banIps)
             case .delete:
                 try await session.perform("users.delete", DeleteInput(userId: user.id, wipe: wipe))
             }
@@ -363,86 +341,6 @@ private struct MemberDetail: View {
 
             isWorking = false
         }
-    }
-}
-
-// a kick, ban or delete is confirmed with what will happen spelled out, and a reason
-private struct ConfirmModeration: View {
-    let action: MemberDetail.Action
-    let name: String
-    @Binding var reason: String
-    @Binding var wipe: Bool
-    @Binding var banIps: Bool
-    let onConfirm: () -> Void
-
-    @Environment(SessionStore.self) private var session
-    @Environment(\.dismiss) private var dismiss
-
-    private var title: String {
-        switch action {
-        case .kick:
-            String(localized: "Kick \(name)")
-        case .ban:
-            String(localized: "Ban \(name)")
-        case .delete:
-            String(localized: "Delete \(name)'s Account")
-        }
-    }
-
-    var body: some View {
-        NavigationStack {
-            SettingsForm {
-                if action == .delete {
-                    Section {
-                        Toggle("Also Delete Their Messages", isOn: $wipe)
-                    } footer: {
-                        Text("Otherwise their messages stay, shown as from a deleted user. This can't be undone.")
-                            .wrappingFooter()
-                    }
-                } else {
-                    Section("Reason (optional)") {
-                        TextField("", text: $reason, prompt: Text("Why?"), axis: .vertical)
-                            .labelsHidden()
-                            .lineLimit(2...4)
-                    }
-                }
-
-                if action == .ban, session.supports(.ipBans) {
-                    Section {
-                        Toggle("Also Ban Their IP Addresses", isOn: $banIps)
-                    } footer: {
-                        Text("Blocks the public addresses they signed in from, so a new account from there is refused. Anyone else on those networks, like a household, is locked out too. Unbanning lifts it.")
-                            .wrappingFooter()
-                    }
-                }
-
-                Section {
-                    Button(role: .destructive, action: confirm) {
-                        Text(title)
-                            .frame(maxWidth: .infinity)
-                    }
-                }
-            }
-            .settingsListStyle()
-            .navigationTitle(title)
-            .inlineNavigationTitle()
-            .toolbar {
-                ActionToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel", action: close)
-                }
-            }
-        }
-        .sheetDetents([.medium])
-        .presentationBackground(Theme.deepBackground)
-    }
-
-    private func confirm() {
-        dismiss()
-        onConfirm()
-    }
-
-    private func close() {
-        dismiss()
     }
 }
 

@@ -456,6 +456,11 @@ invite carries too. Only the owner acts on the owner,
 and the owner acts on anyone. Migration `0074` gives the three new permissions to every role that
 had Manage Users.
 
+In the apps, the member menu (a long press, a right click on a Mac) offers Kick for someone online
+and Ban for anyone not banned, to whoever holds the permission. Both open the same reason sheet as
+the Users screen, which keeps Unban and Delete Account. On the web they are in the Moderation View
+behind the gear on a member's profile card.
+
 ## Pinned channels
 
 Pin Channel to Top on a channel or a conversation in the apps puts it in a Pinned group above

@@ -188,6 +188,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 #### iOS app
 
+- A member's menu (a long press, a right click on a Mac) has Kick and Ban for those allowed, with the same reason sheet as Server Settings.
 - The iOS, iPad and Mac app speaks the web client's languages: Czech, Spanish, French, Italian, Brazilian Portuguese, Russian and Simplified Chinese, following the device's language.
   - Message times read in the device's language and date order.
   - What the server sends, such as channel and category names and its error messages, stays as the server has it.
@@ -490,6 +491,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 #### iOS app
 
+- Pressing a member, channel, category, conversation, voice user or server icon lights it at once with the same grey as a message, and its menu opens after the same short hold. They lit late, in a fainter grey, and took longer to open.
 - Holding someone's name or avatar in the chat opens only the message's actions. Letting go opened their profile over them.
 - A kicked or banned account goes to the sign in screen with the reason, as the web does. It sat on Reconnecting.
 - The largest text sizes no longer break the chat.
