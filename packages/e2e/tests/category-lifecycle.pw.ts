@@ -36,9 +36,22 @@ const createCategoryWithChannel = async (page: Page) => {
 
   await expect(categoryItem(page, CATEGORY)).toBeVisible();
 
-  await categoryItem(page, CATEGORY)
-    .getByTestId(TestId.CATEGORY_ADD_CHANNEL)
-    .click();
+  // a click on the + while the sidebar is still settling around the new category is lost, which
+  // only shows on slow ci runners. clicked again only while the dialog is shut, since a click
+  // on an open one would be intercepted by its overlay
+  const addChannel = categoryItem(page, CATEGORY).getByTestId(
+    TestId.CATEGORY_ADD_CHANNEL
+  );
+  const dialog = page.getByRole('dialog');
+
+  await expect(async () => {
+    if (!(await dialog.isVisible())) {
+      await addChannel.click();
+    }
+
+    await expect(dialog).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 15_000 });
+
   await submitDialog(page, CHANNEL);
 
   // a rejected name leaves the dialog open and the category empty, which would otherwise
@@ -54,6 +67,18 @@ const deleteCategory = async (page: Page, name: string) => {
   await confirmDialog(page);
 };
 
+// a failure partway leaves the category behind, and connect.pw.ts, which counts the seeded
+// ones, then fails on every attempt even after this spec's own retry passes. waits for it to
+// go, or closing the page could drop the delete before it is sent
+const removeLeftoverCategory = async (page: Page) => {
+  const isLeftBehind = (await categoryItem(page, CATEGORY).count()) > 0;
+
+  if (!isLeftBehind) return;
+
+  await deleteCategory(page, CATEGORY);
+  await expect(categoryItem(page, CATEGORY)).toHaveCount(0);
+};
+
 // categories.test.ts covers the server side: the channels are announced and any call in them
 // is dropped. what only a browser shows is the other client's sidebar reacting to those
 // events, which is the half that would silently need a reload if a subscription were missed
@@ -62,9 +87,9 @@ test('deleting a category removes it and its channels from every client', async 
 }) => {
   const ownerContext = await browser.newContext();
   const watcherContext = await browser.newContext();
+  const owner = await ownerContext.newPage();
 
   try {
-    const owner = await ownerContext.newPage();
     const watcher = await watcherContext.newPage();
 
     await loginAs(owner, 'testowner', 'password123');
@@ -88,6 +113,10 @@ test('deleting a category removes it and its channels from every client', async 
       await expect(page.getByText(CHANNEL)).toHaveCount(0, { timeout: 15_000 });
     }
   } finally {
+    await removeLeftoverCategory(owner).catch(() => {
+      // the page itself is broken, the next seed starts clean
+    });
+
     await ownerContext.close().catch(() => {});
     await watcherContext.close().catch(() => {});
   }
