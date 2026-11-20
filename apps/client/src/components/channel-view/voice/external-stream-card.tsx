@@ -35,6 +35,7 @@ import { VolumeButton } from './volume-button';
 type TExternalStreamControlsProps = {
   isPinned: boolean;
   isFullscreen: boolean;
+  fullscreenElement?: HTMLElement;
   isZoomEnabled: boolean;
   handlePinToggle: () => void;
   handleToggleFullscreen: () => void;
@@ -53,6 +54,7 @@ const ExternalStreamControls = memo(
   ({
     isPinned,
     isFullscreen,
+    fullscreenElement,
     isZoomEnabled,
     handlePinToggle,
     handleToggleFullscreen,
@@ -83,6 +85,7 @@ const ExternalStreamControls = memo(
               volumeKey={volumeKey}
               size={density.icon}
               className={cardControlClass()}
+              portalContainer={fullscreenElement}
             />
           )}
           {showQualityControl && (
@@ -91,6 +94,7 @@ const ExternalStreamControls = memo(
               kind={StreamKind.EXTERNAL_VIDEO}
               size={density.icon}
               className={cardControlClass()}
+              portalContainer={fullscreenElement}
             />
           )}
           {hasVideo && (
@@ -191,6 +195,7 @@ const ExternalStreamCard = memo(
 
     const {
       isFullscreen,
+      fullscreenElement,
       isOverlayVisible,
       toggleFullscreen,
       handleDoubleClick
@@ -275,6 +280,7 @@ const ExternalStreamCard = memo(
         <ExternalStreamControls
           isPinned={isPinned}
           isFullscreen={isFullscreen}
+          fullscreenElement={fullscreenElement}
           isZoomEnabled={isZoomEnabled}
           handlePinToggle={handlePinToggle}
           handleToggleFullscreen={handleToggleFullscreen}

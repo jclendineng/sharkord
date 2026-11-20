@@ -117,6 +117,7 @@ const ScreenShareCard = memo(
 
     const {
       isFullscreen,
+      fullscreenElement,
       isOverlayVisible,
       toggleFullscreen,
       handleDoubleClick
@@ -204,6 +205,7 @@ const ScreenShareCard = memo(
                 volumeKey={volumeKey}
                 size={density.icon}
                 className={cardControlClass()}
+                portalContainer={fullscreenElement}
               />
             )}
             {!isOwnUser && webRtcSimulcastEnabled && (
@@ -213,6 +215,7 @@ const ScreenShareCard = memo(
                 disabled={!isSimulcastScreenConsumer}
                 size={density.icon}
                 className={cardControlClass()}
+                portalContainer={fullscreenElement}
               />
             )}
             <FullscreenButton
