@@ -6,8 +6,8 @@
 import { parseArgs } from "node:util";
 import { asc } from "./asc";
 
-const APP_ID = "6822132167";
-const PUBLIC_GROUP_ID = "a6810676-0010-488e-bdc4-56bd4ec4088f";
+const APP_ID = "6839653428";
+const PUBLIC_GROUP_ID = "5888cab3-9a04-40e1-8309-470376f7a55b";
 
 const { values } = parseArgs({
   options: {
