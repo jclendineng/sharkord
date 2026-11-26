@@ -58,7 +58,7 @@ beforeAll(async () => {
 
   env = {
     TICKET_SECRET: toBase64Url(crypto.getRandomValues(new Uint8Array(32))),
-    APNS_TOPIC: 'com.sharkord.ios',
+    APNS_TOPIC: 'com.livingroomplay.sharkord',
     APNS_TEAM_ID: 'TEAM123456',
     APNS_KEY_ID: 'PRODKEY123',
     APNS_KEY: await createApnsKey(),
@@ -202,7 +202,7 @@ describe('POST /v1/push', () => {
     const body = JSON.parse(init!.body as string);
 
     expect(url).toBe(`https://api.push.apple.com/3/device/${DEVICE_TOKEN}`);
-    expect(headers['apns-topic']).toBe('com.sharkord.ios');
+    expect(headers['apns-topic']).toBe('com.livingroomplay.sharkord');
     expect(headers.authorization).toStartWith('bearer ');
     expect(body.encrypted).toBe('ciphertext');
     expect(body.aps['mutable-content']).toBe(1);

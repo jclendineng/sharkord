@@ -4,7 +4,7 @@
   "compatibility_date": "2026-10-01",
   "workers_dev": true,
   "vars": {
-    "APNS_TOPIC": "com.sharkord.ios"
+    "APNS_TOPIC": "com.livingroomplay.sharkord"
   },
   // secrets, set with `bunx wrangler secret put <name>`: TICKET_SECRET, APNS_TEAM_ID,
   // APNS_KEY_ID, APNS_KEY, APNS_SANDBOX_KEY_ID, APNS_SANDBOX_KEY

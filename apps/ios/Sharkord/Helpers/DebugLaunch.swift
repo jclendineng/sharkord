@@ -3,7 +3,7 @@ import Foundation
 
 // lets a simulator launch sign in and open a screen without typing, for screenshots:
 //   SIMCTL_CHILD_SHARKORD_DEV_SERVER=http://localhost:4991 SIMCTL_CHILD_SHARKORD_DEV_IDENTITY=alice
-//   SIMCTL_CHILD_SHARKORD_DEV_PASSWORD=... SIMCTL_CHILD_SHARKORD_DEV_CHANNEL=1 xcrun simctl launch <device> com.sharkord.ios
+//   SIMCTL_CHILD_SHARKORD_DEV_PASSWORD=... SIMCTL_CHILD_SHARKORD_DEV_CHANNEL=1 xcrun simctl launch <device> com.livingroomplay.sharkord
 // SHARKORD_DEV_VOICE=<channel id> joins that voice channel once connected
 // SHARKORD_DEV_SIGNED_OUT=1 forgets every saved server first, so a ui test starts at welcome
 enum DebugLaunch {

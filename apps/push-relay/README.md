@@ -30,7 +30,7 @@ bunx wrangler@4.152.0 secret put TICKET_SECRET
 
 Use 32 random bytes as base64url, for example from `openssl rand -base64 32 | tr '+/' '-_' | tr -d '='`.
 Then the APNs secrets: `APNS_TEAM_ID`, `APNS_KEY_ID` and `APNS_KEY` (a topic-specific
-production key for `com.sharkord.ios`, the whole `.p8` file), and `APNS_SANDBOX_KEY_ID` and
+production key for `com.livingroomplay.sharkord`, the whole `.p8` file), and `APNS_SANDBOX_KEY_ID` and
 `APNS_SANDBOX_KEY` for development builds.
 
 ```bash

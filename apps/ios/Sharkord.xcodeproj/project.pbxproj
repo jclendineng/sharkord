@@ -529,7 +529,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.sharkord.ios;
+				PRODUCT_BUNDLE_IDENTIFIER = com.livingroomplay.sharkord;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SHARKORD_PUSH_RELAY_URL = "https://sharkord-push-relay.compmx.workers.dev";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -572,7 +572,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.sharkord.ios;
+				PRODUCT_BUNDLE_IDENTIFIER = com.livingroomplay.sharkord;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SHARKORD_PUSH_RELAY_URL = "https://sharkord-push-relay.compmx.workers.dev";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -592,7 +592,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.sharkord.ios.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.livingroomplay.sharkord.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -611,7 +611,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.sharkord.ios.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.livingroomplay.sharkord.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -630,7 +630,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.sharkord.ios.uitests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.livingroomplay.sharkord.uitests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = NO;
@@ -647,7 +647,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.sharkord.ios.uitests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.livingroomplay.sharkord.uitests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = NO;
@@ -680,7 +680,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.sharkord.ios.notifications;
+				PRODUCT_BUNDLE_IDENTIFIER = com.livingroomplay.sharkord.notifications;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
@@ -715,7 +715,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.sharkord.ios.notifications;
+				PRODUCT_BUNDLE_IDENTIFIER = com.livingroomplay.sharkord.notifications;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
@@ -751,7 +751,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.sharkord.ios.share;
+				PRODUCT_BUNDLE_IDENTIFIER = com.livingroomplay.sharkord.share;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
@@ -787,7 +787,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.sharkord.ios.share;
+				PRODUCT_BUNDLE_IDENTIFIER = com.livingroomplay.sharkord.share;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
