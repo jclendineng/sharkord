@@ -1,10 +1,11 @@
 import type { TEmojiItem } from '@/components/tiptap-input/helpers';
+import { useCustomEmojis } from '@/features/server/emojis/hooks';
 import {
   getLocalStorageItemAsJSON,
   LocalStorageKey,
   setLocalStorageItemAsJSON
 } from '@/helpers/storage';
-import { useCallback, useSyncExternalStore } from 'react';
+import { useCallback, useMemo, useSyncExternalStore } from 'react';
 
 const MAX_RECENT_EMOJIS = 32;
 
@@ -73,11 +74,29 @@ const getSnapshot = (): TEmojiItem[] => {
 };
 
 const useRecentEmojis = () => {
-  const recentEmojis = useSyncExternalStore(
+  const storedEmojis = useSyncExternalStore(
     subscribe,
     getSnapshot,
     getSnapshot
   );
+
+  const customEmojis = useCustomEmojis();
+
+  // a custom emoji is stored with the signed link it had when it was picked, which runs out,
+  // so it takes the current one from the server's emoji list
+  const recentEmojis = useMemo(() => {
+    const imageByName = new Map(
+      customEmojis.map(({ name, fallbackImage }) => [name, fallbackImage])
+    );
+
+    return storedEmojis.map((emoji) => {
+      const fallbackImage = imageByName.get(emoji.name);
+
+      if (emoji.emoji || !fallbackImage) return emoji;
+
+      return { ...emoji, fallbackImage };
+    });
+  }, [storedEmojis, customEmojis]);
 
   const addRecent = useCallback((emoji: TEmojiItem) => {
     addRecentEmoji(emoji);
