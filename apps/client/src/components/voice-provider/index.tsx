@@ -30,6 +30,7 @@ import {
   getSuppressLocalAudioPlaybackSupport
 } from '@/helpers/get-display-media-support';
 import { getResWidthHeight } from '@/helpers/get-res-with-height';
+import { releaseStalePictureInPicture } from '@/helpers/picture-in-picture';
 import { registerVoiceDebugSource } from '@/helpers/voice-debug';
 import { useScreenShareSupport } from '@/hooks/use-screen-share-support';
 import { getTRPCClient } from '@/lib/trpc';
@@ -1487,6 +1488,33 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
 
     previousConnectionStatus.current = connectionStatus;
   }, [connectionStatus]);
+
+  // the shared picture in picture video outlives the cards, so it is closed here once the
+  // stream it shows has ended
+  useEffect(() => {
+    const remoteStreams = Object.values(remoteUserStreams).flatMap(
+      ({ [StreamKind.VIDEO]: video, [StreamKind.SCREEN]: screen }) => [
+        video,
+        screen
+      ]
+    );
+
+    const externalVideoStreams = Object.values(externalStreams).map(
+      ({ videoStream }) => videoStream
+    );
+
+    releaseStalePictureInPicture([
+      localVideoStream,
+      localScreenShareStream,
+      ...remoteStreams,
+      ...externalVideoStreams
+    ]);
+  }, [
+    remoteUserStreams,
+    externalStreams,
+    localVideoStream,
+    localScreenShareStream
+  ]);
 
   const getVoiceDebugSource = useCallback(
     () => ({
