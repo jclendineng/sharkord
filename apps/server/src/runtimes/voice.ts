@@ -24,6 +24,7 @@ import { config } from '../config';
 import { publishVoiceEvent } from '../db/publishers';
 import { logger } from '../logger';
 import { eventBus } from '../plugins/event-bus';
+import { addInternalIceCandidates } from '../utils/add-internal-ice-candidates';
 import {
   mediaSoupWorker,
   webRtcServer,
@@ -631,10 +632,15 @@ class VoiceRuntime {
     await transport.setMaxIncomingBitrate(maxBitrate);
     await transport.setMaxOutgoingBitrate(maxBitrate);
 
+    const candidates = addInternalIceCandidates(
+      transport.iceCandidates,
+      config.webRtc.internalAnnouncedAddress.trim() || undefined
+    );
+
     const params: TTransportParams = {
       id: transport.id,
       iceParameters: transport.iceParameters,
-      iceCandidates: await resolveIceCandidates(transport.iceCandidates),
+      iceCandidates: await resolveIceCandidates(candidates),
       dtlsParameters: transport.dtlsParameters
     };
 

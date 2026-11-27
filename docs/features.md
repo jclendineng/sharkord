@@ -697,6 +697,14 @@ on. `::` takes IPv6 as well as IPv4 on a host where IPv6 is set up; a container 
 fails to bind `::` and has no voice, which is why it is not the default
 ([#522](https://github.com/Sharkord/sharkord/issues/522)).
 
+`internalAnnouncedAddress` (empty by default, env `SHARKORD_WEBRTC_INTERNAL_ANNOUNCED_ADDRESS`)
+is a second address announced beside `announcedAddress`, for a server whose router can't send
+people on the local network back in through the public address (no NAT loopback) and that has
+no split DNS. Set it to the server's LAN address: each candidate is sent again on it, ranked
+just above the public one, so a client on the network connects there and one outside still
+uses the public address. It may be a hostname too, resolved the same way. Upstream Sharkord
+has the same setting. Code `apps/server/src/utils/add-internal-ice-candidates.ts`.
+
 ## Server settings in the app
 
 Overview, roles, members, invites, channels with per channel permissions, emoji, stickers,
@@ -762,8 +770,9 @@ What only upstream uses (thread follows, metrics, the media proxy and setup wiza
 stays in the database, unused.
 
 `config.ini` is rewritten in the fork's shape at the same start, and settings only upstream has
-are dropped. Voice networking set through `webRtc.internalAnnouncedAddress` or
-`webRtc.announcedAddressV6` has to be set up again with the fork's `announcedAddress`.
+are dropped. `webRtc.internalAnnouncedAddress` is kept, since the fork has it too. Voice over
+IPv6 set through `webRtc.announcedAddressV6` has to be set up again with the fork's `listenIp`
+and `announcedAddress`.
 
 This works from any upstream release up to 0.0.32, and from upstream's development branch as of
 2026-11-24. A database from a newer upstream release is refused at startup with a message and
