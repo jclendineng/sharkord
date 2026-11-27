@@ -1396,15 +1396,20 @@ describe('voice producer subscriptions', () => {
       }
     });
 
-    // user 5 holds the default role and the moderator role (4). the webcam is taken off the
-    // default role and given to the moderator role, so it rests on role 4 alone
+    // user 5 holds only the moderator role (4), given voice and the webcam here. the default
+    // role, which they fall back to when role 4 is deleted, loses the webcam, so it rests on
+    // role 4 alone
     const streamWithWebcamFromModeratorRole = async () => {
       await revokeFromDefaultRole(Permission.ENABLE_WEBCAM);
-      await tdb.insert(rolePermissions).values({
-        roleId: 4,
-        permission: Permission.ENABLE_WEBCAM,
-        createdAt: Date.now()
-      });
+      await tdb.insert(rolePermissions).values(
+        [Permission.JOIN_VOICE_CHANNELS, Permission.ENABLE_WEBCAM].map(
+          (permission) => ({
+            roleId: 4,
+            permission,
+            createdAt: Date.now()
+          })
+        )
+      );
 
       const voice = await joinVoiceChannelTwo(5);
 
@@ -1425,6 +1430,7 @@ describe('voice producer subscriptions', () => {
           name: 'Moderator',
           color: '#00ff00',
           permissions: [
+            Permission.JOIN_VOICE_CHANNELS,
             Permission.MANAGE_USERS,
             Permission.MANAGE_ROLES,
             Permission.MANAGE_CHANNEL_PERMISSIONS,
