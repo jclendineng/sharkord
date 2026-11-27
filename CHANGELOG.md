@@ -50,6 +50,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   - `freesoundApiKey` under `[sounds]`, for sound search.
   - `basePath` under `[server]` (env `SHARKORD_BASE_PATH`), for running under a subpath. Set the proxy to forward that path and its WebSocket upgrades; it may strip the prefix or not.
   - `listenIp` under `[webRtc]` (env `SHARKORD_WEBRTC_LISTEN_IP`), the address voice listens on. Set `::` for IPv6 as well as IPv4 ([#522](https://github.com/Sharkord/sharkord/issues/522)).
+  - `internalAnnouncedAddress` under `[webRtc]` (env `SHARKORD_WEBRTC_INTERNAL_ANNOUNCED_ADDRESS`), a LAN address announced beside `announcedAddress` for a router without NAT loopback. Upstream has the same key, so a server switching over keeps it.
 - Security defaults:
   - `server.trustedProxies` now defaults to loopback only on new installs. An existing `config.ini` keeps its list, so narrow it to your reverse proxy's address to stop other machines on the network passing forwarded addresses.
   - New rate limits in `config.ini`, added by themselves: `loginIdentity` (sign in attempts per account), `messageAction` (pins, ending polls, deleting files) and `pluginManage` (plugin toggle and settings).
@@ -468,6 +469,20 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - An invite works for SSO sign ups on a server closed to new users, as it does for password sign ups. Its role is given and its use counted ([#840](https://github.com/Sharkord/sharkord/issues/840)).
 - Turning off Upload Files for a role no longer stops its members from setting an avatar or banner. It now only covers attaching files to messages ([#830](https://github.com/Sharkord/sharkord/issues/830)).
 - Taking away Webcam or Share Screen in a channel, or making a channel private, turns off a camera or screen share already running there ([#869](https://github.com/Sharkord/sharkord/issues/869)).
+- Fixes brought over from upstream Sharkord:
+  - A role losing Enable Webcam or Share Screen, being taken off a member or being deleted turns off a camera or screen share it no longer allows. The web client also stops its own camera or capture when the server ends it.
+  - Someone moved into a voice channel they can't see can unmute, use the camera and share their screen there, as far as the channel allows.
+  - Someone without Speak joins a call muted, where they showed as unmuted.
+  - A call dropped by a closed connection takes back a hidden channel that a move had shown on the account's other devices.
+  - Custom emoji in older messages and in the recent emoji list keep their picture once their link runs out.
+  - The chat stays at the newest message while slow pictures, failed ones and videos keep changing size.
+  - Firefox can hear a call it joins, and its default speaker works.
+  - Picture in picture stays open when leaving the call's view, and closes once the stream ends.
+  - The noise gate fades instead of clicking as it opens and closes.
+  - A stream's volume and quality menus open in fullscreen.
+  - The sidebar's resize bar stays above the content next to it.
+  - The owner role shows every permission as granted, including ones added after it was made.
+  - The stats popover counts Windows' Media Foundation and D3D12 encoders as hardware.
 - Sticker images are no longer swept up as orphaned files.
 - Search names a direct message after its person or group, not "DM - 2:5".
 - Signing out many devices in a row no longer hits a rate limit.
@@ -483,6 +498,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - An upload that is cut off part way no longer leaves its file behind, and stale upload files are swept every 15 minutes.
 - Sign in attempts are limited per account as well as per address.
 - Plugin capability access can't be opened past the permission its plugin asks for, except by the owner.
+- An open plugin log stops for someone who loses Manage Plugins, instead of streaming until it is closed.
 - A role manager can't edit the owner role or take away permissions they don't hold.
 - A ban signs the account out everywhere, so its old sessions don't come back after an unban.
 - A password reset link works once even when two requests use it at the same moment.
