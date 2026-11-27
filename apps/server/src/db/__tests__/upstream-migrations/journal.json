@@ -1,0 +1,38 @@
+[
+  {
+    "tag": "0036_plugin_storage",
+    "when": 1791932955854
+  },
+  {
+    "tag": "0037_plugin_message_components",
+    "when": 1792007744877
+  },
+  {
+    "tag": "0038_threads_and_dm_close",
+    "when": 1792174265715
+  },
+  {
+    "tag": "0039_grant_set_profile_image",
+    "when": 1793216525337
+  },
+  {
+    "tag": "0040_settings_rate_limiters",
+    "when": 1793752183410
+  },
+  {
+    "tag": "0041_typical_naoko",
+    "when": 1795180868792
+  },
+  {
+    "tag": "0042_settings_media_proxy_link_previews",
+    "when": 1795196843687
+  },
+  {
+    "tag": "0043_metrics",
+    "when": 1795545922783
+  },
+  {
+    "tag": "0044_settings_signed_urls_include_assets",
+    "when": 1795548569326
+  }
+]

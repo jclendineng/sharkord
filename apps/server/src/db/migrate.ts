@@ -7,6 +7,13 @@ import path from 'path';
 import { config } from '../config';
 import { BACKUPS_PATH } from '../helpers/paths';
 import { logger } from '../logger';
+import {
+  findUpstreamRows,
+  finishUpstreamTakeover,
+  prepareUpstreamTakeover,
+  undoUpstreamTakeover,
+  type TTakeover
+} from './upstream-takeover';
 
 type TForeignKeyViolation = {
   table: string;
@@ -54,14 +61,11 @@ const reportForeignKeyViolations = (sqlite: Database) => {
 // is to apply its own rule first: it runs every journal entry stamped later than the newest
 // row in its migrations table (sqlite-core/dialect.js). read before the run, because after a
 // failure the table has been rolled back and no longer says what was pending
-const getPendingMigrationTags = async (
-  sqlite: Database,
+const readJournal = async (
   migrationsFolder: string
-): Promise<string[]> => {
-  let journal: TJournal;
-
+): Promise<TJournal | undefined> => {
   try {
-    journal = JSON.parse(
+    return JSON.parse(
       await fs.readFile(
         path.join(migrationsFolder, 'meta', '_journal.json'),
         'utf-8'
@@ -69,8 +73,15 @@ const getPendingMigrationTags = async (
     ) as TJournal;
   } catch {
     // migrate() is about to fail on the same file and say so properly
-    return [];
+    return undefined;
   }
+};
+
+const getPendingMigrationTags = (
+  sqlite: Database,
+  journal: TJournal | undefined
+): string[] => {
+  if (!journal) return [];
 
   let appliedThrough = 0;
 
@@ -95,7 +106,8 @@ const getPendingMigrationTags = async (
 // -wal. never pruned, so this costs the size of the database per distinct pre-migration state
 const backupDatabase = async (
   sqlite: Database,
-  pendingTags: string[]
+  label: string,
+  reuseExisting: boolean
 ): Promise<void> => {
   const { filename } = sqlite;
 
@@ -103,7 +115,7 @@ const backupDatabase = async (
 
   await fs.mkdir(BACKUPS_PATH, { recursive: true });
 
-  const suffix = `.before-${pendingTags[0]}.sqlite`;
+  const suffix = `.before-${label}.sqlite`;
   const existing = (await fs.readdir(BACKUPS_PATH)).find(
     (name) => name.startsWith(path.basename(filename)) && name.endsWith(suffix)
   );
@@ -111,7 +123,7 @@ const backupDatabase = async (
   // a failed migration rolls the whole batch back, so the database cannot have moved since
   // that snapshot was taken and a second one would be a copy of it. this is what stops a
   // restart loop on a broken migration writing a full copy per attempt
-  if (existing) {
+  if (existing && reuseExisting) {
     logger.info(
       `Database already backed up to ${path.join(BACKUPS_PATH, existing)}`
     );
@@ -142,12 +154,31 @@ const migrateDatabase = async (
   db: BunSQLiteDatabase,
   migrationsFolder: string
 ): Promise<void> => {
-  const pendingTags = await getPendingMigrationTags(sqlite, migrationsFolder);
+  const journal = await readJournal(migrationsFolder);
+  // before anything else reads the migrations table: an upstream database's newest row is
+  // later than ours, which makes our whole chain look already applied
+  const upstreamRows = journal
+    ? findUpstreamRows(sqlite, new Set(journal.entries.map(({ when }) => when)))
+    : [];
+  let takeover: TTakeover | undefined;
 
-  if (pendingTags.length > 0) {
+  if (upstreamRows.length > 0) {
+    // whatever server.backupDatabase says: this is a one way conversion of someone's
+    // database, and the snapshot is the only way back to upstream once it has run
+    // never an earlier snapshot: a failed takeover hands the file back to upstream, which
+    // may run on it for weeks before the next attempt
+    await backupDatabase(sqlite, 'upstream-takeover', false);
+
+    takeover = prepareUpstreamTakeover(sqlite, upstreamRows);
+  }
+
+  const pendingTags = getPendingMigrationTags(sqlite, journal);
+
+  // a takeover's snapshot was taken just above, of the database before anything changed
+  if (pendingTags.length > 0 && !takeover) {
     // not caught: running a destructive migration with no way back is worse than not booting
     if (config.server.backupDatabase) {
-      await backupDatabase(sqlite, pendingTags);
+      await backupDatabase(sqlite, pendingTags[0]!, true);
     } else {
       logger.warn(
         'Applying %d migration(s) with server.backupDatabase off, so there is no snapshot to restore if one of them loses data',
@@ -165,6 +196,10 @@ const migrateDatabase = async (
   } catch (error) {
     // drizzle runs the batch in one transaction and rolls back, so the database is
     // untouched and the old server version still boots against it
+    if (takeover) {
+      undoUpstreamTakeover(sqlite, takeover);
+    }
+
     logger.error(
       'Migration failed while applying %s. The database was rolled back and is unchanged: %s',
       pendingTags.join(', '),
@@ -185,6 +220,8 @@ const migrateDatabase = async (
   for (const tag of pendingTags) {
     logger.info(`Migration ${tag} ran`);
   }
+
+  finishUpstreamTakeover(sqlite);
 
   reportForeignKeyViolations(sqlite);
 };

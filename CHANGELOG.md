@@ -12,6 +12,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 ### Upgrade notes
 
+- A server can switch from upstream Sharkord (up to 0.0.32) by changing its image. The first start backs up the database and takes it over, keeping everything on it. See Switching from upstream Sharkord in `docs/features.md`.
 - Database migrations run by themselves at startup.
   - This release adds tables for friends, group direct messages, private notes, the new member lounge, QR sign in and the soundboard.
   - Upstream's plugin storage migrations run as this fork's `0060_plugin_storage`, after the fork's own, so a database that already ran `0059` still gets them.

@@ -725,6 +725,42 @@ The fork's server image is published to `ghcr.io/jclendineng/sharkord` by
 from the workflow token's pushes), so version tags come from a tag pushed by hand. The old
 `push` tag is gone: point a container still on it at `development`.
 
+### Switching from upstream Sharkord
+
+A server running upstream Sharkord can move to this fork and keep everything on it: accounts,
+messages, files, roles and plugin data.
+
+1. Stop the server.
+2. Point the container at `ghcr.io/jclendineng/sharkord:latest` instead of upstream's image (on
+   Unraid, the Repository field). Keep the same data folder.
+3. Start it.
+
+At the first start the server copies the database to `backups/`, as
+`db.sqlite.<time>.before-upstream-takeover.sqlite`, whatever `server.backupDatabase` says. It then
+takes the database over (`apps/server/src/db/upstream-takeover.ts`):
+
+- It sets aside upstream's migrations from after the fork split (0036 to 0044) and runs the
+  fork's own.
+- It moves upstream's plugin storage and plugin message components out of the way for the
+  fork's `0060_plugin_storage`, then copies them back.
+- It removes upstream's Set Profile Image permission, which the fork doesn't have and which
+  would stop any role holding it from being saved.
+
+What only upstream uses (thread follows, metrics, the media proxy and setup wizard settings)
+stays in the database, unused.
+
+`config.ini` is rewritten in the fork's shape at the same start, and settings only upstream has
+are dropped. Voice networking set through `webRtc.internalAnnouncedAddress` or
+`webRtc.announcedAddressV6` has to be set up again with the fork's `announcedAddress`.
+
+This works from any upstream release up to 0.0.32, and from upstream's development branch as of
+2026-11-24. A database from a newer upstream release is refused at startup with a message and
+left untouched. If the fork's migrations fail partway, the database is put back as upstream left
+it.
+
+The move is one way. To go back, put the backup in place of `db.sqlite` and run upstream's image
+again. Anything written since the switch is lost.
+
 A new member lounge, as Discord's rules screening: an admin picks a message with the rules
 (**Use as Rules Message** on a message, needing Manage Settings) and the role reacting to it
 gives (`others.setOnboarding`). The server puts a ✅ on the message to tap, and can give the role
