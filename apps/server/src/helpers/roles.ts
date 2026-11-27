@@ -17,6 +17,7 @@ import { roles } from '../db/schema';
 import { eventBus } from '../plugins/event-bus';
 import { enqueueActivityLog } from '../queues/activity-log';
 import { invariant } from '../utils/invariant';
+import { enforceVoicePermissionsForEveryone } from './enforce-voice-permissions';
 
 const MAX_ROLES = 100;
 
@@ -121,6 +122,7 @@ const updateRole = async (
 
   if (permissions && role.id !== OWNER_ROLE_ID) {
     await syncRolePermissions(role.id, permissions);
+    await enforceVoicePermissionsForEveryone();
   }
 
   const updatedRole = await loadRole(role.id);

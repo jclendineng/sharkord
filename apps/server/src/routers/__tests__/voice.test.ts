@@ -3,6 +3,7 @@ import {
   Permission,
   REACTION_EMOJI_MAX_LENGTH,
   ServerEvents,
+  STORAGE_MIN_QUOTA_PER_USER,
   StreamKind
 } from '@sharkord/shared';
 import { describe, expect, test } from 'bun:test';
@@ -1390,6 +1391,78 @@ describe('voice producer subscriptions', () => {
         });
 
         expect(runtime.getUserState(2).webcamEnabled).toBe(false);
+      } finally {
+        await runtime.destroy();
+      }
+    });
+
+    // user 5 holds the default role and the moderator role (4). the webcam is taken off the
+    // default role and given to the moderator role, so it rests on role 4 alone
+    const streamWithWebcamFromModeratorRole = async () => {
+      await revokeFromDefaultRole(Permission.ENABLE_WEBCAM);
+      await tdb.insert(rolePermissions).values({
+        roleId: 4,
+        permission: Permission.ENABLE_WEBCAM,
+        createdAt: Date.now()
+      });
+
+      const voice = await joinVoiceChannelTwo(5);
+
+      await voice.caller.voice.updateState({ webcamEnabled: true });
+
+      expect(voice.runtime.getUserState(5).webcamEnabled).toBe(true);
+
+      return voice;
+    };
+
+    test('should turn off the webcam when a role loses the server permission', async () => {
+      const { caller: owner } = await initTest(1);
+      const { runtime } = await streamWithWebcamFromModeratorRole();
+
+      try {
+        await owner.roles.update({
+          roleId: 4,
+          name: 'Moderator',
+          color: '#00ff00',
+          permissions: [
+            Permission.MANAGE_USERS,
+            Permission.MANAGE_ROLES,
+            Permission.MANAGE_CHANNEL_PERMISSIONS,
+            Permission.KICK_MEMBERS,
+            Permission.BAN_MEMBERS,
+            Permission.ASSIGN_ROLES
+          ],
+          storageQuotaOverrideEnabled: false,
+          storageSpaceQuota: STORAGE_MIN_QUOTA_PER_USER
+        });
+
+        expect(runtime.getUserState(5).webcamEnabled).toBe(false);
+      } finally {
+        await runtime.destroy();
+      }
+    });
+
+    test('should turn off the webcam when the role granting it is taken away', async () => {
+      const { caller: owner } = await initTest(1);
+      const { runtime } = await streamWithWebcamFromModeratorRole();
+
+      try {
+        await owner.users.removeRole({ userId: 5, roleId: 4 });
+
+        expect(runtime.getUserState(5).webcamEnabled).toBe(false);
+      } finally {
+        await runtime.destroy();
+      }
+    });
+
+    test('should turn off the webcam when the role granting it is deleted', async () => {
+      const { caller: owner } = await initTest(1);
+      const { runtime } = await streamWithWebcamFromModeratorRole();
+
+      try {
+        await owner.roles.delete({ roleId: 4 });
+
+        expect(runtime.getUserState(5).webcamEnabled).toBe(false);
       } finally {
         await runtime.destroy();
       }

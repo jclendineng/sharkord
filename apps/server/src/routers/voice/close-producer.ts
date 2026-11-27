@@ -53,7 +53,8 @@ const closeProducerRoute = protectedProcedure
       {
         channelId,
         remoteId: ctx.user.id,
-        kind: input.kind
+        kind: input.kind,
+        producerId: producer.id
       }
     );
   });
