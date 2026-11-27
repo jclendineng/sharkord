@@ -21,12 +21,16 @@ const applyAudioOutputDevice = async (
     return true;
   }
 
-  if (audioElementWithSink.sinkId === playbackId) {
+  // the system default is the empty sink id. chromium also lists a device called 'default',
+  // firefox does not, so picking the default speaker there failed with a warning
+  const sinkId = playbackId === 'default' ? '' : playbackId;
+
+  if (audioElementWithSink.sinkId === sinkId) {
     return true;
   }
 
   try {
-    await audioElementWithSink.setSinkId(playbackId);
+    await audioElementWithSink.setSinkId(sinkId);
 
     return true;
   } catch (error) {
