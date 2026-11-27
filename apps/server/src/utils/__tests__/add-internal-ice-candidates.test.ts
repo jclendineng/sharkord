@@ -110,6 +110,26 @@ describe('addInternalIceCandidates', () => {
     );
   });
 
+  test('should only copy candidates of the internal address family', () => {
+    const ipv6Candidate: IceCandidate = {
+      ...udpCandidate,
+      foundation: 'udpv6candidate',
+      ip: '2001:db8::7',
+      address: '2001:db8::7'
+    };
+
+    const result = addInternalIceCandidates(
+      [udpCandidate, ipv6Candidate],
+      INTERNAL_IP
+    );
+
+    const internal = result.filter(({ address }) => address === INTERNAL_IP);
+
+    expect(internal.map(({ foundation }) => foundation)).toEqual([
+      'udpcandidateinternal'
+    ]);
+  });
+
   test('should add nothing when the internal address is the announced one', () => {
     const candidates = [udpCandidate, tcpCandidate];
 

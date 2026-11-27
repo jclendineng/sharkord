@@ -1,6 +1,7 @@
 import { getErrorMessage } from '@sharkord/shared';
 import mediasoup from 'mediasoup';
 import { config, SERVER_PUBLIC_IP } from '../config.js';
+import { getAnnouncedAddressV6 } from '../helpers/network.js';
 import { MEDIASOUP_BINARY_PATH } from '../helpers/paths.js';
 import { logger } from '../logger.js';
 import {
@@ -8,6 +9,7 @@ import {
   restoreSpawn
 } from './bun-mediasoup-workaround.js';
 import { IS_PRODUCTION } from './env.js';
+import { getWebRtcListenInfos } from './webrtc-listen-infos.js';
 
 let mediaSoupWorker: mediasoup.types.Worker<mediasoup.types.AppData>;
 let webRtcServer: mediasoup.types.WebRtcServer<mediasoup.types.AppData>;
@@ -46,20 +48,26 @@ const loadMediasoup = async () => {
   logger.debug('Mediasoup worker loaded');
 
   if (IS_PRODUCTION) {
-    const announcedAddress = config.webRtc.announcedAddress || SERVER_PUBLIC_IP;
-    const { listenIp } = config.webRtc;
-
-    webRtcServer = await mediaSoupWorker.createWebRtcServer({
-      listenInfos: [
-        { protocol: 'udp', ip: listenIp, announcedAddress, port },
-        { protocol: 'tcp', ip: listenIp, announcedAddress, port }
-      ]
+    const { listenInfos, ip, announcedAddress } = getWebRtcListenInfos({
+      listenIp: config.webRtc.listenIp,
+      announcedAddress: config.webRtc.announcedAddress || SERVER_PUBLIC_IP,
+      announcedAddressV6: getAnnouncedAddressV6(
+        config.webRtc.announcedAddressV6
+      ),
+      port
     });
 
-    webRtcServerListenInfo = { ip: listenIp, announcedAddress };
+    webRtcServer = await mediaSoupWorker.createWebRtcServer({ listenInfos });
+
+    webRtcServerListenInfo = { ip, announcedAddress };
 
     logger.debug(
-      `WebRtcServer created on ${listenIp}:${port} with announcedAddress ${announcedAddress}`
+      `WebRtcServer created on ${listenInfos
+        .map(
+          (info) =>
+            `${info.protocol} ${info.ip}:${port} (${info.announcedAddress})`
+        )
+        .join(', ')}`
     );
   } else {
     webRtcServer = await mediaSoupWorker.createWebRtcServer({

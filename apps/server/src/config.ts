@@ -98,6 +98,7 @@ const zConfig = z.object({
     // without ipv6 would fail to bind it and lose voice entirely
     listenIp: z.string().refine((ip) => isIP(ip) !== 0, 'Invalid listen ip'),
     announcedAddress: z.string(),
+    announcedAddressV6: z.string(),
     internalAnnouncedAddress: z.string(),
     maxBitrate: z.coerce.number().int().positive()
   }),
@@ -173,6 +174,8 @@ const defaultConfig: TConfig = {
     port: 40000,
     listenIp: '0.0.0.0',
     announcedAddress: '',
+    // empty is off. upstream sharkord has the same key, so a server switching over keeps it
+    announcedAddressV6: '',
     // empty is off. upstream sharkord has the same key, so a server switching over keeps it
     internalAnnouncedAddress: '',
     maxBitrate: 30_000_000 // 30 Mbps
@@ -374,6 +377,7 @@ const envOverridesMap: Record<string, string> = {
   'webRtc.port': 'SHARKORD_WEBRTC_PORT',
   'webRtc.listenIp': 'SHARKORD_WEBRTC_LISTEN_IP',
   'webRtc.announcedAddress': 'SHARKORD_WEBRTC_ANNOUNCED_ADDRESS',
+  'webRtc.announcedAddressV6': 'SHARKORD_WEBRTC_ANNOUNCED_ADDRESS_V6',
   'webRtc.internalAnnouncedAddress':
     'SHARKORD_WEBRTC_INTERNAL_ANNOUNCED_ADDRESS',
   'webRtc.maxBitrate': 'SHARKORD_WEBRTC_MAX_BITRATE'

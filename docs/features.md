@@ -697,6 +697,14 @@ on. `::` takes IPv6 as well as IPv4 on a host where IPv6 is set up; a container 
 fails to bind `::` and has no voice, which is why it is not the default
 ([#522](https://github.com/Sharkord/sharkord/issues/522)).
 
+`announcedAddressV6` (empty by default, env `SHARKORD_WEBRTC_ANNOUNCED_ADDRESS_V6`) turns on a
+second voice listener for IPv6 only, on the same port, announcing that address next to the IPv4
+one. It has to be an IPv6 address, not a hostname, since a hostname would also resolve to IPv4
+addresses that listener can't take; anything else leaves it off with a warning. With it on, a
+`listenIp` of `::` moves the IPv4 listener to `0.0.0.0`, so the two never hold the same port's
+IPv6 side, and an IPv6 `listenIp` is used for the IPv6 listener. Upstream Sharkord has the same
+setting. Code `apps/server/src/utils/webrtc-listen-infos.ts`.
+
 `internalAnnouncedAddress` (empty by default, env `SHARKORD_WEBRTC_INTERNAL_ANNOUNCED_ADDRESS`)
 is a second address announced beside `announcedAddress`, for a server whose router can't send
 people on the local network back in through the public address (no NAT loopback) and that has
@@ -770,9 +778,9 @@ What only upstream uses (thread follows, metrics, the media proxy and setup wiza
 stays in the database, unused.
 
 `config.ini` is rewritten in the fork's shape at the same start, and settings only upstream has
-are dropped. `webRtc.internalAnnouncedAddress` is kept, since the fork has it too. Voice over
-IPv6 set through `webRtc.announcedAddressV6` has to be set up again with the fork's `listenIp`
-and `announcedAddress`.
+are dropped. `webRtc.internalAnnouncedAddress` and `webRtc.announcedAddressV6` are kept, since the fork has
+them too. An `announcedAddressV6` that is a hostname rather than an IPv6 address leaves IPv6 off
+with a warning, and has to be changed to the address.
 
 This works from any upstream release up to 0.0.32, and from upstream's development branch as of
 2026-11-24. A database from a newer upstream release is refused at startup with a message and
