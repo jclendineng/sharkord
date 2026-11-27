@@ -150,6 +150,47 @@ describe('voice across a user session', () => {
   });
 });
 
+describe('voice in a channel the user cannot see', () => {
+  const PRIVATE_VOICE_CHANNEL_ID = 4;
+
+  // a moderator move is the only way into a channel the user cannot see, and the call is
+  // set on the socket directly since joining one needs mediasoup transports
+  test('should take the channel back from the account when the tab in the call closes', async () => {
+    const runtime = new VoiceRuntime(PRIVATE_VOICE_CHANNEL_ID);
+
+    runtime.addUser(4, { micMuted: false, soundMuted: false });
+
+    try {
+      const phone = createFakeSocket();
+      const desktop = createFakeSocket();
+
+      await initTest(4, { socket: phone });
+      await initTest(4, { socket: desktop });
+
+      phone.inVoice = true;
+
+      const hidden: number[] = [];
+
+      const subscription = pubsub
+        .subscribeFor(4, ServerEvents.CHANNEL_DELETE)
+        .subscribe({
+          next: (channelId) => {
+            hidden.push(channelId);
+          }
+        });
+
+      await handleSocketClose(phone);
+
+      subscription.unsubscribe();
+
+      expect(runtime.getUser(4)).toBeUndefined();
+      expect(hidden).toEqual([PRIVATE_VOICE_CHANNEL_ID]);
+    } finally {
+      await runtime.destroy();
+    }
+  });
+});
+
 describe('voice taken over by another connection of the account', () => {
   // the seeded private voice channel, which user 1 joins as the owner
   const OTHER_VOICE_CHANNEL_ID = 4;
