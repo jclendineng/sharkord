@@ -68,6 +68,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 - On upstream's server the apps keep blocks on the device, folding the person's messages away there, so Block is on every server.
 - Admins of an upstream server see a card in Server Settings, Overview, saying what switching to this server adds and how. The report address and the GIF and sound search keys are hidden there, since upstream doesn't keep them.
+- Report on a message and Report Server are hidden on upstream's server, which has no report address, like the other features it lacks. The server lists them as `reports`.
 - The server lists what this fork adds over upstream Sharkord in `/info` (`features`, from `ServerFeature` in `packages/shared`). The apps show those features only on a server that lists them, so on upstream's server, or this fork's from before the list, they are hidden rather than failing.
   - Hidden there: polls, GIFs, stickers, the soundboard, two-factor, devices and signing in with another device (the QR code on the log in screen too), group messages, friends, status, notes, mark unread, the mentions inbox, the threads list, allowing direct messages, password reset links, reordering roles, rules messages, IP bans, and search's media, links, files and filters.
   - A channel's notification level and mute stay on the device until the app is closed, and pinned channels stay on the device.

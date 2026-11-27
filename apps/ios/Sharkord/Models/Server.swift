@@ -54,6 +54,7 @@ enum ServerFeature: String {
     case pinnedChannels = "pinned-channels"
     case fileSigning = "file-signing"
     case blocking
+    case reports
 }
 
 struct Handshake: Decodable {

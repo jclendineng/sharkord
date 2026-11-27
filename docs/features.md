@@ -131,6 +131,9 @@ sees a card at the top of Server Settings, Overview, naming what switching adds,
 Switch leading to livingroomplay.com/sharkord/switch.html. On such a server the Overview page
 also hides the report address and the Klipy and Freesound keys, which it would not keep.
 
+Report (on a message, and Report Server) and the report address in Overview need feature
+`reports`, so a server without a report address to send them to doesn't offer them.
+
 ## Mentions in the iOS app
 
 The iOS composer lists members, roles and channels as you type `@` or `#`, and sends the same

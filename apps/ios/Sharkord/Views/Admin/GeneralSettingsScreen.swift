@@ -161,8 +161,7 @@ struct GeneralSettingsScreen: View {
                 Toggle("Simulcast for Video", isOn: settings.webRtcSimulcastEnabled)
             }
 
-            // upstream's server keeps no report address, so one typed here would be dropped
-            if session.serverInfo?.features != nil {
+            if session.supports(.reports) {
                 Section {
                     TextField("", text: Binding(
                         get: { settings.wrappedValue.reportEmail ?? "" },

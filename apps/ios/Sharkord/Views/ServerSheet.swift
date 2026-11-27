@@ -79,7 +79,9 @@ struct ServerSheet: View {
                         )
                     }
 
-                    ActionRow(title: "Report Server", systemImage: "flag", tint: Theme.red, action: report)
+                    if session.supports(.reports) {
+                        ActionRow(title: "Report Server", systemImage: "flag", tint: Theme.red, action: report)
+                    }
                 }
                 .tint(Theme.blurple)
                 .foregroundStyle(Theme.header)

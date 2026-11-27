@@ -24,7 +24,8 @@ export enum ServerFeature {
   SEARCH_FILTERS = 'search-filters',
   PINNED_CHANNELS = 'pinned-channels',
   FILE_SIGNING = 'file-signing',
-  BLOCKING = 'blocking'
+  BLOCKING = 'blocking',
+  REPORTS = 'reports'
 }
 
 export const SERVER_FEATURES = Object.values(ServerFeature);

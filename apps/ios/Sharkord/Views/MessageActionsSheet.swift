@@ -43,6 +43,10 @@ struct MessageActionsSheet: View {
         isOwn || session.can(.manageMessages)
     }
 
+    private var canReport: Bool {
+        !isOwn && session.supports(.reports)
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: isPointerMenu ? 0 : 16) {
@@ -137,13 +141,15 @@ struct MessageActionsSheet: View {
                     }
                 }
 
-                ActionGroup {
-                    if canDelete {
-                        ActionRow(title: "Delete Message", systemImage: "trash", tint: Theme.red, action: delete)
-                    }
+                if canDelete || canReport {
+                    ActionGroup {
+                        if canDelete {
+                            ActionRow(title: "Delete Message", systemImage: "trash", tint: Theme.red, action: delete)
+                        }
 
-                    if !isOwn {
-                        ActionRow(title: "Report", systemImage: "flag.fill", tint: Theme.red, action: report)
+                        if canReport {
+                            ActionRow(title: "Report", systemImage: "flag.fill", tint: Theme.red, action: report)
+                        }
                     }
                 }
             }
