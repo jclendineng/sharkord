@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { deleteRoleAndFallbackUsers } from '../../db/mutations/roles';
 import { publishRole } from '../../db/publishers';
 import { getDefaultRole, getRole } from '../../db/queries/roles';
+import { enforceVoicePermissionsForEveryone } from '../../helpers/enforce-voice-permissions';
 import { eventBus } from '../../plugins/event-bus';
 import { enqueueActivityLog } from '../../queues/activity-log';
 import { invariant } from '../../utils/invariant';
@@ -42,6 +43,9 @@ const deleteRoleRoute = protectedProcedure
     deleteRoleAndFallbackUsers(role.id, defaultRole.id);
 
     publishRole(role.id, 'delete');
+
+    // its members fall back to the default role, which may not allow what they are streaming
+    await enforceVoicePermissionsForEveryone();
 
     eventBus.emit('role:deleted', { roleId: role.id, name: role.name });
 

@@ -697,6 +697,22 @@ on. `::` takes IPv6 as well as IPv4 on a host where IPv6 is set up; a container 
 fails to bind `::` and has no voice, which is why it is not the default
 ([#522](https://github.com/Sharkord/sharkord/issues/522)).
 
+`announcedAddressV6` (empty by default, env `SHARKORD_WEBRTC_ANNOUNCED_ADDRESS_V6`) turns on a
+second voice listener for IPv6 only, on the same port, announcing that address next to the IPv4
+one. It has to be an IPv6 address, not a hostname, since a hostname would also resolve to IPv4
+addresses that listener can't take; anything else leaves it off with a warning. With it on, a
+`listenIp` of `::` moves the IPv4 listener to `0.0.0.0`, so the two never hold the same port's
+IPv6 side, and an IPv6 `listenIp` is used for the IPv6 listener. Upstream Sharkord has the same
+setting. Code `apps/server/src/utils/webrtc-listen-infos.ts`.
+
+`internalAnnouncedAddress` (empty by default, env `SHARKORD_WEBRTC_INTERNAL_ANNOUNCED_ADDRESS`)
+is a second address announced beside `announcedAddress`, for a server whose router can't send
+people on the local network back in through the public address (no NAT loopback) and that has
+no split DNS. Set it to the server's LAN address: each candidate is sent again on it, ranked
+just above the public one, so a client on the network connects there and one outside still
+uses the public address. It may be a hostname too, resolved the same way. Upstream Sharkord
+has the same setting. Code `apps/server/src/utils/add-internal-ice-candidates.ts`.
+
 ## Server settings in the app
 
 Overview, roles, members, invites, channels with per channel permissions, emoji, stickers,
@@ -737,6 +753,19 @@ The fork's server image is published to `ghcr.io/jclendineng/sharkord` by
 from the workflow token's pushes), so version tags come from a tag pushed by hand. The old
 `push` tag is gone: point a container still on it at `development`.
 
+### Locking out an address after failed sign ins
+
+From upstream: an address that gets the password or the two-factor code wrong 20 times within 15
+minutes is turned away from `/login` for 15 minutes, with a 429 and `Retry-After`, even with the
+right password. Each lockout after the first doubles, up to a day, and the count is forgotten a
+day after the last lockout ends. An IPv6 client is counted with its whole /64, so it can't pick a fresh
+address per guess. The limits are `[rateLimiters.loginLockout]` (`maxFailures`, `windowMs`,
+`blockMs`, `maxBlockMs`). Only the password route counts and checks it, so QR sign in, login links
+and single sign on are never locked out. Behind a reverse proxy the client's address only reaches
+the server when the proxy is in `server.trustedProxies`. Without that, every client shares the
+proxy's address and one of them can lock out all of them. Code
+`apps/server/src/utils/rate-limiters/failed-attempts-limiter.ts`.
+
 ### Switching from upstream Sharkord
 
 A server running upstream Sharkord can move to this fork and keep everything on it: accounts,
@@ -762,8 +791,9 @@ What only upstream uses (thread follows, metrics, the media proxy and setup wiza
 stays in the database, unused.
 
 `config.ini` is rewritten in the fork's shape at the same start, and settings only upstream has
-are dropped. Voice networking set through `webRtc.internalAnnouncedAddress` or
-`webRtc.announcedAddressV6` has to be set up again with the fork's `announcedAddress`.
+are dropped. `webRtc.internalAnnouncedAddress` and `webRtc.announcedAddressV6` are kept, since the fork has
+them too. An `announcedAddressV6` that is a hostname rather than an IPv6 address leaves IPv6 off
+with a warning, and has to be changed to the address.
 
 This works from any upstream release up to 0.0.32, and from upstream's development branch as of
 2026-11-24. A database from a newer upstream release is refused at startup with a message and

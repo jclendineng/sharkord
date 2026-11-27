@@ -62,7 +62,8 @@ const consumeRoute = rateLimitedProcedure(protectedProcedure, {
         {
           channelId: channelId,
           remoteId: input.remoteId,
-          kind: input.kind
+          kind: input.kind,
+          producerId: producer.id
         }
       );
     });

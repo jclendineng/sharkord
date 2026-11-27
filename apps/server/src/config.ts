@@ -28,6 +28,13 @@ const zRateLimiter = z.object({
   windowMs: z.coerce.number().int().positive()
 });
 
+const zFailedAttemptsLimiter = z.object({
+  maxFailures: z.coerce.number().int().positive(),
+  windowMs: z.coerce.number().int().positive(),
+  blockMs: z.coerce.number().int().positive(),
+  maxBlockMs: z.coerce.number().int().positive()
+});
+
 const zConfig = z.object({
   server: z.object({
     host: z.string().trim(),
@@ -98,6 +105,8 @@ const zConfig = z.object({
     // without ipv6 would fail to bind it and lose voice entirely
     listenIp: z.string().refine((ip) => isIP(ip) !== 0, 'Invalid listen ip'),
     announcedAddress: z.string(),
+    announcedAddressV6: z.string(),
+    internalAnnouncedAddress: z.string(),
     maxBitrate: z.coerce.number().int().positive()
   }),
   rateLimiters: z.object({
@@ -107,6 +116,7 @@ const zConfig = z.object({
     moveMembers: zRateLimiter,
     login: zRateLimiter,
     loginIdentity: zRateLimiter,
+    loginLockout: zFailedAttemptsLimiter,
     joinServer: zRateLimiter,
     upload: zRateLimiter,
     search: zRateLimiter,
@@ -172,6 +182,10 @@ const defaultConfig: TConfig = {
     port: 40000,
     listenIp: '0.0.0.0',
     announcedAddress: '',
+    // empty is off. upstream sharkord has the same key, so a server switching over keeps it
+    announcedAddressV6: '',
+    // empty is off. upstream sharkord has the same key, so a server switching over keeps it
+    internalAnnouncedAddress: '',
     maxBitrate: 30_000_000 // 30 Mbps
   },
   rateLimiters: {
@@ -201,6 +215,13 @@ const defaultConfig: TConfig = {
     loginIdentity: {
       maxRequests: 10,
       windowMs: 60_000
+    },
+    // wrong passwords from one address (an ipv6 /64) before it is locked out of /login
+    loginLockout: {
+      maxFailures: 20,
+      windowMs: 15 * 60_000,
+      blockMs: 15 * 60_000,
+      maxBlockMs: 24 * 60 * 60_000
     },
     joinServer: {
       maxRequests: 5,
@@ -371,6 +392,9 @@ const envOverridesMap: Record<string, string> = {
   'webRtc.port': 'SHARKORD_WEBRTC_PORT',
   'webRtc.listenIp': 'SHARKORD_WEBRTC_LISTEN_IP',
   'webRtc.announcedAddress': 'SHARKORD_WEBRTC_ANNOUNCED_ADDRESS',
+  'webRtc.announcedAddressV6': 'SHARKORD_WEBRTC_ANNOUNCED_ADDRESS_V6',
+  'webRtc.internalAnnouncedAddress':
+    'SHARKORD_WEBRTC_INTERNAL_ANNOUNCED_ADDRESS',
   'webRtc.maxBitrate': 'SHARKORD_WEBRTC_MAX_BITRATE'
 };
 

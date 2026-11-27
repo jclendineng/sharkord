@@ -94,36 +94,9 @@ const useScrollController = ({
 
     if (hasInitialScroll.current) return;
 
-    // content keeps growing after the first paint (images, embeds), so the
-    // position is re-applied until the container stops resizing
-    const performScroll = () => {
-      scrollToBottom();
-      hasInitialScroll.current = true;
-      shouldStickToBottom.current = true;
-    };
-
-    performScroll();
-
-    const container = containerRef.current;
-    const observer = new ResizeObserver(() => {
-      if (!shouldStickToBottom.current) return;
-
-      scrollToBottom();
-    });
-
-    const content = container.firstElementChild;
-
-    if (content) observer.observe(content);
-
-    // ceiling: media that settles after this lands mid-scroll
-    const stopObservingTimer = setTimeout(() => observer.disconnect(), 1000);
-
-    // and the real window is shorter than 1s: messages.length is a dependency, so the next
-    // message or page tears the observer down and the early return above blocks a new one
-    return () => {
-      observer.disconnect();
-      clearTimeout(stopObservingTimer);
-    };
+    scrollToBottom();
+    hasInitialScroll.current = true;
+    shouldStickToBottom.current = true;
   }, [fetching, messages.length, scrollToBottom, containerRef]);
 
   // if user is already at the top when fetching completes
@@ -155,28 +128,33 @@ const useScrollController = ({
     return () => clearTimeout(timer);
   }, [messages, hasTypingUsers, scrollToBottom]);
 
-  // keep bottom lock on container resize (input/footer height changes)
+  // media keeps resizing messages long after they render (slow or proxied loads, failed
+  // images collapsing, video metadata), so the bottom lock follows every resize of the
+  // list and of the container (composer height) for as long as they are mounted. fetching
+  // is a dependency so the observer reattaches when a reload remounts the container
+  const hasMessages = messages.length > 0;
+
   useEffect(() => {
     const container = containerRef.current;
 
-    if (!container) {
-      return;
-    }
+    if (!container || !hasMessages) return;
 
     const observer = new ResizeObserver(() => {
-      if (!shouldStickToBottom.current) {
-        return;
-      }
+      if (!shouldStickToBottom.current) return;
 
       scrollToBottom();
     });
 
     observer.observe(container);
 
+    const content = container.firstElementChild;
+
+    if (content) observer.observe(content);
+
     return () => {
       observer.disconnect();
     };
-  }, [scrollToBottom]);
+  }, [fetching, hasMessages, scrollToBottom]);
 
   // scroll to bottom when async content loads (e.g. metadata images)
   const onAsyncContentLoaded = useCallback(() => {

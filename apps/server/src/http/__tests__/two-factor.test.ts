@@ -1,8 +1,9 @@
 import { TOTP_REQUIRED_MESSAGE } from '@sharkord/shared';
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, spyOn, test } from 'bun:test';
 import { eq } from 'drizzle-orm';
 import { initTest, login } from '../../__tests__/helpers';
 import { tdb, testsBaseUrl } from '../../__tests__/setup';
+import { config } from '../../config';
 import { users, userTotp } from '../../db/schema';
 import { getTotpCode, getTotpStep } from '../../utils/totp';
 
@@ -95,6 +96,28 @@ describe('two-factor authentication', () => {
     expect(withoutCode.status).toBe(400);
     expect((await loginErrors(withoutCode))?.totp).toBe(TOTP_REQUIRED_MESSAGE);
     expect(withCode.status).toBe(200);
+  });
+
+  // someone holding the password would otherwise guess codes from one address without end
+  test('should count wrong codes towards locking the address out', async () => {
+    const { secret } = await enableTwoFactor();
+    let now = Date.now();
+
+    spyOn(Date, 'now').mockImplementation(() => now);
+
+    for (let i = 0; i < config.rateLimiters.loginLockout.maxFailures; i++) {
+      if (i % config.rateLimiters.login.maxRequests === 0) {
+        now += config.rateLimiters.login.windowMs;
+      }
+
+      const response = await loginWithCode('000000');
+
+      expect(response.status).toBe(400);
+    }
+
+    const locked = await loginWithCode(getTotpCode(secret, getTotpStep()));
+
+    expect(locked.status).toBe(429);
   });
 
   test('should not ask for a code after a wrong password', async () => {

@@ -1,4 +1,5 @@
 import ipaddr from 'ipaddr.js';
+import { isIP } from 'net';
 import os from 'os';
 
 const getPrivateIp = async () => {
@@ -77,6 +78,22 @@ const getPublicIp = async () => {
   return ip;
 };
 
+// webRtc.announcedAddressV6 turns the ipv6 listener on. it has to be a literal ipv6 address:
+// a hostname would also resolve to ipv4 addresses the ipv6 listener can't take. anything else
+// leaves ipv6 off with a warning, rather than failing the config and losing the rest of it
+const getAnnouncedAddressV6 = (announcedAddressV6: string): string => {
+  const address = announcedAddressV6.trim();
+
+  if (!address || isIP(address) === 6) return address;
+
+  // logger imports config, which imports this file, see getPublicIp
+  console.warn(
+    `webRtc.announcedAddressV6 "${address}" is not an IPv6 address, IPv6 voice is off.`
+  );
+
+  return '';
+};
+
 // the single answer to "is this a routable public address". an allowlist of one range
 // rather than a blocklist, so anything ipaddr does not call unicast (carrierGradeNat,
 // reserved, benchmarking and friends) is treated as not public. an unparseable address is
@@ -100,4 +117,26 @@ const isPublicIp = (ip: string): boolean => {
 
 const isPrivateIP = (ip: string): boolean => !isPublicIp(ip);
 
-export { getPrivateIp, getPublicIp, isPrivateIP, isPublicIp };
+// the key failed sign ins are counted under. an ipv6 client usually holds a whole /64, so
+// counting single addresses would let it pick a fresh one for every guess
+const getIpBlockKey = (ip: string): string => {
+  if (!ipaddr.isValid(ip)) return ip;
+
+  const address = ipaddr.process(ip);
+
+  if (address.kind() === 'ipv4') return address.toString();
+
+  const cidr = `${address.toString()}/64`;
+  const network = ipaddr.IPv6.networkAddressFromCIDR(cidr);
+
+  return `${network.toString()}/64`;
+};
+
+export {
+  getAnnouncedAddressV6,
+  getIpBlockKey,
+  getPrivateIp,
+  getPublicIp,
+  isPrivateIP,
+  isPublicIp
+};

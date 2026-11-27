@@ -16,7 +16,10 @@ import {
 } from '@trpc/server/adapters/ws';
 import http from 'http';
 import { WebSocket, WebSocketServer } from 'ws';
-import { publishVoiceEvent } from '../db/publishers';
+import {
+  publishVoiceEvent,
+  unpublishHiddenChannelFromUser
+} from '../db/publishers';
 import { channelUserCan } from '../db/queries/channels';
 import { getUserRoles } from '../db/queries/roles';
 import { getUserById, getUserByToken } from '../db/queries/users';
@@ -285,6 +288,10 @@ const handleSocketClose = async (ws: WebSocket) => {
           channelId: voiceRuntime.id,
           userId
         });
+
+        // a moderator move shows a channel the user cannot see for as long as they are in it,
+        // and the account's other devices would keep showing it
+        await unpublishHiddenChannelFromUser(userId, voiceRuntime.id);
       }
     }
 

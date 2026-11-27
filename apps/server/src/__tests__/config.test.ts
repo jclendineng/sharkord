@@ -117,6 +117,21 @@ describe('env overrides are validated', () => {
     expect(applyOverrides).toThrow();
   });
 
+  test('should take an ipv6 announced address from its upstream variable', () => {
+    setEnv('SHARKORD_WEBRTC_ANNOUNCED_ADDRESS_V6', '2001:db8::7');
+
+    expect(applyOverrides().webRtc.announcedAddressV6).toBe('2001:db8::7');
+  });
+
+  // the same variable upstream sharkord reads, so a server switching over keeps working
+  test('should take the internal announced address from its upstream variable', () => {
+    setEnv('SHARKORD_WEBRTC_INTERNAL_ANNOUNCED_ADDRESS', '192.168.1.10');
+
+    expect(applyOverrides().webRtc.internalAnnouncedAddress).toBe(
+      '192.168.1.10'
+    );
+  });
+
   test('should coerce a comma separated list into an array', () => {
     setEnv('SHARKORD_TRUSTED_PROXIES', '10.0.0.1,10.0.0.2');
 

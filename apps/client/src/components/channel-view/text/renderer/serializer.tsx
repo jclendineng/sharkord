@@ -4,6 +4,7 @@ import { getUrlFromServer } from '@/helpers/get-file-url';
 import { MessageNodeType, parseDomCommand } from '@sharkord/shared';
 import { type DOMNode } from 'html-react-parser';
 import { CommandOverride } from '../overrides/command';
+import { CustomEmojiOverride } from '../overrides/custom-emoji';
 import { MentionOverride } from '../overrides/mention';
 import { isElementNode } from './helpers';
 
@@ -16,7 +17,25 @@ const serializer = (domNode: DOMNode, messageId: number) => {
       domNode.name === 'img' &&
       domNode.attribs.src?.startsWith('/public/')
     ) {
-      domNode.attribs.src = `${getUrlFromServer()}${domNode.attribs.src}`;
+      const src = `${getUrlFromServer()}${domNode.attribs.src}`;
+      const parent = domNode.parent as DOMNode | null;
+
+      if (
+        parent &&
+        isElementNode(parent) &&
+        parent.attribs['data-type'] === MessageNodeType.EMOJI &&
+        parent.attribs['data-name']
+      ) {
+        return (
+          <CustomEmojiOverride
+            name={parent.attribs['data-name']}
+            src={src}
+            alt={domNode.attribs.alt}
+          />
+        );
+      }
+
+      domNode.attribs.src = src;
 
       return undefined;
     }

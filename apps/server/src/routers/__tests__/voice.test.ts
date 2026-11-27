@@ -3,6 +3,7 @@ import {
   Permission,
   REACTION_EMOJI_MAX_LENGTH,
   ServerEvents,
+  STORAGE_MIN_QUOTA_PER_USER,
   StreamKind
 } from '@sharkord/shared';
 import { describe, expect, test } from 'bun:test';
@@ -35,6 +36,32 @@ const joinVoiceChannelTwo = async (userId: number) => {
 
   const { caller } = await initTest(userId, undefined, {
     currentVoiceChannelId: VOICE_CHANNEL_ID
+  });
+
+  return { runtime, caller };
+};
+
+// user 2 holds only the default role (id 2), so this is all they get on the private channel,
+// which they cannot see without a VIEW_CHANNEL grant
+const grantOnPrivateVoiceChannel = async (permissions: ChannelPermission[]) =>
+  tdb.insert(channelRolePermissions).values(
+    permissions.map((permission) => ({
+      channelId: PRIVATE_VOICE_CHANNEL_ID,
+      roleId: 2,
+      permission,
+      allow: true,
+      createdAt: Date.now()
+    }))
+  );
+
+// where a moderator move leaves a user: in a call they cannot see
+const joinPrivateVoiceChannelAsMoved = async (userId: number) => {
+  const runtime = new VoiceRuntime(PRIVATE_VOICE_CHANNEL_ID);
+
+  runtime.addUser(userId, { micMuted: true, soundMuted: false });
+
+  const { caller } = await initTest(userId, undefined, {
+    currentVoiceChannelId: PRIVATE_VOICE_CHANNEL_ID
   });
 
   return { runtime, caller };
@@ -75,6 +102,45 @@ describe('voice router', () => {
         }
       })
     ).rejects.toThrow('Too many requests. Please try again shortly.');
+  });
+
+  describe('join', () => {
+    const joinUnmuted = async (permissions: ChannelPermission[]) => {
+      await grantOnPrivateVoiceChannel([
+        ChannelPermission.VIEW_CHANNEL,
+        ChannelPermission.JOIN,
+        ...permissions
+      ]);
+
+      const runtime = new VoiceRuntime(PRIVATE_VOICE_CHANNEL_ID);
+
+      await runtime.init();
+
+      const { caller } = await initTest(2);
+
+      try {
+        await caller.voice.join({
+          channelId: PRIVATE_VOICE_CHANNEL_ID,
+          state: { micMuted: false, soundMuted: false }
+        });
+
+        return runtime.getUserState(2);
+      } finally {
+        await runtime.destroy();
+      }
+    };
+
+    test('should keep the requested mic state when the user can speak', async () => {
+      const state = await joinUnmuted([ChannelPermission.SPEAK]);
+
+      expect(state.micMuted).toBe(false);
+    });
+
+    test('should join muted when the user cannot speak in the channel', async () => {
+      const state = await joinUnmuted([]);
+
+      expect(state.micMuted).toBe(true);
+    });
   });
 
   describe('moveUser', () => {
@@ -685,6 +751,40 @@ describe('voice router', () => {
         await runtime.destroy();
       }
     });
+
+    test('should let a moved user speak in a channel they cannot see', async () => {
+      await grantOnPrivateVoiceChannel([ChannelPermission.SPEAK]);
+
+      const { runtime, caller } = await joinPrivateVoiceChannelAsMoved(2);
+
+      try {
+        await expect(
+          caller.voice.produce({
+            transportId: 'transport',
+            kind: StreamKind.AUDIO,
+            rtpParameters: {}
+          })
+        ).rejects.toThrow('Producer transport not found');
+      } finally {
+        await runtime.destroy();
+      }
+    });
+
+    test('should refuse audio without SPEAK in a channel the user cannot see', async () => {
+      const { runtime, caller } = await joinPrivateVoiceChannelAsMoved(2);
+
+      try {
+        await expect(
+          caller.voice.produce({
+            transportId: 'transport',
+            kind: StreamKind.AUDIO,
+            rtpParameters: {}
+          })
+        ).rejects.toThrow('Insufficient channel permissions');
+      } finally {
+        await runtime.destroy();
+      }
+    });
   });
 
   describe('updateState', () => {
@@ -743,6 +843,32 @@ describe('voice router', () => {
           webcamEnabled: false,
           sharingScreen: false,
           soundMuted: true
+        });
+      } finally {
+        await runtime.destroy();
+      }
+    });
+
+    test('should apply the voice permissions of a channel a moved user cannot see', async () => {
+      await grantOnPrivateVoiceChannel([
+        ChannelPermission.SPEAK,
+        ChannelPermission.WEBCAM,
+        ChannelPermission.SHARE_SCREEN
+      ]);
+
+      const { runtime, caller } = await joinPrivateVoiceChannelAsMoved(2);
+
+      try {
+        await caller.voice.updateState({
+          micMuted: false,
+          webcamEnabled: true,
+          sharingScreen: true
+        });
+
+        expect(runtime.getUserState(2)).toMatchObject({
+          micMuted: false,
+          webcamEnabled: true,
+          sharingScreen: true
         });
       } finally {
         await runtime.destroy();
@@ -1265,6 +1391,123 @@ describe('voice producer subscriptions', () => {
         });
 
         expect(runtime.getUserState(2).webcamEnabled).toBe(false);
+      } finally {
+        await runtime.destroy();
+      }
+    });
+
+    // user 5 holds only the moderator role (4), given voice and the webcam here. the default
+    // role, which they fall back to when role 4 is deleted, loses the webcam, so it rests on
+    // role 4 alone
+    const streamWithWebcamFromModeratorRole = async () => {
+      await revokeFromDefaultRole(Permission.ENABLE_WEBCAM);
+      await tdb.insert(rolePermissions).values(
+        [Permission.JOIN_VOICE_CHANNELS, Permission.ENABLE_WEBCAM].map(
+          (permission) => ({
+            roleId: 4,
+            permission,
+            createdAt: Date.now()
+          })
+        )
+      );
+
+      const voice = await joinVoiceChannelTwo(5);
+
+      await voice.caller.voice.updateState({ webcamEnabled: true });
+
+      expect(voice.runtime.getUserState(5).webcamEnabled).toBe(true);
+
+      return voice;
+    };
+
+    test('should turn off the webcam when a role loses the server permission', async () => {
+      const { caller: owner } = await initTest(1);
+      const { runtime } = await streamWithWebcamFromModeratorRole();
+
+      try {
+        await owner.roles.update({
+          roleId: 4,
+          name: 'Moderator',
+          color: '#00ff00',
+          permissions: [
+            Permission.JOIN_VOICE_CHANNELS,
+            Permission.MANAGE_USERS,
+            Permission.MANAGE_ROLES,
+            Permission.MANAGE_CHANNEL_PERMISSIONS,
+            Permission.KICK_MEMBERS,
+            Permission.BAN_MEMBERS,
+            Permission.ASSIGN_ROLES
+          ],
+          storageQuotaOverrideEnabled: false,
+          storageSpaceQuota: STORAGE_MIN_QUOTA_PER_USER
+        });
+
+        expect(runtime.getUserState(5).webcamEnabled).toBe(false);
+      } finally {
+        await runtime.destroy();
+      }
+    });
+
+    test('should turn off the webcam when the role granting it is taken away', async () => {
+      const { caller: owner } = await initTest(1);
+      const { runtime } = await streamWithWebcamFromModeratorRole();
+
+      try {
+        await owner.users.removeRole({ userId: 5, roleId: 4 });
+
+        expect(runtime.getUserState(5).webcamEnabled).toBe(false);
+      } finally {
+        await runtime.destroy();
+      }
+    });
+
+    test('should turn off the webcam when the role granting it is deleted', async () => {
+      const { caller: owner } = await initTest(1);
+      const { runtime } = await streamWithWebcamFromModeratorRole();
+
+      try {
+        await owner.roles.delete({ roleId: 4 });
+
+        expect(runtime.getUserState(5).webcamEnabled).toBe(false);
+      } finally {
+        await runtime.destroy();
+      }
+    });
+
+    // a moved user has no VIEW_CHANNEL there, which must not count as losing the stream. a
+    // channel permission change only reaches who can see the channel, so a role update, which
+    // checks everyone in a call, is what reaches them
+    test('should leave the webcam of a moved user on while it is still granted', async () => {
+      await grantOnPrivateVoiceChannel([ChannelPermission.WEBCAM]);
+
+      const { caller: owner } = await initTest(1);
+      const { runtime, caller } = await joinPrivateVoiceChannelAsMoved(2);
+
+      const [member, memberPermissions] = await Promise.all([
+        tdb.select().from(roles).where(eq(roles.id, 2)).get(),
+        tdb
+          .select({ permission: rolePermissions.permission })
+          .from(rolePermissions)
+          .where(eq(rolePermissions.roleId, 2))
+      ]);
+
+      try {
+        await caller.voice.updateState({ webcamEnabled: true });
+
+        expect(runtime.getUserState(2).webcamEnabled).toBe(true);
+
+        await owner.roles.update({
+          roleId: 2,
+          name: member!.name,
+          color: member!.color,
+          permissions: memberPermissions.map(
+            ({ permission }) => permission as Permission
+          ),
+          storageQuotaOverrideEnabled: false,
+          storageSpaceQuota: STORAGE_MIN_QUOTA_PER_USER
+        });
+
+        expect(runtime.getUserState(2).webcamEnabled).toBe(true);
       } finally {
         await runtime.destroy();
       }

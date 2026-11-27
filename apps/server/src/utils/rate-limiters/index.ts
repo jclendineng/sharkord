@@ -20,6 +20,11 @@ type TRateLimitEntry = {
 // share of the table dropped when it is full and nothing has expired
 const EVICTION_RATIO = 0.1;
 
+// the globalThis escape hatch is honoured only under test, so it cannot become a production
+// kill switch. limiting stays off in development, which does mean no dev exercises this path
+const isRateLimitingBypassed = () =>
+  (IS_DEVELOPMENT && !IS_TEST) || (IS_TEST && !!globalThis.disableRateLimiting);
+
 // this is a pretty basic implementation of a fixed window rate limiter, but for now it's better than nothing
 class FixedWindowRateLimiter {
   private readonly entries = new Map<string, TRateLimitEntry>();
@@ -38,13 +43,7 @@ class FixedWindowRateLimiter {
   }
 
   public consume = (key: string): TRateLimitResult => {
-    // the globalThis escape hatch is honoured only under test, so it cannot become a
-    // production kill switch. limiting stays off in development, which does mean no dev
-    // exercises this path
-    if (
-      (IS_DEVELOPMENT && !IS_TEST) ||
-      (IS_TEST && globalThis.disableRateLimiting)
-    ) {
+    if (isRateLimitingBypassed()) {
       return {
         allowed: true,
         remaining: this.maxRequests,
@@ -126,5 +125,5 @@ class FixedWindowRateLimiter {
   };
 }
 
-export { FixedWindowRateLimiter };
+export { FixedWindowRateLimiter, isRateLimitingBypassed };
 export type { TRateLimitResult };

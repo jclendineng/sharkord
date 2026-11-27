@@ -1,26 +1,32 @@
 import {
   ChannelPermission,
+  Permission,
   ServerEvents,
   StreamKind,
   type TVoiceUserState
 } from '@sharkord/shared';
 import { publishVoiceEvent } from '../db/publishers';
 import { channelUserCan } from '../db/queries/channels';
+import { userCan } from '../db/queries/roles';
 import { VoiceRuntime } from '../runtimes/voice';
 import { pubsub } from '../utils/pubsub';
 
+// the same pairs produce checks before a stream starts
 const GATED_STREAMS: {
   permission: ChannelPermission;
+  serverPermission: Permission;
   kinds: StreamKind[];
   stateKey: keyof Pick<TVoiceUserState, 'webcamEnabled' | 'sharingScreen'>;
 }[] = [
   {
     permission: ChannelPermission.WEBCAM,
+    serverPermission: Permission.ENABLE_WEBCAM,
     kinds: [StreamKind.VIDEO],
     stateKey: 'webcamEnabled'
   },
   {
     permission: ChannelPermission.SHARE_SCREEN,
+    serverPermission: Permission.SHARE_SCREEN,
     kinds: [StreamKind.SCREEN, StreamKind.SCREEN_AUDIO],
     stateKey: 'sharingScreen'
   }
@@ -33,9 +39,15 @@ const enforceUserVoicePermissions = async (userId: number) => {
 
   const channelId = runtime.id;
   const allowed = await Promise.all(
-    GATED_STREAMS.map(({ permission }) =>
-      channelUserCan(channelId, userId, permission)
-    )
+    GATED_STREAMS.map(async ({ permission, serverPermission }) => {
+      const [channelAllowed, serverAllowed] = await Promise.all([
+        // the same rule produce applies, or a moved user would lose a stream they may run
+        channelUserCan(channelId, userId, permission, { ignoreView: true }),
+        userCan(userId, serverPermission)
+      ]);
+
+      return channelAllowed && serverAllowed;
+    })
   );
 
   let stateChanged = false;
@@ -44,14 +56,17 @@ const enforceUserVoicePermissions = async (userId: number) => {
     if (allowed[index]) return;
 
     kinds.forEach((kind) => {
-      if (!runtime.getProducer(kind, userId)) return;
+      const producer = runtime.getProducer(kind, userId);
+
+      if (!producer) return;
 
       runtime.removeProducer(userId, kind);
 
       pubsub.publishForChannel(channelId, ServerEvents.VOICE_PRODUCER_CLOSED, {
         channelId,
         remoteId: userId,
-        kind
+        kind,
+        producerId: producer.id
       });
     });
 
@@ -77,4 +92,16 @@ const enforceVoicePermissions = async (userIds: number[]) => {
   await Promise.all(userIds.map(enforceUserVoicePermissions));
 };
 
-export { enforceVoicePermissions };
+// a role change can reach anyone holding the role, and checking everyone in a call is cheaper
+// than working out who holds it
+const enforceVoicePermissionsForEveryone = async () => {
+  const userIds = VoiceRuntime.getAll().flatMap((runtime) => {
+    const { users } = runtime.getState();
+
+    return users.map(({ userId }) => userId);
+  });
+
+  await enforceVoicePermissions(userIds);
+};
+
+export { enforceVoicePermissions, enforceVoicePermissionsForEveryone };

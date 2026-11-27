@@ -1,7 +1,10 @@
 import { useCurrentVoiceChannelId } from '@/features/server/channels/hooks';
 import { useWebRtcSimulcastEnabled } from '@/features/server/hooks';
 import { SoundType, type TVoiceSession } from '@/features/server/types';
-import { setVoiceInCall } from '@/features/server/voice/actions';
+import {
+  setVoiceInCall,
+  updateOwnVoiceState
+} from '@/features/server/voice/actions';
 import {
   useIncomingVideoOff,
   useOwnVoiceState,
@@ -27,6 +30,7 @@ import {
   getSuppressLocalAudioPlaybackSupport
 } from '@/helpers/get-display-media-support';
 import { getResWidthHeight } from '@/helpers/get-res-with-height';
+import { releaseStalePictureInPicture } from '@/helpers/picture-in-picture';
 import { registerVoiceDebugSource } from '@/helpers/voice-debug';
 import { useScreenShareSupport } from '@/hooks/use-screen-share-support';
 import { getTRPCClient } from '@/lib/trpc';
@@ -894,6 +898,50 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     setScreenShareProducer
   ]);
 
+  // the server closes a stream whose permission was taken away mid call, which would otherwise
+  // leave the camera or the capture running here with nothing sent. the producer id tells it
+  // apart from an older producer of the same kind
+  const stopClosedOwnStream = useCallback(
+    (kind: StreamKind, producerId: string) => {
+      if (
+        kind === StreamKind.VIDEO &&
+        localVideoProducer.current?.id === producerId
+      ) {
+        voiceLogger.info('webcam: producer closed by the server');
+
+        stopWebcamStream();
+        updateOwnVoiceState({ webcamEnabled: false });
+        playSound(SoundType.OWN_USER_STOPPED_WEBCAM);
+
+        return;
+      }
+
+      if (
+        kind === StreamKind.SCREEN &&
+        localScreenShareProducer.current?.id === producerId
+      ) {
+        voiceLogger.info('screen: producer closed by the server');
+
+        stopScreenShareStream();
+        updateOwnVoiceState({ sharingScreen: false });
+        playSound(SoundType.OWN_USER_STOPPED_SCREENSHARE);
+      }
+    },
+    [
+      localVideoProducer,
+      localScreenShareProducer,
+      stopWebcamStream,
+      stopScreenShareStream
+    ]
+  );
+
+  // the voice events subscribe once per call, so they read the latest one through a ref
+  const stopClosedOwnStreamRef = useRef(stopClosedOwnStream);
+
+  useEffect(() => {
+    stopClosedOwnStreamRef.current = stopClosedOwnStream;
+  }, [stopClosedOwnStream]);
+
   // devices saved mid call apply at once: the mic, and the camera when it is on, start again
   // through the same path as joining, so the processing chain is rebuilt with the new settings.
   // the others hear a short gap while the new producer takes over from the old one
@@ -1344,12 +1392,16 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
           throw new Error('Failed to load device RTP capabilities');
         }
 
-        deviceRtpCapabilities.current = recvRtpCapabilities;
-
         await createProducerTransport(device);
         await createConsumerTransport(device);
-        await consumeExistingProducers(recvRtpCapabilities);
+
+        // the mic starts before anything is consumed so firefox has a live getUserMedia
+        // capture when the receive transport gathers its candidates, or it hears nobody
         await startMicStream();
+
+        deviceRtpCapabilities.current = recvRtpCapabilities;
+
+        await consumeExistingProducers(recvRtpCapabilities);
 
         startMonitoring(producerTransport.current, consumerTransport.current);
         setVoiceInCall(channelId);
@@ -1418,6 +1470,7 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
     removeExternalStreamTrack,
     removeExternalStream,
     clearRemoteUserStreamsForUser,
+    stopClosedOwnStreamRef,
     rtpCapabilitiesRef: deviceRtpCapabilities,
     isVoiceSessionActive:
       voiceSession.phase === 'connecting' || voiceSession.phase === 'inCall'
@@ -1435,6 +1488,33 @@ const VoiceProvider = memo(({ children }: TVoiceProviderProps) => {
 
     previousConnectionStatus.current = connectionStatus;
   }, [connectionStatus]);
+
+  // the shared picture in picture video outlives the cards, so it is closed here once the
+  // stream it shows has ended
+  useEffect(() => {
+    const remoteStreams = Object.values(remoteUserStreams).flatMap(
+      ({ [StreamKind.VIDEO]: video, [StreamKind.SCREEN]: screen }) => [
+        video,
+        screen
+      ]
+    );
+
+    const externalVideoStreams = Object.values(externalStreams).map(
+      ({ videoStream }) => videoStream
+    );
+
+    releaseStalePictureInPicture([
+      localVideoStream,
+      localScreenShareStream,
+      ...remoteStreams,
+      ...externalVideoStreams
+    ]);
+  }, [
+    remoteUserStreams,
+    externalStreams,
+    localVideoStream,
+    localScreenShareStream
+  ]);
 
   const getVoiceDebugSource = useCallback(
     () => ({

@@ -1,12 +1,7 @@
-import { ServerEvents, type StreamKind } from '@sharkord/shared';
+import { ServerEvents } from '@sharkord/shared';
 import { observable } from '@trpc/server/observable';
+import type { TPubSubEvents } from '../../utils/pubsub';
 import { protectedProcedure } from '../../utils/trpc';
-
-type TVoiceProducerEvent = {
-  channelId: number;
-  remoteId: number;
-  kind: StreamKind;
-};
 
 // voice presence goes to the people who can see the channel, see publishVoiceEvent
 const onUserJoinVoiceRoute = protectedProcedure.subscription(
@@ -86,7 +81,9 @@ const onVoiceRemoveExternalStreamRoute = protectedProcedure.subscription(
 const onVoiceNewProducerRoute = protectedProcedure.subscription(
   async ({ ctx }) => {
     if (!ctx.currentVoiceChannelId) {
-      return observable<TVoiceProducerEvent>(() => () => {});
+      return observable<TPubSubEvents[ServerEvents.VOICE_NEW_PRODUCER]>(
+        () => () => {}
+      );
     }
 
     return ctx.pubsub.subscribeForChannel(
@@ -99,7 +96,9 @@ const onVoiceNewProducerRoute = protectedProcedure.subscription(
 const onVoiceProducerClosedRoute = protectedProcedure.subscription(
   async ({ ctx }) => {
     if (!ctx.currentVoiceChannelId) {
-      return observable<TVoiceProducerEvent>(() => () => {});
+      return observable<TPubSubEvents[ServerEvents.VOICE_PRODUCER_CLOSED]>(
+        () => () => {}
+      );
     }
 
     return ctx.pubsub.subscribeForChannel(

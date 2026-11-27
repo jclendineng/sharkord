@@ -21,6 +21,7 @@ import { getSettings } from '../db/queries/server';
 import { getUserByIdentity } from '../db/queries/users';
 import { users } from '../db/schema';
 import { getWsInfo } from '../helpers/get-ws-info';
+import { getIpBlockKey } from '../helpers/network';
 import { isLocalLoginDisabled } from '../helpers/oidc/settings';
 import { safeCompare } from '../helpers/safe-compare';
 import { createSessionToken } from '../helpers/sessions';
@@ -29,9 +30,13 @@ import { logger } from '../logger';
 import { pluginManager } from '../plugins';
 import { runHook } from '../plugins/run-hook';
 import { enqueueActivityLog } from '../queues/activity-log';
-import { createRateLimiter } from '../utils/rate-limiters/rate-limiter';
+import {
+  createFailedAttemptsLimiter,
+  createRateLimiter,
+  getRateLimitRetrySeconds
+} from '../utils/rate-limiters/rate-limiter';
 import { HttpValidationError } from './errors';
-import { enforceHttpRateLimit, getJsonBody } from './helpers';
+import { enforceHttpRateLimit, getJsonBody, sendJsonError } from './helpers';
 
 const zBody = z.object({
   identity: z
@@ -58,7 +63,32 @@ const loginIdentityRateLimiter = createRateLimiter({
   windowMs: config.rateLimiters.loginIdentity.windowMs
 });
 
+// only the password route counts failures, so qr sign in, login links and sso are never locked
+const loginLockout = createFailedAttemptsLimiter(
+  config.rateLimiters.loginLockout
+);
+
 const GENERIC_LOGIN_ERROR = 'Invalid credentials';
+
+// a wrong password and a wrong two factor code both count, or someone holding the password
+// could guess codes from one address without end
+const recordLoginFailure = (lockoutKey: string | undefined) => {
+  if (!lockoutKey) return;
+
+  const blockMs = loginLockout.recordFailure(lockoutKey);
+
+  if (blockMs > 0) {
+    logger.warn(
+      `${chalk.dim('[Auth]')} Blocked login attempts from ${lockoutKey} for ${Math.ceil(blockMs / 60_000)} minutes after repeated failures.`
+    );
+  }
+};
+
+const invalidCredentialsError = (lockoutKey: string | undefined) => {
+  recordLoginFailure(lockoutKey);
+
+  return new HttpValidationError('identity', GENERIC_LOGIN_ERROR);
+};
 
 let dummyArgon2HashPromise: Promise<string> | null = null;
 const getDummyArgon2Hash = (): Promise<string> => {
@@ -77,6 +107,27 @@ const loginRouteHandler = async (
   req: http.IncomingMessage,
   res: http.ServerResponse
 ) => {
+  const connectionInfo = getWsInfo(undefined, req);
+  const lockoutKey = connectionInfo?.ip
+    ? getIpBlockKey(connectionInfo.ip)
+    : undefined;
+
+  // a rate limit step, before the body is read, so a locked address learns nothing
+  if (lockoutKey) {
+    const retryAfterMs = loginLockout.getRetryAfterMs(lockoutKey);
+
+    if (retryAfterMs > 0) {
+      res.setHeader('Retry-After', getRateLimitRetrySeconds(retryAfterMs));
+      sendJsonError(
+        res,
+        429,
+        'Too many failed login attempts. Please try again later.'
+      );
+
+      return;
+    }
+  }
+
   const data = zBody.parse(await getJsonBody(req));
 
   if (data.identity === DELETED_USER_IDENTITY_AND_NAME) {
@@ -92,7 +143,6 @@ const loginRouteHandler = async (
 
   const settings = await getSettings();
   let existingUser = await getUserByIdentity(data.identity);
-  const connectionInfo = getWsInfo(undefined, req);
 
   await runHook<TBeforeLoginPayload, never>({
     entries: pluginManager.getHooks('beforeLogin'),
@@ -145,7 +195,7 @@ const loginRouteHandler = async (
         `${chalk.dim('[Auth]')} Login attempt for unknown identity blocked. (reason: ${result.error}, IP: ${connectionInfo?.ip || 'unknown'})`
       );
 
-      throw new HttpValidationError('identity', GENERIC_LOGIN_ERROR);
+      throw invalidCredentialsError(lockoutKey);
     }
 
     // only consume the invite when one was actually accepted
@@ -216,7 +266,7 @@ const loginRouteHandler = async (
       `${chalk.dim('[Auth]')} Failed login attempt for user "${existingUser.identity}" due to invalid password. (IP: ${connectionInfo?.ip || 'unknown'})`
     );
 
-    throw new HttpValidationError('identity', GENERIC_LOGIN_ERROR);
+    throw invalidCredentialsError(lockoutKey);
   }
 
   if (existingUser.banned) {
@@ -237,6 +287,8 @@ const loginRouteHandler = async (
     logger.info(
       `${chalk.dim('[Auth]')} Failed two-factor code for user "${existingUser.identity}". (IP: ${connectionInfo?.ip || 'unknown'})`
     );
+
+    recordLoginFailure(lockoutKey);
 
     throw new HttpValidationError('totp', "That code isn't right.");
   }
