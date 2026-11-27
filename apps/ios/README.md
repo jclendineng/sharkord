@@ -30,7 +30,7 @@ screen shares, sharing your own screen, profile editing, settings (account, devi
 video, notifications, about with the server's contact), the full server settings (with who joined with each invite), polls, voice messages, and Discord's
 attachment and expression panels (emoji, GIFs, stickers), typing indicators, pinning messages
 and a channel's pinned list, a channel screen from its name (members, media, pins, links, files),
-search in the expression panel at full height, a double tap reaction you pick, friends and friend requests, blocking (Block on a profile and in the member menu, a blocked person's messages folded into one row), group direct messages, direct message menus (close, pin, mute for a while), profile banners, voice reactions, the soundboard (playing in calls, your own soundboard volume, and managing sounds with uploads and the server's library), moving people between voice
+search in the expression panel at full height, a double tap reaction you pick, friends and friend requests, blocking (Block on a profile and in the member menu, a blocked person's messages folded into one row, kept on the device on upstream's server), group direct messages, direct message menus (close, pin, mute for a while), profile banners, voice reactions, the soundboard (playing in calls, your own soundboard volume, and managing sounds with uploads and the server's library), moving people between voice
 channels, a member's activity for moderators, posting locked where a private channel does
 not allow it, Discord style Markdown in the composer (`HTMLText.messageHTML(fromMarkdown:)`,
 turned back with `markdown(from:)` when editing) with lists, quotes, strikethrough and

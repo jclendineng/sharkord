@@ -83,6 +83,12 @@ struct GeneralSettingsScreen: View {
 
     private func form(_ settings: Binding<AdminServerSettings>) -> some View {
         SettingsForm {
+            // a server that lists no features is upstream sharkord's, or this fork's from before
+            // the list. only its admins see this page, and they are who can switch it
+            if let serverInfo = session.serverInfo, serverInfo.features == nil {
+                UpgradeServerCard()
+            }
+
             Section {
                 HStack(spacing: 16) {
                     iconPreview
@@ -155,51 +161,58 @@ struct GeneralSettingsScreen: View {
                 Toggle("Simulcast for Video", isOn: settings.webRtcSimulcastEnabled)
             }
 
-            Section {
-                TextField("", text: Binding(
-                    get: { settings.wrappedValue.reportEmail ?? "" },
-                    set: { settings.wrappedValue.reportEmail = $0 }
-                ), prompt: Text(verbatim: "reports@example.com"))
-                .labelsHidden()
-                .keyboard(.email)
-                .textContentType(.emailAddress)
-                .noAutocapitalization()
-                .autocorrectionDisabled()
-            } header: {
-                Text("Report Email")
-            } footer: {
-                Text("Where people send questions and reports about this server or a message on it. The apps show it as the contact in About, and Report opens an email to it.")
-                    .wrappingFooter()
+            // upstream's server keeps no report address, so one typed here would be dropped
+            if session.serverInfo?.features != nil {
+                Section {
+                    TextField("", text: Binding(
+                        get: { settings.wrappedValue.reportEmail ?? "" },
+                        set: { settings.wrappedValue.reportEmail = $0 }
+                    ), prompt: Text(verbatim: "reports@example.com"))
+                    .labelsHidden()
+                    .keyboard(.email)
+                    .textContentType(.emailAddress)
+                    .noAutocapitalization()
+                    .autocorrectionDisabled()
+                } header: {
+                    Text("Report Email")
+                } footer: {
+                    Text("Where people send questions and reports about this server or a message on it. The apps show it as the contact in About, and Report opens an email to it.")
+                        .wrappingFooter()
+                }
             }
 
-            Section {
-                SecureField("", text: Binding(
-                    get: { settings.wrappedValue.klipyApiKey ?? "" },
-                    set: { settings.wrappedValue.klipyApiKey = $0 }
-                ), prompt: Text("Paste a key to turn on GIFs"))
-                .labelsHidden()
-                .noAutocapitalization()
-                .autocorrectionDisabled()
-            } header: {
-                Text("Klipy API Key")
-            } footer: {
-                Text("Turns on GIFs. Get a free key at klipy.com/developers. Searches go through this server, so the key stays private.")
-                    .wrappingFooter()
+            if session.supports(.gifs) {
+                Section {
+                    SecureField("", text: Binding(
+                        get: { settings.wrappedValue.klipyApiKey ?? "" },
+                        set: { settings.wrappedValue.klipyApiKey = $0 }
+                    ), prompt: Text("Paste a key to turn on GIFs"))
+                    .labelsHidden()
+                    .noAutocapitalization()
+                    .autocorrectionDisabled()
+                } header: {
+                    Text("Klipy API Key")
+                } footer: {
+                    Text("Turns on GIFs. Get a free key at klipy.com/developers. Searches go through this server, so the key stays private.")
+                        .wrappingFooter()
+                }
             }
 
-            Section {
-                SecureField("", text: Binding(
-                    get: { settings.wrappedValue.freesoundApiKey ?? "" },
-                    set: { settings.wrappedValue.freesoundApiKey = $0 }
-                ), prompt: Text("Paste a key to turn on sound search"))
-                .labelsHidden()
-                .noAutocapitalization()
-                .autocorrectionDisabled()
-            } header: {
-                Text("Freesound API Key")
-            } footer: {
-                Text("Turns on searching Freesound for soundboard sounds. Get a free key at freesound.org/apiv2/apply, it's the client secret. Searches go through this server, so the key stays private.")
-                    .wrappingFooter()
+            if session.supports(.soundboard) {
+                Section {
+                    SecureField("", text: Binding(
+                        get: { settings.wrappedValue.freesoundApiKey ?? "" },
+                        set: { settings.wrappedValue.freesoundApiKey = $0 }
+                    ), prompt: Text("Paste a key to turn on sound search"))
+                    .labelsHidden()
+                    .noAutocapitalization()
+                    .autocorrectionDisabled()
+                } header: {
+                    Text("Freesound API Key")
+                } footer: {
+                    Text("Turns on searching Freesound for soundboard sounds. Get a free key at freesound.org/apiv2/apply, it's the client secret. Searches go through this server, so the key stays private.")
+                        .wrappingFooter()
+                }
             }
 
             if let showsContent = settings.wrappedValue.pushShowMessageContent {
@@ -529,6 +542,27 @@ struct GeneralSettingsScreen: View {
             struct NoFile: Encodable {}
 
             try await session.perform("others.changeLogo", NoFile())
+        }
+    }
+}
+
+// what the app can do on this server once it runs the fork, and where the switch is explained
+private struct UpgradeServerCard: View {
+    private static let guideURL = URL(string: "https://livingroomplay.com/sharkord/switch.html")!
+
+    var body: some View {
+        Section {
+            VStack(alignment: .leading, spacing: 8) {
+                Label("More for This Server", systemImage: "sparkles")
+                    .font(.headline)
+
+                Text("This server can't use everything the app does: push notifications, the soundboard, friends, blocking and signing in from another device. Switching it to the LivingRoom Play server adds them and keeps everything already on it.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.vertical, 4)
+
+            Link("How to Switch", destination: Self.guideURL)
         }
     }
 }

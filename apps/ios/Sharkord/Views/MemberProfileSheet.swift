@@ -83,30 +83,28 @@ struct MemberProfileSheet: View {
                             .buttonStyle(.plain)
                             .accessibilityLabel("Message")
 
-                            if session.supports(.blocking) {
-                                Menu {
-                                    if isBlocked {
-                                        Button("Unblock", systemImage: "nosign", action: unblock)
-                                    } else {
-                                        Button("Block", systemImage: "nosign", role: .destructive, action: confirmBlock)
-                                    }
-                                } label: {
-                                    Image(systemName: "ellipsis")
-                                        .font(.body.weight(.semibold))
-                                        .foregroundStyle(Theme.header)
-                                        .frame(width: 48, height: 46)
-                                        .background(Theme.listBackground, in: .rect(cornerRadius: 10))
+                            Menu {
+                                if isBlocked {
+                                    Button("Unblock", systemImage: "nosign", action: unblock)
+                                } else {
+                                    Button("Block", systemImage: "nosign", role: .destructive, action: confirmBlock)
                                 }
-                                .menuIndicator(.hidden)
-                                // the menu's icon takes the tint: red beside Block, plain beside Unblock
-                                .tint(isBlocked ? Theme.header : Theme.red)
-                                .accessibilityLabel("More")
-                                // on the button, so the question points at what asked it
-                                .confirmationDialog("Block \(user.name)?", isPresented: $isConfirmingBlock, titleVisibility: .visible) {
-                                    Button("Block", role: .destructive, action: block)
-                                } message: {
-                                    Text("They can't message you or send you a friend request, and their messages are folded away for you. A friendship with them ends. They aren't told.")
-                                }
+                            } label: {
+                                Image(systemName: "ellipsis")
+                                    .font(.body.weight(.semibold))
+                                    .foregroundStyle(Theme.header)
+                                    .frame(width: 48, height: 46)
+                                    .background(Theme.listBackground, in: .rect(cornerRadius: 10))
+                            }
+                            .menuIndicator(.hidden)
+                            // the menu's icon takes the tint: red beside Block, plain beside Unblock
+                            .tint(isBlocked ? Theme.header : Theme.red)
+                            .accessibilityLabel("More")
+                            // on the button, so the question points at what asked it
+                            .confirmationDialog("Block \(user.name)?", isPresented: $isConfirmingBlock, titleVisibility: .visible) {
+                                Button("Block", role: .destructive, action: block)
+                            } message: {
+                                BlockConsequence()
                             }
                         }
                         // menu icons in the text's colour: the app's blurple tint drew a blue
@@ -203,11 +201,17 @@ struct MemberProfileSheet: View {
     }
 
     private func block() {
-        change("block")
+        setBlocked(true)
     }
 
     private func unblock() {
-        change("unblock")
+        setBlocked(false)
+    }
+
+    private func setBlocked(_ blocked: Bool) {
+        Task {
+            await session.setBlocked(blocked, userId: user.id)
+        }
     }
 
     private func change(_ action: String) {
@@ -310,6 +314,20 @@ private struct NoteCard: View {
             } catch {
                 session.showError(error)
             }
+        }
+    }
+}
+
+// what blocking does. a server that keeps no blocks can't stop the person reaching you, so
+// there it only folds their messages away on this device
+struct BlockConsequence: View {
+    @Environment(SessionStore.self) private var session
+
+    var body: some View {
+        if session.supports(.blocking) {
+            Text("They can't message you or send you a friend request, and their messages are folded away for you. A friendship with them ends. They aren't told.")
+        } else {
+            Text("Their messages are folded away for you on this device. This server can't stop them messaging you. They aren't told.")
         }
     }
 }

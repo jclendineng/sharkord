@@ -122,6 +122,15 @@ the Friends dialog has a Blocked section with Unblock. In the apps, a profile ha
 more menu and shows Blocked with Unblock once blocked, the member menu (a right click on a Mac)
 has Block or Unblock at the bottom, and Add Friends lists the people you blocked.
 
+On a server without `blocking`, upstream's, the apps still offer Block: the block is kept on the
+device for that server (`CredentialStore.deviceBlockedUserIds`) and only folds the person's
+messages away there, which the confirmation says. The server can't stop them messaging you.
+
+An admin of a server that lists no features (upstream's, or this fork's from before the list)
+sees a card at the top of Server Settings, Overview, naming what switching adds, with How to
+Switch leading to livingroomplay.com/sharkord/switch.html. On such a server the Overview page
+also hides the report address and the Klipy and Freesound keys, which it would not keep.
+
 ## Mentions in the iOS app
 
 The iOS composer lists members, roles and channels as you type `@` or `#`, and sends the same

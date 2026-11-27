@@ -124,7 +124,7 @@ struct MemberActionsSheet: View {
                     }
                 }
 
-                if !isSelf, session.supports(.blocking) {
+                if !isSelf {
                     ActionGroup {
                         if session.isBlocked(user.id) {
                             ActionRow(title: "Unblock", systemImage: "nosign", action: unblock)
@@ -208,7 +208,7 @@ struct MemberActionsSheet: View {
         close()
 
         Task {
-            await session.changeFriendship("unblock", with: user.id)
+            await session.setBlocked(false, userId: user.id)
         }
     }
 

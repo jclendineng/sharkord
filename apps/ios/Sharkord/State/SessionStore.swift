@@ -106,6 +106,7 @@ final class SessionStore {
     private(set) var namesHiddenChannelIds: [Int] = []
     private(set) var allowsDirectMessages = true
     private(set) var friendLists = FriendLists()
+    private(set) var deviceBlockedUserIds: [Int] = []
     // what this account picked, which the member list cannot say for invisible
     private(set) var ownPresence = Presence.online
     private(set) var ownCustomStatus: String?
@@ -1688,8 +1689,30 @@ final class SessionStore {
         return .none
     }
 
+    // the server's blocks where it keeps them, this device's on a server that doesn't
+    var blockedUserIds: [Int] {
+        supports(.blocking) ? friendLists.blocked : deviceBlockedUserIds
+    }
+
     func isBlocked(_ userId: Int) -> Bool {
-        friendLists.blocked.contains(userId)
+        blockedUserIds.contains(userId)
+    }
+
+    func setBlocked(_ blocked: Bool, userId: Int) async {
+        if supports(.blocking) {
+            await changeFriendship(blocked ? "block" : "unblock", with: userId)
+            return
+        }
+
+        deviceBlockedUserIds.removeAll { $0 == userId }
+
+        if blocked {
+            deviceBlockedUserIds.append(userId)
+        }
+
+        if let address {
+            CredentialStore.setDeviceBlockedUserIds(deviceBlockedUserIds, for: address)
+        }
     }
 
     // from the members screen and from a member's menu. an empty reason is sent as none, which
@@ -1974,6 +1997,7 @@ final class SessionStore {
         pinnedChannelIds = address.map(CredentialStore.pinnedChannelIds(for:)) ?? []
         hidesMutedChannels = address.map(CredentialStore.hidesMutedChannels(for:)) ?? false
         namesHiddenChannelIds = address.map(CredentialStore.namesHiddenChannelIds(for:)) ?? []
+        deviceBlockedUserIds = address.map(CredentialStore.deviceBlockedUserIds(for:)) ?? []
         ownUserId = result.ownUserId
         ownUserHasPassword = result.ownUserPasswordSet ?? true
         categories = result.categories

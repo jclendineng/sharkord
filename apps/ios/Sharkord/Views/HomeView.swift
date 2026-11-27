@@ -885,13 +885,13 @@ private struct BlockConfirmation: ViewModifier {
 
             Button("Cancel", role: .cancel) {}
         } message: { _ in
-            Text("They can't message you or send you a friend request, and their messages are folded away for you. A friendship with them ends. They aren't told.")
+            BlockConsequence()
         }
     }
 
     private func block(_ user: PublicUser) {
         Task {
-            await session.changeFriendship("block", with: user.id)
+            await session.setBlocked(true, userId: user.id)
         }
     }
 }

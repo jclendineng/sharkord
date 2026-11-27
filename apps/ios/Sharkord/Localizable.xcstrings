@@ -835,6 +835,190 @@
         }
       }
     },
+    "More for This Server": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More for This Server"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Víc pro tento server"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Más para este servidor"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus pour ce serveur"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Di più per questo server"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mais para este servidor"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Больше возможностей для сервера"
+          }
+        }
+      }
+    },
+    "This server can't use everything the app does: push notifications, the soundboard, friends, blocking and signing in from another device. Switching it to the LivingRoom Play server adds them and keeps everything already on it.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This server can’t use everything the app does: push notifications, the soundboard, friends, blocking and signing in from another device. Switching it to the LivingRoom Play server adds them and keeps everything already on it."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tento server neumí vše, co aplikace: oznámení push, zvukovou desku, přátele, blokování a přihlášení z jiného zařízení. Přechod na server LivingRoom Play je přidá a zachová vše, co na něm už je."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este servidor no puede usar todo lo que hace la app: notificaciones push, la mesa de sonidos, amigos, bloqueos e inicio de sesión desde otro dispositivo. Cambiarlo al servidor de LivingRoom Play los añade y conserva todo lo que ya tiene."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce serveur ne prend pas en charge tout ce que fait l'app : notifications push, table de sons, amis, blocage et connexion depuis un autre appareil. Le passer au serveur LivingRoom Play les ajoute et garde tout ce qu'il contient déjà."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questo server non supporta tutto ciò che fa l'app: notifiche push, la soundboard, amici, blocchi e accesso da un altro dispositivo. Passarlo al server LivingRoom Play li aggiunge e conserva tutto ciò che contiene già."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este servidor não usa tudo o que o app faz: notificações push, a mesa de sons, amigos, bloqueios e entrar por outro dispositivo. Mudá-lo para o servidor LivingRoom Play adiciona tudo isso e mantém o que já está nele."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Этот сервер поддерживает не всё, что умеет приложение: push-уведомления, звуковую панель, друзей, блокировку и вход с другого устройства. Переход на сервер LivingRoom Play добавит их и сохранит всё, что на нём уже есть."
+          }
+        }
+      }
+    },
+    "How to Switch": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How to Switch"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jak přejít"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cómo cambiar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comment changer"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Come passare"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Como mudar"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Как перейти"
+          }
+        }
+      }
+    },
+    "Their messages are folded away for you on this device. This server can't stop them messaging you. They aren't told.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Their messages are folded away for you on this device. This server can’t stop them messaging you. They aren’t told."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeho zprávy se vám na tomto zařízení skryjí. Tento server mu nemůže zabránit, aby vám psal. Nedozví se o tom."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sus mensajes quedarán ocultos para ti en este dispositivo. Este servidor no puede impedir que te escriba. No se le avisa."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ses messages seront masqués pour vous sur cet appareil. Ce serveur ne peut pas l'empêcher de vous écrire. Elle n'est pas prévenue."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I suoi messaggi saranno nascosti per te su questo dispositivo. Questo server non può impedirle di scriverti. Non viene avvisata."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As mensagens dela ficarão ocultas para você neste dispositivo. Este servidor não pode impedir que ela envie mensagens para você. Ela não é avisada."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Его сообщения будут скрыты для вас на этом устройстве. Этот сервер не может запретить ему писать вам. Он не узнает об этом."
+          }
+        }
+      }
+    },
     "%@, %lld reactions": {
       "localizations": {
         "cs": {

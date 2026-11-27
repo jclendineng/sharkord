@@ -624,7 +624,7 @@ struct MessageListView<Header: View>: View {
     // each message by someone you blocked, keyed to the run of their messages it is part of:
     // the run folds into one row until it is asked to show
     private func blockedStretches() -> [Int: BlockedStretch] {
-        let blocked = Set(session.friendLists.blocked)
+        let blocked = Set(session.blockedUserIds)
 
         guard !blocked.isEmpty else {
             return [:]

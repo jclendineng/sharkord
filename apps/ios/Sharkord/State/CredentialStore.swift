@@ -48,6 +48,16 @@ enum CredentialStore {
         UserDefaults.standard.set(true, forKey: "pinsUploaded." + address.baseURL.absoluteString)
     }
 
+    // blocks on a server that keeps none, upstream's, so blocking is there on every server.
+    // they only fold the person's messages away on this device
+    static func deviceBlockedUserIds(for address: ServerAddress) -> [Int] {
+        UserDefaults.standard.array(forKey: "blocked." + address.baseURL.absoluteString) as? [Int] ?? []
+    }
+
+    static func setDeviceBlockedUserIds(_ userIds: [Int], for address: ServerAddress) {
+        UserDefaults.standard.set(userIds, forKey: "blocked." + address.baseURL.absoluteString)
+    }
+
     static func namesHiddenChannelIds(for address: ServerAddress) -> [Int] {
         UserDefaults.standard.array(forKey: "hiddenNames." + address.baseURL.absoluteString) as? [Int] ?? []
     }
