@@ -16,15 +16,18 @@ const Plugins = memo(({ plugins, loading, refetch }: TPluginsProps) => {
   const { t } = useTranslation('settings');
   const pluginsEnabled = usePluginsEnabled();
 
+  // with plugins off there is nothing to browse, only the note saying how to turn them on
+  if (!pluginsEnabled) {
+    return (
+      <InstalledPlugins plugins={plugins} loading={loading} refetch={refetch} />
+    );
+  }
+
   return (
     <Tabs defaultValue="installed" className="w-full">
       <TabsList className="mb-4 grid w-full grid-cols-2">
-        <TabsTrigger value="installed" disabled={!pluginsEnabled}>
-          {t('installedTab')}
-        </TabsTrigger>
-        <TabsTrigger value="marketplace" disabled={!pluginsEnabled}>
-          {t('marketplaceTab')}
-        </TabsTrigger>
+        <TabsTrigger value="installed">{t('installedTab')}</TabsTrigger>
+        <TabsTrigger value="marketplace">{t('marketplaceTab')}</TabsTrigger>
       </TabsList>
       <TabsContent value="installed">
         <InstalledPlugins

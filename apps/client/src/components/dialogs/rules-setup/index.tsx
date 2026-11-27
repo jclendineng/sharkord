@@ -111,6 +111,7 @@ const RulesSetupDialog = memo(
           <Group
             label={t('rulesCloseOthers')}
             description={t('rulesCloseOthersHelp')}
+            inline
           >
             <Switch
               checked={closeOtherChannels}
@@ -124,6 +125,7 @@ const RulesSetupDialog = memo(
               description={t('rulesRemoveDefaultHelp', {
                 role: defaultRole.name
               })}
+              inline
             >
               <Switch
                 checked={removeDefaultRole}
@@ -135,6 +137,7 @@ const RulesSetupDialog = memo(
           <Group
             label={t('rulesGiveExisting')}
             description={t('rulesGiveExistingHelp')}
+            inline
           >
             <Switch
               checked={giveExistingMembers}

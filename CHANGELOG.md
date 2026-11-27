@@ -291,6 +291,19 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 
 ### Changed
 
+- Settings and lists are laid out the same way in every app.
+  - Web: server settings are Overview, Roles, Emoji, Stickers, Soundboard, Members, Invites, Storage and Plugins, in the apps' order. Overview is split into Server Information, Access, Features, AFK, Integrations, Push Notifications and Link Previews.
+  - Web: a switch sits beside its label instead of under it, on every settings page.
+  - Web: user settings have an Account page with the password, two-factor sign in and deleting the account, and a General page for the language and rejoining the last channel.
+  - Web: notifications for channel messages are one choice, all messages, only mentions or nothing.
+  - Web: an unread channel shows a bold name and a mark at its edge, as in the apps. A mention keeps its count.
+  - Web: message times read Today, Yesterday or a short date, with the time, as in the apps.
+  - Web: the sign in form asks for a username, as the apps do.
+  - Web: a profile card has a Message button, and the direct messages screen offers Add Friends and New Group with no member list beside it.
+  - Web: the members table has the picture beside the name and 25 rows a page, and tables no longer say they are empty twice.
+  - iPhone, iPad and Mac: someone without a picture shows their initials, as on the web.
+  - iPad: settings show their pages down the side, as on a Mac.
+
 - One picture viewer everywhere, with real zooming.
   - iPhone, iPad and Mac: a picture in a message, attached or shown from a link, opens the same viewer a channel's media does, with the message's other pictures a swipe away.
   - A picture zooms about the point between two fingers, pans while zoomed, zooms in and out on a double tap and closes with a pull down. It used to snap back the moment the fingers lifted.
@@ -403,6 +416,15 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - The voice channel sheet's own invite button, which repeated the server invite at the top of the channel list.
 
 ### Fixed
+
+- iPad: the message box no longer sits off the bottom of the screen after signing in.
+- iPhone, iPad and Mac: the screens for adding a server and signing in are in every language the app speaks, not only English.
+- iPhone, iPad and Mac: a local address typed without http://, like 192.168.1.5:4991 or localhost:4991, connects over plain HTTP instead of failing. Names and addresses on the internet still default to HTTPS.
+- Web: reactions with nothing to show no longer render an empty picture, which made the browser fetch the page again.
+- Web: the last English only text is translated: the upload progress, the bot tag, the pinned video card's buttons, the empty voice channel, the voice disconnect button, the resolution and frame rate pickers, emoji search with no results and the search result's jump button.
+- iPhone, iPad and Mac: the QR sign in instructions name the buttons as they are, Log In With a QR Code and Scan a Code Instead.
+- iPad: a server's initials keep their tile in the server sheet in light mode.
+- Web: the composer, server menu and member list buttons have names for screen readers.
 
 #### Server and web client
 

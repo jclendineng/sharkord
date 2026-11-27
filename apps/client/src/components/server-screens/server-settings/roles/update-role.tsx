@@ -217,6 +217,7 @@ const UpdateRole = memo(
         <Group
           label={t('roleStorageOverrideLabel')}
           description={t('roleStorageOverrideDesc')}
+          inline
         >
           <Switch
             checked={!!values.storageQuotaOverrideEnabled}

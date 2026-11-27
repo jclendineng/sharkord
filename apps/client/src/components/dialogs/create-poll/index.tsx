@@ -245,7 +245,7 @@ const CreatePollDialog = memo(
             </Select>
           </Group>
 
-          <Group label={t('pollAllowMultipleLabel')}>
+          <Group label={t('pollAllowMultipleLabel')} inline>
             <Switch
               checked={allowMultiple}
               onCheckedChange={setAllowMultiple}

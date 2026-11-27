@@ -18,6 +18,13 @@ struct ServerAddress: Hashable {
 
         if !text.contains("://") {
             text = "https://\(text)"
+
+            // an address or localhost typed bare is a server on this network, which has no
+            // certificate for it: "192.168.1.5:4991" failed until http:// was typed too. a name,
+            // even a local one, keeps https, tailscale serves its names with real certificates
+            if let host = URL(string: text)?.host(percentEncoded: false), Self.isAddressOrLocalhost(host) && Self.isLocal(host) {
+                text = "http://" + text.dropFirst("https://".count)
+            }
         }
 
         guard
@@ -68,6 +75,18 @@ struct ServerAddress: Hashable {
         }
 
         return !Self.isLocal(host)
+    }
+
+    private static func isAddressOrLocalhost(_ host: String) -> Bool {
+        let host = host.trimmingCharacters(in: CharacterSet(charactersIn: "[]")).lowercased()
+
+        if host == "localhost" || host.contains(":") {
+            return true
+        }
+
+        let octets = host.split(separator: ".")
+
+        return octets.count == 4 && octets.allSatisfy { Int($0) != nil }
     }
 
     private static let localSuffixes = [".local", ".lan", ".home.arpa", ".internal", ".ts.net"]

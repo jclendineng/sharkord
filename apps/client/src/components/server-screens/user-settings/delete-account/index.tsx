@@ -68,6 +68,7 @@ const DeleteAccount = memo(() => {
       <Group
         label={t('deleteAccountWipeLabel')}
         description={t('deleteAccountWipeDesc')}
+        inline
       >
         <Switch checked={wipe} onCheckedChange={setWipe} />
       </Group>

@@ -143,11 +143,9 @@ const VoiceChannel = memo(({ channelId }: TChannelProps) => {
         {menuButton}
         <div className="text-center">
           <p className="text-muted-foreground text-lg mb-2">
-            No one in the voice channel
+            {t('voiceEmptyTitle')}
           </p>
-          <p className="text-muted-foreground text-sm">
-            Join the voice channel to start a meeting
-          </p>
+          <p className="text-muted-foreground text-sm">{t('voiceEmptyDesc')}</p>
         </div>
       </div>
     );

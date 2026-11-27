@@ -3,6 +3,7 @@ import {
   type TEmojiItem
 } from '@/components/tiptap-input/helpers';
 import { memo, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { VirtuosoGrid } from 'react-virtuoso';
 import { GRID_COLS } from './emoji-data';
 
@@ -49,6 +50,7 @@ type TEmojiGridProps = {
 };
 
 const EmojiGrid = memo(({ emojis, onSelect }: TEmojiGridProps) => {
+  const { t } = useTranslation('common');
   const rowCount = useMemo(
     () => Math.ceil(emojis.length / GRID_COLS),
     [emojis.length]
@@ -66,7 +68,7 @@ const EmojiGrid = memo(({ emojis, onSelect }: TEmojiGridProps) => {
   if (emojis.length === 0) {
     return (
       <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
-        No emojis found
+        {t('noEmojisFound')}
       </div>
     );
   }

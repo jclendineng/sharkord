@@ -12,6 +12,7 @@ import {
 } from '@sharkord/shared';
 import { format } from 'date-fns';
 import { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { BlockedMessages } from './blocked-messages';
 import { areGroupsEqual } from './helpers';
 import { useMessageAuthorName } from './hooks/use-message-author-name';
@@ -42,6 +43,7 @@ const MessagesGroup = memo(
     editingMessageId,
     onEditComplete
   }: TMessagesGroupProps) => {
+    const { t } = useTranslation('common');
     const firstMessage = group[0];
     const pluginMetadata = usePluginMetadata(firstMessage.pluginId);
     const user = useUserById(firstMessage.userId);
@@ -82,7 +84,7 @@ const MessagesGroup = memo(
             </span>
             {isBotMessage && (
               <span className="inline-flex items-center rounded-sm bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary-text/60 uppercase tracking-wide">
-                bot
+                {t('botBadge')}
               </span>
             )}
             <RelativeTime date={date}>

@@ -40,6 +40,11 @@ struct ServerSheet: View {
                 ServerIcon(server: session)
                     .frame(width: 64, height: 64)
                     .clipShape(.rect(cornerRadius: 18))
+                    // the initials' tile is the sheet's own grey in light mode, the edge keeps it a tile
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .stroke(Theme.panelEdge, lineWidth: 1)
+                    }
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text(session.displayName)

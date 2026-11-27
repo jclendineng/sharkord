@@ -14,7 +14,7 @@ const Users = memo(() => {
   }
 
   return (
-    <SettingsSection title={t('usersTitle')} description={t('usersDesc')}>
+    <SettingsSection title={t('membersTab')}>
       <UsersTable users={users} refetch={refetch} />
     </SettingsSection>
   );

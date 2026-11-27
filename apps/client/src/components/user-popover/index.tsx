@@ -23,6 +23,7 @@ import {
   UserStatus
 } from '@sharkord/shared';
 import {
+  Button,
   IconButton,
   Popover,
   PopoverContent,
@@ -239,6 +240,16 @@ const UserPopover = memo(({ userId, children }: TUserPopoverProps) => {
             </div>
           )}
           {!isOwnUser && !isDeleted && <UserNote userId={user.id} />}
+          {showDmButton && (
+            <Button
+              data-testid={TestId.USER_POPOVER_DM}
+              className="mt-4 w-full"
+              onClick={onDirectMessageClick}
+            >
+              <MessageSquare />
+              {t('directMessage')}
+            </Button>
+          )}
           <div className="flex justify-between items-center mt-4 pt-3 border-t border-border">
             <p className="text-xs text-muted-foreground">
               {t('memberSince', {
@@ -271,17 +282,6 @@ const UserPopover = memo(({ userId, children }: TUserPopoverProps) => {
                   size="sm"
                   title={isBlocked ? t('unblockUser') : t('blockUser')}
                   onClick={onBlockClick}
-                />
-              )}
-
-              {showDmButton && (
-                <IconButton
-                  data-testid={TestId.USER_POPOVER_DM}
-                  icon={MessageSquare}
-                  variant="ghost"
-                  size="sm"
-                  title={t('directMessage')}
-                  onClick={onDirectMessageClick}
                 />
               )}
 

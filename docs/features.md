@@ -718,7 +718,8 @@ has the same setting. Code `apps/server/src/utils/add-internal-ice-candidates.ts
 Overview, roles, members, invites, channels with per channel permissions, emoji, stickers,
 storage and plugins (marketplace, settings, who can use them, logs) are all in the
 app, each shown only to people with the permission for it. They use the same routes as the
-web client.
+web client. The web client lists the same pages in the same order, apart from Channels, which
+it manages in the sidebar. On an iPad and a Mac the pages run down the side of the window.
 
 ## Load test
 

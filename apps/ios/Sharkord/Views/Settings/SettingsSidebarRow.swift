@@ -59,8 +59,9 @@ struct SettingsWindow<Sidebar: View, Detail: View>: View {
 
     var body: some View {
         HStack(spacing: 0) {
+            // an ipad's larger text cut "Sign In Another Device" short at a mac's width
             sidebar
-                .frame(width: 260)
+                .frame(width: Platform.isPad ? 320 : 260)
                 .frame(maxHeight: .infinity)
 
             Theme.divider
@@ -127,14 +128,16 @@ extension View {
     func settingsPage(onClose close: (() -> Void)?) -> some View {
         navigationBarBackground(Theme.deepBackground)
             .navigationBarBackgroundVisible()
-            #if os(macOS)
             .toolbar {
                 if let close {
                     ActionToolbarItem(placement: .cancellationAction) {
+                        #if os(macOS)
                         Button("Close", action: close)
+                        #else
+                        Button("Close", systemImage: "xmark", action: close)
+                        #endif
                     }
                 }
             }
-            #endif
     }
 }

@@ -18,9 +18,15 @@ struct ServerSettingsScreen: View {
         }
     }
 
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
+    // an ipad's page is as wide as a mac's sheet, so it gets the pages down the side too
     var body: some View {
         if Platform.isMac {
             splitView
+        } else if Platform.isPad && horizontalSizeClass == .regular {
+            splitView
+                .presentationSizing(.page)
         } else {
             stackView
         }

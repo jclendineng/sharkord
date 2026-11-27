@@ -22,6 +22,7 @@ import {
   VideoOff
 } from 'lucide-react';
 import { memo, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ControlToggleButton } from './control-toggle-button';
 import { ReactionsButton } from './reactions-button';
 import { SoundboardButton } from './soundboard-button';
@@ -31,6 +32,7 @@ type TControlsBarProps = {
 };
 
 const ControlsBar = memo(({ channelId }: TControlsBarProps) => {
+  const { t } = useTranslation('common');
   const {
     toggleMic,
     toggleSound,
@@ -139,7 +141,7 @@ const ControlsBar = memo(({ channelId }: TControlsBarProps) => {
           </Protect>
         )}
       </div>
-      <Tooltip content="Disconnect">
+      <Tooltip content={t('leaveVoice')}>
         <Button
           className={cn(
             'inline-flex h-auto self-stretch min-w-11 items-center justify-center rounded px-3 border border-border',
@@ -147,7 +149,7 @@ const ControlsBar = memo(({ channelId }: TControlsBarProps) => {
             'bg-[#ec4245] hover:bg-[#da373c]'
           )}
           onClick={handleLeaveVoice}
-          aria-label="Disconnect"
+          aria-label={t('leaveVoice')}
         >
           <PhoneOff className="size-4" fill="currentColor" />
         </Button>

@@ -36,7 +36,8 @@ const Emoji = memo(
       );
     }
 
-    if (failed) {
+    // nothing to load, the same as a picture that failed: an empty src asks for the page itself
+    if (failed || !imgSrc) {
       return <span className="text-xs text-muted-foreground">:{emoji}:</span>;
     }
 

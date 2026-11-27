@@ -50,6 +50,9 @@ const ServerView = memo(() => {
     hasOpenChannel = !!selectedDmChannelId;
   }
 
+  // the server's members have nothing to do with picking a conversation
+  const isDmHome = dmsOpen && !selectedDmChannelId;
+
   const handleDesktopRightSidebarToggle = useCallback(() => {
     setIsDesktopRightSidebarOpen((prev) => !prev);
     setLocalStorageItemBool(
@@ -124,6 +127,7 @@ const ServerView = memo(() => {
         <TopBar
           onToggleRightSidebar={handleDesktopRightSidebarToggle}
           isOpen={isDesktopRightSidebarOpen}
+          canToggleMembers={!isDmHome}
         />
         <div className="relative flex min-h-0 flex-1 overflow-hidden">
           <PreventBrowser />
@@ -160,17 +164,19 @@ const ServerView = memo(() => {
 
           <ThreadSidebar isOpen={isThreadSidebarOpen} />
 
-          <RightSidebar
-            className={cn(
-              'fixed top-0 bottom-0 right-0 h-full z-40',
-              'lg:relative lg:z-0',
-              'transition-transform duration-300 ease-sheet motion-reduce:transition-none lg:transition-[width] lg:duration-200 lg:ease-out',
-              isMobileUsersOpen
-                ? 'translate-x-0 lg:translate-x-0'
-                : 'translate-x-full lg:translate-x-0'
-            )}
-            isOpen={isMobileUsersOpen || isDesktopRightSidebarOpen}
-          />
+          {!isDmHome && (
+            <RightSidebar
+              className={cn(
+                'fixed top-0 bottom-0 right-0 h-full z-40',
+                'lg:relative lg:z-0',
+                'transition-transform duration-300 ease-sheet motion-reduce:transition-none lg:transition-[width] lg:duration-200 lg:ease-out',
+                isMobileUsersOpen
+                  ? 'translate-x-0 lg:translate-x-0'
+                  : 'translate-x-full lg:translate-x-0'
+              )}
+              isOpen={isMobileUsersOpen || isDesktopRightSidebarOpen}
+            />
+          )}
 
           <Protect permission={USER_MODERATION_PERMISSIONS}>
             <ModViewSheet />

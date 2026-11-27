@@ -39,10 +39,23 @@ struct AvatarView: View {
         ZStack {
             LinearGradient(colors: gradient, startPoint: .topLeading, endPoint: .bottomTrailing)
 
-            Image(systemName: "person.fill")
-                .font(.system(size: size * 0.5))
-                .foregroundStyle(.white)
+            if let user {
+                Text(Self.initials(of: user.name))
+                    .font(.system(size: size * 0.4, weight: .semibold))
+                    .foregroundStyle(.white)
+            } else {
+                Image(systemName: "person.fill")
+                    .font(.system(size: size * 0.5))
+                    .foregroundStyle(.white)
+            }
         }
+    }
+
+    // getInitialsFromName on the web: the first letter of the first two words
+    private static func initials(of name: String) -> String {
+        let words = name.split(separator: " ").prefix(2)
+
+        return words.compactMap(\.first).map { String($0).uppercased() }.joined()
     }
 
     // getAvatarGradient in packages/shared: a picked profile color, otherwise a hue from the id

@@ -64,6 +64,7 @@ const ServerDropdownMenu = memo(() => {
           data-testid={TestId.SERVER_MENU_TRIGGER}
           variant="ghost"
           size="icon"
+          aria-label={t('server')}
         >
           <Menu className="h-4 w-4 text-muted-foreground" />
         </Button>

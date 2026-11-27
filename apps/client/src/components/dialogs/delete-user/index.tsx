@@ -77,7 +77,7 @@ const DeleteUserDialog = memo(
             </AlertDialogTitle>
           </AlertDialogHeader>
           <div className="flex flex-col gap-4">
-            <Group label={t('wipeAllDataLabel')}>
+            <Group label={t('wipeAllDataLabel')} inline>
               <Switch checked={wipe} onCheckedChange={setWipe} />
             </Group>
 

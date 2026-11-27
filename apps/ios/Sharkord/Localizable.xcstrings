@@ -1,6 +1,696 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Check your other device": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zkontrolujte druhé zařízení"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revisa tu otro dispositivo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vérifiez votre autre appareil"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Controlla l'altro dispositivo"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verifique seu outro dispositivo"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверьте другое устройство"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看你的另一台设备"
+          }
+        }
+      }
+    },
+    "Approve signing in on the device showing the code. It's waiting under Settings, Sign In Another Device.": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schvalte přihlášení na zařízení, které ukazuje kód. Čeká v Nastavení, Přihlásit jiné zařízení."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aprueba el inicio de sesión en el dispositivo que muestra el código. Está en Ajustes, Iniciar sesión en otro dispositivo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Approuvez la connexion sur l'appareil qui affiche le code. Elle attend dans Réglages, Connecter un autre appareil."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Approva l'accesso sul dispositivo che mostra il codice. È in attesa in Impostazioni, Accedi con un altro dispositivo."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aprove a entrada no dispositivo que mostra o código. Ela aguarda em Configurações, Entrar com outro dispositivo."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подтвердите вход на устройстве, где показан код. Запрос ждёт в Настройках, «Войти с другого устройства»."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在显示代码的设备上批准登录。它在“设置”的“登录另一台设备”中等待。"
+          }
+        }
+      }
+    },
+    "Scan with your phone": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naskenujte telefonem"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escanea con tu teléfono"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scannez avec votre téléphone"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scansiona con il telefono"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escaneie com seu celular"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отсканируйте телефоном"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用手机扫描"
+          }
+        }
+      }
+    },
+    "On a phone signed in to this server, open Sharkord, go to Settings, Sign In Another Device and tap Scan a Code Instead. Its camera app works too.": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na telefonu přihlášeném k tomuto serveru otevřete Sharkord, přejděte do Nastavení, Přihlásit jiné zařízení a klepněte na Naskenovat kód. Funguje i aplikace Fotoaparát."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En un teléfono con sesión en este servidor, abre Sharkord, ve a Ajustes, Iniciar sesión en otro dispositivo y toca Escanear un código. La app Cámara también sirve."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sur un téléphone connecté à ce serveur, ouvrez Sharkord, allez dans Réglages, Connecter un autre appareil et touchez Scanner un code à la place. L'app Appareil photo marche aussi."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Su un telefono collegato a questo server, apri Sharkord, vai in Impostazioni, Accedi con un altro dispositivo e tocca Scansiona un codice. Funziona anche l'app Fotocamera."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Em um celular conectado a este servidor, abra o Sharkord, vá em Configurações, Entrar com outro dispositivo e toque em Escanear um código. O app Câmera também funciona."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На телефоне, где выполнен вход на этот сервер, откройте Sharkord, перейдите в Настройки, «Войти с другого устройства» и нажмите «Сканировать код». Подойдёт и приложение Камера."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在已登录此服务器的手机上打开 Sharkord，前往“设置”的“登录另一台设备”，然后轻点“改为扫描代码”。也可以用相机 App。"
+          }
+        }
+      }
+    },
+    "Enter your server": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadejte svůj server"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Introduce tu servidor"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saisissez votre serveur"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inserisci il tuo server"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digite seu servidor"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Введите адрес сервера"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "输入你的服务器"
+          }
+        }
+      }
+    },
+    "The address you use to reach it, like chat.example.com, or the invite link you were sent.": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adresa, na které ho najdete, například chat.example.com, nebo odkaz s pozvánkou, který jste dostali."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La dirección que usas para acceder, como chat.example.com, o el enlace de invitación que te enviaron."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'adresse que vous utilisez pour y accéder, comme chat.example.com, ou le lien d'invitation reçu."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'indirizzo che usi per raggiungerlo, come chat.example.com, o il link di invito che hai ricevuto."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O endereço que você usa para acessá-lo, como chat.example.com, ou o link de convite que recebeu."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Адрес, по которому он открывается, например chat.example.com, или присланная ссылка-приглашение."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你访问它所用的地址，例如 chat.example.com，或收到的邀请链接。"
+          }
+        }
+      }
+    },
+    "Welcome back!": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vítejte zpět!"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¡Hola de nuevo!"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bon retour !"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bentornato!"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bem-vindo de volta!"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "С возвращением!"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "欢迎回来！"
+          }
+        }
+      }
+    },
+    "Log in to pick up where you left off.": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Přihlaste se a pokračujte, kde jste skončili."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicia sesión para seguir donde lo dejaste."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connectez-vous pour reprendre là où vous en étiez."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accedi per riprendere da dove avevi lasciato."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entre para continuar de onde parou."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Войдите, чтобы продолжить с того места, где остановились."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登录以从上次离开的地方继续。"
+          }
+        }
+      }
+    },
+    "Create an account": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vytvořit účet"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crear una cuenta"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Créer un compte"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crea un account"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Criar uma conta"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Создать аккаунт"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "创建账户"
+          }
+        }
+      }
+    },
+    "Join %@.": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Připojte se k %@."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Únete a %@."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rejoignez %@."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unisciti a %@."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entre em %@."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Присоединяйтесь к %@."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加入 %@。"
+          }
+        }
+      }
+    },
+    "Join the server.": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Připojte se k serveru."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Únete al servidor."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rejoignez le serveur."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unisciti al server."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entre no servidor."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Присоединяйтесь к серверу."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加入服务器。"
+          }
+        }
+      }
+    },
+    "Show a New Code": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zobrazit nový kód"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar un código nuevo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher un nouveau code"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra un nuovo codice"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar um novo código"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показать новый код"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示新代码"
+          }
+        }
+      }
+    },
+    "Next": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Další"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Siguiente"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suivant"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avanti"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Próximo"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Далее"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下一步"
+          }
+        }
+      }
+    },
+    "Create Account": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vytvořit účet"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crear cuenta"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Créer un compte"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crea account"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Criar conta"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Создать аккаунт"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "创建账户"
+          }
+        }
+      }
+    },
+    "Log In Instead": {
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raději se přihlásit"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iniciar sesión en su lugar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se connecter plutôt"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accedi invece"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entrar em vez disso"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Войти вместо этого"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "改为登录"
+          }
+        }
+      }
+    },
     "Add a Server": {
       "localizations": {
         "cs": {
@@ -13477,48 +14167,48 @@
         }
       }
     },
-    "For a device without a camera, like a Mac mini: it shows a code under Sign In With Another Device, and you scan it here.": {
+    "For a device without a camera, like a Mac mini: it shows a code under Log In With a QR Code, and you scan it here.": {
       "localizations": {
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pro zařízení bez kamery, například Mac mini: zobrazí kód v části Přihlásit jiným zařízením a vy ho naskenujete tady."
+            "value": "Pro zařízení bez kamery, například Mac mini: zobrazí kód v části Přihlásit se QR kódem a vy ho naskenujete tady."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Para un dispositivo sin cámara, como un Mac mini: muestra un código en Iniciar sesión con otro dispositivo y lo escaneas aquí."
+            "value": "Para un dispositivo sin cámara, como un Mac mini: muestra un código en Iniciar sesión con un código QR y lo escaneas aquí."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pour un appareil sans caméra, comme un Mac mini : il affiche un code sous Se connecter avec un autre appareil, et vous le scannez ici."
+            "value": "Pour un appareil sans caméra, comme un Mac mini : il affiche un code sous Se connecter avec un code QR, et vous le scannez ici."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Per un dispositivo senza fotocamera, come un Mac mini: mostra un codice in Accedi con un altro dispositivo e tu lo scansioni qui."
+            "value": "Per un dispositivo senza fotocamera, come un Mac mini: mostra un codice in Accedi con un codice QR e tu lo scansioni qui."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Para um dispositivo sem câmera, como um Mac mini: ele mostra um código em Entrar com outro dispositivo, e você o escaneia aqui."
+            "value": "Para um dispositivo sem câmera, como um Mac mini: ele mostra um código em Entrar com um código QR, e você o escaneia aqui."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Для устройства без камеры, например Mac mini: оно показывает код в разделе «Войти с другого устройства», а вы сканируете его здесь."
+            "value": "Для устройства без камеры, например Mac mini: оно показывает код в разделе «Войти по QR-коду», а вы сканируете его здесь."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "用于没有相机的设备（如 Mac mini）：它会在“用其他设备登录”下显示代码，你在这里扫描即可。"
+            "value": "用于没有相机的设备（如 Mac mini）：它会在“用二维码登录”下显示代码，你在这里扫描即可。"
           }
         }
       }
@@ -22420,54 +23110,54 @@
         }
       }
     },
-    "On the other device, open Sharkord and tap Scan a QR Code, or point its camera at this code. You'll approve it here before it's signed in.": {
+    "On the other device, open Sharkord and tap Log In With a QR Code, or point its camera at this code. You'll approve it here before it's signed in.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "On the other device, open Sharkord and tap Scan a QR Code, or point its camera at this code. You’ll approve it here before it’s signed in."
+            "value": "On the other device, open Sharkord and tap Log In With a QR Code, or point its camera at this code. You’ll approve it here before it’s signed in."
           }
         },
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Na druhém zařízení otevřete Sharkord a klepněte na Naskenovat QR kód, nebo na tento kód namiřte jeho kameru. Než se přihlásí, schválíte ho tady."
+            "value": "Na druhém zařízení otevřete Sharkord a klepněte na Přihlásit se QR kódem, nebo na tento kód namiřte jeho kameru. Než se přihlásí, schválíte ho tady."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "En el otro dispositivo, abre Sharkord y toca Escanear un código QR, o apunta su cámara a este código. Lo aprobarás aquí antes de que inicie sesión."
+            "value": "En el otro dispositivo, abre Sharkord y toca Iniciar sesión con un código QR, o apunta su cámara a este código. Lo aprobarás aquí antes de que inicie sesión."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sur l’autre appareil, ouvrez Sharkord et touchez Scanner un code QR, ou visez ce code avec sa caméra. Vous l’approuverez ici avant qu’il soit connecté."
+            "value": "Sur l’autre appareil, ouvrez Sharkord et touchez Se connecter avec un code QR, ou visez ce code avec sa caméra. Vous l’approuverez ici avant qu’il soit connecté."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sull’altro dispositivo apri Sharkord e tocca Scansiona un codice QR, oppure inquadra questo codice con la sua fotocamera. Lo approverai qui prima che acceda."
+            "value": "Sull’altro dispositivo apri Sharkord e tocca Accedi con un codice QR, oppure inquadra questo codice con la sua fotocamera. Lo approverai qui prima che acceda."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "No outro dispositivo, abra o Sharkord e toque em Escanear um código QR, ou aponte a câmera dele para este código. Você vai aprová-lo aqui antes de ele entrar."
+            "value": "No outro dispositivo, abra o Sharkord e toque em Entrar com um código QR, ou aponte a câmera dele para este código. Você vai aprová-lo aqui antes de ele entrar."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "На другом устройстве откройте Sharkord и нажмите «Сканировать QR-код» или наведите его камеру на этот код. Вы подтвердите его здесь, прежде чем оно войдёт."
+            "value": "На другом устройстве откройте Sharkord и нажмите «Войти по QR-коду» или наведите его камеру на этот код. Вы подтвердите его здесь, прежде чем оно войдёт."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "在另一台设备上打开 Sharkord 并轻点“扫描二维码”，或用它的相机对准这个代码。它登录前，你会在这里批准。"
+            "value": "在另一台设备上打开 Sharkord 并轻点“用二维码登录”，或用它的相机对准这个代码。它登录前，你会在这里批准。"
           }
         }
       }

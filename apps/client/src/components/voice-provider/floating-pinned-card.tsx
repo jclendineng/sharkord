@@ -9,6 +9,7 @@ import type { TRemoteStreams } from '@/types';
 import { IconButton } from '@sharkord/ui';
 import { ArrowDownLeft, SendToBack, X } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CardControls } from '../channel-view/voice/card-controls';
 import { PinnedCardType } from '../channel-view/voice/hooks/use-pin-card-controller';
 import { useFloatingCard } from './hooks/use-floating-card';
@@ -28,6 +29,7 @@ const FloatingPinnedCard = memo(
     localVideoStream,
     localScreenShareStream
   }: TFloatingPinnedCardProps) => {
+    const { t } = useTranslation('common');
     const { cardRef, handleMouseDown, getStyle, resetCard } = useFloatingCard();
     const videoRef = useRef<HTMLVideoElement>(null);
     const [open, setOpen] = useState(true);
@@ -102,21 +104,21 @@ const FloatingPinnedCard = memo(
             icon={ArrowDownLeft}
             size="sm"
             variant="ghost"
-            title="Go To Voice Channel"
+            title={t('goToVoiceChannel')}
             onClick={onGoToVoiceChannelClick}
           />
           <IconButton
             icon={SendToBack}
             size="sm"
             variant="ghost"
-            title="Reset Position"
+            title={t('resetPosition')}
             onClick={resetCard}
           />
           <IconButton
             icon={X}
             size="sm"
             variant="ghost"
-            title="Close"
+            title={t('close')}
             onClick={onCloseClick}
           />
         </CardControls>

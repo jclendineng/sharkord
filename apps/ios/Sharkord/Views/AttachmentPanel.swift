@@ -689,8 +689,10 @@ final class AttachPanelModel {
     }
 
     // how far the composer and the panel have been pushed down past the resting height
+    // nothing without a drag: settledHeight is kept from before a keyboard first shows, and a
+    // resting height that grew past it pushed the composer off the bottom after signing in
     var slideOffset: CGFloat {
-        max(0, dragOffset - (settledHeight - Self.restingHeight))
+        max(0, dragOffset - max(0, settledHeight - Self.restingHeight))
     }
 
     var isDragging: Bool {

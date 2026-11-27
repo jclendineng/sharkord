@@ -253,17 +253,19 @@ const InstalledPlugins = memo(
         title={t('pluginsTitle')}
         description={t('pluginsManageDesc')}
         action={
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={isRefreshing || loading || !enabled}
-          >
-            <RefreshCw
-              className={cn('h-4 w-4', isRefreshing && 'animate-spin')}
-            />
-            {t('refreshBtn')}
-          </Button>
+          enabled && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing || loading}
+            >
+              <RefreshCw
+                className={cn('h-4 w-4', isRefreshing && 'animate-spin')}
+              />
+              {t('refreshBtn')}
+            </Button>
+          )
         }
       >
         {content}

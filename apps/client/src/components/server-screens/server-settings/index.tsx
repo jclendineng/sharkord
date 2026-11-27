@@ -45,7 +45,7 @@ const ServerSettings = memo(({ close }: TServerSettingsProps) => {
     const all = [
       {
         id: 'general',
-        label: t('generalTab'),
+        label: t('overviewTab'),
         icon: Settings,
         content: <General />,
         permission: Permission.MANAGE_SETTINGS
@@ -79,15 +79,8 @@ const ServerSettings = memo(({ close }: TServerSettingsProps) => {
         permission: Permission.MANAGE_SOUNDBOARD
       },
       {
-        id: 'storage',
-        label: t('storageTab'),
-        icon: Package,
-        content: <Storage />,
-        permission: Permission.MANAGE_STORAGE
-      },
-      {
         id: 'users',
-        label: t('usersTab'),
+        label: t('membersTab'),
         icon: Users,
         content: <UsersSection />,
         permission: USER_MODERATION_PERMISSIONS
@@ -98,6 +91,13 @@ const ServerSettings = memo(({ close }: TServerSettingsProps) => {
         icon: Mail,
         content: <Invites />,
         permission: Permission.MANAGE_INVITES
+      },
+      {
+        id: 'storage',
+        label: t('storageTab'),
+        icon: Package,
+        content: <Storage />,
+        permission: Permission.MANAGE_STORAGE
       },
       {
         id: 'plugins',

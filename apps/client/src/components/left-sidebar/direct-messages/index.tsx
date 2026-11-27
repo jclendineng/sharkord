@@ -64,10 +64,7 @@ const DirectMessages = memo(() => {
 
   return (
     <div className="flex-1 overflow-y-auto p-2">
-      <div className="mb-1 flex items-center justify-between px-2 py-1">
-        <span className="text-xs font-semibold text-muted-foreground">
-          {t('directMessages')}
-        </span>
+      <div className="mb-1 flex items-center justify-end px-2 py-1">
         <div className="flex items-center">
           <div className="relative">
             <IconButton

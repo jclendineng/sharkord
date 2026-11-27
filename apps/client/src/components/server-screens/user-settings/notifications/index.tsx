@@ -16,13 +16,24 @@ import {
   useMessageSentSound,
   useNotificationSounds
 } from '@/features/app/hooks';
-import { Group, Switch } from '@sharkord/ui';
+import {
+  Group,
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Switch
+} from '@sharkord/ui';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
+// one choice over the two stored flags: all wins over mentions, so they never both apply
+type TMessageLevel = 'all' | 'mentions' | 'off';
+
 type TNotificationsValues = {
-  all: boolean;
-  mentions: boolean;
+  level: TMessageLevel;
   dms: boolean;
   replies: boolean;
   sounds: boolean;
@@ -39,28 +50,31 @@ const Notifications = memo(() => {
   const sentSound = useMessageSentSound();
 
   const onSave = useCallback(async (values: TNotificationsValues) => {
-    // TODO: refactor this later
-    setBrowserNotifications(values.all);
-    setBrowserNotificationsForMentions(values.mentions);
+    setBrowserNotifications(values.level === 'all');
+    setBrowserNotificationsForMentions(values.level === 'mentions');
     setBrowserNotificationsForDms(values.dms);
     setBrowserNotificationsForReplies(values.replies);
     setNotificationSounds(values.sounds);
     setMessageSentSound(values.sentSound);
   }, []);
 
+  let level: TMessageLevel = 'off';
+
+  if (all) {
+    level = 'all';
+  } else if (mentions) {
+    level = 'mentions';
+  }
+
   const { values, onChange } = useSettingsForm<TNotificationsValues>({
-    initialValues: { all, mentions, dms, replies, sounds, sentSound },
+    initialValues: { level, dms, replies, sounds, sentSound },
     onSave,
     successMessage: t('notificationsUpdated'),
     errorMessage: t('failedUpdateNotifications')
   });
 
-  const handleAllChange = useCallback(
-    (value: boolean) => onChange('all', value),
-    [onChange]
-  );
-  const handleMentionsChange = useCallback(
-    (value: boolean) => onChange('mentions', value),
+  const handleLevelChange = useCallback(
+    (value: string) => onChange('level', value as TMessageLevel),
     [onChange]
   );
   const handleDmsChange = useCallback(
@@ -85,36 +99,47 @@ const Notifications = memo(() => {
       title={t('notificationsTitle')}
       description={t('notificationsDesc')}
     >
-      <Group label={t('allMessagesLabel')} description={t('allMessagesDesc')}>
-        <Switch checked={values.all} onCheckedChange={handleAllChange} />
-      </Group>
-      <Group label={t('mentionsOnlyLabel')} description={t('mentionsOnlyDesc')}>
-        <Switch
-          checked={values.mentions}
-          onCheckedChange={handleMentionsChange}
-        />
+      <Group label={t('messageLevelLabel')} description={t('messageLevelDesc')}>
+        <Select value={values.level} onValueChange={handleLevelChange}>
+          <SelectTrigger className="w-64">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="all">{t('messageLevelAll')}</SelectItem>
+              <SelectItem value="mentions">
+                {t('messageLevelMentions')}
+              </SelectItem>
+              <SelectItem value="off">{t('messageLevelOff')}</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
       </Group>
       <Group
         label={t('dmNotificationsLabel')}
         description={t('dmNotificationsDesc')}
+        inline
       >
         <Switch checked={values.dms} onCheckedChange={handleDmsChange} />
       </Group>
       <Group
         label={t('repliesNotificationsLabel')}
         description={t('repliesNotificationsDesc')}
+        inline
       >
         <Switch
-          checked={values.replies}
+          checked={values.replies || values.level === 'all'}
+          disabled={values.level === 'all'}
           onCheckedChange={handleRepliesChange}
         />
       </Group>
-      <Group label={t('soundsLabel')} description={t('soundsDesc')}>
+      <Group label={t('soundsLabel')} description={t('soundsDesc')} inline>
         <Switch checked={values.sounds} onCheckedChange={handleSoundsChange} />
       </Group>
       <Group
         label={t('messageSentSoundLabel')}
         description={t('messageSentSoundDesc')}
+        inline
       >
         <Switch
           checked={values.sentSound}

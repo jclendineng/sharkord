@@ -213,205 +213,225 @@ const General = memo(() => {
   }
 
   return (
-    <SettingsSection
-      title={t('serverInfoTitle')}
-      description={t('serverInfoDesc')}
-    >
-      <Group label={t('nameLabel')}>
-        <Input placeholder={t('namePlaceholder')} {...r('name')} />
-      </Group>
-
-      <Group label={t('descriptionLabel')}>
-        <Textarea
-          rows={4}
-          placeholder={t('descriptionPlaceholder')}
-          {...r('description')}
-        />
-      </Group>
-
-      <Group label={t('serverPasswordLabel')}>
-        <Input
-          placeholder={t('serverPasswordPlaceholder')}
-          {...r('password', 'password')}
-        />
-      </Group>
-
-      <Group
-        label={t('onlyAskForPasswordOnFirstJoinLabel')}
-        description={t('onlyAskForPasswordOnFirstJoinDesc')}
+    <div className="space-y-4">
+      <SettingsSection
+        title={t('serverInfoTitle')}
+        description={t('serverInfoDesc')}
       >
-        <Switch
-          checked={values.onlyAskForPasswordOnFirstJoin}
-          onCheckedChange={handlePasswordOnFirstJoinChange}
+        <Group label={t('nameLabel')}>
+          <Input placeholder={t('namePlaceholder')} {...r('name')} />
+        </Group>
+
+        <Group label={t('descriptionLabel')}>
+          <Textarea
+            rows={4}
+            placeholder={t('descriptionPlaceholder')}
+            {...r('description')}
+          />
+        </Group>
+
+        <ImagePicker
+          label={t('logoLabel')}
+          description={t('logoDesc')}
+          className="h-24 w-80 object-scale-down"
+          currentUrl={getFileUrl(settings?.logo)}
+          draft={values.logo}
+          onChange={handleLogoChange}
+          cropsToSquare
+          refusesGif
         />
-      </Group>
+      </SettingsSection>
+      <SettingsSection title={t('generalAccessTitle')}>
+        <Group label={t('serverPasswordLabel')}>
+          <Input
+            placeholder={t('serverPasswordPlaceholder')}
+            {...r('password', 'password')}
+          />
+        </Group>
 
-      <ImagePicker
-        label={t('logoLabel')}
-        description={t('logoDesc')}
-        className="h-24 w-80 object-scale-down"
-        currentUrl={getFileUrl(settings?.logo)}
-        draft={values.logo}
-        onChange={handleLogoChange}
-        cropsToSquare
-        refusesGif
-      />
-
-      <Group
-        label={t('allowNewUsersLabel')}
-        description={t('allowNewUsersDesc')}
-      >
-        <Switch
-          checked={values.allowNewUsers}
-          onCheckedChange={handleAllowNewUsersChange}
-        />
-      </Group>
-
-      <Group label={t('pluginsLabel')} description={t('pluginsDesc')}>
-        <Switch
-          checked={values.enablePlugins}
-          onCheckedChange={handleEnablePluginsChange}
-        />
-      </Group>
-
-      <Group label={t('simulcastLabel')} description={t('simulcastDesc')}>
-        <Switch
-          checked={values.webRtcSimulcastEnabled}
-          onCheckedChange={handleSimulcastChange}
-        />
-      </Group>
-
-      <Group
-        label={t('directMessagesEnabledLabel')}
-        description={t('directMessagesEnabledDesc')}
-      >
-        <Switch
-          checked={values.directMessagesEnabled}
-          onCheckedChange={handleDirectMessagesChange}
-        />
-      </Group>
-
-      <Group
-        label={t('searchEnabledLabel')}
-        description={t('searchEnabledDesc')}
-      >
-        <Switch
-          checked={values.enableSearch}
-          onCheckedChange={handleSearchChange}
-        />
-      </Group>
-
-      <Group
-        label={t('showWelcomeDialogLabel')}
-        description={t('showWelcomeDialogDesc')}
-      >
-        <Switch
-          checked={values.showWelcomeDialog}
-          onCheckedChange={handleWelcomeDialogChange}
-        />
-      </Group>
-
-      <Group label={t('afkChannelLabel')} description={t('afkChannelDesc')}>
-        <Select
-          value={values.afkChannelId}
-          onValueChange={handleAfkChannelChange}
+        <Group
+          label={t('onlyAskForPasswordOnFirstJoinLabel')}
+          description={t('onlyAskForPasswordOnFirstJoinDesc')}
+          inline
         >
-          <SelectTrigger className="w-64">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              <SelectItem value={AFK_OFF}>{t('afkChannelNone')}</SelectItem>
-              {voiceChannels.map((channel) => (
-                <SelectItem key={channel.id} value={String(channel.id)}>
-                  {channel.name}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-      </Group>
+          <Switch
+            checked={values.onlyAskForPasswordOnFirstJoin}
+            onCheckedChange={handlePasswordOnFirstJoinChange}
+          />
+        </Group>
 
-      <Group label={t('afkTimeoutLabel')}>
-        <Select
-          value={values.afkTimeoutSeconds}
-          onValueChange={handleAfkTimeoutChange}
-          disabled={values.afkChannelId === AFK_OFF}
+        <Group
+          label={t('allowNewUsersLabel')}
+          description={t('allowNewUsersDesc')}
+          inline
         >
-          <SelectTrigger className="w-64">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              {AFK_TIMEOUT_OPTIONS_SECONDS.map((seconds) => (
-                <SelectItem key={seconds} value={String(seconds)}>
-                  {t('afkTimeoutMinutes', { count: seconds / 60 })}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-      </Group>
+          <Switch
+            checked={values.allowNewUsers}
+            onCheckedChange={handleAllowNewUsersChange}
+          />
+        </Group>
+      </SettingsSection>
+      <SettingsSection title={t('generalFeaturesTitle')}>
+        <Group
+          label={t('directMessagesEnabledLabel')}
+          description={t('directMessagesEnabledDesc')}
+          inline
+        >
+          <Switch
+            checked={values.directMessagesEnabled}
+            onCheckedChange={handleDirectMessagesChange}
+          />
+        </Group>
 
-      <Group label={t('reportEmailLabel')} description={t('reportEmailDesc')}>
-        <Input
-          {...r('reportEmail')}
-          type="email"
-          placeholder={t('reportEmailPlaceholder')}
-        />
-      </Group>
+        <Group
+          label={t('searchEnabledLabel')}
+          description={t('searchEnabledDesc')}
+          inline
+        >
+          <Switch
+            checked={values.enableSearch}
+            onCheckedChange={handleSearchChange}
+          />
+        </Group>
 
-      <Group label={t('klipyApiKeyLabel')} description={t('klipyApiKeyDesc')}>
-        <Input
-          {...r('klipyApiKey')}
-          type="password"
-          autoComplete="off"
-          placeholder={t('klipyApiKeyPlaceholder')}
-        />
-      </Group>
+        <Group label={t('pluginsLabel')} description={t('pluginsDesc')} inline>
+          <Switch
+            checked={values.enablePlugins}
+            onCheckedChange={handleEnablePluginsChange}
+          />
+        </Group>
 
-      <Group
-        label={t('freesoundApiKeyLabel')}
-        description={t('freesoundApiKeyDesc')}
-      >
-        <Input
-          {...r('freesoundApiKey')}
-          type="password"
-          autoComplete="off"
-          placeholder={t('freesoundApiKeyPlaceholder')}
-        />
-      </Group>
+        <Group
+          label={t('showWelcomeDialogLabel')}
+          description={t('showWelcomeDialogDesc')}
+          inline
+        >
+          <Switch
+            checked={values.showWelcomeDialog}
+            onCheckedChange={handleWelcomeDialogChange}
+          />
+        </Group>
 
-      <Group
-        label={t('pushShowMessageContentLabel')}
-        description={t('pushShowMessageContentDesc')}
-      >
-        <Switch
-          checked={values.pushShowMessageContent}
-          onCheckedChange={handlePushContentChange}
-        />
-      </Group>
+        <Group
+          label={t('simulcastLabel')}
+          description={t('simulcastDesc')}
+          inline
+        >
+          <Switch
+            checked={values.webRtcSimulcastEnabled}
+            onCheckedChange={handleSimulcastChange}
+          />
+        </Group>
+      </SettingsSection>
+      <SettingsSection title={t('generalAfkTitle')}>
+        <Group label={t('afkChannelLabel')} description={t('afkChannelDesc')}>
+          <Select
+            value={values.afkChannelId}
+            onValueChange={handleAfkChannelChange}
+          >
+            <SelectTrigger className="w-64">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectItem value={AFK_OFF}>{t('afkChannelNone')}</SelectItem>
+                {voiceChannels.map((channel) => (
+                  <SelectItem key={channel.id} value={String(channel.id)}>
+                    {channel.name}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </Group>
 
-      <Group
-        label={t('pushRelayEnabledLabel')}
-        description={t('pushRelayEnabledDesc')}
-      >
-        <Switch
-          checked={values.pushRelayEnabled}
-          onCheckedChange={handlePushRelayChange}
-        />
-      </Group>
+        <Group label={t('afkTimeoutLabel')}>
+          <Select
+            value={values.afkTimeoutSeconds}
+            onValueChange={handleAfkTimeoutChange}
+            disabled={values.afkChannelId === AFK_OFF}
+          >
+            <SelectTrigger className="w-64">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {AFK_TIMEOUT_OPTIONS_SECONDS.map((seconds) => (
+                  <SelectItem key={seconds} value={String(seconds)}>
+                    {t('afkTimeoutMinutes', { count: seconds / 60 })}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </Group>
+      </SettingsSection>
+      <SettingsSection title={t('generalIntegrationsTitle')}>
+        <Group label={t('reportEmailLabel')} description={t('reportEmailDesc')}>
+          <Input
+            {...r('reportEmail')}
+            type="email"
+            placeholder={t('reportEmailPlaceholder')}
+          />
+        </Group>
 
-      <Group
-        label={t('linkPreviewsPrivateNetworkLabel')}
-        description={t('linkPreviewsPrivateNetworkDesc')}
-      >
-        <Switch
-          checked={values.linkPreviewsPrivateNetwork}
-          onCheckedChange={handlePrivatePreviewsChange}
-        />
-      </Group>
-    </SettingsSection>
+        <Group label={t('klipyApiKeyLabel')} description={t('klipyApiKeyDesc')}>
+          <Input
+            {...r('klipyApiKey')}
+            type="password"
+            autoComplete="off"
+            placeholder={t('klipyApiKeyPlaceholder')}
+          />
+        </Group>
+
+        <Group
+          label={t('freesoundApiKeyLabel')}
+          description={t('freesoundApiKeyDesc')}
+        >
+          <Input
+            {...r('freesoundApiKey')}
+            type="password"
+            autoComplete="off"
+            placeholder={t('freesoundApiKeyPlaceholder')}
+          />
+        </Group>
+      </SettingsSection>
+      <SettingsSection title={t('generalPushTitle')}>
+        <Group
+          label={t('pushShowMessageContentLabel')}
+          description={t('pushShowMessageContentDesc')}
+          inline
+        >
+          <Switch
+            checked={values.pushShowMessageContent}
+            onCheckedChange={handlePushContentChange}
+          />
+        </Group>
+
+        <Group
+          label={t('pushRelayEnabledLabel')}
+          description={t('pushRelayEnabledDesc')}
+          inline
+        >
+          <Switch
+            checked={values.pushRelayEnabled}
+            onCheckedChange={handlePushRelayChange}
+          />
+        </Group>
+      </SettingsSection>
+      <SettingsSection title={t('generalLinkPreviewsTitle')}>
+        <Group
+          label={t('linkPreviewsPrivateNetworkLabel')}
+          description={t('linkPreviewsPrivateNetworkDesc')}
+          inline
+        >
+          <Switch
+            checked={values.linkPreviewsPrivateNetwork}
+            onCheckedChange={handlePrivatePreviewsChange}
+          />
+        </Group>
+      </SettingsSection>
+    </div>
   );
 });
 

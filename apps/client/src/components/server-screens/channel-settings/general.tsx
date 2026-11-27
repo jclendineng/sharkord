@@ -141,7 +141,7 @@ const General = memo(({ channelId }: TGeneralProps) => {
         <Textarea placeholder={t('channelTopicPlaceholder')} {...r('topic')} />
       </Group>
 
-      <Group label={t('privateLabel')} description={t('privateDesc')}>
+      <Group label={t('privateLabel')} description={t('privateDesc')} inline>
         <Switch
           checked={values.private}
           onCheckedChange={handlePrivateChange}

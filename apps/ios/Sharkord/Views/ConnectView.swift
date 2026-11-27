@@ -208,7 +208,7 @@ struct ConnectView: View {
 
     @ViewBuilder
     private var requestCodeCard: some View {
-        AuthTitle(title: "Scan with your phone", subtitle: "On a phone signed in to this server, open Sharkord, go to Settings, Sign In Another Device and tap Scan a Code. Its camera app works too.")
+        AuthTitle(title: "Scan with your phone", subtitle: "On a phone signed in to this server, open Sharkord, go to Settings, Sign In Another Device and tap Scan a Code Instead. Its camera app works too.")
 
         Group {
             if let loginRequest, let url = approvalURL(for: loginRequest), let image = QRCode.image(url) {
@@ -280,7 +280,7 @@ struct ConnectView: View {
 
     @ViewBuilder
     private var loginCard: some View {
-        AuthTitle(title: "Welcome back!", subtitle: serverInfo.map { "We're so excited to see you on \($0.name) again!" } ?? "We're so excited to see you again!")
+        AuthTitle(title: "Welcome back!", subtitle: "Log in to pick up where you left off.")
 
         ServerBadge(info: serverInfo, address: ServerAddress(userInput: serverURL))
 
@@ -323,7 +323,7 @@ struct ConnectView: View {
 
     @ViewBuilder
     private var registerCard: some View {
-        AuthTitle(title: "Create an account", subtitle: serverInfo.map { "Join \($0.name)." } ?? "Join the server.")
+        AuthTitle(title: "Create an account", subtitle: serverInfo.map { "Join \($0.name)." } ?? LocalizedStringKey("Join the server."))
 
         ServerBadge(info: serverInfo, address: ServerAddress(userInput: serverURL))
 
@@ -710,9 +710,10 @@ private struct AuthCard<Content: View>: View {
     }
 }
 
+// keys rather than strings, so the sign in screens are looked up in the catalog like the rest
 private struct AuthTitle: View {
-    let title: String
-    let subtitle: String
+    let title: LocalizedStringKey
+    let subtitle: LocalizedStringKey
 
     var body: some View {
         VStack(spacing: 8) {
@@ -731,7 +732,7 @@ private struct AuthTitle: View {
 }
 
 private struct AuthField<Content: View>: View {
-    let label: String
+    let label: LocalizedStringKey
     @ViewBuilder let content: Content
 
     var body: some View {
@@ -753,7 +754,7 @@ private struct AuthField<Content: View>: View {
 }
 
 private struct AuthButton: View {
-    let title: String
+    let title: LocalizedStringKey
     let isEnabled: Bool
     let isWorking: Bool
     let action: () -> Void

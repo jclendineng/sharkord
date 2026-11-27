@@ -11,6 +11,13 @@ struct ServerAddressTests {
         #expect(!address.isInsecure)
     }
 
+    @Test(arguments: [("192.168.1.5:4991", "http://192.168.1.5:4991"), ("localhost:4991", "http://localhost:4991"), ("8.8.8.8", "https://8.8.8.8"), ("nas.local", "https://nas.local")])
+    func aBareLocalAddressUsesPlainHTTP(_ typed: String, _ expected: String) throws {
+        let address = try #require(ServerAddress(userInput: typed))
+
+        #expect(address.baseURL.absoluteString == expected)
+    }
+
     @Test(arguments: ["https://chat.example.com/?invite=abc123", "chat.example.com/?invite=abc123", "https://chat.example.com?invite=abc123"])
     func anInviteLinkGivesTheServerAndTheCode(_ typed: String) throws {
         let address = try #require(ServerAddress(userInput: typed))

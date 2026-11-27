@@ -415,6 +415,7 @@ const Devices = memo(() => {
         <Group
           label={t('muteStreamAudioLabel')}
           description={t('muteStreamAudioDesc')}
+          inline
         >
           <Switch
             checked={!!values.muteStreamAudio}
@@ -483,21 +484,21 @@ const Devices = memo(() => {
           </Group>
 
           <div className="flex items-center gap-4">
-            <Group label={t('echoCancellationLabel')}>
+            <Group label={t('echoCancellationLabel')} inline>
               <Switch
                 checked={!!values.echoCancellation}
                 onCheckedChange={onEchoCancellationChange}
               />
             </Group>
 
-            <Group label={t('autoGainControlLabel')}>
+            <Group label={t('autoGainControlLabel')} inline>
               <Switch
                 checked={!!values.autoGainControl}
                 onCheckedChange={onAutoGainControlChange}
               />
             </Group>
 
-            <Group label={t('noiseGateLabel')}>
+            <Group label={t('noiseGateLabel')} inline>
               <Switch
                 checked={values.noiseGateEnabled}
                 disabled={!isNoiseGateAvailable}
@@ -648,7 +649,7 @@ const Devices = memo(() => {
               onResolutionChange={onWebcamResolutionChange}
             />
 
-            <Group label={t('mirrorOwnVideoLabel')}>
+            <Group label={t('mirrorOwnVideoLabel')} inline>
               <Switch
                 checked={!!values.mirrorOwnVideo}
                 onCheckedChange={onMirrorOwnVideoChange}
@@ -668,6 +669,7 @@ const Devices = memo(() => {
               ? t('simulcastUserDesc')
               : t('simulcastDisabledByServerDesc')
           }
+          inline
         >
           <Switch
             checked={!!values.simulcastEnabled}

@@ -4,6 +4,7 @@ import {
   setLocalStorageItem
 } from '@/helpers/storage';
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   getHeight,
   MAX_VH,
@@ -28,6 +29,7 @@ const ChatInputDivider = ({
   storageKey,
   defaultMaxHeightVh
 }: TChatInputDividerProps) => {
+  const { t } = useTranslation('common');
   const onPointerDown = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
       e.preventDefault();
@@ -154,7 +156,7 @@ const ChatInputDivider = ({
       className="group relative h-0 shrink-0 overflow-visible cursor-row-resize select-none z-10"
       role="separator"
       aria-orientation="horizontal"
-      aria-label="Resize chat input"
+      aria-label={t('resizeChatInput')}
     >
       <div className="absolute inset-x-0 top-0 h-px w-full bg-border transition-[transform,background-color] origin-top group-hover:scale-y-[4] group-hover:bg-primary/50 group-active:scale-y-[4] group-active:bg-primary" />
       <div className="absolute inset-x-0 -top-0.5 h-4" />

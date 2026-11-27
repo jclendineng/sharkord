@@ -4,10 +4,9 @@ import { setModViewOpen } from '@/features/app/actions';
 import { openDialog } from '@/features/dialogs/actions';
 import type { TAdminUser } from '@/features/server/admin/hooks';
 import { useCan, useUserRoles } from '@/features/server/hooks';
-import { useOwnUserId, useUserStatus } from '@/features/server/users/hooks';
+import { useOwnUserId } from '@/features/server/users/hooks';
 import { useDateLocale } from '@/hooks/use-date-locale';
-import { cn } from '@/lib/utils';
-import { Permission, UserStatus } from '@sharkord/shared';
+import { Permission } from '@sharkord/shared';
 import {
   Button,
   DropdownMenu,
@@ -30,7 +29,6 @@ const TableUser = memo(({ user, refetch }: TTableUserProps) => {
   const { t } = useTranslation('settings');
   const dateLocale = useDateLocale();
   const roles = useUserRoles(user.id);
-  const status = useUserStatus(user.id);
   const ownUserId = useOwnUserId();
   const can = useCan();
   const canDelete = ownUserId !== user.id && can(Permission.MANAGE_USERS);
@@ -47,17 +45,14 @@ const TableUser = memo(({ user, refetch }: TTableUserProps) => {
     <>
       <div
         key={user.id}
-        className="grid grid-cols-[60px_1fr_120px_120px_120px_80px_50px] gap-4 px-4 py-3 text-sm hover:bg-muted/30 transition-colors"
+        className="grid grid-cols-[1fr_120px_120px_120px_50px] gap-4 px-4 py-3 text-sm hover:bg-muted/30 transition-colors"
       >
-        <div className="flex items-center justify-center">
+        <div className="flex items-center gap-3 min-w-0">
           <UserAvatar
             userId={user.id}
             className="h-8 w-8 flex-shrink-0"
             showUserPopover
           />
-        </div>
-
-        <div className="flex items-center min-w-0">
           <div className="min-w-0">
             <div className="font-medium text-foreground truncate">
               {user.name}
@@ -97,17 +92,6 @@ const TableUser = memo(({ user, refetch }: TTableUserProps) => {
               addSuffix: true,
               locale: dateLocale
             })}
-          </span>
-        </div>
-
-        <div className="flex items-center text-muted-foreground">
-          <span
-            className={cn('capitalize text-xs', {
-              'text-green-500': status === UserStatus.ONLINE,
-              'text-yellow-500': status === UserStatus.IDLE
-            })}
-          >
-            {status}
           </span>
         </div>
 

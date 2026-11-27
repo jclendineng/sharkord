@@ -4,6 +4,7 @@ import type { TMessageJumpToTarget } from '@/types';
 import { Button } from '@sharkord/ui';
 import { FileText } from 'lucide-react';
 import { memo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { SearchResultPlace } from './search-result-place';
 import type { TSearchResultFile } from './types';
 
@@ -14,6 +15,7 @@ type TSearchResultFileCardProps = {
 
 const SearchResultFileCard = memo(
   ({ result, onJump }: TSearchResultFileCardProps) => {
+    const { t } = useTranslation('dialogs');
     const handleJump = useCallback(() => {
       onJump({
         channelId: result.channelId,
@@ -57,7 +59,7 @@ const SearchResultFileCard = memo(
           className="mt-2"
           onClick={handleJump}
         >
-          Jump to message
+          {t('jumpToMessage')}
         </Button>
       </div>
     );

@@ -64,6 +64,7 @@ const BridgeSettings = memo(({ values, onChange }: TBridgeSettingsProps) => {
       <Group
         label={t('hotkeysEnableLabel')}
         description={t('hotkeysEnableDesc')}
+        inline
       >
         <Switch
           checked={values.enabled}

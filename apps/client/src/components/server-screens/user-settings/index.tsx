@@ -9,7 +9,6 @@ import {
   KeyRound,
   Package,
   SlidersHorizontal,
-  Trash2,
   User
 } from 'lucide-react';
 import { memo, useMemo } from 'react';
@@ -56,12 +55,13 @@ const UserSettings = memo(({ close }: TUserSettingsProps) => {
       },
       {
         id: 'password',
-        label: t('passwordTab'),
+        label: t('accountTab'),
         icon: KeyRound,
         content: (
           <>
             <Password />
             <TwoFactor />
+            <DeleteAccount />
           </>
         )
       },
@@ -73,7 +73,7 @@ const UserSettings = memo(({ close }: TUserSettingsProps) => {
       },
       {
         id: 'others',
-        label: t('othersTab'),
+        label: t('generalTab'),
         icon: SlidersHorizontal,
         content: <Others />
       },
@@ -82,12 +82,6 @@ const UserSettings = memo(({ close }: TUserSettingsProps) => {
         label: t('aboutTab'),
         icon: Info,
         content: <About />
-      },
-      {
-        id: 'delete-account',
-        label: t('deleteAccountTab'),
-        icon: Trash2,
-        content: <DeleteAccount />
       }
     ],
     [t]

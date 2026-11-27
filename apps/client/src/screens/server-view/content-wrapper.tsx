@@ -1,7 +1,9 @@
 import { TextChannel } from '@/components/channel-view/text';
 import { VoiceChannel } from '@/components/channel-view/voice';
+import { Dialog } from '@/components/dialogs/dialogs';
 import { PluginSlotRenderer } from '@/components/plugin-slot-renderer';
 import { setMobileDrawer } from '@/features/app/actions';
+import { openDialog } from '@/features/dialogs/actions';
 import {
   useSelectedChannelId,
   useSelectedChannelType
@@ -13,7 +15,7 @@ import {
 import { MobileDrawer } from '@/types';
 import { ChannelType, PluginSlot } from '@sharkord/shared';
 import { Button } from '@sharkord/ui';
-import { Menu } from 'lucide-react';
+import { Menu, MessagesSquare, UserPlus, Users } from 'lucide-react';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -25,6 +27,7 @@ type TContentWrapperProps = {
 const ContentWrapper = memo(
   ({ isDmMode, selectedDmChannelId }: TContentWrapperProps) => {
     const { t } = useTranslation();
+    const { t: tSidebar } = useTranslation('sidebar');
     const selectedChannelId = useSelectedChannelId();
     const selectedChannelType = useSelectedChannelType();
     const serverName = useServerName();
@@ -32,6 +35,14 @@ const ContentWrapper = memo(
 
     const onOpenChannelsClick = useCallback(() => {
       setMobileDrawer(MobileDrawer.CHANNELS);
+    }, []);
+
+    const onAddFriendsClick = useCallback(() => {
+      openDialog(Dialog.FRIENDS);
+    }, []);
+
+    const onNewGroupClick = useCallback(() => {
+      openDialog(Dialog.GROUP_DM);
     }, []);
 
     if (activeFullscreenPluginId) {
@@ -60,7 +71,18 @@ const ContentWrapper = memo(
       } else {
         content = (
           <div className="flex flex-col gap-4 h-full items-center justify-center text-sm text-muted-foreground">
+            <MessagesSquare className="h-10 w-10" />
             {t('selectDmPrompt')}
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={onAddFriendsClick}>
+                <UserPlus />
+                {tSidebar('addFriends')}
+              </Button>
+              <Button variant="outline" onClick={onNewGroupClick}>
+                <Users />
+                {tSidebar('newGroup')}
+              </Button>
+            </div>
             <Button
               variant="outline"
               className="md:hidden"

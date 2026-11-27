@@ -59,6 +59,29 @@ type TVoiceProps = Omit<TItemWrapperProps, 'children'> & {
   channel: TChannel;
 };
 
+type TChannelUnreadProps = {
+  count: number;
+  hasMention: boolean;
+  isMuted: boolean;
+};
+
+// the apps' marker: a mention keeps its count, other unread messages only a pill at the edge
+const ChannelUnread = memo(
+  ({ count, hasMention, isMuted }: TChannelUnreadProps) => {
+    if (count === 0) return null;
+
+    if (hasMention) {
+      return <UnreadCount count={count} hasMention />;
+    }
+
+    if (isMuted) return null;
+
+    return (
+      <span className="absolute -left-2 top-1/2 h-2 w-1 -translate-y-1/2 rounded-r-full bg-foreground" />
+    );
+  }
+);
+
 const Voice = memo(
   ({
     channel,
@@ -141,13 +164,20 @@ const Voice = memo(
             <Volume2 className="h-4 w-4" />
           )}
 
-          <span className={cn('flex-1 truncate', { 'opacity-50': isMuted })}>
+          <span
+            className={cn('flex-1 truncate', {
+              'opacity-50': isMuted,
+              'font-semibold text-foreground': unreadCount > 0 && !isMuted
+            })}
+          >
             {channel.name}
           </span>
 
-          {unreadCount > 0 && (
-            <UnreadCount count={unreadCount} hasMention={hasUnreadMentions} />
-          )}
+          <ChannelUnread
+            count={unreadCount}
+            hasMention={hasUnreadMentions}
+            isMuted={isMuted}
+          />
         </ItemWrapper>
         {channel.type === 'VOICE' && (
           <div className="ml-6 space-y-1 mt-1" onContextMenu={stopPropagation}>
@@ -192,7 +222,12 @@ const Text = memo(({ channel, ...props }: TTextProps) => {
   return (
     <ItemWrapper {...props}>
       <Hash className="h-4 w-4" />
-      <span className={cn('flex-1', { 'opacity-50': isMuted })}>
+      <span
+        className={cn('flex-1', {
+          'opacity-50': isMuted,
+          'font-semibold text-foreground': unreadCount > 0 && !isMuted
+        })}
+      >
         {channel.name}
       </span>
       {hasTypingUsers && (
@@ -200,8 +235,12 @@ const Text = memo(({ channel, ...props }: TTextProps) => {
           <TypingDots />
         </div>
       )}
-      {!hasTypingUsers && unreadCount > 0 && (
-        <UnreadCount count={unreadCount} hasMention={hasUnreadMessages} />
+      {!hasTypingUsers && (
+        <ChannelUnread
+          count={unreadCount}
+          hasMention={hasUnreadMessages}
+          isMuted={isMuted}
+        />
       )}
     </ItemWrapper>
   );
@@ -245,7 +284,7 @@ const ItemWrapper = memo(
         onDragLeave={onDragLeave}
         onDrop={onDrop}
         className={cn(
-          'flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground select-none cursor-pointer',
+          'relative flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground select-none cursor-pointer',
           {
             'bg-accent text-accent-foreground': isSelected,
             'cursor-default opacity-50 hover:bg-transparent hover:text-muted-foreground':

@@ -23,17 +23,14 @@ const UsersTable = memo(({ users, refetch }: TUsersTableProps) => {
       searchFilter={searchFilter}
       headerColumns={
         <>
-          <div>{t('usersAvatarCol')}</div>
           <div>{t('usersUserCol')}</div>
           <div>{t('usersRolesCol')}</div>
           <div>{t('usersJoinedAtCol')}</div>
           <div>{t('usersLastJoinCol')}</div>
-          <div>{t('usersStatusCol')}</div>
           <div>{t('usersActionsCol')}</div>
         </>
       }
-      gridCols="grid-cols-[60px_1fr_120px_120px_120px_80px_50px]"
-      itemsPerPage={8}
+      gridCols="grid-cols-[1fr_120px_120px_120px_50px]"
       searchPlaceholder={t('searchUsersPlaceholder')}
       emptyMessage={t('noUsersFound')}
     />

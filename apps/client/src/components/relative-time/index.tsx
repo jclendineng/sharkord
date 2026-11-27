@@ -1,17 +1,10 @@
 import { useDateLocale } from '@/hooks/use-date-locale';
-import {
-  format,
-  formatDistanceToNow,
-  isFuture,
-  isWithinInterval,
-  subHours,
-  type Locale
-} from 'date-fns';
+import { format, isToday, isYesterday, type Locale } from 'date-fns';
+import type { TFunction } from 'i18next';
 import { memo, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
-const ONE_MINUTE = 60_000;
-const ONE_HOUR = 60 * ONE_MINUTE;
-const DEFAULT_FORMAT = 'PPpp'; // eg: 12 August 2022, 14:30
+const ONE_HOUR = 3_600_000;
 
 type TRelativeTimeProps = {
   date: Date | string;
@@ -19,34 +12,32 @@ type TRelativeTimeProps = {
   children: (relativeTime: string) => ReactNode;
 };
 
-const getFormattedTime = (d: Date, dateLocale: Locale): string => {
-  const now = new Date();
-  const twentyFourHoursAgo = subHours(now, 24);
+// the apps' style: today and yesterday by name, anything older as a short date, all with the time
+const getFormattedTime = (
+  d: Date,
+  dateLocale: Locale,
+  t: TFunction
+): string => {
+  const time = format(d, 'p', { locale: dateLocale });
 
-  // past 24 hours show relative time, eg: 5 minutes ago
-  if (isWithinInterval(d, { start: twentyFourHoursAgo, end: now })) {
-    return formatDistanceToNow(d, { addSuffix: true, locale: dateLocale });
+  if (isToday(d)) {
+    return t('dateToday', { time });
   }
 
-  return format(d, DEFAULT_FORMAT, { locale: dateLocale });
+  if (isYesterday(d)) {
+    return t('dateYesterday', { time });
+  }
+
+  return format(d, 'P, p', { locale: dateLocale });
 };
 
+// only a time from today or yesterday changes as midnight passes, hourly is soon enough
 const getUpdateInterval = (date: Date): number | null => {
-  const now = new Date();
-  const diffInMs = now.getTime() - date.getTime();
-
-  // future dates or absolute dates don't need updates
-  if (isFuture(date) || diffInMs > 24 * ONE_HOUR) {
-    return null; // no updates needed
+  if (isToday(date) || isYesterday(date)) {
+    return ONE_HOUR;
   }
 
-  // less than 1 hour, rerender every minute
-  if (diffInMs < ONE_HOUR) {
-    return ONE_MINUTE;
-  }
-
-  // 1-24 hours, rerender every hour
-  return ONE_HOUR;
+  return null;
 };
 
 const RelativeTime = memo(
@@ -56,6 +47,7 @@ const RelativeTime = memo(
     children
   }: TRelativeTimeProps) => {
     const dateLocale = useDateLocale();
+    const { t } = useTranslation('common');
     const parsedDate = useMemo(
       () => (typeof date === 'string' ? new Date(date) : date),
       [date]
@@ -79,7 +71,7 @@ const RelativeTime = memo(
       return () => clearInterval(timer);
     }, [interval, parsedDate]);
 
-    return children(getFormattedTime(parsedDate, dateLocale));
+    return children(getFormattedTime(parsedDate, dateLocale, t));
   }
 );
 

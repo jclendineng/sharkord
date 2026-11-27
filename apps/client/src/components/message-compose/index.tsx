@@ -349,8 +349,12 @@ const MessageCompose = memo(
             {uploading && (
               <div className="flex items-center gap-2 px-2 pt-2">
                 <div className="text-xs text-muted-foreground mb-1">
-                  Uploading files ({filesize(uploadingSize)})
-                  {uploadSpeed > 0 && ` - ${filesize(uploadSpeed)}/s`}
+                  {uploadSpeed > 0
+                    ? t('uploadingFilesSpeed', {
+                        size: filesize(uploadingSize),
+                        speed: filesize(uploadSpeed)
+                      })
+                    : t('uploadingFiles', { size: filesize(uploadingSize) })}
                 </div>
                 <Spinner size="xxs" />
               </div>
@@ -402,6 +406,7 @@ const MessageCompose = memo(
                 size="icon"
                 variant="ghost"
                 disabled={uploading || !canSendMessages}
+                aria-label={t('expressionEmoji')}
               >
                 <Smile className="h-4 w-4" />
               </Button>
@@ -412,6 +417,7 @@ const MessageCompose = memo(
                 variant="ghost"
                 disabled={uploading || !canSendMessages}
                 onClick={onCreatePollClick}
+                aria-label={t('composeCreatePoll')}
               >
                 <ChartBar className="h-4 w-4" />
               </Button>
@@ -421,6 +427,7 @@ const MessageCompose = memo(
               variant="ghost"
               disabled={uploading || !canUploadFiles}
               onClick={openFileDialog}
+              aria-label={t('composeAttachFiles')}
             >
               <Paperclip className="h-4 w-4" />
             </Button>
@@ -429,6 +436,7 @@ const MessageCompose = memo(
               variant="ghost"
               onClick={handleSend}
               disabled={uploading || sending || !canSendMessages}
+              aria-label={t('composeSend')}
             >
               <Send className="h-4 w-4" />
             </Button>

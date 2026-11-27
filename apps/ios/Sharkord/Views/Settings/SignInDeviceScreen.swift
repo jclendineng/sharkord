@@ -121,7 +121,7 @@ struct SignInDeviceScreen: View {
 
     private var code: some View {
         VStack(spacing: 16) {
-            Text("On the other device, open Sharkord and tap Scan a QR Code, or point its camera at this code. You'll approve it here before it's signed in.")
+            Text("On the other device, open Sharkord and tap Log In With a QR Code, or point its camera at this code. You'll approve it here before it's signed in.")
                 .font(.subheadline)
                 .foregroundStyle(Theme.muted)
                 .multilineTextAlignment(.center)
@@ -149,7 +149,7 @@ struct SignInDeviceScreen: View {
                 }
                 .buttonStyle(.plain)
 
-                Text("For a device without a camera, like a Mac mini: it shows a code under Sign In With Another Device, and you scan it here.")
+                Text("For a device without a camera, like a Mac mini: it shows a code under Log In With a QR Code, and you scan it here.")
                     .font(.footnote)
                     .foregroundStyle(Theme.muted)
                     .multilineTextAlignment(.center)

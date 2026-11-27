@@ -32,10 +32,11 @@ const Others = memo(() => {
   );
 
   return (
-    <SettingsSection title={t('othersTitle')} description={t('othersDesc')}>
+    <SettingsSection title={t('generalTab')}>
       <Group
         label={t('autoJoinLastChannelLabel')}
         description={t('autoJoinLastChannelDesc')}
+        inline
       >
         <Switch
           checked={values.autoJoinLastChannel}

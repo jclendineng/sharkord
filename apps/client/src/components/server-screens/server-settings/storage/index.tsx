@@ -233,12 +233,16 @@ const Storage = memo(() => {
   }
 
   return (
-    <SettingsSection title={t('storageTitle')} description={t('storageDesc')}>
+    <SettingsSection title={t('storageTitle')}>
       <DiskMetrics diskMetrics={diskMetrics!} />
 
       <PluginStorageUsage pluginStorage={pluginStorage} />
 
-      <Group label={t('allowUploadsLabel')} description={t('allowUploadsDesc')}>
+      <Group
+        label={t('allowUploadsLabel')}
+        description={t('allowUploadsDesc')}
+        inline
+      >
         <Switch
           checked={!!values.storageUploadEnabled}
           onCheckedChange={onStorageUploadEnabledChange}
@@ -248,6 +252,7 @@ const Storage = memo(() => {
       <Group
         label={t('allowFileSharingInDMsLabel')}
         description={t('allowFileSharingInDMsDesc')}
+        inline
       >
         <Switch
           checked={!!values.storageFileSharingInDirectMessages}
@@ -419,6 +424,7 @@ const Storage = memo(() => {
       <Group
         label={t('imageOptimizationLabel')}
         description={t('imageOptimizationDesc')}
+        inline
       >
         <Switch
           checked={!!values.storageImageOptimizationEnabled}

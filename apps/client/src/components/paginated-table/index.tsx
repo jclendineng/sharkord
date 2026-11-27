@@ -1,6 +1,7 @@
 import { Button, Input } from '@sharkord/ui';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { memo, useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 type TPaginatedTableProps<T> = {
   items: T[];
@@ -19,10 +20,11 @@ const PaginatedTableComponent = <T,>({
   searchFilter,
   headerColumns,
   gridCols,
-  itemsPerPage = 10,
-  searchPlaceholder = 'Search…',
-  emptyMessage = 'No items found.'
+  itemsPerPage = 25,
+  searchPlaceholder,
+  emptyMessage
 }: TPaginatedTableProps<T>) => {
+  const { t } = useTranslation('common');
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -104,7 +106,7 @@ const PaginatedTableComponent = <T,>({
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          placeholder={searchPlaceholder}
+          placeholder={searchPlaceholder ?? t('tableSearchPlaceholder')}
           value={searchTerm}
           onChange={onSearchInput}
           className="pl-9"
@@ -122,8 +124,8 @@ const PaginatedTableComponent = <T,>({
           {paginatedItems.length === 0 ? (
             <div className="px-4 py-8 text-center text-muted-foreground text-sm">
               {searchTerm.trim()
-                ? `No items found matching "${searchTerm}"`
-                : emptyMessage}
+                ? t('tableNoMatches', { term: searchTerm })
+                : (emptyMessage ?? t('tableEmpty'))}
             </div>
           ) : (
             paginatedItems.map((item, index) => (
@@ -137,15 +139,12 @@ const PaginatedTableComponent = <T,>({
 
       <div className="flex justify-between items-center">
         <div className="text-xs text-muted-foreground">
-          {filteredItems.length === 0 ? (
-            'No items found'
-          ) : (
-            <>
-              Showing {(currentPage - 1) * itemsPerPage + 1} to{' '}
-              {Math.min(currentPage * itemsPerPage, filteredItems.length)} of{' '}
-              {filteredItems.length} item{filteredItems.length !== 1 ? 's' : ''}
-            </>
-          )}
+          {filteredItems.length > 0 &&
+            t('tableShowing', {
+              from: (currentPage - 1) * itemsPerPage + 1,
+              to: Math.min(currentPage * itemsPerPage, filteredItems.length),
+              total: filteredItems.length
+            })}
         </div>
 
         {totalPages > 1 && (
