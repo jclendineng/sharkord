@@ -753,6 +753,19 @@ The fork's server image is published to `ghcr.io/jclendineng/sharkord` by
 from the workflow token's pushes), so version tags come from a tag pushed by hand. The old
 `push` tag is gone: point a container still on it at `development`.
 
+### Locking out an address after failed sign ins
+
+From upstream: an address that gets the password or the two-factor code wrong 20 times within 15
+minutes is turned away from `/login` for 15 minutes, with a 429 and `Retry-After`, even with the
+right password. Each lockout after the first doubles, up to a day, and the count is forgotten a
+day after the last lockout ends. An IPv6 client is counted with its whole /64, so it can't pick a fresh
+address per guess. The limits are `[rateLimiters.loginLockout]` (`maxFailures`, `windowMs`,
+`blockMs`, `maxBlockMs`). Only the password route counts and checks it, so QR sign in, login links
+and single sign on are never locked out. Behind a reverse proxy the client's address only reaches
+the server when the proxy is in `server.trustedProxies`. Without that, every client shares the
+proxy's address and one of them can lock out all of them. Code
+`apps/server/src/utils/rate-limiters/failed-attempts-limiter.ts`.
+
 ### Switching from upstream Sharkord
 
 A server running upstream Sharkord can move to this fork and keep everything on it: accounts,

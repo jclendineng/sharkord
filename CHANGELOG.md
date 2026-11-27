@@ -51,9 +51,11 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   - `basePath` under `[server]` (env `SHARKORD_BASE_PATH`), for running under a subpath. Set the proxy to forward that path and its WebSocket upgrades; it may strip the prefix or not.
   - `listenIp` under `[webRtc]` (env `SHARKORD_WEBRTC_LISTEN_IP`), the address voice listens on. Set `::` for IPv6 as well as IPv4 ([#522](https://github.com/Sharkord/sharkord/issues/522)).
   - `internalAnnouncedAddress` under `[webRtc]` (env `SHARKORD_WEBRTC_INTERNAL_ANNOUNCED_ADDRESS`), a LAN address announced beside `announcedAddress` for a router without NAT loopback. Upstream has the same key, so a server switching over keeps it.
+  - `announcedAddressV6` under `[webRtc]` (env `SHARKORD_WEBRTC_ANNOUNCED_ADDRESS_V6`), off by default. Set to the server's IPv6 address, it adds an IPv6 voice listener on the same port. Upstream has the same key, so a server switching over keeps it.
 - Security defaults:
   - `server.trustedProxies` now defaults to loopback only on new installs. An existing `config.ini` keeps its list, so narrow it to your reverse proxy's address to stop other machines on the network passing forwarded addresses.
   - New rate limits in `config.ini`, added by themselves: `loginIdentity` (sign in attempts per account), `messageAction` (pins, ending polls, deleting files) and `pluginManage` (plugin toggle and settings).
+  - `[rateLimiters.loginLockout]` locks an address out of password sign in after 20 wrong passwords or two-factor codes in 15 minutes, for 15 minutes, doubling each time up to a day. An IPv6 client is locked out with its whole /64. QR sign in, login links and single sign on are never locked. Behind a reverse proxy, list the proxy in `server.trustedProxies`, or every client shares its address and one can lock out all of them.
   - A database first made by a development build had the access token `dev`. It is replaced once at startup with a new one printed to the console, which signs everyone out on that server.
   - Emoji uploads have to be images of 2 MB or less.
   - The web app enforces its content security policy. Plugins that load scripts, frames or connections from other sites are blocked by it.

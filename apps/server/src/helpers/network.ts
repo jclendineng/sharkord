@@ -117,8 +117,24 @@ const isPublicIp = (ip: string): boolean => {
 
 const isPrivateIP = (ip: string): boolean => !isPublicIp(ip);
 
+// the key failed sign ins are counted under. an ipv6 client usually holds a whole /64, so
+// counting single addresses would let it pick a fresh one for every guess
+const getIpBlockKey = (ip: string): string => {
+  if (!ipaddr.isValid(ip)) return ip;
+
+  const address = ipaddr.process(ip);
+
+  if (address.kind() === 'ipv4') return address.toString();
+
+  const cidr = `${address.toString()}/64`;
+  const network = ipaddr.IPv6.networkAddressFromCIDR(cidr);
+
+  return `${network.toString()}/64`;
+};
+
 export {
   getAnnouncedAddressV6,
+  getIpBlockKey,
   getPrivateIp,
   getPublicIp,
   isPrivateIP,
