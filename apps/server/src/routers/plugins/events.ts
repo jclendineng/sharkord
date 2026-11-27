@@ -1,10 +1,60 @@
-import { Permission, ServerEvents } from '@sharkord/shared';
+import {
+  getErrorMessage,
+  Permission,
+  ServerEvents,
+  type TLogEntry
+} from '@sharkord/shared';
+import { observable } from '@trpc/server/observable';
+import { logger } from '../../logger';
 import { protectedProcedure } from '../../utils/trpc';
 
+// the permission is checked again for every entry, so someone who loses it while the log is
+// open stops getting what plugins write. the checks are chained to keep entries in order
 const onPluginLogRoute = protectedProcedure.subscription(async ({ ctx }) => {
   await ctx.needsPermission(Permission.MANAGE_PLUGINS);
 
-  return ctx.pubsub.subscribe(ServerEvents.PLUGIN_LOG);
+  return observable<TLogEntry>((observer) => {
+    let pending = Promise.resolve();
+    let closed = false;
+
+    const subscription = ctx.pubsub
+      .subscribe(ServerEvents.PLUGIN_LOG)
+      .subscribe({
+        next: (entry) => {
+          pending = pending.then(async () => {
+            if (closed) return;
+
+            let allowed = false;
+
+            try {
+              allowed = await ctx.hasPermission(Permission.MANAGE_PLUGINS);
+            } catch (error) {
+              logger.error(
+                'Failed to check plugin log access: %s',
+                getErrorMessage(error)
+              );
+            }
+
+            if (allowed) {
+              observer.next(entry);
+
+              return;
+            }
+
+            closed = true;
+
+            subscription.unsubscribe();
+            observer.complete();
+          });
+        }
+      });
+
+    return () => {
+      closed = true;
+
+      subscription.unsubscribe();
+    };
+  });
 });
 
 const onCommandsChangeRoute = protectedProcedure.subscription(
