@@ -480,7 +480,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   - Picture in picture stays open when leaving the call's view, and closes once the stream ends.
   - The noise gate fades instead of clicking as it opens and closes.
   - A stream's volume and quality menus open in fullscreen.
-  - The sidebar's resize bar stays above the content next to it.
+  - The resizable sidebar is its own stacking layer, upstream's fix for its resize bar.
   - The owner role shows every permission as granted, including ones added after it was made.
   - The stats popover counts Windows' Media Foundation and D3D12 encoders as hardware.
 - Sticker images are no longer swept up as orphaned files.
