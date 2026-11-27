@@ -10,6 +10,7 @@ import { z } from 'zod';
 import { config } from '../../config';
 import { db } from '../../db';
 import { publishVoiceEvent } from '../../db/publishers';
+import { channelUserCan } from '../../db/queries/channels';
 import { channels } from '../../db/schema';
 import { takeOverVoiceSeat } from '../../helpers/take-over-voice-seat';
 import {
@@ -84,6 +85,14 @@ const joinVoiceRoute = rateLimitedProcedure(protectedProcedure, {
       message: 'User already in a voice channel'
     });
 
+    // a moderator move can land the user in a channel they cannot see, so view is not required
+    const canSpeak = await channelUserCan(
+      input.channelId,
+      ctx.user.id,
+      ChannelPermission.SPEAK,
+      { ignoreView: true }
+    );
+
     await runHook<TBeforeVoiceJoinPayload, never>({
       entries: pluginManager.getHooks('beforeVoiceJoin'),
       payload: {
@@ -100,7 +109,11 @@ const joinVoiceRoute = rateLimitedProcedure(protectedProcedure, {
       message: 'Voice runtime not found for this channel'
     });
 
-    runtime.addUser(ctx.user.id, input.state);
+    // the mic state is the client's ask, and someone who cannot speak would show as unmuted
+    runtime.addUser(ctx.user.id, {
+      ...input.state,
+      micMuted: input.state.micMuted || !canSpeak
+    });
 
     if (movedByModerator) consumeVoiceMoveGrant(ctx.user.id);
 
