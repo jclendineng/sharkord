@@ -34,7 +34,8 @@ const enforceUserVoicePermissions = async (userId: number) => {
   const channelId = runtime.id;
   const allowed = await Promise.all(
     GATED_STREAMS.map(({ permission }) =>
-      channelUserCan(channelId, userId, permission)
+      // the same rule produce applies, or a moved user would lose a stream they may run
+      channelUserCan(channelId, userId, permission, { ignoreView: true })
     )
   );
 

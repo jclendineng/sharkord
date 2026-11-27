@@ -9,6 +9,7 @@ import {
 } from '@sharkord/shared';
 import { z } from 'zod';
 import { config } from '../../config';
+import { channelUserCan } from '../../db/queries/channels';
 import { getCurrentVoiceRuntime } from '../../helpers/get-current-voice-runtime';
 import { invariant } from '../../utils/invariant';
 import { protectedProcedure, rateLimitedProcedure } from '../../utils/trpc';
@@ -57,7 +58,15 @@ const produceRoute = rateLimitedProcedure(protectedProcedure, {
 
     const { channel, server } = KIND_PERMISSIONS[input.kind];
 
-    await ctx.needsChannelPermission(channelId, channel);
+    // a moderator move can put the user in a channel they cannot see, where they still speak
+    const canProduce = await channelUserCan(channelId, ctx.user.id, channel, {
+      ignoreView: true
+    });
+
+    invariant(canProduce, {
+      code: 'FORBIDDEN',
+      message: 'Insufficient channel permissions'
+    });
 
     if (server) {
       await ctx.needsPermission(server);
