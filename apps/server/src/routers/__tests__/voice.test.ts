@@ -1468,32 +1468,37 @@ describe('voice producer subscriptions', () => {
       }
     });
 
-    // a moved user has no VIEW_CHANNEL there, which must not count as losing the stream
+    // a moved user has no VIEW_CHANNEL there, which must not count as losing the stream. a
+    // channel permission change only reaches who can see the channel, so a role update, which
+    // checks everyone in a call, is what reaches them
     test('should leave the webcam of a moved user on while it is still granted', async () => {
       await grantOnPrivateVoiceChannel([ChannelPermission.WEBCAM]);
 
       const { caller: owner } = await initTest(1);
-      const runtime = new VoiceRuntime(PRIVATE_VOICE_CHANNEL_ID);
+      const { runtime, caller } = await joinPrivateVoiceChannelAsMoved(2);
 
-      runtime.addUser(2, { micMuted: false, soundMuted: false });
-
-      const socket = createFakeSocket();
-
-      socket.inVoice = true;
-
-      const { caller } = await initTest(
-        2,
-        { socket },
-        { currentVoiceChannelId: PRIVATE_VOICE_CHANNEL_ID }
-      );
+      const [member, memberPermissions] = await Promise.all([
+        tdb.select().from(roles).where(eq(roles.id, 2)).get(),
+        tdb
+          .select({ permission: rolePermissions.permission })
+          .from(rolePermissions)
+          .where(eq(rolePermissions.roleId, 2))
+      ]);
 
       try {
         await caller.voice.updateState({ webcamEnabled: true });
 
-        await owner.channels.updatePermissions({
-          channelId: PRIVATE_VOICE_CHANNEL_ID,
+        expect(runtime.getUserState(2).webcamEnabled).toBe(true);
+
+        await owner.roles.update({
           roleId: 2,
-          permissions: [ChannelPermission.WEBCAM, ChannelPermission.SPEAK]
+          name: member!.name,
+          color: member!.color,
+          permissions: memberPermissions.map(
+            ({ permission }) => permission as Permission
+          ),
+          storageQuotaOverrideEnabled: false,
+          storageSpaceQuota: STORAGE_MIN_QUOTA_PER_USER
         });
 
         expect(runtime.getUserState(2).webcamEnabled).toBe(true);
