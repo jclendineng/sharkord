@@ -680,5 +680,7 @@
   "messageLevelOff": "Niente",
   "overviewTab": "Panoramica",
   "membersTab": "Membri",
-  "accountTab": "Account"
+  "accountTab": "Account",
+  "channelsTab": "Canali",
+  "channelsDesc": "Tutte le categorie e i canali, ognuno apre le sue impostazioni. Creali, spostali ed eliminali nell’elenco dei canali."
 }

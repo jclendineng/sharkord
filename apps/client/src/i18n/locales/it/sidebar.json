@@ -102,5 +102,7 @@
   "unmuteConversation": "Riattiva conversazione",
   "addFriendsToGroup": "Aggiungi amici",
   "renameGroup": "Rinomina gruppo",
-  "closeDM": "Chiudi DM"
+  "closeDM": "Chiudi DM",
+  "duplicateChannel": "Duplica canale",
+  "failedDuplicateChannel": "Impossibile duplicare il canale"
 }

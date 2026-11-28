@@ -28,9 +28,11 @@ import {
 } from '@sharkord/ui';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-
-// one choice over the two stored flags: all wins over mentions, so they never both apply
-type TMessageLevel = 'all' | 'mentions' | 'off';
+import {
+  fromMessageLevel,
+  toMessageLevel,
+  type TMessageLevel
+} from './helpers';
 
 type TNotificationsValues = {
   level: TMessageLevel;
@@ -50,21 +52,17 @@ const Notifications = memo(() => {
   const sentSound = useMessageSentSound();
 
   const onSave = useCallback(async (values: TNotificationsValues) => {
-    setBrowserNotifications(values.level === 'all');
-    setBrowserNotificationsForMentions(values.level === 'mentions');
+    const flags = fromMessageLevel(values.level);
+
+    setBrowserNotifications(flags.all);
+    setBrowserNotificationsForMentions(flags.mentions);
     setBrowserNotificationsForDms(values.dms);
     setBrowserNotificationsForReplies(values.replies);
     setNotificationSounds(values.sounds);
     setMessageSentSound(values.sentSound);
   }, []);
 
-  let level: TMessageLevel = 'off';
-
-  if (all) {
-    level = 'all';
-  } else if (mentions) {
-    level = 'mentions';
-  }
+  const level = toMessageLevel(all, mentions);
 
   const { values, onChange } = useSettingsForm<TNotificationsValues>({
     initialValues: { level, dms, replies, sounds, sentSound },

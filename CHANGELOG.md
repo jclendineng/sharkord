@@ -303,6 +303,9 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
   - Web: the members table has the picture beside the name and 25 rows a page, and tables no longer say they are empty twice.
   - iPhone, iPad and Mac: someone without a picture shows their initials, as on the web.
   - iPad: settings show their pages down the side, as on a Mac.
+  - Web: server settings have a Channels page, as the apps do, listing every category and channel with a way into its settings.
+  - Web: settings pages can be searched by name.
+  - Web: a channel's menu has Mark As Read and Duplicate Channel, as the apps' does.
 
 - One picture viewer everywhere, with real zooming.
   - iPhone, iPad and Mac: a picture in a message, attached or shown from a link, opens the same viewer a channel's media does, with the message's other pictures a swipe away.
@@ -421,6 +424,7 @@ Everything since the fork from upstream Sharkord 0.0.27 (2026-10-11).
 - iPhone, iPad and Mac: the screens for adding a server and signing in are in every language the app speaks, not only English.
 - iPhone, iPad and Mac: a local address typed without http://, like 192.168.1.5:4991 or localhost:4991, connects over plain HTTP instead of failing. Names and addresses on the internet still default to HTTPS.
 - Web: reactions with nothing to show no longer render an empty picture, which made the browser fetch the page again.
+- Web: initials skip extra spaces in a name, as the apps do.
 - Web: the last English only text is translated: the upload progress, the bot tag, the pinned video card's buttons, the empty voice channel, the voice disconnect button, the resolution and frame rate pickers, emoji search with no results and the search result's jump button.
 - iPhone, iPad and Mac: the QR sign in instructions name the buttons as they are, Log In With a QR Code and Scan a Code Instead.
 - iPad: a server's initials keep their tile in the server sheet in light mode.

@@ -6,10 +6,11 @@ import {
 import { useIsChannelMuted } from '@/features/app/hooks';
 import { requestConfirmation } from '@/features/dialogs/actions';
 import { openServerScreen } from '@/features/server-screens/actions';
+import { markChannelAsRead } from '@/features/server/actions';
 import { useChannelById } from '@/features/server/channels/hooks';
-import { useCan } from '@/features/server/hooks';
+import { useCan, useUnreadMessagesCount } from '@/features/server/hooks';
 import { getTRPCClient } from '@/lib/trpc';
-import { ChannelType, Permission } from '@sharkord/shared';
+import { ChannelType, getTrpcError, Permission } from '@sharkord/shared';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -40,10 +41,40 @@ const ChannelContextMenu = memo(
     ]);
     const isVoiceChannel = channel?.type === ChannelType.VOICE;
     const isMuted = useIsChannelMuted(channelId);
+    const unreadCount = useUnreadMessagesCount(channelId);
 
     const onOpenChat = useCallback(() => {
       openVoiceChatSidebar(channelId);
     }, [channelId]);
+
+    const onMarkAsReadClick = useCallback(() => {
+      markChannelAsRead(channelId);
+    }, [channelId]);
+
+    // the apps' clone: the same name, kind and category, private and with its topic if it was
+    const onDuplicateClick = useCallback(async () => {
+      if (!channel?.categoryId) return;
+
+      try {
+        const trpc = getTRPCClient();
+        const newChannelId = await trpc.channels.add.mutate({
+          type: channel.type as ChannelType,
+          name: channel.name,
+          categoryId: channel.categoryId
+        });
+
+        if (channel.private || channel.topic) {
+          await trpc.channels.update.mutate({
+            channelId: newChannelId,
+            name: channel.name,
+            topic: channel.topic,
+            private: channel.private
+          });
+        }
+      } catch (error) {
+        toast.error(getTrpcError(error, t('failedDuplicateChannel')));
+      }
+    }, [channel, t]);
 
     const onToggleMuteClick = useCallback(() => {
       toggleChannelMuted(channelId);
@@ -85,6 +116,11 @@ const ChannelContextMenu = memo(
               {t('openChat')}
             </ContextMenuItem>
           )}
+          {unreadCount > 0 && (
+            <ContextMenuItem onClick={onMarkAsReadClick}>
+              {t('markAsRead')}
+            </ContextMenuItem>
+          )}
           <ContextMenuItem onClick={onToggleMuteClick}>
             {isMuted ? t('unmuteChannel') : t('muteChannel')}
           </ContextMenuItem>
@@ -95,6 +131,11 @@ const ChannelContextMenu = memo(
                 {t('editLabel')}
               </ContextMenuItem>
             </>
+          )}
+          {canManageChannels && (
+            <ContextMenuItem onClick={onDuplicateClick}>
+              {t('duplicateChannel')}
+            </ContextMenuItem>
           )}
           {canManageChannels && (
             <ContextMenuItem variant="destructive" onClick={onDeleteClick}>

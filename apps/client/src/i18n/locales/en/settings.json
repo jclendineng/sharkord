@@ -680,5 +680,7 @@
   "messageLevelOff": "Nothing",
   "overviewTab": "Overview",
   "membersTab": "Members",
-  "accountTab": "Account"
+  "accountTab": "Account",
+  "channelsTab": "Channels",
+  "channelsDesc": "Every category and channel, each opening its settings. Create, move and delete them in the channel list."
 }

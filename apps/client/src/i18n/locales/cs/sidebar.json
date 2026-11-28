@@ -102,5 +102,7 @@
   "unmuteConversation": "Zrušit ztlumení konverzace",
   "addFriendsToGroup": "Přidat přátele",
   "renameGroup": "Přejmenovat skupinu",
-  "closeDM": "Zavřít zprávu"
+  "closeDM": "Zavřít zprávu",
+  "duplicateChannel": "Duplikovat kanál",
+  "failedDuplicateChannel": "Kanál se nepodařilo duplikovat"
 }

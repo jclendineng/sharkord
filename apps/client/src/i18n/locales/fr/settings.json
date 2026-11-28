@@ -680,5 +680,7 @@
   "messageLevelOff": "Rien",
   "overviewTab": "Aperçu",
   "membersTab": "Membres",
-  "accountTab": "Compte"
+  "accountTab": "Compte",
+  "channelsTab": "Salons",
+  "channelsDesc": "Toutes les catégories et tous les salons, chacun ouvre ses réglages. Créez-les, déplacez-les et supprimez-les dans la liste des salons."
 }

@@ -680,5 +680,7 @@
   "messageLevelOff": "无",
   "overviewTab": "概览",
   "membersTab": "成员",
-  "accountTab": "账户"
+  "accountTab": "账户",
+  "channelsTab": "频道",
+  "channelsDesc": "所有分类和频道，点开即可进入其设置。在频道列表中创建、移动和删除它们。"
 }

@@ -102,5 +102,7 @@
   "unmuteConversation": "Réactiver la conversation",
   "addFriendsToGroup": "Ajouter des amis",
   "renameGroup": "Renommer le groupe",
-  "closeDM": "Fermer le MP"
+  "closeDM": "Fermer le MP",
+  "duplicateChannel": "Dupliquer le salon",
+  "failedDuplicateChannel": "Impossible de dupliquer le salon"
 }

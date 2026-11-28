@@ -686,5 +686,7 @@
   "messageLevelOff": "Nic",
   "overviewTab": "Přehled",
   "membersTab": "Členové",
-  "accountTab": "Účet"
+  "accountTab": "Účet",
+  "channelsTab": "Kanály",
+  "channelsDesc": "Všechny kategorie a kanály, každý otevře své nastavení. Vytvářejte, přesouvejte a mažte je v seznamu kanálů."
 }

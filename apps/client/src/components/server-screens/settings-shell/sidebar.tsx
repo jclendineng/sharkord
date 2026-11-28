@@ -1,9 +1,11 @@
 import { cn } from '@/lib/utils';
 import { TestId } from '@sharkord/shared';
-import { Separator, Tooltip } from '@sharkord/ui';
+import { Input, Separator, Tooltip } from '@sharkord/ui';
 import { AlertCircle } from 'lucide-react';
 
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { filterEntries } from './helpers';
 import type { TSettingsEntry } from './types';
 
 type TSidebarEntryProps = {
@@ -70,6 +72,23 @@ const SettingsSidebar = memo(
     onSelect,
     className
   }: TSettingsSidebarProps) => {
+    const { t } = useTranslation('common');
+    const [query, setQuery] = useState('');
+
+    const shownEntries = useMemo(
+      () => filterEntries(entries, query),
+      [entries, query]
+    );
+    const shownPluginEntries = useMemo(
+      () => filterEntries(pluginEntries, query),
+      [pluginEntries, query]
+    );
+
+    const onQueryChange = useCallback(
+      (e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value),
+      []
+    );
+
     return (
       <nav
         className={cn(
@@ -77,7 +96,14 @@ const SettingsSidebar = memo(
           className
         )}
       >
-        {entries.map((entry) => (
+        <Input
+          value={query}
+          onChange={onQueryChange}
+          placeholder={t('tableSearchPlaceholder')}
+          aria-label={t('tableSearchPlaceholder')}
+          className="mb-2 h-8"
+        />
+        {shownEntries.map((entry) => (
           <SidebarEntry
             key={entry.id}
             entry={entry}
@@ -86,10 +112,10 @@ const SettingsSidebar = memo(
           />
         ))}
 
-        {pluginEntries.length > 0 && (
+        {shownPluginEntries.length > 0 && (
           <>
             <Separator className="my-3" />
-            {pluginEntries.map((entry) => (
+            {shownPluginEntries.map((entry) => (
               <SidebarEntry
                 key={entry.id}
                 entry={entry}

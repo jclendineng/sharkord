@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { hasUnsavedChanges } from '../helpers';
+import { filterEntries, hasUnsavedChanges } from '../helpers';
 
 describe('hasUnsavedChanges', () => {
   test('should report a form matching its baseline as clean', () => {
@@ -43,5 +43,25 @@ describe('hasUnsavedChanges', () => {
     expect(hasUnsavedChanges({ bio: '', avatar: undefined }, { bio: '' })).toBe(
       false
     );
+  });
+});
+
+describe('filterEntries', () => {
+  const entries = [
+    { label: 'Overview' },
+    { label: 'Members' },
+    { label: 'Emoji' }
+  ];
+
+  test('should keep every page with nothing typed', () => {
+    expect(filterEntries(entries, '  ')).toBe(entries);
+  });
+
+  test('should match part of a name in any case', () => {
+    expect(filterEntries(entries, 'MEM')).toEqual([{ label: 'Members' }]);
+  });
+
+  test('should leave nothing when no name matches', () => {
+    expect(filterEntries(entries, 'billing')).toEqual([]);
   });
 });

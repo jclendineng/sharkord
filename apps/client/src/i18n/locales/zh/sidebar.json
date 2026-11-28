@@ -102,5 +102,7 @@
   "unmuteConversation": "取消静音会话",
   "addFriendsToGroup": "添加好友",
   "renameGroup": "重命名群组",
-  "closeDM": "关闭私信"
+  "closeDM": "关闭私信",
+  "duplicateChannel": "复制频道",
+  "failedDuplicateChannel": "无法复制频道"
 }

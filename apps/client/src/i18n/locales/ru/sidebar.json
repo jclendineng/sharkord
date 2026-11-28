@@ -102,5 +102,7 @@
   "unmuteConversation": "Включить звук беседы",
   "addFriendsToGroup": "Добавить друзей",
   "renameGroup": "Переименовать группу",
-  "closeDM": "Закрыть ЛС"
+  "closeDM": "Закрыть ЛС",
+  "duplicateChannel": "Дублировать канал",
+  "failedDuplicateChannel": "Не удалось дублировать канал"
 }

@@ -52,7 +52,7 @@ struct AvatarView: View {
     }
 
     // getInitialsFromName on the web: the first letter of the first two words
-    private static func initials(of name: String) -> String {
+    static func initials(of name: String) -> String {
         let words = name.split(separator: " ").prefix(2)
 
         return words.compactMap(\.first).map { String($0).uppercased() }.joined()

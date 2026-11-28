@@ -102,5 +102,7 @@
   "unmuteConversation": "Unmute Conversation",
   "addFriendsToGroup": "Add Friends",
   "renameGroup": "Rename Group",
-  "closeDM": "Close DM"
+  "closeDM": "Close DM",
+  "duplicateChannel": "Duplicate Channel",
+  "failedDuplicateChannel": "Could not duplicate the channel"
 }

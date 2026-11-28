@@ -228,3 +228,12 @@ struct ShortAgeTests {
         #expect(age(secondsAgo: 400 * 86400) == "1y")
     }
 }
+
+struct AvatarInitialsTests {
+    // the web's getInitialsFromName, so a person reads the same on both
+    @Test(arguments: [("Ada Lovelace", "AL"), ("admin", "A"), ("ross82", "R"), ("Mary Ann Evans", "MA"), ("  padded  name ", "PN")])
+    func initialsMatchTheWeb(_ name: String, _ expected: String) {
+        #expect(AvatarView.initials(of: name) == expected)
+    }
+}
+

@@ -4,6 +4,7 @@ import { Permission, USER_MODERATION_PERMISSIONS } from '@sharkord/shared';
 import {
   AudioLines,
   Blocks,
+  Hash,
   Mail,
   Package,
   Settings,
@@ -17,6 +18,7 @@ import { useTranslation } from 'react-i18next';
 import type { TServerScreenBaseProps } from '../screens';
 import { SettingsShell } from '../settings-shell';
 import type { TSettingsEntry } from '../settings-shell/types';
+import { Channels } from './channels';
 import { Emojis } from './emojis';
 import { General } from './general';
 import { Invites } from './invites';
@@ -91,6 +93,13 @@ const ServerSettings = memo(({ close }: TServerSettingsProps) => {
         icon: Mail,
         content: <Invites />,
         permission: Permission.MANAGE_INVITES
+      },
+      {
+        id: 'channels',
+        label: t('channelsTab'),
+        icon: Hash,
+        content: <Channels />,
+        permission: Permission.MANAGE_CHANNELS
       },
       {
         id: 'storage',
